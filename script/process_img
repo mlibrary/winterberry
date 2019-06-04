@@ -1,0 +1,58 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Script for generating a CSV containing the alt text/captions for
+# images found within the specified list of HTML files.
+
+require 'optparse'
+require 'ostruct'
+
+require 'nokogiri'
+require 'csv'
+
+options = OpenStruct.new
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} <csv_path> <html_path> [<html_path>..]"
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    puts opts
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+
+if ARGV.count < 2
+  puts option_parser.help
+  return
+end
+
+#require File.expand_path('../config/environment', __dir__)
+require_relative '../lib/metadata'
+
+if ARGV.count > 1
+  csv_path = ARGV[0]
+  html_path_list = ARGV[1..-1]
+
+  fig_proc = FigureProcessor.new
+  html_parser = HTMLParser.new(fig_proc)
+  parser = Nokogiri::XML::SAX::Parser.new(html_parser)
+
+  html_path_list.each do |html_path|
+    puts "Path: #{html_path}"
+    STDOUT.flush
+    parser.parse_file(html_path)
+  end
+  info_list = fig_proc.info_list
+
+  CSV.open(csv_path,'w',
+      :write_headers=> true,
+      :headers => ["File Name","Alternative Text","Caption"]
+    ) do |csv|
+    info_list.each do |info|
+      attrs_h = info.attrs.to_h
+
+      src = File.basename(attrs_h['src'])
+      row = [ src, attrs_h['alt'], info.caption ]
+      csv << row
+    end
+  end
+end
