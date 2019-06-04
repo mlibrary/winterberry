@@ -1,12 +1,20 @@
 GEM
   remote: https://rubygems.org/
   specs:
+    csv (3.1.1)
+    htmlentities (4.3.4)
+    mini_portile2 (2.4.0)
+    nokogiri (1.10.3-x64-mingw32)
+      mini_portile2 (~> 2.4.0)
 
 PLATFORMS
   x64-mingw32
 
 DEPENDENCIES
   bundler
+  csv
+  htmlentities
+  nokogiri
 
 RUBY VERSION
    ruby 2.5.3p105

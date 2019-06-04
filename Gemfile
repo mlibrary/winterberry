@@ -6,5 +6,5 @@ ruby '2.5.3'
 gem 'bundler'
 
 gem 'csv'
+gem 'htmlentities'
 gem 'nokogiri'
-

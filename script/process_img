@@ -7,8 +7,9 @@
 require 'optparse'
 require 'ostruct'
 
-require 'nokogiri'
 require 'csv'
+require 'htmlentities'
+require 'nokogiri'
 
 options = OpenStruct.new
 option_parser = OptionParser.new do |opts|
@@ -43,6 +44,8 @@ if ARGV.count > 1
   end
   info_list = fig_proc.info_list
 
+  encoder = HTMLEntities.new
+
   CSV.open(csv_path,'w',
       :write_headers=> true,
       :headers => ["File Name","Alternative Text","Caption"]
@@ -51,7 +54,7 @@ if ARGV.count > 1
       attrs_h = info.attrs.to_h
 
       src = File.basename(attrs_h['src'])
-      row = [ src, attrs_h['alt'], info.caption ]
+      row = [ src, encoder.encode(attrs_h['alt']), encoder.encode(info.caption) ]
       csv << row
     end
   end
