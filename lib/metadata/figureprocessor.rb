@@ -18,8 +18,9 @@ class FigureProcessor < Processor
       @info_list << ElementInfo.new(name, attrs)
     end
 
-    if @figcap_stack.count > 0 or (attrs_h.has_key?('class') and attrs_h['class'] == 'figcap')
-      # This element is a caption, so grab its text content.
+    clss = attrs_h['class']
+    if @figcap_stack.count > 0 or (attrs_h.has_key?('class') and (clss == 'figcap' or clss == 'figh'))
+      # This element is a caption, so prepare to grab its text content.
       @figcap_stack.push(name)
     end
   end
@@ -32,8 +33,7 @@ class FigureProcessor < Processor
       if @figcap_stack.empty? and !@info_list.empty?
         # If reach end of caption, save it with
         # last element info.
-        element_info = @info_list.last
-        element_info.caption = @fig_caption
+        @info_list.last.caption = @fig_caption
         @fig_caption = ''
       end
     end
