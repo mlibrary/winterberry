@@ -1,3 +1,7 @@
+# Class for retrieving HTML image elements.
+# Adds element name and attributes into a list.
+# Also, attempt to retrieve the image caption.
+
 require_relative 'elementinfo'
 
 class FigureProcessor < Processor
