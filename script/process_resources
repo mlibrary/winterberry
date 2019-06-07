@@ -1,0 +1,41 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require 'optparse'
+require 'ostruct'
+require 'uri'
+
+options = OpenStruct.new
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} [--resource <resource_path>] <html_path> [<html_path>..]"
+  opts.on('-r', '--resource [FILE]', 'Path of resources') do |path|
+    options.resource_path = path
+  end
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    puts opts
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+
+if ARGV.count < 1
+  puts option_parser.help
+  return
+end
+
+#require File.expand_path('../config/environment', __dir__)
+require_relative '../lib/xslt'
+
+if ARGV.count > 0
+  resource_path = File.expand_path(options.resource_path)
+  html_path_list = ARGV
+
+  xsl_path = File.expand_path('lib/xsl/test.xsl')
+  parameters_map = { "resourcePath" => resource_path }
+
+  html_path_list.each do |html_path|
+    src_path = File.expand_path(html_path)
+    dest_path = File.join(File.dirname(src_path), File.basename(src_path, ".*") + "-new" + File.extname(src_path))
+    XSLT.transform(:xslpath => xsl_path, :srcpath => src_path, :destpath => dest_path, :parameters => parameters_map)
+  end
+end

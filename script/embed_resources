@@ -1,0 +1,81 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require 'optparse'
+require 'ostruct'
+
+require 'nokogiri'
+require 'csv'
+
+options = OpenStruct.new
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} <output_dir> <resource_path> <html_path> [<html_path>..]"
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    puts opts
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+
+if ARGV.count < 3
+  puts option_parser.help
+  return
+end
+
+#require File.expand_path('../config/environment', __dir__)
+require_relative '../lib/resources'
+
+output_dir = File.expand_path(ARGV[0])
+resource_path = File.expand_path(ARGV[1])
+html_path_list = ARGV[2..-1]
+
+if output_dir == "" or !Dir.exists?(output_dir)
+  puts "Error: \"#{ARGV[0]} is not a valid directory."
+  return
+end
+
+resource = nil
+if resource_path != nil and !resource_path.empty?
+  begin
+    resource_metadata = CSV.read(resource_path, :headers => true,
+                   :converters => :all, :header_converters => lambda { |h| h.downcase.gsub(' ', '_') })
+  rescue Exception => e
+    puts "Error: resources, #{e.message}"
+    return
+  end
+end
+
+processor = ResourceProcessor.new(resource_metadata)
+
+html_path_list.each do |html_path|
+
+  begin
+    doc = Nokogiri::XML(File.open(File.expand_path(html_path)))
+  rescue Exception => e
+    puts e.message
+    next
+  end
+
+  resource_marker_node_list = processor.find_resources(doc)
+  if resource_marker_node_list.count > 0
+    embedder = ResourceEmbedder.new(processor)
+
+    resource_marker_node_list.each do |resource_marker_node|
+      embedder.embed(resource_marker_node)
+    end
+  end
+
+  dest_path = File.join(output_dir, File.basename(html_path))
+  puts "Writing #{dest_path}"
+  STDOUT.flush
+
+  begin
+    File.write(dest_path, doc.to_xml)
+  rescue Exception => e
+    puts e.message
+  end
+end
+
+
+
+
