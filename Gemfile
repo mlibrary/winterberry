@@ -8,3 +8,5 @@ gem 'bundler'
 gem 'csv'
 gem 'htmlentities'
 gem 'nokogiri'
+
+gem 'turnsole', :git => 'https://github.com/mlibrary/turnsole'

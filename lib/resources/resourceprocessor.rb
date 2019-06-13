@@ -8,9 +8,25 @@ class ResourceProcessor
     doc.xpath("//*[@class='rb_test' or @class='rbi_test']")
   end
 
-  def get_resource_path(resource_marker_node)
+  def get_resource_pathOLD(resource_marker_node)
     str = resource_marker_node.xpath(".//comment()")
     str.text.match("file=\"([^\"]+)\"")[1].strip
+  end
+
+  def get_resource_path(resource_marker_node)
+    comment_list = resource_marker_node.xpath(".//comment()")
+    return "" if comment_list == nil or comment_list.count == 0
+
+    res_doc = Nokogiri::XML(comment_list[0])
+    return "" if res_doc == nil
+
+    embed_elem = res_doc.xpath("//embed")
+    return "" if embed_elem == nil
+
+    src_attr = embed_elem.attribute("src")
+    return "" if src_attr == nil
+
+    return src_attr.to_s
   end
 
   def get_reference_node(resource_marker_node)
