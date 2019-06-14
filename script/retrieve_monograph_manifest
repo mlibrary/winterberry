@@ -1,0 +1,46 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require 'optparse'
+require 'ostruct'
+
+require 'csv'
+
+options = OpenStruct.new
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} [--output_dir <output_dir>] <monograph noid> [<monograph node>..]"
+  opts.on('-o', '--output_dir [DIRECTORY]', 'Path of output directory') do |dir_path|
+    options.directory_path = dir_path
+  end
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    puts opts
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+
+if ARGV.count < 1
+  puts option_parser.help
+  return
+end
+
+require_relative '../lib/services'
+
+if options.directory_path == nil
+  options.directory_path = Dir.pwd
+else
+  require 'fileutils'
+  FileUtils.mkpath options.directory_path
+end
+
+noid_list = ARGV
+
+service = HeliotropeService.new
+noid_list.each do |noid|
+  service_response = service.monograph_noid_export(noid)
+
+  output_path = File.join(options.directory_path, noid + ".csv")
+  File.open(output_path, "w") do |f|
+    f.write(service_response)
+  end
+end

@@ -2,9 +2,28 @@ require 'faraday'
 require 'faraday_middleware'
 require 'json'
 
-class Service
+class HeliotropeService
   HELIOTROPE_API = 'https://www.fulcrum.org/api'
   HELIOTROPE_TOKEN = 'eyJhbGciOiJIUzI1NiJ9.eyJlbWFpbCI6InRiZWxjQHVtaWNoLmVkdSIsInBpbiI6IiQyYSQxMCR6VE83Z2VvbmtRaEhhbUZCTkNNYTRPbHJ4NlJSWC9TTlZVN1Uzd3lUTUVrQkouTU92eWp6UyJ9.64lOKeT4zfrd7sbKNxUALOEIJRRiu5liDNbFixBLf9Y'
+
+  #
+  # Manifest
+  #
+  def monograph_noid_export(noid)
+    begin
+      response = connection.get("monographs/#{noid}/manifest")
+    rescue StandardError => e
+      e.message
+    end
+
+    if response == nil || !response.success?
+      puts "Warning: no manifest found for noid #{noid}"
+      return ""
+    end
+
+    puts "Manifest found for noid #{noid}"
+    return response.body
+  end
 
   #
   # Configuration
@@ -32,8 +51,8 @@ class Service
       conn.response :json, content_type: /\bjson$/
       conn.adapter Faraday.default_adapter
 
-      #conn.options[:open_timeout] = @open_timeout
-      #conn.options[:timeout] = @timeout
+      conn.options[:open_timeout] = @open_timeout
+      conn.options[:timeout] = @timeout
     end
   end
 end

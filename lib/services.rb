@@ -1,4 +1,3 @@
 module Services
-  require_relative 'services/service'
-  require_relative 'services/manifestservice'
+  require_relative 'services/heliotropeservice'
 end
