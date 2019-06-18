@@ -9,7 +9,10 @@ require 'csv'
 
 options = OpenStruct.new
 option_parser = OptionParser.new do |opts|
-  opts.banner = "Usage: #{File.basename(__FILE__)} <mpress|heb> <embed|link> <resource_path|monograph_noid> <output_dir>  <html_path> [<html_path>..]"
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-a <embed|link> <marker|heb> <resource_path|monograph_noid> <output_dir> <html_path> [<html_path>..]"
+  opts.on('-a', '--action_file [FILE]', 'Path for file specifying resource actions') do |fpath|
+    options.action_path = fpath
+  end
   opts.on_tail('-h', '--help', 'Print this help message') do
     puts opts
     exit 0
@@ -25,23 +28,35 @@ end
 #require File.expand_path('../config/environment', __dir__)
 require_relative '../lib/resources'
 
-press = ARGV[0].downcase
-action = ARGV[1].downcase
+default_action = ARGV[0].downcase
+type = ARGV[1].downcase
 resource_path = ARGV[2]
 output_dir = ARGV[3]
 html_path_list = ARGV[4..-1]
 
-case press
-when "mpress", "heb"
+action_path = ""
+if options.action_path != nil and !options.action_path.empty?
+  action_path = File.expand_path(options.action_path)
+end
+
+resource_actions = nil
+if !action_path.empty? and File.exists?(action_path)
+  resource_actions = CSV.read(action_path,
+                :headers => true, :converters => :all,
+                :header_converters => lambda { |h| h.downcase.gsub(' ', '_') })
+end
+
+case default_action
+when "embed", "link"
 else
-  puts "Error: \"#{press} is not a valid press."
+  puts "Error: \"#{default_action} is not a valid action."
   return
 end
 
-case action
-when "embed", "link"
+case type
+when "marker", "heb"
 else
-  puts "Error: \"#{action} is not a valid action."
+  puts "Error: \"#{marker} is not a valid type."
   return
 end
 
@@ -64,38 +79,41 @@ end
 require_relative '../lib/services'
 
 begin
-  resources = resource_path == nil ? HeliotropeService.new.monograph_noid_export(monograph_noid) : File.read(resource_path)
+  resources = resource_path == nil ?
+        HeliotropeService.new.monograph_noid_export(monograph_noid) :
+        File.read(resource_path)
   resource_metadata = CSV.parse(resources,
-            :headers => true, :converters => :all, :header_converters => lambda { |h| h.downcase.gsub(' ', '_') })
+            :headers => true, :converters => :all,
+            :header_converters => lambda { |h| h.downcase.gsub(' ', '_') })
 rescue Exception => e
   puts e.message
 end
 
-case press
-when "mpress"
-  resource_locator = PressResourceLocator.new
+case type
+when "marker"
+  resource_locator = ResourceMarkerLocator.new
 when "heb"
-  #resource_locator = HEBResourceLocator.new
-  raise NotImplementedError
+  resource_locator = ResourceElemLocator.new
 end
 
-case action
-when "embed"
-  processor = ResourceEmbedder.new(
-                :resource_metadata => resource_metadata,
-                :resource_locator => resource_locator
-                )
-when "link"
-  processor = ResourceLinker.new(
-                :resource_metadata => resource_metadata,
-                :resource_locator => resource_locator
-                )
+case default_action
+when "embed", "link"
+else
+  puts "Error: invalid default action \"#{action}\"."
+  return
 end
+
+processor = ResourceProcessor.new(
+              :resource_metadata => resource_metadata,
+              :resource_locator => resource_locator,
+              :resource_actions => resource_actions,
+              :default_action => default_action
+              )
 
 html_path_list.each do |html_path|
 
   begin
-    doc = Nokogiri::XML(File.open(File.expand_path(html_path)))
+    doc = Nokogiri::XML(File.open(File.expand_path(html_path)), nil, 'UTF-8')
   rescue Exception => e
     puts e.message
     next
@@ -103,7 +121,7 @@ html_path_list.each do |html_path|
 
   resource_marker_node_list = resource_locator.find_resources(doc)
   resource_marker_node_list.each do |resource_marker_node|
-    processor.process(:marker => resource_marker_node)
+    processor.process(:resource_marker => resource_marker_node)
   end
 
   dest_path = File.join(output_dir, File.basename(html_path))

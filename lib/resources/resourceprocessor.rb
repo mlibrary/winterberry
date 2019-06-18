@@ -1,23 +1,43 @@
 require 'nokogiri'
 
 class ResourceProcessor
-  attr_reader :resource_csv, :resource_locator
+  attr_reader :resource_metadata, :resource_locator,
+        :resource_actions, :default_action
 
   def initialize(params = {})
     @resource_metadata = params[:resource_metadata]
     @resource_locator = params[:resource_locator]
+    @resource_actions = params[:resource_actions]
+    @default_action = params[:default_action]
   end
 
   def get_resource_metadata(resource_path)
     @resource_metadata.find { |row| row['file_name'] == resource_path }
   end
 
+  def get_resource_action(resource_path)
+    if @resource_actions != nil
+      action = @resource_actions.find { |row|
+                      row['resource_name'] == resource_path
+                    }
+      return action unless action == nil
+    end
+    nil
+  end
+
   def get_resource_path(resource_marker_node)
-    @resource_locator.get_resource_path(resource_marker_node)
+    @resource_locator.get_resource_path(
+                :resource_marker => resource_marker_node,
+                :resource_actions => @resource_actions
+                )
   end
 
   def get_reference_node(resource_marker_node)
-    @resource_locator.get_reference_node(resource_marker_node)
+    resource_path = get_resource_path(resource_marker_node)
+    @resource_locator.get_reference_node(
+                :resource_marker => resource_marker_node,
+                :resource_actions => @resource_actions
+                )
   end
 
   def replace_node(resource_marker_node)
@@ -34,8 +54,20 @@ class ResourceProcessor
     end
 
     puts "resource found for path #{path}."
-    embed_code = get_embed_xml(metadata)
-    embed_doc = Nokogiri::XML(embed_code)
+
+    action = get_resource_action(path)
+    action_str = action == nil ? @default_action : action['resource_action']
+
+    case action_str
+    when "embed"
+      embed_markup = metadata['embed_code']
+    when "link"
+      link = metadata['link']
+      link = link.match('^[^\(]+\(\"([^\"]+)\".*') {|m| m[1] }
+      embed_markup = "<p><a href=\"#{link}\">55View resource</a></p>"
+    end
+
+    embed_doc = Nokogiri::XML(embed_markup)
     embed_doc.root
   end
 
@@ -77,13 +109,13 @@ class ResourceProcessor
   end
 
   def insert_media_markup(params = {}, div = nil)
-    resource_marker_node = params[:marker]
+    resource_marker_node = params[:resource_marker]
     embed_container = create_media_container(resource_marker_node)
     insert_media_container(embed_container, resource_marker_node, div)
   end
 
   def replace_media_markup(params = {})
-    resource_marker_node = params[:marker]
+    resource_marker_node = params[:resource_marker]
 
     embed_container = create_media_container(resource_marker_node)
     if embed_container
@@ -114,15 +146,20 @@ class ResourceProcessor
         # Add <div> around default media markup. One for each ID found.
         # If no IDs, add just one.
         div = nil
-        id_list.each do |id|
-          ch = doc.create_element("div", :id => id.attribute("id"))
+        if id_list.count == 0
+          div = doc.create_element("div")
+          reference_node.add_next_sibling(div)
+        else
+          id_list.each do |id|
+            ch = doc.create_element("div", :id => id.attribute("id"))
 
-          if div == nil
-            reference_node.add_next_sibling(ch)
-          else
-            div.add_child(ch)
+            if div == nil
+              reference_node.add_next_sibling(ch)
+            else
+              div.add_child(ch)
+            end
+            div = ch
           end
-          div = ch
         end
 
         # Remove the IDs from the reference markup
@@ -142,7 +179,7 @@ class ResourceProcessor
   end
 
   def process(params = {})
-    resource_marker_node = params[:marker]
+    resource_marker_node = params[:resource_marker]
     if replace_node(resource_marker_node)
       replace_media_markup(params)
     else
