@@ -8,6 +8,7 @@ class ResourceProcessor
     @resource_metadata = params[:resource_metadata]
     @resource_locator = params[:resource_locator]
     @resource_actions = params[:resource_actions]
+    @resource_marker_type = params[:resource_marker_type]
     @default_action = params[:default_action]
   end
 
@@ -64,7 +65,7 @@ class ResourceProcessor
     when "link"
       link = metadata['link']
       link = link.match('^[^\(]+\(\"([^\"]+)\".*') {|m| m[1] }
-      embed_markup = "<p><a href=\"#{link}\">55View resource</a></p>"
+      embed_markup = "<p><a href=\"#{link}\" target=\"_blank\">View resource</a></p>"
     end
 
     embed_doc = Nokogiri::XML(embed_markup)
@@ -97,14 +98,19 @@ class ResourceProcessor
 
   def insert_media_container(embed_container, resource_marker_node, div = nil)
     if embed_container != nil
-      if div == nil
-        resource_marker_node.add_next_sibling(embed_container)
-      else
-        div.add_child(embed_container)
-      end
+      case @resource_marker_type
+      when "marker"
+        if div == nil
+          resource_marker_node.add_next_sibling(embed_container)
+        else
+          div.add_child(embed_container)
+        end
 
-      # Remove the resource marker
-      resource_marker_node.remove
+        # Remove the resource marker
+        resource_marker_node.remove
+      when "element"
+        resource_marker_node.add_child(embed_container)
+      end
     end
   end
 

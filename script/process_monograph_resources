@@ -9,7 +9,7 @@ require 'csv'
 
 options = OpenStruct.new
 option_parser = OptionParser.new do |opts|
-  opts.banner = "Usage: #{File.basename(__FILE__)} [-a <embed|link> <marker|heb> <resource_path|monograph_noid> <output_dir> <html_path> [<html_path>..]"
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-a <embed|link> <marker|element> <resource_path|monograph_noid> <output_dir> <html_path> [<html_path>..]"
   opts.on('-a', '--action_file [FILE]', 'Path for file specifying resource actions') do |fpath|
     options.action_path = fpath
   end
@@ -29,7 +29,7 @@ end
 require_relative '../lib/resources'
 
 default_action = ARGV[0].downcase
-type = ARGV[1].downcase
+resource_marker_type = ARGV[1].downcase
 resource_path = ARGV[2]
 output_dir = ARGV[3]
 html_path_list = ARGV[4..-1]
@@ -53,10 +53,10 @@ else
   return
 end
 
-case type
-when "marker", "heb"
+case resource_marker_type
+when "marker", "element"
 else
-  puts "Error: \"#{marker} is not a valid type."
+  puts "Error: \"#{resource_marker_type} is not a valid type."
   return
 end
 
@@ -89,13 +89,6 @@ rescue Exception => e
   puts e.message
 end
 
-case type
-when "marker"
-  resource_locator = ResourceMarkerLocator.new
-when "heb"
-  resource_locator = ResourceElemLocator.new
-end
-
 case default_action
 when "embed", "link"
 else
@@ -103,12 +96,20 @@ else
   return
 end
 
-processor = ResourceProcessor.new(
-              :resource_metadata => resource_metadata,
-              :resource_locator => resource_locator,
-              :resource_actions => resource_actions,
-              :default_action => default_action
-              )
+case resource_marker_type
+when "marker"
+  resource_locator = ResourceMarkerLocator.new
+when "element"
+  resource_locator = ResourceElemLocator.new
+end
+
+resource_processor = ResourceProcessor.new(
+            :resource_metadata => resource_metadata,
+            :resource_locator => resource_locator,
+            :resource_actions => resource_actions,
+            :resource_marker_type => resource_marker_type,
+            :default_action => default_action
+            )
 
 html_path_list.each do |html_path|
 
@@ -121,7 +122,7 @@ html_path_list.each do |html_path|
 
   resource_marker_node_list = resource_locator.find_resources(doc)
   resource_marker_node_list.each do |resource_marker_node|
-    processor.process(:resource_marker => resource_marker_node)
+    resource_processor.process(:resource_marker => resource_marker_node)
   end
 
   dest_path = File.join(output_dir, File.basename(html_path))
