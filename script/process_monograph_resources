@@ -9,7 +9,7 @@ require 'csv'
 
 options = OpenStruct.new
 option_parser = OptionParser.new do |opts|
-  opts.banner = "Usage: #{File.basename(__FILE__)} [-a <embed|link> <marker|element> <resource_path|monograph_noid> <output_dir> <html_path> [<html_path>..]"
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-a <action_file_path>] <embed|link> <marker|element> <resource_path|monograph_noid> <output_dir> <html_path> [<html_path>..]"
   opts.on('-a', '--action_file [FILE]', 'Path for file specifying resource actions') do |fpath|
     options.action_path = fpath
   end
