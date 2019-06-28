@@ -120,6 +120,18 @@ html_path_list.each do |html_path|
     next
   end
 
+  # Add stylesheet link
+  head_element_list = doc.xpath("/*[local-name()='html']/*[local-name()='head']")
+  if head_element_list != nil and head_element_list.count > 0
+    head_element = head_element_list[0]
+    link_element = doc.create_element("link",
+            :href => "../styles/fulcrum_enhanced.css",
+            :rel => "stylesheet",
+            :type => "text/css"
+            )
+    head_element.add_child(link_element)
+  end
+
   resource_marker_node_list = resource_locator.find_resources(doc)
   resource_marker_node_list.each do |resource_marker_node|
     resource_processor.process(:resource_marker => resource_marker_node)

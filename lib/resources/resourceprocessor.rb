@@ -65,7 +65,8 @@ class ResourceProcessor
     when "link"
       link = metadata['link']
       link = link.match('^[^\(]+\(\"([^\"]+)\".*') {|m| m[1] }
-      embed_markup = "<p><a href=\"#{link}\" target=\"_blank\">View resource</a></p>"
+      #embed_markup = "<p><a href=\"#{link}\" target=\"_blank\">View resource</a></p>"
+      embed_markup = "<a href=\"#{link}\" target=\"_blank\">View resource.</a>"
     end
 
     embed_doc = Nokogiri::XML(embed_markup)
@@ -75,7 +76,10 @@ class ResourceProcessor
   def create_media_container(resource_marker_node)
     embed_markup = get_embed_markup(resource_marker_node)
     if embed_markup != nil
-      embed_container = resource_marker_node.document.create_element("div", :class => "enhanced-media-display")
+      embed_container = resource_marker_node.document.create_element(
+              @resource_marker_type == "marker" ? "div" : "span",
+              :class => "enhanced-media-display"
+              )
       embed_container.add_child(embed_markup)
       return embed_container
     end
@@ -109,7 +113,15 @@ class ResourceProcessor
         # Remove the resource marker
         resource_marker_node.remove
       when "element"
-        resource_marker_node.add_child(embed_container)
+        caption = resource_marker_node.xpath(".//*[local-name()='p' and @class='image_caption']")
+        if caption == nil or caption.count == 0
+          resource_marker_node.add_child(embed_container)
+        else
+          c = caption[0]
+          text_node = c.document.create_text_node(" ")
+          c.add_child(text_node)
+          c.add_child(embed_container)
+        end
       end
     end
   end
