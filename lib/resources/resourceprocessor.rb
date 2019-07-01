@@ -16,14 +16,11 @@ class ResourceProcessor
     @resource_metadata.find { |row| row['file_name'] == resource_path }
   end
 
-  def get_resource_action(resource_path)
-    if @resource_actions != nil
-      action = @resource_actions.find { |row|
-                      row['resource_name'] == resource_path
-                    }
-      return action unless action == nil
-    end
-    nil
+  def get_resource_action(resource_marker_node)
+    @resource_locator.get_resource_action(
+                :resource_marker => resource_marker_node,
+                :resource_actions => @resource_actions
+                )
   end
 
   def get_resource_path(resource_marker_node)
@@ -56,7 +53,7 @@ class ResourceProcessor
 
     puts "resource found for path #{path}."
 
-    action = get_resource_action(path)
+    action = get_resource_action(resource_marker_node)
     action_str = action == nil ? @default_action : action['resource_action']
 
     case action_str
@@ -67,6 +64,11 @@ class ResourceProcessor
       link = link.match('^[^\(]+\(\"([^\"]+)\".*') {|m| m[1] }
       #embed_markup = "<p><a href=\"#{link}\" target=\"_blank\">View resource</a></p>"
       embed_markup = "<a href=\"#{link}\" target=\"_blank\">View resource.</a>"
+    when "remove"
+      puts "Remove #{path}"
+      comment = resource_marker_node.document.create_comment("Image #{path} removed.")
+      #resource_marker_node.add_next_sibling(comment)
+      #resource_marker_node.remove
     end
 
     embed_doc = Nokogiri::XML(embed_markup)

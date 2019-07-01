@@ -114,7 +114,7 @@ resource_processor = ResourceProcessor.new(
 html_path_list.each do |html_path|
 
   begin
-    doc = Nokogiri::XML(File.open(File.expand_path(html_path)), nil, 'UTF-8')
+    doc = Nokogiri::XML(File.read(File.expand_path(html_path)), nil, 'UTF-8')
   rescue Exception => e
     puts e.message
     next
@@ -141,8 +141,10 @@ html_path_list.each do |html_path|
   puts "Writing #{dest_path}"
   STDOUT.flush
 
+  xml_header = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
   begin
-    File.write(dest_path, doc.to_xml)
+    # doc.to_xml would include <!DOCTYPE html> header.
+    File.write(dest_path, xml_header + doc.xpath("//*[local-name()='html']").to_s)
   rescue Exception => e
     puts e.message
   end
