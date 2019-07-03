@@ -1,0 +1,241 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require 'optparse'
+require 'ostruct'
+
+require 'nokogiri'
+require 'csv'
+
+options = OpenStruct.new
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-a <embed|link|action_file_path>] <resource_path|monograph_noid> <output_dir> <html_path> [<html_path>..]"
+  opts.on('-a', '--action_file [FILE]', 'Path for file specifying resource actions') do |fpath|
+    options.action_path = fpath
+  end
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    puts opts
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+
+if ARGV.count < 3
+  puts option_parser.help
+  return
+end
+
+#require File.expand_path('../config/environment', __dir__)
+require_relative '../lib/resources'
+
+metadata_path = ARGV[0]
+output_dir = ARGV[1]
+html_path_list = ARGV[2..-1]
+
+action_path = ""
+default_action = "embed"
+if options.action_path != nil and !options.action_path.empty?
+  ap = options.action_path
+  ap.downcase!
+  if ap == "link"
+    default_action = ap
+  elsif ap != 'embed'
+    action_path = File.expand_path(options.action_path)
+  end
+end
+
+resource_actions = nil
+if !action_path.empty? and File.exists?(action_path)
+  resource_actions = CSV.read(action_path,
+                :headers => true, :converters => :all,
+                :header_converters => lambda { |h| h.downcase.gsub(' ', '_') })
+end
+
+m_path = File.expand_path(metadata_path)
+
+monograph_noid = nil
+if File.exists?(m_path)
+  metadata_path = m_path
+else
+  monograph_noid = metadata_path
+  metadata_path = nil
+end
+
+output_dir = File.expand_path(output_dir)
+
+if output_dir == "" or !Dir.exists?(output_dir)
+  puts "Error: \"#{output_dir} is not a valid directory."
+  return
+end
+
+require_relative '../lib/services'
+
+begin
+  resources = metadata_path == nil ?
+        HeliotropeService.new.monograph_noid_export(monograph_noid) :
+        File.read(metadata_path)
+  resource_metadata = CSV.parse(resources,
+            :headers => true, :converters => :all,
+            :header_converters => lambda { |h| h.downcase.gsub(' ', '_') })
+rescue Exception => e
+  puts e.message
+end
+
+resource_locator = ResourceLocator.new
+
+html_path_list.each do |html_path|
+
+  begin
+    doc = Nokogiri::XML(File.read(File.expand_path(html_path)), nil, 'UTF-8')
+  rescue Exception => e
+    puts e.message
+    next
+  end
+
+  # Add stylesheet link
+  head_element_list = doc.xpath("/*[local-name()='html']/*[local-name()='head']")
+  if head_element_list != nil and head_element_list.count > 0
+    head_element = head_element_list[0]
+    link_element = doc.create_element("link",
+            :href => "fulcrum_default.css",
+            :rel => "stylesheet",
+            :type => "text/css"
+            )
+    head_element.add_child(link_element)
+  end
+
+  resource_node_list = resource_locator.find_resources(doc)
+  puts "resource_node count: #{resource_node_list.count}"
+
+  resource_node_list.each do |resource_node|
+    #puts resource_node
+
+    if resource_locator.is_marker?(resource_node)
+      resource_name = resource_locator.resource_name_from_marker(resource_node)
+      if resource_name == nil
+        puts "Warning: no name for resource #{resource_node}"
+        next
+      end
+
+      action = resource_actions.find { |row|
+                      row['resource_name'] == resource_name
+                } unless resource_actions == nil
+      resource_action = action == nil ? default_action : action['resource_action']
+
+      metadata = resource_metadata.find { |row| row['file_name'] == resource_name }
+      if metadata == nil
+        puts "Warning: no metadata for resource #{resource_name}"
+        next
+      end
+
+      case resource_action
+      when "embed"
+        puts "Embedding #{resource_name}"
+
+        embed_markup = metadata['embed_code']
+        if embed_markup != nil and !embed_markup.empty?
+          markup = resource_locator.embed_markup(embed_markup)
+          fragment = Nokogiri::XML.fragment(markup)
+          resource_node.add_next_sibling(fragment)
+        end
+      when "link"
+        puts "Linking #{resource_name}"
+
+        link = metadata['link']
+        if link != nil and !link.empty?
+          link = link.match('^[^\(]+\(\"([^\"]+)\".*') {|m| m[1] }
+          title = metadata['title']
+          markup = resource_locator.caption_markup(link, title)
+          fragment = Nokogiri::XML.fragment(markup)
+          resource_node.add_next_sibling(fragment)
+        end
+      when "delete"
+        puts "Deleting #{resource_name}"
+        # NA at this time.
+      else
+        puts "Warning: invalid action #{resource_action} for resource #{resource_name}"
+      end
+
+    else
+      img_list = resource_node.xpath(".//*[local-name()='img']")
+
+      # Have a check here looking to see if all img should
+      # be deleted. If so, delete resource_node and continue.
+
+      img_list.each do |img|
+        file_name = File.basename(img.attribute("src"))
+
+        action = resource_actions.find { |row|
+                        row['file_name'] == file_name
+                  } unless resource_actions == nil
+        resource_action = action == nil ? default_action : action['resource_action']
+        resource_name = action == nil ? file_name : action['resource_name']
+
+        metadata = resource_metadata.find { |row| row['file_name'] == resource_name }
+        if metadata == nil and resource_name != "none"
+          puts "Warning: no metadata for resource #{resource_name}"
+          next
+        end
+
+        case resource_action
+        when "embed"
+          puts "Embedding #{resource_name}"
+
+          embed_markup = metadata['embed_code']
+          if embed_markup != nil
+            parent = resource_node.parent
+
+            default_container = resource_locator.default_container(resource_node.document)
+            default_container.add_child(resource_node)
+            parent.add_child(default_container)
+
+            markup = resource_locator.embed_markup(embed_markup)
+            fragment = Nokogiri::XML.fragment(markup)
+            parent.add_child(fragment)
+          end
+        when "link"
+          puts "Linking #{resource_name}"
+
+          link = metadata['link']
+          if link != nil and !link.empty?
+            link = link.match('^[^\(]+\(\"([^\"]+)\".*') {|m| m[1] }
+
+            caption_node = resource_locator.find_caption(img)
+            markup = resource_locator.caption_markup(link, nil, caption_node)
+            fragment = Nokogiri::XML.fragment(markup)
+            if caption_node == nil
+              img.add_next_sibling(fragment)
+            else
+              caption_node.add_child(fragment)
+            end
+          end
+        when "remove"
+          puts "Removing #{file_name}"
+
+          caption_node = resource_locator.find_caption(img)
+          caption_node.remove unless caption_node == nil
+          img.add_next_sibling(img.document.create_comment("Image #{file_name} removed"))
+          img.remove
+        else
+          puts "Warning: invalid action #{resource_action} for resource #{resource_name}"
+        end
+      end
+    end
+  end
+
+  dest_path = File.join(output_dir, File.basename(html_path))
+  puts "Writing #{dest_path}"
+  STDOUT.flush
+
+  xml_header = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+  begin
+    # doc.to_xml would include <!DOCTYPE html> header.
+    File.write(dest_path, xml_header + doc.xpath("//*[local-name()='html']").to_s)
+  rescue Exception => e
+    puts e.message
+  end
+end
+
+
+
+
