@@ -28,7 +28,7 @@ end
 #require File.expand_path('../config/environment', __dir__)
 require_relative '../lib/resources'
 
-default_action = ARGV[0].downcase
+default_action_str = ARGV[0].downcase
 resource_path = ARGV[1]
 output_dir = ARGV[2]
 html_path_list = ARGV[3..-1]
@@ -45,12 +45,17 @@ if !action_path.empty? and File.exists?(action_path)
                 :header_converters => lambda { |h| h.downcase.gsub(' ', '_') })
 end
 
-case default_action
+case default_action_str
 when "embed", "link"
 else
-  puts "Error: \"#{default_action} is not a valid action."
+  puts "Error: \"#{default_action_str} is not a valid action."
   return
 end
+default_action = {
+                  "file_name" => "",
+                  "resource_name" => "",
+                  "resource_action" => default_action_str
+                 }
 
 r_path = File.expand_path(resource_path)
 monograph_noid = nil
@@ -81,13 +86,6 @@ rescue Exception => e
   puts e.message
 end
 
-case default_action
-when "embed", "link"
-else
-  puts "Error: invalid default action \"#{action}\"."
-  return
-end
-
 resource_processor = ResourceProcessor.new(
             :resource_metadata => resource_metadata,
             :resource_actions => resource_actions,
@@ -108,11 +106,17 @@ html_path_list.each do |html_path|
   if head_element_list != nil and head_element_list.count > 0
     head_element = head_element_list[0]
     link_element = doc.create_element("link",
-            :href => "../styles/fulcrum_enhanced.css",
+            :href => "../styles/fulcrum_default.css",
             :rel => "stylesheet",
             :type => "text/css"
             )
     head_element.add_child(link_element)
+    link_element = doc.create_element("link",
+            :href => "../styles/fulcrum_enhanced.css",
+            :rel => "stylesheet",
+            :type => "text/css"
+            )
+    #head_element.add_child(link_element)
   end
 
   resource_processor.process(doc)

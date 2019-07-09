@@ -1,12 +1,18 @@
 class MarkerResource < Resource
 
-  def process()
+  def process
     node_list = resource_node_list
     node_list.each do |node|
       path = resource_path(node)
       action = resource_action(path)
-      puts path
-      puts action
+      metadata = resource_metadata(path)
+      puts "#{action['resource_action']}: #{path}"
+      #puts action
+      #puts metadata
+
+      marker_action = MarkerActionFactory.create(node, action)
+      #puts "marker_action: #{marker_action}"
+      marker_action.process(:resource_metadata => metadata) unless marker_action == nil
     end
   end
 
@@ -20,12 +26,9 @@ class MarkerResource < Resource
   end
 
   def resource_action(path)
-    if @resource_actions != nil
-      action = @resource_actions.find { |row|
-                      row['resource_name'] == path
-                    }
-      return action
-    end
-    nil
+    action = @resource_actions.find { |row| row['resource_name'] == path } \
+              unless @resource_actions == nil
+    return action unless action == nil
+    return @default_action
   end
 end

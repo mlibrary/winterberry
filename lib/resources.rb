@@ -7,4 +7,12 @@ module Resources
   require_relative 'resources_new/resource'
   require_relative 'resources_new/markerresource'
   require_relative 'resources_new/elementresource'
+  require_relative 'resources_new/action'
+  require_relative 'resources_new/markeractionfactory'
+  require_relative 'resources_new/embedmarkeraction'
+  require_relative 'resources_new/linkmarkeraction'
+  require_relative 'resources_new/elementactionfactory'
+  require_relative 'resources_new/embedelementaction'
+  require_relative 'resources_new/linkelementaction'
+  require_relative 'resources_new/removeelementaction'
 end

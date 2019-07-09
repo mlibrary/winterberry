@@ -5,9 +5,14 @@ class ElementResource < Resource
       spath = src_path(node)
       action = resource_action(spath)
       path = action['resource_name']
-      puts spath
-      puts path
-      puts action
+      metadata = resource_metadata(path)
+      puts "#{action['resource_action']}: #{spath} => #{path}"
+      element_action = ElementActionFactory.create(node, action)
+      element_action.process(:resource_metadata => metadata) unless element_action == nil
+    end
+
+    if @resource_node.element_children.count == 0
+      @resource_node.remove
     end
   end
 
@@ -27,6 +32,6 @@ class ElementResource < Resource
                     }
       return action
     end
-    nil
+    @default_action
   end
 end

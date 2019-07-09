@@ -1,0 +1,3 @@
+class EmbedMarkerAction < Action
+
+end
