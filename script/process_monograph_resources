@@ -9,7 +9,7 @@ require 'csv'
 
 options = OpenStruct.new
 option_parser = OptionParser.new do |opts|
-  opts.banner = "Usage: #{File.basename(__FILE__)} [-a <action_file_path>] <embed|link> <marker|element> <resource_path|monograph_noid> <output_dir> <html_path> [<html_path>..]"
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-a <action_file_path>] <embed|link> <resource_path|monograph_noid> <output_dir> <html_path> [<html_path>..]"
   opts.on('-a', '--action_file [FILE]', 'Path for file specifying resource actions') do |fpath|
     options.action_path = fpath
   end
@@ -20,7 +20,7 @@ option_parser = OptionParser.new do |opts|
 end
 option_parser.parse!(ARGV)
 
-if ARGV.count < 5
+if ARGV.count < 4
   puts option_parser.help
   return
 end
@@ -28,11 +28,10 @@ end
 #require File.expand_path('../config/environment', __dir__)
 require_relative '../lib/resources'
 
-default_action = ARGV[0].downcase
-resource_marker_type = ARGV[1].downcase
-resource_path = ARGV[2]
-output_dir = ARGV[3]
-html_path_list = ARGV[4..-1]
+default_action_str = ARGV[0].downcase
+resource_path = ARGV[1]
+output_dir = ARGV[2]
+html_path_list = ARGV[3..-1]
 
 action_path = ""
 if options.action_path != nil and !options.action_path.empty?
@@ -46,19 +45,17 @@ if !action_path.empty? and File.exists?(action_path)
                 :header_converters => lambda { |h| h.downcase.gsub(' ', '_') })
 end
 
-case default_action
+case default_action_str
 when "embed", "link"
 else
-  puts "Error: \"#{default_action} is not a valid action."
+  puts "Error: \"#{default_action_str} is not a valid action."
   return
 end
-
-case resource_marker_type
-when "marker", "element"
-else
-  puts "Error: \"#{resource_marker_type} is not a valid type."
-  return
-end
+default_action = {
+                  "file_name" => "",
+                  "resource_name" => "",
+                  "resource_action" => default_action_str
+                 }
 
 r_path = File.expand_path(resource_path)
 monograph_noid = nil
@@ -89,25 +86,9 @@ rescue Exception => e
   puts e.message
 end
 
-case default_action
-when "embed", "link"
-else
-  puts "Error: invalid default action \"#{action}\"."
-  return
-end
-
-case resource_marker_type
-when "marker"
-  resource_locator = ResourceMarkerLocator.new
-when "element"
-  resource_locator = ResourceElemLocator.new
-end
-
 resource_processor = ResourceProcessor.new(
             :resource_metadata => resource_metadata,
-            :resource_locator => resource_locator,
             :resource_actions => resource_actions,
-            :resource_marker_type => resource_marker_type,
             :default_action => default_action
             )
 
@@ -125,17 +106,20 @@ html_path_list.each do |html_path|
   if head_element_list != nil and head_element_list.count > 0
     head_element = head_element_list[0]
     link_element = doc.create_element("link",
-            :href => "../styles/fulcrum_enhanced.css",
+            :href => "../styles/fulcrum_default.css",
             :rel => "stylesheet",
             :type => "text/css"
             )
     head_element.add_child(link_element)
+    link_element = doc.create_element("link",
+            :href => "../styles/fulcrum_enhanced.css",
+            :rel => "stylesheet",
+            :type => "text/css"
+            )
+    #head_element.add_child(link_element)
   end
 
-  resource_marker_node_list = resource_locator.find_resources(doc)
-  resource_marker_node_list.each do |resource_marker_node|
-    resource_processor.process(:resource_marker => resource_marker_node)
-  end
+  resource_processor.process(doc)
 
   dest_path = File.join(output_dir, File.basename(html_path))
   puts "Writing #{dest_path}"
