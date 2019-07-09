@@ -1,0 +1,135 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require 'optparse'
+require 'ostruct'
+
+require 'nokogiri'
+require 'csv'
+
+options = OpenStruct.new
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-a <action_file_path>] <embed|link> <resource_path|monograph_noid> <output_dir> <html_path> [<html_path>..]"
+  opts.on('-a', '--action_file [FILE]', 'Path for file specifying resource actions') do |fpath|
+    options.action_path = fpath
+  end
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    puts opts
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+
+if ARGV.count < 4
+  puts option_parser.help
+  return
+end
+
+#require File.expand_path('../config/environment', __dir__)
+require_relative '../lib/resources'
+
+default_action = ARGV[0].downcase
+resource_path = ARGV[1]
+output_dir = ARGV[2]
+html_path_list = ARGV[3..-1]
+
+action_path = ""
+if options.action_path != nil and !options.action_path.empty?
+  action_path = File.expand_path(options.action_path)
+end
+
+resource_actions = nil
+if !action_path.empty? and File.exists?(action_path)
+  resource_actions = CSV.read(action_path,
+                :headers => true, :converters => :all,
+                :header_converters => lambda { |h| h.downcase.gsub(' ', '_') })
+end
+
+case default_action
+when "embed", "link"
+else
+  puts "Error: \"#{default_action} is not a valid action."
+  return
+end
+
+r_path = File.expand_path(resource_path)
+monograph_noid = nil
+if File.exists?(r_path)
+  resource_path = r_path
+else
+  monograph_noid = resource_path
+  resource_path = nil
+end
+
+output_dir = File.expand_path(output_dir)
+
+if output_dir == "" or !Dir.exists?(output_dir)
+  puts "Error: \"#{output_dir} is not a valid directory."
+  return
+end
+
+require_relative '../lib/services'
+
+begin
+  resources = resource_path == nil ?
+        HeliotropeService.new.monograph_noid_export(monograph_noid) :
+        File.read(resource_path)
+  resource_metadata = CSV.parse(resources,
+            :headers => true, :converters => :all,
+            :header_converters => lambda { |h| h.downcase.gsub(' ', '_') })
+rescue Exception => e
+  puts e.message
+end
+
+case default_action
+when "embed", "link"
+else
+  puts "Error: invalid default action \"#{action}\"."
+  return
+end
+
+resource_processor = ResourceProcessor.new(
+            :resource_metadata => resource_metadata,
+            :resource_actions => resource_actions,
+            :default_action => default_action
+            )
+
+html_path_list.each do |html_path|
+
+  begin
+    doc = Nokogiri::XML(File.read(File.expand_path(html_path)), nil, 'UTF-8')
+  rescue Exception => e
+    puts e.message
+    next
+  end
+
+  # Add stylesheet link
+  head_element_list = doc.xpath("/*[local-name()='html']/*[local-name()='head']")
+  if head_element_list != nil and head_element_list.count > 0
+    head_element = head_element_list[0]
+    link_element = doc.create_element("link",
+            :href => "../styles/fulcrum_enhanced.css",
+            :rel => "stylesheet",
+            :type => "text/css"
+            )
+    head_element.add_child(link_element)
+  end
+
+  resource_processor.process(doc)
+
+  dest_path = File.join(output_dir, File.basename(html_path))
+  puts "Writing #{dest_path}"
+  STDOUT.flush
+
+  xml_header = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+  begin
+    # doc.to_xml would include <!DOCTYPE html> header.
+    File.write(dest_path, xml_header + doc.xpath("//*[local-name()='html']").to_s)
+  rescue Exception => e
+    puts e.message
+  end
+end
+
+
+
+
