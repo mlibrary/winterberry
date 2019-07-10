@@ -1,10 +1,9 @@
 class LinkMarkerAction < Action
-  def process(args)
-    metadata = args[:resource_metadata]
-    link_resource(metadata)
-  end
+  def process()
+    metadata = @action_args[:resource_metadata]
+    resource = @action_args[:resource]
+    resource_node = resource.resource_node
 
-  def link_resource(metadata)
     embed_markup = link_markup(metadata, metadata['title'])
     embed_markup = "<div class=\"enhanced-media-display\">#{embed_markup}</div>"
 
@@ -14,6 +13,6 @@ class LinkMarkerAction < Action
       return
     end
 
-    @resource_node.replace(embed_fragment)
+    resource_node.replace(embed_fragment)
   end
 end

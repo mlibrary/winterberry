@@ -130,17 +130,21 @@ html_path_list.each do |html_path|
     resource_processor.process(doc)
   else
     # Add stylesheet link
+    #href_base = "../styles"
+    href_base = "./"
+    #href_base = "c:/Users/tbelc/Documents/winterberry_test/styles"
+
     head_element_list = doc.xpath("/*[local-name()='html']/*[local-name()='head']")
     if head_element_list != nil and head_element_list.count > 0
       head_element = head_element_list[0]
       link_element = doc.create_element("link",
-              :href => "../styles/fulcrum_default.css",
+              :href => File.join(href_base, "fulcrum_default.css"),
               :rel => "stylesheet",
               :type => "text/css"
               )
       head_element.add_child(link_element)
       link_element = doc.create_element("link",
-              :href => "../styles/fulcrum_enhanced.css",
+              :href => File.join(href_base, "fulcrum_enhanced.css"),
               :rel => "stylesheet",
               :type => "text/css"
               )

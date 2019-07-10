@@ -1,8 +1,8 @@
 require 'nokogiri'
 
 class Action
-  def initialize(res)
-    @resource_node = res
+  def initialize(args)
+    @action_args = args
   end
 
   def link_markup(metadata, descr = nil)

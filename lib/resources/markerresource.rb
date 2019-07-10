@@ -15,8 +15,13 @@ class MarkerResource < Resource
           :resource_metadata => metadata
           )
       else
-        marker_action = MarkerActionFactory.create(node, action)
-        marker_action.process(:resource_metadata => metadata) unless marker_action == nil
+        marker_action = MarkerActionFactory.create(
+                    :resource => self,
+                    :resource_action => action,
+                    :resource_img => node,
+                    :resource_metadata => metadata
+                    )
+        marker_action.process() unless marker_action == nil
       end
     end
   end
@@ -35,7 +40,7 @@ class MarkerResource < Resource
               unless @resource_actions == nil
     return action unless action == nil
 
-    return default_action(:resource_name => path, :file_name => path)
+    return clone_default_action(:resource_name => path, :file_name => path)
   end
 
   def scan_report(args)

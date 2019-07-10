@@ -1,23 +1,19 @@
 class RemoveElementAction < Action
-  def process(args)
-    metadata = args[:resource_metadata]
-    remove_resource(metadata)
-  end
+  def process()
+    metadata = @action_args[:resource_metadata]
+    resource = @action_args[:resource]
+    resource_node = resource.resource_node
+    img_node = @action_args[:resource_img]
 
-  def remove_resource(metadata)
     if false
       # For now, not removing captions
-      next_sibling = @resource_node.next_element
-      if next_sibling != nil and next_sibling.node_name == 'p'
-        puts "next name: #{next_sibling.node_name}"
-        klass_attr = next_sibling.attribute("class")
-        klass = klass_attr == nil ? "" : klass_attr.text
-        if klass == "image_caption"
-          #next_sibling.remove
-        end
+      container = resource_node.node_name == 'p' ? resource_node.parent : resource_node
+      caption = container.xpath(".//*[local-name()='p' and (@class='image_caption' or @class='figh')]")
+      if caption != nil
+        caption.remove
       end
     end
 
-   @resource_node.remove
+   img_node.remove
   end
 end

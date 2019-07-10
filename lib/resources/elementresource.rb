@@ -15,8 +15,13 @@ class ElementResource < Resource
           :resource_metadata => metadata
           )
       else
-        element_action = ElementActionFactory.create(node, action)
-        element_action.process(:resource_metadata => metadata) unless element_action == nil
+        element_action = ElementActionFactory.create(
+                    :resource => self,
+                    :resource_action => action,
+                    :resource_img => node,
+                    :resource_metadata => metadata
+                    )
+        element_action.process() unless element_action == nil
       end
     end
 
@@ -39,7 +44,7 @@ class ElementResource < Resource
               unless @resource_actions == nil
     return action unless action == nil
 
-    return default_action(:resource_name => path, :file_name => path)
+    return clone_default_action(:resource_name => path, :file_name => path)
   end
 
   def scan_report(args)

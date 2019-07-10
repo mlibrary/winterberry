@@ -1,5 +1,5 @@
 class Resource
-  attr_reader :resource_node
+  attr_reader :resource_node, :default_action
 
 	def initialize(args)
 	  @resource_args = args
@@ -13,7 +13,7 @@ class Resource
     @resource_metadata.find { |row| row['file_name'] == file_path } unless @resource_metadata == nil
   end
 
-  def default_action(args)
+  def clone_default_action(args)
     action = @default_action.clone
     action['resource_name'] = args[:resource_name]
     action['file_name'] = args[:file_name]

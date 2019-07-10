@@ -1,10 +1,9 @@
 class LinkElementAction < Action
-  def process(args)
-    metadata = args[:resource_metadata]
-    link_resource(metadata)
-  end
+  def process()
+    metadata = @action_args[:resource_metadata]
+    resource = @action_args[:resource]
+    resource_node = resource.resource_node
 
-  def link_resource(metadata)
     link_markup = link_markup(metadata, "View resource.")
     link_markup = "<span class=\"enhanced-media-display\">#{link_markup}</span>"
 
@@ -14,10 +13,10 @@ class LinkElementAction < Action
       return
     end
 
-    parent = @resource_node.parent
-    caption = parent.xpath(".//*[local-name()='p' and (@class='image_caption' or @class='figh')]")
+    container = resource_node.node_name == 'p' ? resource_node.parent : resource_node
+    caption = container.xpath(".//*[local-name()='p' and (@class='image_caption' or @class='figh')]")
     if caption == nil or caption.count == 0
-      parent.add_child(link_fragment)
+      container.add_child(link_fragment)
     else
       c = caption[0]
       text_node = c.document.create_text_node(" ")

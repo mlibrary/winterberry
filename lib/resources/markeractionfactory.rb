@@ -1,12 +1,14 @@
 class MarkerActionFactory
-  def self.create(resource, action)
+  def self.create(args)
+    action = args[:resource_action]
+
     case action['resource_action']
     when "embed"
-      return EmbedMarkerAction.new(resource)
+      return EmbedMarkerAction.new(args)
     when "link"
-      return LinkMarkerAction.new(resource)
+      return LinkMarkerAction.new(args)
     else
-      puts "Warning: invalid marker action #{action}"
+      puts "Warning: invalid marker action #{action['resource_action']}"
     end
     return nil
   end
