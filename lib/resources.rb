@@ -1,7 +1,8 @@
 module Resources
-  require_relative 'resources_old/resourcelocator'
-  require_relative 'resources_old/resourcemarkerlocator'
-  require_relative 'resources_old/resourceelemlocator'
+  #require_relative 'resources_old/resourcelocator'
+  #require_relative 'resources_old/resourcemarkerlocator'
+  #require_relative 'resources_old/resourceelemlocator'
+  #require_relative 'resources_old/resourceprocessor'
   require_relative 'resources/resourceprocessor'
   require_relative 'resources/resourcefactory'
   require_relative 'resources/resource'

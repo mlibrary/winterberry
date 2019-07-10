@@ -8,7 +8,6 @@ class ResourceProcessor
 
 		args = @processor_args.clone
 		resource_node_list.each do |resource_node|
-			#puts resource_node
 			args[:resource_node] = resource_node
 			resource = ResourceFactory.create(args)
 			resource.process()
@@ -16,6 +15,7 @@ class ResourceProcessor
 	end
 
 	def resources(doc)
-		doc.xpath("//*[@class='fig' or @class='rb']")
+		#doc.xpath("//*[@class='fig' or @class='rb']")
+		doc.xpath("//*[@class='fig']") + doc.xpath("//*[@class='rb']")
 	end
 end
