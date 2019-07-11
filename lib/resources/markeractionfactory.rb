@@ -7,6 +7,7 @@ class MarkerActionFactory
       return EmbedMarkerAction.new(args)
     when "link"
       return LinkMarkerAction.new(args)
+    when "none"
     else
       puts "Warning: invalid marker action #{action['resource_action']}"
     end

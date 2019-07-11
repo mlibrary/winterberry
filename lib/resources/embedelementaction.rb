@@ -1,33 +1,29 @@
 class EmbedElementAction < Action
   def process()
-    metadata = @action_args[:resource_metadata]
-    resource = @action_args[:resource]
     img_node = @action_args[:resource_img]
+    resource = @action_args[:resource]
     resource_node = resource.resource_node
 
     if resource_node.node_name == "p"
+      # Not sure about this. epubcheck complains about ./span/div
+      # so, attempt to convert the 'p' to 'div'.
+      # See how this goes.
       resource_node.node_name = "div"
     end
 
-    embed_markup = metadata['embed_code']
-    if embed_markup == nil or embed_markup.strip.empty?
-      puts "Warning: no embed markup for resource node #{@resource_node}"
-      return
-    end
+    emb_fragment = embed_fragment
 
-    embed_fragment = Nokogiri::XML.fragment(embed_markup)
-    if embed_fragment == nil
-      puts "Warning: error creating embed markup document"
-      return
-    end
+    # May have an issue if the img_node has @{id,style,class}
+    # Wrap a div around both containers and add these attrs?
+    def_container = default_container
+    img_node.add_next_sibling(def_container)
+    def_container.add_child(img_node)
 
-    default_container = img_node.document.create_element("div", :class => "default-media-display")
-    img_node.add_next_sibling(default_container)
-    default_container.add_child(img_node)
+    emb_container = embed_container
+    emb_container.add_child(embed_fragment)
 
-    embed_container = img_node.document.create_element("div", :class => "enhanced-media-display")
-    embed_container.add_child(embed_fragment)
+    def_container.add_next_sibling(emb_container)
 
-    default_container.add_next_sibling(embed_container)
+    return true
   end
 end

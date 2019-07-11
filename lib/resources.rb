@@ -16,4 +16,5 @@ module Resources
   require_relative 'resources/embedelementaction'
   require_relative 'resources/linkelementaction'
   require_relative 'resources/removeelementaction'
+  require_relative 'resources/xmlutil'
 end

@@ -15,6 +15,7 @@ class ElementActionFactory
       return LinkElementAction.new(args)
     when "remove"
       return RemoveElementAction.new(args)
+    when "none"
     else
       puts "Warning: invalid element action #{action}"
     end

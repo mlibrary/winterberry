@@ -8,20 +8,23 @@ require 'nokogiri'
 require 'csv'
 
 options = OpenStruct.new
-options.do_scan = false
+
+options.default_action_str = nil
+options.execute = false
+
 option_parser = OptionParser.new do |opts|
-  opts.banner = "Usage: #{File.basename(__FILE__)} [-s] [-d <output_dir>] [-r <resource_path|monograph_node>] [-a <action_file_path>] <embed|link> <html_path> [<html_path>..]"
-  opts.on('-s', '--scan', 'Scan files, but do not process') do |scan|
-    options.do_scan = true
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-a <action_file>] [-d <embed|link|none>] [-o <output_dir>] [-r <resource_metadata_file|monograph_node>] <html_file> [<html_file>..]"
+  opts.on('-d', '--default_action [embed|link|none]', 'Default action') do |da|
+    options.default_action_str = da.downcase
   end
-  opts.on('-d', '--output_dir [DIR]', 'Directory to store output files') do |dpath|
+  opts.on('-a', '--action_path [FILE]', 'Path for file specifying resource actions') do |fpath|
+    options.action_path = fpath
+  end
+  opts.on('-o', '--output_dir [DIR]', 'Directory to store output files') do |dpath|
     options.output_dir = dpath
   end
-  opts.on('-r', '--resource_metadata_file [FILE]', 'Path containing resource metadata') do |rpath|
+  opts.on('-r', '--resource_metadata_path [FILE]', 'Path containing resource metadata') do |rpath|
     options.resource_path = rpath
-  end
-  opts.on('-a', '--action_file [FILE]', 'Path for file specifying resource actions') do |fpath|
-    options.action_path = fpath
   end
   opts.on_tail('-h', '--help', 'Print this help message') do
     puts opts
@@ -38,10 +41,10 @@ end
 #require File.expand_path('../config/environment', __dir__)
 require_relative '../lib/resources'
 
-default_action_str = ARGV[0].downcase
+default_action_str = options.default_action_str
 resource_path = options.resource_path
 output_dir = options.output_dir
-html_path_list = ARGV[1..-1]
+html_path_list = ARGV
 
 action_path = ""
 if options.action_path != nil and !options.action_path.empty?
@@ -56,7 +59,9 @@ if !action_path.empty? and File.exists?(action_path)
 end
 
 case default_action_str
-when "embed", "link"
+when "embed", "link", "none"
+  options.execute = true
+when nil
 else
   puts "Error: \"#{default_action_str} is not a valid action."
   return
@@ -78,7 +83,7 @@ if resource_path != nil
   end
 end
 
-if !options.do_scan
+if options.execute
   if output_dir == nil
     output_dir = File.join(Dir.pwd, "xhtml")
     FileUtils.mkdir_p output_dir
@@ -114,10 +119,12 @@ resource_processor = ResourceProcessor.new(
             :options => options
             )
 
+html_path_update_list = []
 html_path_list.each do |html_path|
 
   hpath = File.expand_path(html_path)
   puts "Processing file #{File.basename(hpath)}"
+  STDOUT.flush
 
   begin
     doc = Nokogiri::XML(File.read(hpath), nil, 'UTF-8')
@@ -126,45 +133,36 @@ html_path_list.each do |html_path|
     next
   end
 
-  if options.do_scan
-    resource_processor.process(doc)
-  else
-    # Add stylesheet link
-    #href_base = "../styles"
-    href_base = "./"
-    #href_base = "c:/Users/tbelc/Documents/winterberry_test/styles"
-
-    head_element_list = doc.xpath("/*[local-name()='html']/*[local-name()='head']")
-    if head_element_list != nil and head_element_list.count > 0
-      head_element = head_element_list[0]
-      link_element = doc.create_element("link",
-              :href => File.join(href_base, "fulcrum_default.css"),
-              :rel => "stylesheet",
-              :type => "text/css"
-              )
-      head_element.add_child(link_element)
-      link_element = doc.create_element("link",
-              :href => File.join(href_base, "fulcrum_enhanced.css"),
-              :rel => "stylesheet",
-              :type => "text/css"
-              )
-      #head_element.add_child(link_element)
-    end
-
-    resource_processor.process(doc)
-
-    dest_path = File.join(output_dir, File.basename(html_path))
-    puts "Writing #{dest_path}"
+  result = resource_processor.process(doc)
+  if options.execute
+    puts "Result: #{result ? 'Updated' : 'No updates'}"
     STDOUT.flush
+  end
 
-    xml_header = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
-    begin
-      # doc.to_xml would include <!DOCTYPE html> header.
-      File.write(dest_path, xml_header + doc.xpath("//*[local-name()='html']").to_s)
-    rescue Exception => e
-      puts e.message
+  if result
+
+    html_path_update_list << hpath
+
+    if options.execute
+      # Add stylesheet link
+      #href_base = "../styles"
+      href_base = "./"
+      #href_base = "c:/Users/tbelc/Documents/winterberry_test/styles"
+
+      XMLUtil.add_css(doc, File.join(href_base, "fulcrum_default.css"))
+      #XMLUtil.add_css(doc, File.join(href_base, "fulcrum_enhanced.css"))
+
+      dest_path = File.join(output_dir, File.basename(html_path))
+      XMLUtil.save(doc, dest_path)
     end
   end
+  puts "\n"
+end
+
+if options.execute
+  puts "Updated files"
+  html_path_update_list.each { |path| puts File.basename(path) }
+  STDOUT.flush
 end
 
 

@@ -3,27 +3,34 @@ class MarkerResource < Resource
   def process
     options = @resource_args[:options]
 
+    result = false
     node_list = resource_node_list
     node_list.each do |node|
       path = resource_path(node)
       action = resource_action(path)
       metadata = resource_metadata(path)
 
-      if metadata == nil or options.do_scan
-        scan_report(
-          :resource_action => action,
-          :resource_metadata => metadata
-          )
-      else
+      scan_report(
+        :resource_action => action,
+        :resource_metadata => metadata
+        )
+
+      if metadata != nil and options.execute
         marker_action = MarkerActionFactory.create(
                     :resource => self,
                     :resource_action => action,
                     :resource_img => node,
                     :resource_metadata => metadata
                     )
-        marker_action.process() unless marker_action == nil
+        result = marker_action.process() unless marker_action == nil
+
+        # Catch any successes for now
+        result = rc if rc == true
       end
+
     end
+
+    return result
   end
 
   def resource_node_list
@@ -36,11 +43,7 @@ class MarkerResource < Resource
   end
 
   def resource_action(path)
-    action = @resource_actions.find { |row| row['resource_name'] == path } \
-              unless @resource_actions == nil
-    return action unless action == nil
-
-    return clone_default_action(:resource_name => path, :file_name => path)
+    c_resource_action('resource_name', path)
   end
 
   def scan_report(args)

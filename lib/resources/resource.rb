@@ -19,4 +19,19 @@ class Resource
     action['file_name'] = args[:file_name]
     action
   end
+
+  def c_resource_action(field, path)
+    action = @resource_actions.find { |row| row[field] == path } \
+              unless @resource_actions == nil
+
+    if action != nil
+      action_str = action['resource_action'].downcase
+      if action_str == 'default'
+        action['resource_action'] = @default_action['resource_action']
+      end
+      return action
+    end
+
+    return clone_default_action(:resource_name => path, :file_name => path)
+  end
 end

@@ -7,11 +7,16 @@ class ResourceProcessor
 		resource_node_list = resources(doc)
 
 		args = @processor_args.clone
+
+		result = false
 		resource_node_list.each do |resource_node|
 			args[:resource_node] = resource_node
 			resource = ResourceFactory.create(args)
-			resource.process()
+			rc = resource.process()
+			result = rc if rc == true
 		end
+
+		return result
 	end
 
 	def resources(doc)

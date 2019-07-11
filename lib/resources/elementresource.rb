@@ -2,6 +2,7 @@ class ElementResource < Resource
   def process()
     options = @resource_args[:options]
 
+    result = false
     node_list = resource_node_list
     node_list.each do |node|
       spath = src_path(node)
@@ -9,25 +10,30 @@ class ElementResource < Resource
       path = action['resource_name']
       metadata = resource_metadata(path)
 
-      if metadata == nil or options.do_scan
-        scan_report(
-          :resource_action => action,
-          :resource_metadata => metadata
-          )
-      else
+      scan_report(
+        :resource_action => action,
+        :resource_metadata => metadata
+        )
+
+      if metadata != nil and options.execute
         element_action = ElementActionFactory.create(
                     :resource => self,
                     :resource_action => action,
                     :resource_img => node,
                     :resource_metadata => metadata
                     )
-        element_action.process() unless element_action == nil
+        rc = element_action.process() unless element_action == nil
+
+        # Catch any successes for now
+        result = rc if rc == true
       end
     end
 
     if @resource_node.element_children.count == 0
       @resource_node.remove
     end
+
+    return result
   end
 
   def resource_node_list
@@ -40,11 +46,7 @@ class ElementResource < Resource
   end
 
   def resource_action(path)
-    action = @resource_actions.find { |row| row['file_name'] == path } \
-              unless @resource_actions == nil
-    return action unless action == nil
-
-    return clone_default_action(:resource_name => path, :file_name => path)
+    c_resource_action('file_name', path)
   end
 
   def scan_report(args)
