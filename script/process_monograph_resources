@@ -6,24 +6,31 @@ require 'ostruct'
 
 require 'nokogiri'
 require 'csv'
+require 'fileutils'
 
 options = OpenStruct.new
 
-options.default_action_str = nil
+options.default_action_str = "none"
 options.execute = false
 
 option_parser = OptionParser.new do |opts|
-  opts.banner = "Usage: #{File.basename(__FILE__)} [-a <action_file>] [-d <embed|link|none>] [-o <output_dir>] [-r <resource_metadata_file|monograph_node>] <html_file> [<html_file>..]"
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-e] [-a <action_file>] [-d <embed|link|none>] [-o <output_dir>] [-p <opf_file>] [-r <resource_metadata_file|monograph_node>] <html_file> [<html_file>..]"
+  opts.on('-a', '--action_file [FILE]', 'Path for file specifying resource actions') do |fpath|
+    options.action_path = fpath
+  end
   opts.on('-d', '--default_action [embed|link|none]', 'Default action') do |da|
     options.default_action_str = da.downcase
   end
-  opts.on('-a', '--action_path [FILE]', 'Path for file specifying resource actions') do |fpath|
-    options.action_path = fpath
+  opts.on('-e', '--execute', 'Execute actions') do |da|
+    options.execute = true
   end
   opts.on('-o', '--output_dir [DIR]', 'Directory to store output files') do |dpath|
     options.output_dir = dpath
   end
-  opts.on('-r', '--resource_metadata_path [FILE]', 'Path containing resource metadata') do |rpath|
+  opts.on('-p', '--opf_file [FILE]', 'Path to the OPF file') do |opath|
+    options.opf_path = opath
+  end
+  opts.on('-r', '--resource_metadata_file [FILE]', 'Path containing resource metadata') do |rpath|
     options.resource_path = rpath
   end
   opts.on_tail('-h', '--help', 'Print this help message') do
@@ -33,7 +40,7 @@ option_parser = OptionParser.new do |opts|
 end
 option_parser.parse!(ARGV)
 
-if ARGV.count < 2
+if ARGV.count < 1
   puts option_parser.help
   return
 end
@@ -42,6 +49,7 @@ end
 require_relative '../lib/resources'
 
 default_action_str = options.default_action_str
+opf_path = options.opf_path
 resource_path = options.resource_path
 output_dir = options.output_dir
 html_path_list = ARGV
@@ -60,8 +68,6 @@ end
 
 case default_action_str
 when "embed", "link", "none"
-  options.execute = true
-when nil
 else
   puts "Error: \"#{default_action_str} is not a valid action."
   return
@@ -98,7 +104,7 @@ end
 
 require_relative '../lib/services'
 
-resources = nil
+resource_metadata = nil
 if resource_path != nil or monograph_noid != nil
   begin
     resources = resource_path == nil ?
@@ -120,6 +126,7 @@ resource_processor = ResourceProcessor.new(
             )
 
 html_path_update_list = []
+remote_resources_list = []
 html_path_list.each do |html_path|
 
   hpath = File.expand_path(html_path)
@@ -133,17 +140,21 @@ html_path_list.each do |html_path|
     next
   end
 
-  result = resource_processor.process(doc)
-  if options.execute
-    puts "Result: #{result ? 'Updated' : 'No updates'}"
-    STDOUT.flush
-  end
+  action_list = resource_processor.process(doc)
+  result = action_list.index { |action| action.status == Action.COMPLETED }
 
   if result
-
-    html_path_update_list << hpath
-
     if options.execute
+
+      html_path_update_list << hpath
+
+      has_remote_resources = action_list.index { |action|
+                  action.status == Action.COMPLETED and action.resource_action['resource_action'] == "embed"
+      }
+      if has_remote_resources
+        remote_resources_list << hpath
+      end
+
       # Add stylesheet link
       #href_base = "../styles"
       href_base = "./"
@@ -159,10 +170,60 @@ html_path_list.each do |html_path|
   puts "\n"
 end
 
-if options.execute
-  puts "Updated files"
-  html_path_update_list.each { |path| puts File.basename(path) }
-  STDOUT.flush
+if options.execute and opf_path != nil
+  puts "opf_path: #{opf_path}"
+  opf_path = File.expand_path(opf_path)
+  if File.exists?(opf_path) and (html_path_update_list.count > 0 or remote_resource_list.count > 0)
+
+    begin
+      doc = Nokogiri::XML(File.read(opf_path), nil, 'UTF-8')
+    rescue Exception => e
+      puts e.message
+      exit
+    end
+
+    manifest_node = doc.xpath("//*[local-name()='manifest']")
+    if manifest_node == nil
+      puts "No manifest node"
+      exit
+    end
+
+    if html_path_update_list.count > 0
+      item_node = doc.create_element(
+              "item",
+              :href => "fulcrum_default.css",
+              :id => "fulcrum_default",
+              )
+      item_node['media-type'] = "text/css"
+      
+      node_list = manifest_node.xpath("./*[local-name()='item' and @media-type='text/css']")
+      if node_list == nil
+        manifest_node.add_child(item_node)
+      else
+        node_list.last.add_next_sibling(item_node)
+      end
+    end
+
+    puts "Adding remote resources to OPF file #{File.basename(opf_path)}"
+
+    remote_resources_list.each do |path|
+      path_basename = File.basename(path)
+      node_list = doc.xpath("//*[local-name()='manifest']/*[local-name()='item' and contains(@href, '#{path_basename}')]")
+      node_list.each do |node|
+        if node.has_attribute?("properties")
+          node['properties'] += " remote-resources"
+        else
+          node['properties'] = "remote-resources"
+        end
+      end
+    end
+
+    dest_path = File.join(output_dir, File.basename(opf_path))
+    XMLUtil.save(doc, dest_path)
+  else
+    puts "OPF file #{File.basename(opf_path)} does not exist."
+  end
+
 end
 
 

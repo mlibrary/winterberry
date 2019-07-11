@@ -1,8 +1,16 @@
 require 'nokogiri'
 
 class Action
+  @@PENDING = "Pending"
+  @@COMPLETED = "Completed"
+  @@FAILED = "Failed"
+
+  attr_reader :status, :message
+
   def initialize(args)
     @action_args = args
+    @status = @@PENDING
+    @message = ""
   end
 
   def link_markup(metadata, descr = nil)
@@ -20,14 +28,14 @@ class Action
     emb_markup = metadata['embed_code']
     if emb_markup == nil or emb_markup.strip.empty?
       resource_node = @action_args[:resource_node]
-      puts "Warning: no embed markup for resource node #{resource_node}"
-      return
+      @message = "Warning: no embed markup for resource node #{resource_node}"
+      return nil
     end
 
     emb_fragment = Nokogiri::XML.fragment(emb_markup)
     if emb_fragment == nil
       resource_node = @action_args[:resource_node]
-      puts "Warning: error creating embed markup document for resource node #{resource_node}"
+      @message = "Warning: error creating embed markup document for resource node #{resource_node}"
     end
     emb_fragment
   end
@@ -44,4 +52,29 @@ class Action
     container
   end
 
+  def element_action_to_s
+    action = @action_args[:resource_action]
+    metadata = @action_args[:resource_metadata]
+
+    return "#{@status}: #{self.class}, #{action['resource_action']}: #{action['file_name']} => #{action['resource_name']}, metadata: #{metadata == nil ? "none" : "exists"}"
+  end
+
+  def marker_action_to_s
+    action = @action_args[:resource_action]
+    metadata = @action_args[:resource_metadata]
+
+    return "#{@status}: #{self.class}, #{action['resource_action']}: #{action['resource_name']}, metadata: #{metadata == nil ? "none" : "exists"}"
+  end
+
+  def self.COMPLETED
+    @@COMPLETED
+  end
+
+  def self.PENDING
+    @@PENDING
+  end
+
+  def self.FAILED
+    @@FAILED
+  end
 end

@@ -11,6 +11,10 @@ class EmbedMarkerAction < Action
     resource_node.add_next_sibling(emb_container)
     resource_node.remove
 
-    return true
+    @status = @@COMPLETED
+  end
+
+  def to_s
+    marker_action_to_s
   end
 end

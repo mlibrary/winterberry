@@ -1,8 +1,8 @@
 class ElementResource < Resource
-  def process()
+  def create_actions
     options = @resource_args[:options]
 
-    result = false
+    action_list = []
     node_list = resource_node_list
     node_list.each do |node|
       spath = src_path(node)
@@ -10,22 +10,14 @@ class ElementResource < Resource
       path = action['resource_name']
       metadata = resource_metadata(path)
 
-      scan_report(
-        :resource_action => action,
-        :resource_metadata => metadata
-        )
-
-      if metadata != nil and options.execute
-        element_action = ElementActionFactory.create(
+      if metadata != nil
+        action = ElementActionFactory.create(
                     :resource => self,
                     :resource_action => action,
                     :resource_img => node,
                     :resource_metadata => metadata
                     )
-        rc = element_action.process() unless element_action == nil
-
-        # Catch any successes for now
-        result = rc if rc == true
+        action_list << action unless action == nil
       end
     end
 
@@ -33,7 +25,7 @@ class ElementResource < Resource
       @resource_node.remove
     end
 
-    return result
+    return action_list
   end
 
   def resource_node_list
@@ -47,14 +39,5 @@ class ElementResource < Resource
 
   def resource_action(path)
     c_resource_action('file_name', path)
-  end
-
-  def scan_report(args)
-    action = args[:resource_action]
-    metadata = args[:resource_metadata]
-
-    puts "Resource: #{self.class}, #{action['resource_action']}: #{action['file_name']} => #{action['resource_name']}, metadata: #{metadata == nil ? "none" : "exists"}"
-    #puts "Action:   #{action.class}"
-    #puts "Metadata: #{metadata.class}"
   end
 end

@@ -25,13 +25,25 @@ class XMLUtil
       end
   end
 
-  def self.save(doc, dest_path)
+  def self.save_html(doc, dest_path)
     puts "Writing #{dest_path}"
 
     xml_header = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
     begin
       # doc.to_xml would include <!DOCTYPE html> header.
       File.write(dest_path, xml_header + doc.xpath("//*[local-name()='html']").to_s)
+    rescue Exception => e
+      puts e.message
+    end
+  end
+
+  def self.save(doc, dest_path)
+    puts "Writing #{dest_path}"
+
+    xml_header = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+    begin
+      # doc.to_xml would include <!DOCTYPE html> header.
+      File.write(dest_path, xml_header + doc.xpath("/*").to_s)
     rescue Exception => e
       puts e.message
     end

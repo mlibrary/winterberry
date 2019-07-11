@@ -24,6 +24,14 @@ class EmbedElementAction < Action
 
     def_container.add_next_sibling(emb_container)
 
-    return true
+    @status = @@COMPLETED
+  end
+
+  def resource_action
+    @action_args[:resource_action]
+  end
+
+  def to_s
+    element_action_to_s
   end
 end

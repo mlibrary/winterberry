@@ -8,15 +8,24 @@ class ResourceProcessor
 
 		args = @processor_args.clone
 
-		result = false
+    options = @processor_args[:options]
+
+    action_list = []
 		resource_node_list.each do |resource_node|
 			args[:resource_node] = resource_node
 			resource = ResourceFactory.create(args)
-			rc = resource.process()
-			result = rc if rc == true
+			actions = resource.create_actions()
+      action_list += actions
+
+			if options.execute
+			  actions.each do |action|
+			    action.process
+			    puts action
+			  end
+			end
 		end
 
-		return result
+    return action_list
 	end
 
 	def resources(doc)
