@@ -195,7 +195,7 @@ if options.execute and opf_path != nil
               :id => "fulcrum_default",
               )
       item_node['media-type'] = "text/css"
-      
+
       node_list = manifest_node.xpath("./*[local-name()='item' and @media-type='text/css']")
       if node_list == nil
         manifest_node.add_child(item_node)
