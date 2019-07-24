@@ -1,0 +1,10 @@
+/* Display default media blocks, such as image thumbnails */
+.default-media-display {
+  display: block;
+}
+
+/* Hide enhanced media blocks, such as Fulcrum embedded audio/video/images
+   or links to Fulcrum resource pages. */
+.enhanced-media-display {
+  display: none;
+}
