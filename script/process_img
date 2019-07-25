@@ -13,7 +13,13 @@ require 'nokogiri'
 
 options = OpenStruct.new
 option_parser = OptionParser.new do |opts|
-  opts.banner = "Usage: #{File.basename(__FILE__)} <csv_path> <html_path> [<html_path>..]"
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-a <actions_file>] [-r <resource_metadata_file>] <output_csv_path> <html_path> [<html_path>..]"
+  opts.on('-a', '--action_file [FILE]', 'Path for file specifying resource actions') do |fpath|
+    options.actions_path = fpath
+  end
+  opts.on('-r', '--resource_metadata_file [FILE]', 'Path containing resource metadata') do |rpath|
+    options.resource_path = rpath
+  end
   opts.on_tail('-h', '--help', 'Print this help message') do
     puts opts
     exit 0
@@ -28,34 +34,61 @@ end
 
 #require File.expand_path('../config/environment', __dir__)
 require_relative '../lib/metadata'
+require_relative '../lib/csv_file'
 
-if ARGV.count > 1
-  csv_path = ARGV[0]
-  html_path_list = ARGV[1..-1]
+resource_path = options.resource_path
+actions_path = options.actions_path
+output_csv_path = ARGV[0]
+html_path_list = ARGV[1..-1]
 
-  fig_proc = FigureProcessor.new
-  html_parser = HTMLParser.new(fig_proc)
-  parser = Nokogiri::XML::SAX::Parser.new(html_parser)
+resource_metadata = CSVFile.read_file(:csv_path => resource_path)
+resource_actions = CSVFile.read_file(:csv_path => actions_path)
 
-  html_path_list.each do |html_path|
-    puts "Path: #{html_path}"
-    STDOUT.flush
-    parser.parse_file(html_path)
-  end
-  info_list = fig_proc.info_list
+fig_proc = FigureProcessor.new
+html_parser = HTMLParser.new(fig_proc)
+parser = Nokogiri::XML::SAX::Parser.new(html_parser)
 
-  encoder = HTMLEntities.new
+html_path_list.each do |html_path|
+  puts "Path: #{html_path}"
+  STDOUT.flush
+  parser.parse_file(html_path)
+end
+info_list = fig_proc.info_list
 
-  CSV.open(csv_path,'w',
-      :write_headers=> true,
-      :headers => ["File Name","Alternative Text","Caption"]
-    ) do |csv|
-    info_list.each do |info|
-      attrs_h = info.attrs.to_h
+encoder = HTMLEntities.new
 
-      src = File.basename(attrs_h['src'])
+CSV.open(output_csv_path,'w',
+    :write_headers=> true,
+    :headers => ["NOID","Alternative Text","Caption"]
+  ) do |csv|
+  info_list.each do |info|
+    attrs_h = info.attrs.to_h
+
+    src = File.basename(attrs_h['src'])
+    if src != nil
+      if resource_actions != nil
+        row = resource_actions.find {|r| r['file_name'] == src }
+        if row != nil
+          src = row['resource_name']
+        end
+      end
+
+      if resource_metadata != nil
+        noid = resource_metadata.find
+        row = resource_metadata.find { |r| r['file_name'] == src }
+        if row != nil
+          src = row['noid']
+        else
+          src = ""
+        end
+      end
+    end
+    if src == ""
+      puts "Error: no noid for #{File.basename(attrs_h['src'])}"
+    else
       row = [ src, encoder.encode(attrs_h['alt']), encoder.encode(info.caption) ]
       csv << row
+      puts "NOID: #{src}"
     end
   end
 end

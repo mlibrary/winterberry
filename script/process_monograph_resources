@@ -14,9 +14,9 @@ options.default_action_str = "none"
 options.execute = false
 
 option_parser = OptionParser.new do |opts|
-  opts.banner = "Usage: #{File.basename(__FILE__)} [-e] [-a <action_file>] [-d <embed|link|none>] [-o <output_dir>] [-p <opf_file>] [-r <resource_metadata_file|monograph_node>] <html_file> [<html_file>..]"
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-e] [-a <actions_file>] [-d <embed|link|none>] [-o <output_dir>] [-p <opf_file>] [-r <resource_metadata_file>] <html_file> [<html_file>..]"
   opts.on('-a', '--action_file [FILE]', 'Path for file specifying resource actions') do |fpath|
-    options.action_path = fpath
+    options.actions_path = fpath
   end
   opts.on('-d', '--default_action [embed|link|none]', 'Default action') do |da|
     options.default_action_str = da.downcase
@@ -47,24 +47,14 @@ end
 
 #require File.expand_path('../config/environment', __dir__)
 require_relative '../lib/resources'
+require_relative '../lib/csv_file'
 
 default_action_str = options.default_action_str
 opf_path = options.opf_path
 resource_path = options.resource_path
+actions_path = options.actions_path
 output_dir = options.output_dir
 html_path_list = ARGV
-
-action_path = ""
-if options.action_path != nil and !options.action_path.empty?
-  action_path = File.expand_path(options.action_path)
-end
-
-resource_actions = nil
-if !action_path.empty? and File.exists?(action_path)
-  resource_actions = CSV.read(action_path,
-                :headers => true, :converters => :all,
-                :header_converters => lambda { |h| h.downcase.gsub(' ', '_') })
-end
 
 case default_action_str
 when "embed", "link", "none"
@@ -78,16 +68,8 @@ default_action = {
                   "resource_action" => default_action_str
                  }
 
-monograph_noid = nil
-if resource_path != nil
-  r_path = File.expand_path(resource_path)
-  if File.exists?(r_path)
-    resource_path = r_path
-  else
-    monograph_noid = resource_path
-    resource_path = nil
-  end
-end
+resource_metadata = CSVFile.read_file(:csv_path => resource_path)
+resource_actions = CSVFile.read_file(:csv_path => actions_path)
 
 if options.execute
   if output_dir == nil
@@ -99,22 +81,6 @@ if options.execute
       puts "Error: \"#{output_dir} is not a valid directory."
       return
     end
-  end
-end
-
-require_relative '../lib/services'
-
-resource_metadata = nil
-if resource_path != nil or monograph_noid != nil
-  begin
-    resources = resource_path == nil ?
-          HeliotropeService.new.monograph_noid_export(monograph_noid) :
-          File.read(resource_path)
-    resource_metadata = CSV.parse(resources,
-              :headers => true, :converters => :all,
-              :header_converters => lambda { |h| h.downcase.gsub(' ', '_') })
-  rescue Exception => e
-    puts e.message
   end
 end
 
@@ -156,11 +122,12 @@ html_path_list.each do |html_path|
       end
 
       # Add stylesheet link
-      #href_base = "../styles"
-      href_base = "./"
+      href_base = "../Styles"
+      #href_base = "./"
       #href_base = "c:/Users/tbelc/Documents/winterberry_test/styles"
 
       XMLUtil.add_css(doc, File.join(href_base, "fulcrum_default.css"))
+      puts "Added CSS stylesheet \"fulcrum_default.css\"."
       #XMLUtil.add_css(doc, File.join(href_base, "fulcrum_enhanced.css"))
 
       dest_path = File.join(output_dir, File.basename(html_path))
