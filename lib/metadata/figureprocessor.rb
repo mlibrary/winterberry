@@ -9,8 +9,7 @@ class FigureProcessor < Processor
 
   def initialize(p_info_list = [])
     @info_list = p_info_list
-    @figcap_stack = []
-    @fig_caption = ''
+    reset
   end
 
   def start_element(name, attrs = [])
@@ -48,5 +47,11 @@ class FigureProcessor < Processor
       # Within a figure caption. Save the text.
       @fig_caption += string
     end
+  end
+
+  def reset
+    @info_list = []
+    @figcap_stack = []
+    @fig_caption = ''
   end
 end

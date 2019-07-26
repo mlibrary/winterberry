@@ -1,0 +1,82 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require 'optparse'
+require 'ostruct'
+
+require 'csv'
+require 'fileutils'
+
+options = OpenStruct.new
+
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} [--output_dir <output_dir>] <monograph noid> [<monograph node>..]"
+  opts.on('-o', '--output_dir [DIRECTORY]', 'Path of output directory') do |dir_path|
+    options.output_dir = dir_path
+  end
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    puts opts
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+
+if ARGV.count < 1
+  puts option_parser.help
+  return
+end
+
+require_relative '../lib/services'
+require_relative '../lib/csv_file'
+
+output_dir = options.output_dir
+monograph_noid_list = ARGV
+
+output_dir = Dir.pwd if output_dir == nil
+if !Dir.exists?(output_dir)
+  FileUtils.mkdir_p output_dir
+end
+
+service = HeliotropeService.new
+
+monograph_noid_list.each do |noid|
+  # Retrieve the monograph manifest.
+  #manifest_csv = CSVFile.read(:csv_body => service.monograph_noid_export(noid))
+  manifest_csv = CSVFile.read_file(:csv_path => File.join('c:/Users/tbelc/Documents/winterberry_test/project', "#{noid}.csv"))
+  monograph_row = manifest_csv.find {|row| row['noid'] == noid }
+  if monograph_row == nil
+    puts "Warning: no monograph row for noid #{noid}"
+    next
+  end
+
+  # Determine the ebook ISBN without dashes.
+  isbns = monograph_row['isbn(s)']
+  if isbns == nil or isbns.empty?
+    puts "Warning: no isbns found for noid #{noid}"
+    next
+  end
+
+  ebook_isbns = isbns.split(';').select {|isbn|
+    isbn.strip.downcase.match('[0-9]+[ ]+\(ebook\)')
+  }
+  if ebook_isbns.empty?
+    puts "Warning: no ebook isbn found for noid #{noid}"
+    next
+  end
+  puts "Warning: multiple ebook isbns found for noid #{noid}" if ebook_isbns.count > 1
+
+  ebook_isbn = ebook_isbns[0].sub('(ebook)', '').strip.gsub('-', '')
+
+  project_dir =  File.join(output_dir, ebook_isbn)
+  puts "Using project directory #{project_dir}"
+  STDOUT.flush
+  FileUtils.mkdir_p project_dir
+
+  # Save the manifest file
+  manifest_path = File.join(project_dir, "manifest.csv")
+  puts "Saving manifest"
+  File.open(manifest_path, "w") do |f|
+    f.write(manifest_csv)
+  end
+end
+

@@ -14,7 +14,7 @@ options.default_action_str = "none"
 options.execute = false
 
 option_parser = OptionParser.new do |opts|
-  opts.banner = "Usage: #{File.basename(__FILE__)} [-e] [-a <actions_file>] [-d <embed|link|none>] [-o <output_dir>] [-p <opf_file>] [-r <resource_metadata_file>] <html_file> [<html_file>..]"
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-e] [-a <actions_file>] [-d <embed|link|none>] [-o <output_dir>] [-m <manifest_file>] [-p <opf_file>] <html_file> [<html_file>..]"
   opts.on('-a', '--action_file [FILE]', 'Path for file specifying resource actions') do |fpath|
     options.actions_path = fpath
   end
@@ -27,11 +27,11 @@ option_parser = OptionParser.new do |opts|
   opts.on('-o', '--output_dir [DIR]', 'Directory to store output files') do |dpath|
     options.output_dir = dpath
   end
+  opts.on('-m', '--manifest_file [FILE]', 'Path containing monograph manifest file') do |rpath|
+    options.manifest_path = rpath
+  end
   opts.on('-p', '--opf_file [FILE]', 'Path to the OPF file') do |opath|
     options.opf_path = opath
-  end
-  opts.on('-r', '--resource_metadata_file [FILE]', 'Path containing resource metadata') do |rpath|
-    options.resource_path = rpath
   end
   opts.on_tail('-h', '--help', 'Print this help message') do
     puts opts
@@ -51,7 +51,7 @@ require_relative '../lib/csv_file'
 
 default_action_str = options.default_action_str
 opf_path = options.opf_path
-resource_path = options.resource_path
+manifest_path = options.manifest_path
 actions_path = options.actions_path
 output_dir = options.output_dir
 html_path_list = ARGV
@@ -68,7 +68,7 @@ default_action = {
                   "resource_action" => default_action_str
                  }
 
-resource_metadata = CSVFile.read_file(:csv_path => resource_path)
+resource_metadata = CSVFile.read_file(:csv_path => manifest_path)
 resource_actions = CSVFile.read_file(:csv_path => actions_path)
 
 if options.execute

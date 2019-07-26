@@ -13,12 +13,12 @@ require 'nokogiri'
 
 options = OpenStruct.new
 option_parser = OptionParser.new do |opts|
-  opts.banner = "Usage: #{File.basename(__FILE__)} [-a <actions_file>] [-r <resource_metadata_file>] <output_csv_path> <html_path> [<html_path>..]"
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-a <actions_file>] [-m <manifest_file>] <output_csv_path> <html_path> [<html_path>..]"
   opts.on('-a', '--action_file [FILE]', 'Path for file specifying resource actions') do |fpath|
     options.actions_path = fpath
   end
-  opts.on('-r', '--resource_metadata_file [FILE]', 'Path containing resource metadata') do |rpath|
-    options.resource_path = rpath
+  opts.on('-m', '--manifest_file [FILE]', 'Path containing monograph manifest file') do |rpath|
+    options.manifest_path = rpath
   end
   opts.on_tail('-h', '--help', 'Print this help message') do
     puts opts
@@ -36,12 +36,12 @@ end
 require_relative '../lib/metadata'
 require_relative '../lib/csv_file'
 
-resource_path = options.resource_path
+manifest_path = options.manifest_path
 actions_path = options.actions_path
 output_csv_path = ARGV[0]
 html_path_list = ARGV[1..-1]
 
-resource_metadata = CSVFile.read_file(:csv_path => resource_path)
+resource_metadata = CSVFile.read_file(:csv_path => manifest_path)
 resource_actions = CSVFile.read_file(:csv_path => actions_path)
 
 fig_proc = FigureProcessor.new
@@ -57,7 +57,8 @@ info_list = fig_proc.info_list
 
 encoder = HTMLEntities.new
 
-CSV.open(output_csv_path,'w',
+CSV.open(output_csv_path,
+    'w',
     :write_headers=> true,
     :headers => ["NOID","Alternative Text","Caption"]
   ) do |csv|
