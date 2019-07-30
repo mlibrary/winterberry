@@ -8,5 +8,5 @@ gem 'bundler'
 gem 'csv'
 gem 'htmlentities'
 gem 'nokogiri'
-
+gem 'rubyzip', '~> 1.2.2'
 gem 'turnsole', :git => 'https://github.com/mlibrary/turnsole'

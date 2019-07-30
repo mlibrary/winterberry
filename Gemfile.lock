@@ -27,6 +27,7 @@ GEM
     multipart-post (2.1.1)
     nokogiri (1.10.3-x64-mingw32)
       mini_portile2 (~> 2.4.0)
+    rubyzip (1.2.3)
 
 PLATFORMS
   x64-mingw32
@@ -36,6 +37,7 @@ DEPENDENCIES
   csv
   htmlentities
   nokogiri
+  rubyzip (~> 1.2.2)
   turnsole!
 
 RUBY VERSION
