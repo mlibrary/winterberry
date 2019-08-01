@@ -1,0 +1,239 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require 'optparse'
+require 'ostruct'
+
+require 'csv'
+require 'fileutils'
+require 'zip'
+
+options = OpenStruct.new
+
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-e] <project_dir> [<project_dir>..]"
+  opts.on('-e', '--execute', 'Execute actions') do |da|
+    options.execute = true
+  end
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    puts opts
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+
+if ARGV.count < 1
+  puts option_parser.help
+  return
+end
+
+require_relative '../lib/csv_file'
+require_relative '../lib/metadata'
+require_relative '../lib/resources'
+
+project_dir_list = ARGV
+
+default_action = {
+                  "file_name" => "",
+                  "resource_name" => "",
+                  "resource_action" => "embed"
+                 }
+
+project_dir_list.each do |project_dir|
+  project_dir = File.expand_path(project_dir)
+  puts "Processing project #{File.basename(project_dir)}"
+
+  # Locate resource mapping file.
+  resource_map_file = File.join(project_dir, "resource_map.csv")
+  if !File.exists?(resource_map_file)
+    puts "Error: no resource mapping file for project #{File.basename(project_dir)}"
+    next
+  end
+
+  # Locate the resource manifest file.
+  manifest_file = File.join(project_dir, "manifest.csv")
+  if !File.exists?(manifest_file)
+    puts "Error: no resource manifest file for project #{File.basename(project_dir)}"
+    next
+  end
+
+  # Read the resource mapping/manifest files.
+  resource_map_csv = CSVFile.read_file(:csv_path => resource_map_file)
+  manifest_csv = CSVFile.read_file(:csv_path => manifest_file)
+
+  # Generate the resource action list.
+  actions_list = []
+  resource_map_csv.each do |row|
+    file_name = row['file_name']
+    resource_name = row['resource_name']
+
+    fileset_row = manifest_csv.find {|row| File.basename(row['file_name'], ".*") == File.basename(resource_name, ".*") }
+    if fileset_row == nil
+      puts "Error: no fileset row for resource #{resource_name}"
+      noid = ""
+      link = ""
+      embed_code = ""
+    else
+      noid = fileset_row['noid']
+      link = fileset_row['link'].match('^[^\(]+\(\"([^\"]+)\".*') {|m| m[1] }
+      embed_code = fileset_row['embed_code']
+    end
+    action_row = {
+          "file_name" => file_name,
+          "resource_action" => "default",
+          "resource_name" => resource_name,
+          "noid" => noid,
+          "link" => link,
+          "embed_code" => embed_code
+    }
+    actions_list << action_row
+  end
+
+  # For now, save the resource actions file.
+  resource_actions_file = File.join(project_dir, "resource_actions.csv")
+  puts "Saving resource action file #{File.basename(resource_actions_file)}"
+  CSV.open(
+          resource_actions_file,
+          "w",
+          :write_headers=> true,
+          :headers => ["File Name", "Resource Name", "Resource Action", "NOID", "Link", "Embed Code"]
+        ) do |csv|
+    actions_list.each do |action_row|
+
+      csv_row = [
+              action_row['file_name'],
+              action_row['resource_name'],
+              action_row['resource_action'],
+              action_row['noid'],
+              action_row['link'],
+              action_row['embed_code']
+      ]
+
+      #puts "Action: #{csv_row}"
+      csv << csv_row
+    end
+  end
+
+  dest_epub_dir = File.join(project_dir, "epub")
+  if options.execute
+    FileUtils.mkdir_p dest_epub_dir
+  end
+
+  epub_file = File.join(project_dir, File.basename(project_dir)+".epub")
+  resource_processor = ResourceProcessor.new(
+              :resource_metadata => manifest_csv,
+              :resource_actions => actions_list,
+              :default_action => default_action,
+              :options => options
+              )
+
+  html_path_update_list = []
+  remote_resources_list = []
+  opf_path = nil
+  opf_content = nil
+
+  Zip::File.open(epub_file) do |file|
+    file.each do |entry|
+
+      dest_file = File.join(dest_epub_dir, entry.name)
+      #entry.extract(dest_file)
+
+      if File.extname(entry.name) == ".opf"
+        opf_path = entry.name
+        opf_content = entry.get_input_stream.read
+      elsif File.extname(entry.name) == ".xhtml"
+        puts "Processing file #{entry.name}"
+        STDOUT.flush
+
+        content = entry.get_input_stream.read
+        begin
+          doc = Nokogiri::XML(content, nil, 'UTF-8')
+        rescue Exception => e
+          puts e.message
+          next
+        end
+
+        action_list = resource_processor.process(doc)
+        result = action_list.index { |action| action.status == Action.COMPLETED }
+        if result
+          if options.execute
+
+            html_path_update_list << dest_file
+
+            has_remote_resources = action_list.index { |action|
+                        action.status == Action.COMPLETED and action.resource_action['resource_action'] == "embed"
+            }
+            if has_remote_resources
+              remote_resources_list << dest_file
+            end
+
+            # Add stylesheet link
+            #href_base = "../Styles"
+            href_base = "./"
+            #href_base = "c:/Users/tbelc/Documents/winterberry_test/styles"
+
+            XMLUtil.add_css(doc, File.join(href_base, "fulcrum_default.css"))
+            puts "Added CSS stylesheet \"fulcrum_default.css\"."
+            #XMLUtil.add_css(doc, File.join(href_base, "fulcrum_enhanced.css"))
+
+            FileUtils.mkdir_p File.dirname(dest_file)
+            XMLUtil.save(doc, dest_file)
+          end
+        end
+        puts "\n"
+      end
+    end
+  end
+
+  if options.execute and opf_path != nil
+
+      begin
+        doc = Nokogiri::XML(opf_content, nil, 'UTF-8')
+      rescue Exception => e
+        puts e.message
+        exit
+      end
+
+      manifest_node = doc.xpath("//*[local-name()='manifest']")
+      if manifest_node == nil
+        puts "No manifest node"
+        exit
+      end
+
+      if html_path_update_list.count > 0
+        item_node = doc.create_element(
+                "item",
+                :href => "fulcrum_default.css",
+                :id => "fulcrum_default",
+                )
+        item_node['media-type'] = "text/css"
+
+        node_list = manifest_node.xpath("./*[local-name()='item' and @media-type='text/css']")
+        if node_list == nil
+          manifest_node.add_child(item_node)
+        else
+          node_list.last.add_next_sibling(item_node)
+        end
+      end
+
+      puts "Adding remote resources to OPF file #{File.basename(opf_path)}"
+
+      remote_resources_list.each do |path|
+        path_basename = File.basename(path)
+        node_list = doc.xpath("//*[local-name()='manifest']/*[local-name()='item' and contains(@href, '#{path_basename}')]")
+        node_list.each do |node|
+          if node.has_attribute?("properties")
+            node['properties'] += " remote-resources"
+          else
+            node['properties'] = "remote-resources"
+          end
+        end
+      end
+
+      #dest_path = File.join(output_dir, File.basename(opf_path))
+      dest_file = File.join(dest_epub_dir, opf_path)
+      XMLUtil.save(doc, dest_file)
+
+  end
+
+end

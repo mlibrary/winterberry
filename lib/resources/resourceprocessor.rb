@@ -17,12 +17,12 @@ class ResourceProcessor
 			actions = resource.create_actions()
       action_list += actions
 
-			if options.execute
-			  actions.each do |action|
-			    action.process
-			    puts action
-			  end
-			end
+      actions.each do |action|
+        if options.execute
+          action.process
+        end
+        puts action
+      end
 		end
 
     return action_list

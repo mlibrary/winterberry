@@ -23,9 +23,8 @@ class Action
   end
 
   def embed_fragment
-    metadata = @action_args[:resource_metadata]
-
-    emb_markup = metadata['embed_code']
+    resource_action = @action_args[:resource_action]
+    emb_markup = resource_action['embed_code']
     if emb_markup == nil or emb_markup.strip.empty?
       resource_node = @action_args[:resource_node]
       @message = "Warning: no embed markup for resource node #{resource_node}"
@@ -54,16 +53,12 @@ class Action
 
   def element_action_to_s
     action = @action_args[:resource_action]
-    metadata = @action_args[:resource_metadata]
-
-    return "#{@status}: #{self.class}, #{action['resource_action']}: #{action['file_name']} => #{action['resource_name']}, metadata: #{metadata == nil ? "none" : "exists"}"
+    return "#{@status}: #{self.class}, #{action['resource_action']}: #{action['file_name']} => #{action['resource_name']}"
   end
 
   def marker_action_to_s
     action = @action_args[:resource_action]
-    metadata = @action_args[:resource_metadata]
-
-    return "#{@status}: #{self.class}, #{action['resource_action']}: #{action['resource_name']}, metadata: #{metadata == nil ? "none" : "exists"}"
+    return "#{@status}: #{self.class}, #{action['resource_action']}: #{action['resource_name']}"
   end
 
   def self.COMPLETED

@@ -1,10 +1,10 @@
 class LinkElementAction < Action
   def process()
-    metadata = @action_args[:resource_metadata]
+    resource_action = @action_args[:resource_action]
     resource = @action_args[:resource]
     resource_node = resource.resource_node
 
-    link_markup = link_markup(metadata, "View resource.")
+    link_markup = link_markup(resource_action, "View resource.")
     link_markup = "<span class=\"enhanced-media-display\">#{link_markup}</span>"
 
     link_fragment = Nokogiri::XML.fragment(link_markup)

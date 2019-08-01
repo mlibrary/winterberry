@@ -45,9 +45,10 @@ end
 
 require_relative '../lib/csv_file'
 require_relative '../lib/metadata'
+require_relative '../lib/resources'
 require_relative '../lib/services'
 
-input_dir = options.input_dir
+input_dir = options.input_dir || ENV['WINTERBERRY_FULCRUM_UMP_DIR']
 output_dir = options.output_dir
 noid_list = ARGV
 
@@ -64,6 +65,12 @@ parser = Nokogiri::XML::SAX::Parser.new(html_parser)
 
 encoder = HTMLEntities.new
 
+default_action = {
+                  "file_name" => "",
+                  "resource_name" => "",
+                  "resource_action" => "embed"
+                 }
+
 noid_list.each do |noid|
   # Retrieve the monograph manifest. First look and see
   # the file exists in the input directory.
@@ -76,6 +83,7 @@ noid_list.each do |noid|
     csv_body = service.monograph_noid_export(noid)
   end
   manifest_csv = CSVFile.read(:csv_body => csv_body)
+  next if manifest_csv == nil
 
   # Find ebook monograph row.
   monograph_row = manifest_csv.find {|row| row['noid'] == noid }
@@ -123,9 +131,9 @@ noid_list.each do |noid|
   src_epub_dir = File.join(project_dir, "src_epub")
   dest_epub_dir = File.join(project_dir, "dest_epub")
 
-  FileUtils.mkdir_p src_epub_dir
-  FileUtils.mkdir_p dest_epub_dir
-  FileUtils.copy_file(epub_file, File.join(src_epub_dir, epub_file_name))
+  FileUtils.mkdir_p project_dir
+  #FileUtils.mkdir_p dest_epub_dir
+  FileUtils.copy_file(epub_file, File.join(project_dir, epub_file_name))
 
   # Save the manifest file
   dest_manifest_path = File.join(project_dir, "manifest.csv")
@@ -134,24 +142,16 @@ noid_list.each do |noid|
     f.write(manifest_csv)
   end
 
-  puts "Extracting #{epub_file} to #{dest_epub_dir}"
+  #puts "Extracting #{epub_file} to #{dest_epub_dir}"
   Zip::File.open(epub_file) do |file|
     file.each do |entry|
-      dest_file = File.join(dest_epub_dir, entry.name)
+      #dest_file = File.join(dest_epub_dir, entry.name)
+      #entry.extract(dest_file)
 
-      entry.extract(dest_file)
+      if File.extname(entry.name) == ".xhtml"
+        parser.parse(entry.get_input_stream.read)
+      end
     end
-  end
-
-  # Find HTML files
-  html_file_list = Dir.glob(File.join(project_dir, "dest_epub", "**", "*.xhtml"))
-  if html_file_list.count == 0
-    puts "Warning: no HTML files found for project #{File.basename(project_dir)}"
-    next
-  end
-
-  html_file_list.each do |html_file|
-    parser.parse_file(html_file)
   end
   info_list = fig_proc.info_list
 
@@ -187,16 +187,18 @@ noid_list.each do |noid|
 
     caption_row = {
           "noid" => noid,
-          "alternative_text" => encoder.encode(attrs_h['alt']),
-          "caption" => encoder.encode(info.caption)
+          "alternative_text" => attrs_h['alt'],
+          "caption" => info.caption
+    #      "alternative_text" => encoder.encode(attrs_h['alt']),
+    #      "caption" => encoder.encode(info.caption)
     }
     caption_list << caption_row
   end
 
-  dest_epub_src_dir = File.join(dest_epub_dir, "META-INF", "src")
-  FileUtils.mkdir_p dest_epub_src_dir
+  #dest_epub_src_dir = File.join(dest_epub_dir, "META-INF", "src")
+  #FileUtils.mkdir_p dest_epub_src_dir
 
-  resource_map_file = File.join(dest_epub_src_dir, "resource_map.csv")
+  resource_map_file = File.join(project_dir, "resource_map.csv")
   puts "Saving resource map file #{File.basename(resource_map_file)}"
   CSV.open(
           resource_map_file,
@@ -212,30 +214,6 @@ noid_list.each do |noid|
               "default"
       ]
 
-      csv << csv_row
-    end
-  end
-
-  resource_actions_file = File.join(project_dir, "resource_actions.csv")
-  puts "Saving resource action file #{File.basename(resource_actions_file)}"
-  CSV.open(
-          resource_actions_file,
-          "w",
-          :write_headers=> true,
-          :headers => ["File Name", "Resource Name", "Resource Action", "NOID", "Link", "Embed Code"]
-        ) do |csv|
-    actions_list.each do |action_row|
-
-      csv_row = [
-              action_row['file_name'],
-              "default",
-              action_row['resource_name'],
-              action_row['noid'],
-              action_row['link'],
-              action_row['embed_code']
-      ]
-
-      #puts "Action: #{csv_row}"
       csv << csv_row
     end
   end
@@ -262,4 +240,5 @@ noid_list.each do |noid|
   end
 
   fig_proc.reset
+
 end
