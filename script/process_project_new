@@ -31,6 +31,7 @@ if ARGV.count < 1
 end
 
 require_relative '../lib/csv_file'
+require_relative '../lib/manifest'
 require_relative '../lib/metadata'
 require_relative '../lib/resources'
 
@@ -79,25 +80,21 @@ project_dir_list.each do |project_dir|
     file_name = row['file_name']
     resource_name = row['resource_name']
 
-    fileset_row = manifest_csv.find {|row| File.basename(row['file_name'], ".*") == File.basename(resource_name, ".*") }
-    if fileset_row == nil
+    fileset_row = Manifest.find_fileset(manifest_csv, resource_name)
+    if fileset_row['noid'].empty?
       puts "Error: no fileset row for resource #{resource_name}"
-      noid = ""
-      link = ""
-      embed_code = ""
+      link = fileset_row['link']
     else
       puts "Using resource #{resource_name}"
-      noid = fileset_row['noid']
       link = fileset_row['link'].match('^[^\(]+\(\"([^\"]+)\".*') {|m| m[1] }
-      embed_code = fileset_row['embed_code']
     end
     action_row = {
           "file_name" => file_name,
           "resource_action" => "default",
           "resource_name" => resource_name,
-          "noid" => noid,
+          "noid" => fileset_row['noid'],
           "link" => link,
-          "embed_code" => embed_code
+          "embed_code" => fileset_row['embed_code']
     }
     actions_list << action_row
   end

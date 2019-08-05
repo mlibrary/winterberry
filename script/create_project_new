@@ -43,6 +43,7 @@ if ARGV.count < 1
 end
 
 require_relative '../lib/csv_file'
+require_relative '../lib/manifest'
 require_relative '../lib/metadata'
 require_relative '../lib/resources'
 require_relative '../lib/services'
@@ -74,30 +75,9 @@ noid_list.each do |noid|
   manifest_csv = CSVFile.read(:csv_body => csv_body)
   next if manifest_csv == nil
 
-  # Find ebook monograph row.
-  monograph_row = manifest_csv.find {|row| row['noid'] == noid }
-  if monograph_row == nil
-    puts "Error: no monograph row for noid #{noid}"
-    next
-  end
-
   # Determine the ebook ISBN without dashes.
-  isbns = monograph_row['isbn(s)']
-  if isbns == nil or isbns.empty?
-    puts "Error: no isbns found for noid #{noid}"
-    next
-  end
-
-  ebook_isbns = isbns.split(';').select {|isbn|
-    isbn.strip.downcase.match('[0-9]+[ ]+\(ebook\)')
-  }
-  if ebook_isbns.empty?
-    puts "Error: no ebook isbn found for noid #{noid}"
-    next
-  end
-  puts "Warning: multiple ebook isbns found for noid #{noid}" if ebook_isbns.count > 1
-
-  ebook_isbn = ebook_isbns[0].sub('(ebook)', '').strip.gsub('-', '')
+  ebook_isbn = Manifest.find_ebook_isbn(manifest_csv, noid)
+  next if ebook_isbn == nil
 
   # Find the ebook source folder
   puts File.join(source_root_dir, "#{ebook_isbn}_*")
@@ -112,12 +92,7 @@ noid_list.each do |noid|
   puts "Using #{source_dir}" if source_dir_list.count == 1
 
   # Find the epub file name.
-  epub_row = manifest_csv.find {|row| row['representative_kind'] == 'epub' }
-  if epub_row == nil
-    puts "Error: no epub row for noid #{noid}"
-    next
-  end
-  epub_file_name = epub_row['file_name']
+  epub_file_name = Manifest.find_epub_file_name(manifest_csv)
   src_epub_file = File.join(source_dir, epub_file_name)
   if !File.exist?(src_epub_file)
     puts "Error: no #{epub_file_name} not found for noid #{noid}"
@@ -131,11 +106,7 @@ noid_list.each do |noid|
   FileUtils.mkdir_p project_dir
 
   # Save the manifest file
-  dest_manifest_file = File.join(project_dir, "manifest.csv")
-  puts "Saving manifest file #{File.basename(dest_manifest_file)}"
-  File.open(dest_manifest_file, "w") do |f|
-    f.write(manifest_csv)
-  end
+  Manifest.save(manifest_csv, File.join(project_dir, "manifest.csv"))
 
   # Copy the epub file.
   epub_file = File.join(project_dir, epub_file_name)
@@ -158,29 +129,20 @@ noid_list.each do |noid|
 
     src = attrs_h['src']
     file_name = File.basename(src)
-    file_name_base = File.basename(file_name, ".*")
-    fileset_row = manifest_csv.find {|row| File.basename(row['file_name'], ".*") == file_name_base }
-
-    if fileset_row == nil
+    fileset_row = Manifest.find_fileset(manifest_csv, file_name)
+    if fileset_row['noid'].empty?
       puts "Warning: no resource mapping found for file #{file_name}"
-      noid = ""
-      resource_name = ""
-      link = ""
-      embed_code = ""
     else
       resource_name = fileset_row['file_name']
       puts "File #{file_name} mapped to resource #{resource_name}"
-      noid = fileset_row['noid']
-      link = fileset_row['link'].match('^[^\(]+\(\"([^\"]+)\".*') {|m| m[1] }
-      embed_code = fileset_row['embed_code']
     end
     action_row = {
           "file_name" => file_name,
           "resource_action" => "default",
-          "resource_name" => resource_name,
-          "noid" => noid,
-          "link" => link,
-          "embed_code" => embed_code
+          "resource_name" => fileset_row['file_name'],
+          "noid" => fileset_row['noid'],
+          "link" => fileset_row['link'],
+          "embed_code" => fileset_row['embed_code']
     }
     actions_list << action_row
   end
@@ -199,7 +161,7 @@ noid_list.each do |noid|
               action_row['noid'],
               action_row['file_name'],
               action_row['resource_name'],
-              "default"
+              action_row['resource_action']
       ]
 
       csv << csv_row
