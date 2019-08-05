@@ -1,0 +1,154 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require 'optparse'
+require 'ostruct'
+
+require 'csv'
+require 'fileutils'
+require 'zip'
+
+options = OpenStruct.new
+
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} <project_dir> [<project_dir>..]"
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    puts opts
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+
+if ARGV.count < 1
+  puts option_parser.help
+  return
+end
+
+require_relative '../lib/csv_file'
+require_relative '../lib/metadata'
+require_relative '../lib/resources'
+
+project_dir_list = ARGV
+
+fig_proc = FigureProcessor.new
+html_parser = HTMLParser.new(fig_proc)
+parser = Nokogiri::XML::SAX::Parser.new(html_parser)
+
+project_dir_list.each do |project_dir|
+  # Determine if the monograph manifest exists.
+  manifest_file = File.join(project_dir, "manifest.csv")
+  if !File.exists?(manifest_file)
+    puts "Error: missing manifest file for project #{File.basename(project_dir)}"
+    next
+  end
+
+  # Determine if the resource mapping file exists.
+  resource_map_file = File.join(project_dir, "resource_map.csv")
+  if !File.exists?(resource_map_file)
+    puts "Error: missing resource map file for project #{File.basename(project_dir)}"
+    next
+  end
+
+  # Load the manifest file
+  manifest_csv = CSVFile.read_file(:csv_path => manifest_file)
+  if manifest_csv == nil
+    puts "Error: reading manifest file for project #{File.basename(project_dir)}"
+    next
+  end
+
+  # Find the epub file name.
+  epub_row = manifest_csv.find {|row| row['representative_kind'] == 'epub' }
+  if epub_row == nil
+    puts "Error: no epub row for noid #{noid}"
+    next
+  end
+  epub_file_name = epub_row['file_name']
+  epub_file = File.join(project_dir, epub_file_name)
+  if !File.exist?(epub_file)
+    puts "Error: no #{epub_file} not found for project #{File.basename(project_dir)}"
+    next
+  end
+
+  # Load the resource map file
+  resource_map_csv = CSVFile.read_file(:csv_path => resource_map_file)
+  if resource_map_csv == nil
+    puts "Error: reading resource map file for project #{File.basename(project_dir)}"
+    next
+  end
+
+  # Parse the epub files
+  Zip::File.open(epub_file) do |file|
+    file.each do |entry|
+      if File.extname(entry.name) == ".xhtml"
+        parser.parse(entry.get_input_stream.read)
+      end
+    end
+  end
+  info_list = fig_proc.info_list
+
+  caption_list = []
+  info_list.each do |info|
+    attrs_h = info.attrs.to_h
+
+    src = attrs_h['src']
+    file_name = File.basename(src)
+
+    map_row = resource_map_csv.find {|row| row['file_name'] == file_name }
+    if map_row == nil
+      puts "Warning: no resource mapping found for file #{file_name}"
+      file_base_name = File.basename(file_name, ".*")
+    else
+      puts "File #{file_name} mapped to name #{map_row['file_name']}"
+      file_base_name = File.basename(map_row['file_name'], ".*")
+    end
+
+    fileset_row = manifest_csv.find {|row| File.basename(row['file_name'], ".*") == file_base_name }
+
+    if fileset_row == nil
+      puts "Warning: no resource entry found for file #{file_name}"
+      noid = ""
+      resource_name = ""
+      link = ""
+      embed_code = ""
+    else
+      resource_name = fileset_row['file_name']
+      puts "Name #{file_name} mapped to resource #{resource_name}"
+      noid = fileset_row['noid']
+      link = fileset_row['link'].match('^[^\(]+\(\"([^\"]+)\".*') {|m| m[1] }
+      embed_code = fileset_row['embed_code']
+    end
+
+    caption_row = {
+          "noid" => noid,
+          "alternative_text" => attrs_h['alt'],
+          "caption" => info.caption
+    #      "alternative_text" => encoder.encode(attrs_h['alt']),
+    #      "caption" => encoder.encode(info.caption)
+    }
+    caption_list << caption_row
+  end
+
+  captions_file = File.join(project_dir, "alt_captions.csv")
+  puts "Saving alt_text/captions file #{File.basename(captions_file)}"
+  CSV.open(
+          captions_file,
+          "w",
+          :write_headers=> true,
+          :headers => ["NOID","Alternative Text","Caption"]
+        ) do |csv|
+    caption_list.each do |caption_row|
+
+      csv_row = [
+              caption_row['noid'],
+              caption_row['alternative_text'],
+              caption_row['caption']
+            ]
+
+      #puts "Caption: #{csv_row}"
+      csv << csv_row
+    end
+  end
+
+  fig_proc.reset
+
+end
