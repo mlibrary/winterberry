@@ -2,9 +2,11 @@
 # Adds element name and attributes into a list.
 # Also, attempt to retrieve the image caption.
 
+require "nokogiri"
+
 require_relative 'elementinfo'
 
-class FigureProcessor < Processor
+class FigureProcessor < Nokogiri::XML::SAX::Document
   attr_reader :info_list
 
   def initialize(p_info_list = [])

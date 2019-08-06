@@ -90,8 +90,7 @@ end
 # Initialize the processor that scans the monograph epub .xhtml
 # files and collects information concerning the contained resources.
 fig_proc = FigureProcessor.new
-html_parser = HTMLParser.new(fig_proc)
-parser = Nokogiri::XML::SAX::Parser.new(html_parser)
+parser = Nokogiri::XML::SAX::Parser.new(fig_proc)
 
 noid_list.each do |noid|
   # Use the noid to retrieve the monograph manifest. First look and see
