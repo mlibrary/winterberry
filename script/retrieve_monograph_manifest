@@ -1,11 +1,16 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
+# This script retrieves one or more monograph manifest files from Fulcrum.
+#
+# Invoke this script without any parameters to display the usage.
+
 require 'optparse'
 require 'ostruct'
 
 require 'csv'
 
+# Process the script parameters.
 options = OpenStruct.new
 option_parser = OptionParser.new do |opts|
   opts.banner = "Usage: #{File.basename(__FILE__)} [--output_dir <output_dir>] <monograph noid> [<monograph node>..]"
@@ -18,13 +23,16 @@ option_parser = OptionParser.new do |opts|
   end
 end
 option_parser.parse!(ARGV)
-
 if ARGV.count < 1
   puts option_parser.help
   return
 end
 
-require_relative '../lib/services'
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, 'lib', 'services')
 
 if options.directory_path == nil
   options.directory_path = Dir.pwd
@@ -33,14 +41,21 @@ else
   FileUtils.mkpath options.directory_path
 end
 
+# Rest of the parameters is a list of monograph noids.
 noid_list = ARGV
 
+# Create the service object.
 service = HeliotropeService.new
+
 noid_list.each do |noid|
+  # Attempt to download the monograph manifest.
   service_response = service.monograph_noid_export(noid)
 
-  output_path = File.join(options.directory_path, noid + ".csv")
-  File.open(output_path, "w") do |f|
-    f.write(service_response)
+  if !service_response.empty?
+    # Not empty, save the manifest using its noid as the file name.
+    output_path = File.join(options.directory_path, noid + ".csv")
+    File.open(output_path, "w") do |f|
+      f.write(service_response)
+    end
   end
 end
