@@ -147,7 +147,10 @@ noid_list.each do |noid|
     actions_list << action_row
   end
 
-  resource_map_file = File.join(project_dir, "resource_map.csv")
+  epub_src_dir = File.join(project_dir, "epub", "META-INF", "src")
+  FileUtils.mkdir_p epub_src_dir
+  resource_map_file = File.join(epub_src_dir, "resource_map.csv")
+
   puts "Saving resource map file #{File.basename(resource_map_file)}"
   CSV.open(
           resource_map_file,

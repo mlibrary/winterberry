@@ -57,7 +57,8 @@ project_dir_list.each do |project_dir|
   puts "Processing project #{File.basename(project_dir)}"
 
   # Locate resource mapping file.
-  resource_map_file = File.join(project_dir, "resource_map.csv")
+  epub_src_dir = File.join(project_dir, "epub", "META-INF", "src")
+  resource_map_file = File.join(epub_src_dir, "resource_map.csv")
   if !File.exists?(resource_map_file)
     puts "Error: no resource mapping file for project #{File.basename(project_dir)}"
     next
@@ -139,12 +140,7 @@ project_dir_list.each do |project_dir|
 
   dest_epub_dir = File.join(project_dir, "epub")
   if options.execute
-    #FileUtils.mkdir_p dest_epub_dir
-
-    # Copy/Move the resource mapping file into the epub
-    epub_src_dir = File.join(project_dir, "epub", "META-INF", "src")
-    FileUtils.mkdir_p epub_src_dir
-    FileUtils.cp(resource_map_file, File.join(epub_src_dir, File.basename(resource_map_file)))
+    FileUtils.mkdir_p dest_epub_dir
   end
 
   resource_processor = ResourceProcessor.new(
