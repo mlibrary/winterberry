@@ -139,7 +139,12 @@ project_dir_list.each do |project_dir|
 
   dest_epub_dir = File.join(project_dir, "epub")
   if options.execute
-    FileUtils.mkdir_p dest_epub_dir
+    #FileUtils.mkdir_p dest_epub_dir
+
+    # Copy/Move the resource mapping file into the epub
+    epub_src_dir = File.join(project_dir, "epub", "META-INF", "src")
+    FileUtils.mkdir_p epub_src_dir
+    FileUtils.cp(resource_map_file, File.join(epub_src_dir, File.basename(resource_map_file)))
   end
 
   resource_processor = ResourceProcessor.new(
@@ -153,6 +158,14 @@ project_dir_list.each do |project_dir|
   remote_resources_list = []
   opf_path = nil
   opf_content = nil
+
+  # Provide the directory path for adding the stylesheet link.
+  # Possible option?
+  fulcrum_css_name = 'fulcrum_default.css'
+  fulcrum_src_css_file = File.join('lib', 'css', fulcrum_css_name)
+  #fulcrum_css_dir = "../Styles"
+  fulcrum_dest_css_dir = "./"
+  fulcrum_dest_css_file = File.join(fulcrum_dest_css_dir, fulcrum_css_name)
 
   Zip::File.open(epub_file) do |file|
     file.each do |entry|
@@ -194,9 +207,9 @@ project_dir_list.each do |project_dir|
             href_base = "./"
             #href_base = "c:/Users/tbelc/Documents/winterberry_test/styles"
 
-            XMLUtil.add_css(doc, File.join(href_base, "fulcrum_default.css"))
-            puts "Added CSS stylesheet \"fulcrum_default.css\"."
-            #XMLUtil.add_css(doc, File.join(href_base, "fulcrum_enhanced.css"))
+            XMLUtil.add_css(doc, fulcrum_dest_css_file)
+            puts "Added CSS stylesheet \"#{fulcrum_css_name}\"."
+            #XMLUtil.add_css(doc, File.join(fulcrum_dest_css_dir, "fulcrum_enhanced.css"))
 
             FileUtils.mkdir_p File.dirname(dest_file)
             XMLUtil.save(doc, dest_file)
@@ -225,7 +238,7 @@ project_dir_list.each do |project_dir|
       if html_path_update_list.count > 0
         item_node = doc.create_element(
                 "item",
-                :href => "fulcrum_default.css",
+                :href => fulcrum_dest_css_file,
                 :id => "fulcrum_default",
                 )
         item_node['media-type'] = "text/css"
@@ -236,6 +249,8 @@ project_dir_list.each do |project_dir|
         else
           node_list.last.add_next_sibling(item_node)
         end
+
+        FileUtils.cp(fulcrum_src_css_file, File.join(dest_epub_dir, "OEBPS", fulcrum_dest_css_file))
       end
 
       puts "Adding remote resources to OPF file #{File.basename(opf_path)}"
