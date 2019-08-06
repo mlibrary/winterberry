@@ -1,6 +1,32 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
+# This script creates one or more initial project directory containing the
+# necessary components for processing a monograph epub prior to publishing
+# on Fulcrum.
+#
+# Invoke this script without any parameters to display the usage.
+#
+# The main function of this script is scan a monograph epub
+# and generate a mapping of file names (images/audio/video/pdf/spreadsheets,
+# etc.) to resource file names found within the monograph manifest.
+#
+# This directory will contain the following components:
+#   - manifest.csv                        Monograph manifest
+#   - xxxxxxxxxxxxx.epub                  Monograph epub where x+ is the
+#                                         epub isbn.
+#   - epub/META-INF/src/resource_map.csv  File that maps epub file names to
+#                                         monograph resource file names.
+#
+# This functionality is separate from others since it is possible
+# that the generated resource_map.csv may need to be manually edited before
+# it can be used to finish processing the epub. File names used within
+# the epub may not match their associated resource file names. Also,
+# it is possible that a file contained within the epub may want its
+# resource embedded in the epub while the rest of the files want
+# their resources linked. This mapping will allow specification
+# of each file name mapping.
+
 require 'optparse'
 require 'ostruct'
 
@@ -8,20 +34,8 @@ require 'csv'
 require 'fileutils'
 require 'zip'
 
-def expand_dir_path(dir_path)
-  if dir_path == nil
-    return Dir.pwd
-  end
-
-  full_dir = File.expand_path(dir_path)
-  return full_dir if File.exists?(full_dir)
-
-  puts "Error: directory #{dir_path} does not exist."
-  return nil
-end
-
+# Process the script parameters.
 options = OpenStruct.new
-
 option_parser = OptionParser.new do |opts|
   opts.banner = "Usage: #{File.basename(__FILE__)} [-p <project_root_dir>] [-s <source_root_dir>] <monograph_noid> [<monograph_noid>..]"
   opts.on('-p', '--project_root_dir [DIRECTORY]', 'Root directory containing ebook project directories') do |project_root_dir|
@@ -36,34 +50,53 @@ option_parser = OptionParser.new do |opts|
   end
 end
 option_parser.parse!(ARGV)
-
 if ARGV.count < 1
   puts option_parser.help
   return
 end
 
-require_relative '../lib/csv_file'
-require_relative '../lib/manifest'
-require_relative '../lib/metadata'
-require_relative '../lib/resources'
-require_relative '../lib/services'
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
 
-source_root_dir = options.source_root_dir || ENV['WINTERBERRY_FULCRUM_UMP_DIR']
-project_root_dir = options.project_root_dir || ENV['WINTERBERRY_PRODUCTION_DIR']
+require_relative File.join(root_dir, 'lib', 'csv_file')
+require_relative File.join(root_dir, 'lib', 'manifest')
+require_relative File.join(root_dir, 'lib', 'metadata')
+require_relative File.join(root_dir, 'lib', 'services')
+
+# Determine the directory containing the source monograph epubs, and
+# possibly the monograph manifest.
+source_root_dir = options.source_root_dir || ENV['WINTERBERRY_FULCRUM_UMP_DIR'] || Dir.pwd
+
+# Determine the root directory where the project directories should
+# be created.
+project_root_dir = options.project_root_dir || ENV['WINTERBERRY_PRODUCTION_DIR'] || Dir.pwd
+
+# Rest of the parameters is a list of monograph noids.
 noid_list = ARGV
 
-source_root_dir = expand_dir_path(source_root_dir)
-exit if source_root_dir == nil
-project_root_dir = expand_dir_path(project_root_dir)
-exit if project_root_dir == nil
+# Verify existence of the source/project root directories.
+source_root_dir = File.expand_path(source_root_dir)
+if !File.exists?(source_root_dir)
+  puts "Error: source directory #{source_root_dir} does not exist."
+  exit
+end
+project_root_dir = File.expand_path(project_root_dir)
+if !File.exists?(project_root_dir)
+  puts "Error: project root directory #{project_root_dir} does not exist."
+  exit
+end
 
+# Initialize the processor that scans the monograph epub .xhtml
+# files and collects information concerning the contained resources.
 fig_proc = FigureProcessor.new
 html_parser = HTMLParser.new(fig_proc)
 parser = Nokogiri::XML::SAX::Parser.new(html_parser)
 
 noid_list.each do |noid|
-  # Retrieve the monograph manifest. First look and see
-  # the file exists in the input directory.
+  # Use the noid to retrieve the monograph manifest. First look and see
+  # the file exists in the input directory. If so, load it. Otherwise,
+  # attempt to download it from Fulcrum.
   src_manifest_file = File.join(source_root_dir, "#{noid}.csv")
   if File.exists?(src_manifest_file)
     puts "Loading manifest file #{File.basename(src_manifest_file)}"
@@ -75,12 +108,11 @@ noid_list.each do |noid|
   manifest_csv = CSVFile.read(:csv_body => csv_body)
   next if manifest_csv == nil
 
-  # Determine the ebook ISBN without dashes.
+  # From the manifest, determine the ebook ISBN without dashes.
   ebook_isbn = Manifest.find_ebook_isbn(manifest_csv, noid)
   next if ebook_isbn == nil
 
   # Find the ebook source folder
-  puts File.join(source_root_dir, "#{ebook_isbn}_*")
   source_dir_list = Dir.glob(File.join(source_root_dir, "#{ebook_isbn}_*"))
   if source_dir_list.count == 0
     puts "Error: ebook source directory not found for noid #{noid}."
@@ -91,7 +123,9 @@ noid_list.each do |noid|
         if source_dir_list.count > 1
   puts "Using #{source_dir}" if source_dir_list.count == 1
 
-  # Find the epub file name.
+  # Find the epub file name and determine whether it exists.
+  # Currently, no heliotrope service for downloading a fileset exists,
+  # otherwise it could be retrieved.
   epub_file_name = Manifest.find_epub_file_name(manifest_csv)
   src_epub_file = File.join(source_dir, epub_file_name)
   if !File.exist?(src_epub_file)
@@ -99,10 +133,10 @@ noid_list.each do |noid|
     next
   end
 
+  # Create the project directory.
   project_dir = File.join(project_root_dir, File.basename(source_dir))
   puts "Creating project #{project_dir}"
   STDOUT.flush
-
   FileUtils.mkdir_p project_dir
 
   # Save the manifest file
@@ -113,7 +147,8 @@ noid_list.each do |noid|
   puts "Copying epub file #{File.basename(epub_file)}"
   FileUtils.cp(src_epub_file, epub_file)
 
-  # Find resources.
+  # Scan the .xhtml files within the epub and collect the
+  # resource information.
   Zip::File.open(epub_file) do |file|
     file.each do |entry|
       if File.extname(entry.name) == ".xhtml"
@@ -123,10 +158,16 @@ noid_list.each do |noid|
   end
   info_list = fig_proc.info_list
 
+  # For each resource referenced with the epub, attempt to create a
+  # resource mapping.
   actions_list = []
   info_list.each do |info|
     attrs_h = info.attrs.to_h
 
+    # Determine resource file name. Using the file base name,
+    # search the monograph manifest for associated resource information.
+    # If not found, provide default information that could be
+    # edited later.
     src = attrs_h['src']
     file_name = File.basename(src)
     fileset_row = Manifest.find_fileset(manifest_csv, file_name)
@@ -137,7 +178,7 @@ noid_list.each do |noid|
       puts "File #{file_name} mapped to resource #{resource_name}"
     end
     action_row = {
-          "file_name" => file_name,
+          "file_name" => src,
           "resource_action" => "default",
           "resource_name" => fileset_row['file_name'],
           "noid" => fileset_row['noid'],
@@ -147,10 +188,11 @@ noid_list.each do |noid|
     actions_list << action_row
   end
 
+  # Save the resource map file within a new epub structure
+  # for archival purposes.
   epub_src_dir = File.join(project_dir, "epub", "META-INF", "src")
   FileUtils.mkdir_p epub_src_dir
   resource_map_file = File.join(epub_src_dir, "resource_map.csv")
-
   puts "Saving resource map file #{File.basename(resource_map_file)}"
   CSV.open(
           resource_map_file,
@@ -171,6 +213,7 @@ noid_list.each do |noid|
     end
   end
 
+  # Reset the processor for the next monograph noid
   fig_proc.reset
 
 end

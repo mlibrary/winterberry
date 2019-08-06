@@ -1,6 +1,16 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
+# This script process a project directory by determining the necessary
+# resource actions and invoking the proper action for each resource.
+#
+# Invoke this script without any parameters to display the usage.
+#
+# The main function of this script is to traverse each epub xhtml file
+# and for each resource referenced, modify the markup to allow for
+# the resource to be appear either embedded in the epub, or to provide a link
+# to that resource Fulcrum resource page.
+
 require 'optparse'
 require 'ostruct'
 
@@ -8,8 +18,8 @@ require 'csv'
 require 'fileutils'
 require 'zip'
 
+# Process the script parameters.
 options = OpenStruct.new
-
 option_parser = OptionParser.new do |opts|
   opts.banner = "Usage: #{File.basename(__FILE__)} [-e] [-d embed|link] <project_dir> [<project_dir>..]"
   opts.on('-d', '--default_action embed|link', 'Default action embed or link') do |da|
@@ -24,34 +34,41 @@ option_parser = OptionParser.new do |opts|
   end
 end
 option_parser.parse!(ARGV)
-
 if ARGV.count < 1
   puts option_parser.help
   return
 end
 
-require_relative '../lib/csv_file'
-require_relative '../lib/manifest'
-require_relative '../lib/metadata'
-require_relative '../lib/resources'
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
 
+require_relative File.join(root_dir, 'lib', 'csv_file')
+require_relative File.join(root_dir, 'lib', 'manifest')
+require_relative File.join(root_dir, 'lib', 'resources')
+
+# Determine the default action, either embed or link.
 default_action_str = options.default_action_str || "embed"
+
+# Rest of the parameters is a list of project directories.
 project_dir_list = ARGV
 
+# Verify the default action.
 if default_action_str != "embed" and default_action_str != "link"
-  puts "Error: invalid default action #{default_action_str}"
+  puts "Error: invalid default action \"#{default_action_str}\""
   exit
 end
-
 puts "Default action: #{default_action_str}"
 STDOUT.flush
 
+# Create the default action object.
 default_action = {
                   "file_name" => "",
                   "resource_name" => "",
                   "resource_action" => default_action_str
                  }
 
+# For each project directory, process the epub resources.
 project_dir_list.each do |project_dir|
   project_dir = File.expand_path(project_dir)
   puts "Processing project #{File.basename(project_dir)}"
@@ -126,21 +143,11 @@ project_dir_list.each do |project_dir|
   end
 
   # Find the epub file name.
-  epub_row = manifest_csv.find {|row| row['representative_kind'] == 'epub' }
-  if epub_row == nil
-    puts "Error: no epub row for noid #{noid}"
-    next
-  end
-  epub_file_name = epub_row['file_name']
+  epub_file_name = Manifest.find_epub_file_name(manifest_csv)
   epub_file = File.join(project_dir, epub_file_name)
   if !File.exist?(epub_file)
     puts "Error: no #{epub_file} not found for project #{File.basename(project_dir)}"
     next
-  end
-
-  dest_epub_dir = File.join(project_dir, "epub")
-  if options.execute
-    FileUtils.mkdir_p dest_epub_dir
   end
 
   resource_processor = ResourceProcessor.new(
@@ -158,24 +165,36 @@ project_dir_list.each do |project_dir|
   # Provide the directory path for adding the stylesheet link.
   # Possible option?
   fulcrum_css_name = 'fulcrum_default.css'
-  fulcrum_src_css_file = File.join('lib', 'css', fulcrum_css_name)
+  fulcrum_src_css_file = File.join(root_dir, 'lib', 'css', fulcrum_css_name)
   #fulcrum_css_dir = "../Styles"
   fulcrum_dest_css_dir = "./"
   fulcrum_dest_css_file = File.join(fulcrum_dest_css_dir, fulcrum_css_name)
 
+  # Determine the project directory for storing the modified .xhtml
+  # and the OPF files.
+  dest_epub_dir = File.join(project_dir, "epub")
+
+  # For each .xhtml file, process the resources.
   Zip::File.open(epub_file) do |file|
     file.each do |entry|
 
+      # Assign the output file name.
       dest_file = File.join(dest_epub_dir, entry.name)
       #entry.extract(dest_file)
 
       if File.extname(entry.name) == ".opf"
+        # Found the OPF file. Save its name and content.
         opf_path = entry.name
         opf_content = entry.get_input_stream.read
-      elsif File.extname(entry.name) == ".xhtml"
+        next
+      end
+
+      if File.extname(entry.name) == ".xhtml"
+        # Found a xhtml file. Process the resources.
         puts "Processing file #{entry.name}"
         STDOUT.flush
 
+        # Create the XML tree.
         content = entry.get_input_stream.read
         begin
           doc = Nokogiri::XML(content, nil, 'UTF-8')
@@ -184,40 +203,45 @@ project_dir_list.each do |project_dir|
           next
         end
 
+        # Determine the list of actions completed.
+        # The -e flag must be specified for the actions
+        # to be completed.
         action_list = resource_processor.process(doc)
         result = action_list.index { |action| action.status == Action.COMPLETED }
         if result
-          if options.execute
 
-            html_path_update_list << dest_file
+          # At last one action was completed. Remember that this
+          # file was updated.
+          html_path_update_list << dest_file
 
-            has_remote_resources = action_list.index { |action|
-                        action.status == Action.COMPLETED and action.resource_action['resource_action'] == "embed"
-            }
-            if has_remote_resources
-              remote_resources_list << dest_file
-            end
-
-            # Add stylesheet link
-            #href_base = "../Styles"
-            href_base = "./"
-            #href_base = "c:/Users/tbelc/Documents/winterberry_test/styles"
-
-            XMLUtil.add_css(doc, fulcrum_dest_css_file)
-            puts "Added CSS stylesheet \"#{fulcrum_css_name}\"."
-            #XMLUtil.add_css(doc, File.join(fulcrum_dest_css_dir, "fulcrum_enhanced.css"))
-
-            FileUtils.mkdir_p File.dirname(dest_file)
-            XMLUtil.save(doc, dest_file)
+          # If resources were embedded, then we need to set the
+          # remote-resource property in the OPF file.
+          has_remote_resources = action_list.index { |action|
+                      action.status == Action.COMPLETED and action.resource_action['resource_action'] == "embed"
+          }
+          if has_remote_resources
+            remote_resources_list << dest_file
           end
+
+          # Add the CSS stylesheet link that manages the Fulcrum resource display.
+          XMLUtil.add_css(doc, fulcrum_dest_css_file)
+          puts "Added CSS stylesheet \"#{fulcrum_css_name}\"."
+
+          # Save the modified xhtml file.
+          FileUtils.mkdir_p File.dirname(dest_file)
+          XMLUtil.save(doc, dest_file)
         end
         puts "\n"
       end
     end
   end
 
-  if options.execute and opf_path != nil
-
+  if html_path_update_list.count > 0
+    # xhtml files were modified. Need to update the OPF file.
+    if opf_path == nil
+      puts "Error: OPF file not found."
+    elsif options.execute
+      # Create XML tree for the OPF file.
       begin
         doc = Nokogiri::XML(opf_content, nil, 'UTF-8')
       rescue Exception => e
@@ -225,13 +249,14 @@ project_dir_list.each do |project_dir|
         exit
       end
 
+      # Locate the <manifest>.
       manifest_node = doc.xpath("//*[local-name()='manifest']")
       if manifest_node == nil
         puts "No manifest node"
-        exit
-      end
-
-      if html_path_update_list.count > 0
+      else
+        # Add the manifest entry for the Fulcrum CSS stylesheet.
+        # If another CSS stylesheet is present, add it after.
+        # Otherwise, add it as last child.
         item_node = doc.create_element(
                 "item",
                 :href => fulcrum_dest_css_file,
@@ -246,11 +271,12 @@ project_dir_list.each do |project_dir|
           node_list.last.add_next_sibling(item_node)
         end
 
+        # Copy the Fulcrum CSS stylesheet into the epub structure.
         FileUtils.cp(fulcrum_src_css_file, File.join(dest_epub_dir, "OEBPS", fulcrum_dest_css_file))
       end
 
+      # Add remote resources to the OPF file.
       puts "Adding remote resources to OPF file #{File.basename(opf_path)}"
-
       remote_resources_list.each do |path|
         path_basename = File.basename(path)
         node_list = doc.xpath("//*[local-name()='manifest']/*[local-name()='item' and contains(@href, '#{path_basename}')]")
@@ -263,10 +289,8 @@ project_dir_list.each do |project_dir|
         end
       end
 
-      #dest_path = File.join(output_dir, File.basename(opf_path))
-      dest_file = File.join(dest_epub_dir, opf_path)
-      XMLUtil.save(doc, dest_file)
-
+      # Save the OPF file.
+      XMLUtil.save(doc, File.join(dest_epub_dir, opf_path))
+    end
   end
-
 end

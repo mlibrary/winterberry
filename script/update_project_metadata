@@ -8,8 +8,8 @@ require 'csv'
 require 'fileutils'
 require 'zip'
 
+# Process the script parameters.
 options = OpenStruct.new
-
 option_parser = OptionParser.new do |opts|
   opts.banner = "Usage: #{File.basename(__FILE__)} <project_dir> [<project_dir>..]"
   opts.on_tail('-h', '--help', 'Print this help message') do
@@ -18,23 +18,29 @@ option_parser = OptionParser.new do |opts|
   end
 end
 option_parser.parse!(ARGV)
-
 if ARGV.count < 1
   puts option_parser.help
   return
 end
 
-require_relative '../lib/csv_file'
-require_relative '../lib/manifest'
-require_relative '../lib/metadata'
-require_relative '../lib/resources'
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
 
+require_relative File.join(root_dir, 'lib', 'csv_file')
+require_relative File.join(root_dir, 'lib', 'manifest')
+require_relative File.join(root_dir, 'lib', 'metadata')
+
+# Rest of the parameters is a list of project directories.
 project_dir_list = ARGV
 
+# Initialize the processor that scans the monograph epub .xhtml
+# files and collects information concerning the contained resources.
 fig_proc = FigureProcessor.new
 html_parser = HTMLParser.new(fig_proc)
 parser = Nokogiri::XML::SAX::Parser.new(html_parser)
 
+# For each project directory, collect the epub captions/alt text.
 project_dir_list.each do |project_dir|
   # Determine if the monograph manifest exists.
   manifest_file = File.join(project_dir, "manifest.csv")
@@ -83,21 +89,27 @@ project_dir_list.each do |project_dir|
   end
   info_list = fig_proc.info_list
 
+  # For each resource referenced with the epub, associate its
+  # noid with the caption/alt text.
   caption_list = []
   info_list.each do |info|
     attrs_h = info.attrs.to_h
 
+    # Determine the resource file name
     src = attrs_h['src']
     file_name = File.basename(src)
 
-    map_row = resource_map_csv.find {|row| row['file_name'] == file_name }
+    # Attempt to find a resource mapping. If not found,
+    # then a row with default values is returned.
+    map_row = resource_map_csv.find {|row| row['file_name'] == src }
     if map_row == nil
-      puts "Warning: no resource mapping found for file #{file_name}"
+      puts "Warning: no resource mapping found for file #{src}"
     else
-      puts "File #{src} mapped to name #{map_row['file_name']}"
       file_name = File.basename(map_row['file_name'])
+      puts "File #{src} mapped to name #{file_name}"
     end
 
+    # Attempt the monograph resource information from the manifest.
     fileset_row = Manifest.find_fileset(manifest_csv, file_name)
     if fileset_row['noid'].empty?
       puts "Warning: no resource entry found for file #{src}"
@@ -106,6 +118,8 @@ project_dir_list.each do |project_dir|
       puts "Name #{file_name} mapped to resource #{resource_name}"
     end
 
+    # Create an entry for this resource with its noid,
+    # caption/alt text.
     caption_row = {
           "noid" => fileset_row['noid'],
           "alternative_text" => attrs_h['alt'],
@@ -116,6 +130,7 @@ project_dir_list.each do |project_dir|
     caption_list << caption_row
   end
 
+  # Save the captions/alt text metadata file.
   captions_file = File.join(project_dir, "alt_captions.csv")
   puts "Saving alt_text/captions file #{File.basename(captions_file)}"
   CSV.open(
@@ -136,6 +151,6 @@ project_dir_list.each do |project_dir|
     end
   end
 
+  # Reset the processor for the next project directory.
   fig_proc.reset
-
 end

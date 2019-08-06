@@ -34,7 +34,8 @@ class ElementResource < Resource
 
   def src_path(resource_node)
     src_attr = resource_node.attribute("src")
-    File.basename(src_attr.value.strip)
+    #File.basename(src_attr.value.strip)
+    src_attr.value.strip
   end
 
   def resource_action(path)
