@@ -1,0 +1,76 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require 'optparse'
+require 'ostruct'
+
+require 'fileutils'
+require 'zip'
+
+# Process the script parameters.
+options = OpenStruct.new
+options.xhtml = false
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-x] <project_dir> [<project_dir>..]"
+  opts.on('-x', '--xhtml', 'Process xhtml files') do |da|
+    options.xhtml = true
+  end
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    puts opts
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  puts option_parser.help
+  return
+end
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, 'lib', 'epub')
+
+project_dir_list = ARGV
+
+project_dir_list.each do |project_dir|
+  project_dir = File.expand_path(project_dir)
+
+  puts "Processing #{File.basename(project_dir)}"
+
+  src_output_dir = File.join(project_dir, 'src')
+  dest_output_dir = File.join(project_dir, 'dest')
+
+  Dir.glob(File.join(src_output_dir, '**', '*.ncx')).each do |file|
+    fname = File.basename(file, ".*") + '.xhtml'
+    dname = File.expand_path("." + File.path(file).delete_prefix(src_output_dir), dest_output_dir)
+    update_toc(
+        :srcpath => file,
+        :destpath => File.join(File.dirname(dname), fname)
+        )
+    update_ncx(
+        :srcpath => file,
+        :destpath => File.join(File.dirname(dname), File.basename(file))
+        )
+  end
+
+  Dir.glob(File.join(src_output_dir, '**', '*.opf')).each do |file|
+    update_opf(
+        :srcpath => file,
+        :destpath => File.join(dest_output_dir, "." + File.path(file).delete_prefix(src_output_dir))
+        )
+  end
+
+  if options.xhtml
+    Dir.glob(File.join(src_output_dir, '**', '*.{html,xhtml}')).each do |file|
+      fname = File.basename(file, ".*") + '.xhtml'
+      dname = File.expand_path("." + File.path(file).delete_prefix(src_output_dir), dest_output_dir)
+      update_xhtml(
+          :srcpath => file,
+          :destpath => File.join(File.dirname(dname), fname)
+          )
+    end
+  end
+end
+

@@ -9,7 +9,7 @@ class XSLT
     parameters = args[:parameters]
 
     parameters_str = ""
-    parameters.each { |key, val| parameters_str += " #{key}=\"#{val}\""}
+    parameters.each { |key, val| parameters_str += " #{key}=\"#{val}\""} unless parameters == nil
     cmd_str = sprintf(CMD_STR, JAR_PATH, xsl_path, src_path, dest_path, parameters_str)
     puts cmd_str
     STDOUT.flush
