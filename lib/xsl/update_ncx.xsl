@@ -45,6 +45,9 @@
                 <xsl:when test="not(starts-with(.,'http:')) and not(contains(.,'www.')) and contains(.,'.html')">
                     <xsl:value-of select="replace(.,'\.html','.xhtml')"/>
                 </xsl:when>
+                <xsl:when test="not(starts-with(.,'http:')) and not(contains(.,'www.')) and contains(.,'.htm')">
+                    <xsl:value-of select="replace(.,'\.htm','.xhtml')"/>
+                </xsl:when>
                 <xsl:otherwise>
                     <xsl:value-of select="."/>
                 </xsl:otherwise>

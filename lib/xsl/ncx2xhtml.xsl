@@ -106,6 +106,14 @@
         </xsl:call-template>
     </xsl:template>
 
+    <xsl:template match="*[local-name()='docTitle']">
+        <!-- Remove this element -->
+    </xsl:template>
+
+    <xsl:template match="*[local-name()='docAuthor']">
+        <!-- Remove this element -->
+    </xsl:template>
+
     <xsl:template match="*">
         <xsl:element name="{local-name()}" namespace="{$HTML_URL}">
             <xsl:apply-templates select="@*"/>
@@ -116,9 +124,6 @@
         <xsl:copy>
             <xsl:apply-templates select="@*|text()|processing-instruction()|comment()"/>
         </xsl:copy>
-    </xsl:template>
-
-    <xsl:template match="*[local-name()='docTitle']">
     </xsl:template>
 
     <xsl:template name="generateTocList">
@@ -150,6 +155,9 @@
                 <xsl:choose>
                     <xsl:when test="contains($src,'.html')">
                         <xsl:value-of select="replace($src,'\.html','.xhtml')"/>
+                    </xsl:when>
+                    <xsl:when test="contains($src,'.htm')">
+                        <xsl:value-of select="replace($src,'\.htm','.xhtml')"/>
                     </xsl:when>
                     <xsl:otherwise>
                         <xsl:value-of select="$elem/*[local-name()='content']/@src"/>

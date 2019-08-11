@@ -199,6 +199,10 @@
         <xsl:value-of select="."/>
     </xsl:template>
 
+    <xsl:template match="*[local-name()='head']//*[local-name()='meta' and @http-equiv='Content-Type']/@content">
+        <xsl:attribute name="content" select="'text/html; charset=utf-8'"/>
+    </xsl:template>
+
     <xsl:template match="*|@*|processing-instruction()|comment()">
         <xsl:copy>
             <xsl:apply-templates select="*|@*|text()|processing-instruction()|comment()"/>
@@ -212,6 +216,9 @@
             <xsl:choose>
                 <xsl:when test="not(starts-with($href,'http:')) and not(contains($href,'www.')) and contains($href,'.html')">
                     <xsl:value-of select="replace($href,'.html','.xhtml')"/>
+                </xsl:when>
+                <xsl:when test="not(starts-with($href,'http:')) and not(contains($href,'www.')) and contains($href,'.htm')">
+                    <xsl:value-of select="replace($href,'.htm','.xhtml')"/>
                 </xsl:when>
                 <xsl:otherwise>
                     <xsl:value-of select="$href"/>

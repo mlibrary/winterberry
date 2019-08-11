@@ -60,7 +60,13 @@ epub_file_list.each do |epub_file|
       path = File.expand_path(entry.name, dest_output_dir)
       if File.extname(entry.name) != '.plist'
         FileUtils.mkdir_p File.dirname(path)
-        entry.extract(path) { true }
+
+        extname = File.extname(path)
+        case extname
+        when '.htm', '.html', '.xhtml'
+        else
+          entry.extract(path) { true }
+        end
       end
     end
     extract(
@@ -74,7 +80,8 @@ epub_file_list.each do |epub_file|
         :outputdir => src_output_dir
         )
 
-    entry_list = zip.glob(File.join('**', '*.{html,xhtml}'))
+    # Copy the .{htm,html,xhtml} files.
+    entry_list = zip.glob(File.join('**', '*.{htm,html,xhtml}'))
     entry_list.each do |entry|
       content = entry.get_input_stream.read
       begin

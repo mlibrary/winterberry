@@ -71,6 +71,9 @@
                     -->
                     <xsl:value-of select="concat(substring(@href,1,string-length(@href)-5),'.xhtml')"/>
                 </xsl:when>
+                <xsl:when test="ends-with(@href,'.htm')">
+                    <xsl:value-of select="concat(substring(@href,1,string-length(@href)-4),'.xhtml')"/>
+                </xsl:when>
                 <xsl:otherwise>
                     <xsl:value-of select="@href"/>
                 </xsl:otherwise>

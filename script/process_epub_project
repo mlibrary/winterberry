@@ -63,7 +63,7 @@ project_dir_list.each do |project_dir|
   end
 
   if options.xhtml
-    Dir.glob(File.join(src_output_dir, '**', '*.{html,xhtml}')).each do |file|
+    Dir.glob(File.join(src_output_dir, '**', '*.{htm,html,xhtml}')).each do |file|
       fname = File.basename(file, ".*") + '.xhtml'
       dname = File.expand_path("." + File.path(file).delete_prefix(src_output_dir), dest_output_dir)
       update_xhtml(
