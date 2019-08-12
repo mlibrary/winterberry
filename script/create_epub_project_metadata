@@ -5,6 +5,7 @@ require 'optparse'
 require 'ostruct'
 
 require 'csv'
+require 'fileutils'
 require 'zip'
 
 # Process the script parameters.
@@ -39,6 +40,7 @@ project_dir_list.each do |project_dir|
   project_dir = File.expand_path(project_dir)
 
   puts "Processing #{File.basename(project_dir)}"
+  STDOUT.flush
 
   dest_output_dir = File.join(project_dir, 'dest')
 
@@ -69,17 +71,34 @@ project_dir_list.each do |project_dir|
     end
     opf_info = opf_proc.opf_info
 
+    cover_href = opf_info.args['cover_href']
+    cover_file_list = file.glob(File.join('**', cover_href))
+    cover_file = cover_file_list.count == 0 ? nil : cover_file_list.first
+
+    isbn = opf_info.args['dc:identifier'] + " (ebook)"
     csv_file = File.expand_path('metadata.csv', project_dir)
     CSV.open(
             csv_file,
             "w",
             :write_headers=> true,
-            :headers => [ "File Name", "Title", "Creator Display", "Publisher", "Pub Year", "Representative Kind" ]
+            :headers => [ "File Name", "Title", "Creator Display", "Publisher", "Pub Year", "ISBN(s)", "Representative Kind" ]
           ) do |csv|
 
-      if opf_info.args.has_key?('cover_href')
+      csv_row = [
+        "*** row intentionally left blank ***",
+          "",
+          "",
+          "",
+          "",
+          "",
+          ""
+      ]
+      csv << csv_row
+
+      if cover_file != nil
         csv_row = [
-          File.basename(opf_info.args['cover_href']),
+          File.basename(cover_file.name),
+          "",
           "",
           "",
           "",
@@ -90,14 +109,37 @@ project_dir_list.each do |project_dir|
       end
 
       csv_row = [
+        File.basename(epub_file),
+        File.basename(epub_file),
+        "",
+        "",
+        "",
+        "",
+        "epub"
+      ]
+      csv << csv_row
+
+      csv_row = [
         "://:MONOGRAPH://:",
         opf_info.args['dc:title'],
         opf_info.args['dc:creator'],
         opf_info.args['dc:publisher'],
         opf_info.args['dc:date'],
+        isbn,
         ""
       ]
       csv << csv_row
+    end
+
+    bundle_file = File.expand_path(File.basename(epub_file, ".*") + "_bundle.zip", project_dir)
+    if File.exists?(bundle_file)
+      FileUtils.remove(bundle_file)
+    end
+
+    Zip::File.open(bundle_file, Zip::File::CREATE) do |zfile|
+      zfile.add(File.basename(csv_file), csv_file)
+      zfile.get_output_stream(File.basename(cover_file.name)) { |os| os.write cover_file.get_input_stream.read }
+      zfile.add(File.basename(epub_file), epub_file)
     end
   end
 end
