@@ -182,7 +182,7 @@
         <xsl:message>Removing attribute <xsl:value-of select="local-name()"/>/@width.</xsl:message>
     </xsl:template>
 
-    <xsl:template match="*[local-name()='small']">
+    <xsl:template match="*[local-name()='smallOLD']">
         <xsl:choose>
             <xsl:when test="exists(./*[local-name()='big'])">
                 <xsl:for-each select="./*[local-name()='big']">
@@ -192,7 +192,26 @@
                     <xsl:apply-templates select="./*[local-name()='big']/following-sibling::text()"/>
                 </xsl:element>
             </xsl:when>
+            <xsl:otherwise>
+                <xsl:element name="small" namespace="{$HTML_URL}">
+                    <xsl:apply-templates/>
+                </xsl:element>
+            </xsl:otherwise>
         </xsl:choose>
+    </xsl:template>
+
+    <xsl:template match="*[local-name()='small']">
+        <xsl:element name="small" namespace="{$HTML_URL}">
+            <xsl:choose>
+                <xsl:when test="exists(./*[local-name()='big'])">
+                    <xsl:apply-templates select="@*"/>
+                    <xsl:value-of select="string()"/>
+                </xsl:when>
+                <xsl:otherwise>
+                    <xsl:apply-templates/>
+                </xsl:otherwise>
+            </xsl:choose>
+        </xsl:element>
     </xsl:template>
 
     <xsl:template match="*[local-name()='p']//*[local-name()='big']">

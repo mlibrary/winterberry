@@ -114,6 +114,28 @@
         <!-- Remove this element -->
     </xsl:template>
 
+    <xsl:template match="*[local-name()='navPoint']/@id">
+        <xsl:choose>
+            <xsl:when test="matches(., '^[0-9]')">
+                <xsl:attribute name="id" select="concat('nav',.)"/>
+            </xsl:when>
+            <xsl:otherwise>
+                <xsl:attribute name="id" select="."/>
+            </xsl:otherwise>
+        </xsl:choose>
+    </xsl:template>
+
+    <xsl:template match="*[local-name()='pageTarget']/@id">
+        <xsl:choose>
+            <xsl:when test="matches(., '^[0-9]')">
+                <xsl:attribute name="id" select="concat('page',.)"/>
+            </xsl:when>
+            <xsl:otherwise>
+                <xsl:attribute name="id" select="."/>
+            </xsl:otherwise>
+        </xsl:choose>
+    </xsl:template>
+
     <xsl:template match="*">
         <xsl:element name="{local-name()}" namespace="{$HTML_URL}">
             <xsl:apply-templates select="@*"/>
@@ -146,7 +168,10 @@
 
         <xsl:element name="li" namespace="{$HTML_URL}">
             <xsl:if test="exists($elem/@id)">
+                <!--
                 <xsl:attribute name="id" select="$elem/@id"/>
+                -->
+                <xsl:apply-templates select="$elem/@id"/>
             </xsl:if>
 
             <xsl:variable name="src" select="$elem/*[local-name()='content']/@src"/>

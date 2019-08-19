@@ -64,6 +64,10 @@ epub_file_list.each do |epub_file|
         extname = File.extname(path)
         case extname
         when '.htm', '.html', '.xhtml'
+        when '.xml'
+          if File.dirname(entry.name) == 'META-INF'
+            entry.extract(path)
+          end
         else
           entry.extract(path) { true }
         end
@@ -80,9 +84,13 @@ epub_file_list.each do |epub_file|
         :outputdir => src_output_dir
         )
 
-    # Copy the .{htm,html,xhtml} files.
-    entry_list = zip.glob(File.join('**', '*.{htm,html,xhtml}'))
+    # Copy the .{htm,html,xhtml,xml} files.
+    entry_list = zip.glob(File.join('**', '*.{htm,html,xhtml,xml}'))
     entry_list.each do |entry|
+      if File.dirname(entry.name) == 'META-INF'
+        next
+      end
+
       content = entry.get_input_stream.read
       begin
         doc = Nokogiri::XML(content, nil, 'UTF-8')
