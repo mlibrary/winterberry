@@ -20,7 +20,7 @@ class XSLT
     case ok
     when true
     else
-      puts "Transform failed (status = #{status.exitstatus})"
+      puts "Transform failed (status = #{status})"
     end
   end
 end

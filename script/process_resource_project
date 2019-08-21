@@ -102,7 +102,10 @@ project_dir_list.each do |project_dir|
       next
     end
 
-    fileset_row = Manifest.find_fileset(manifest_csv, resource_name)
+    # Use file_name to find manifest row. Could use the NOID found in
+    # the resource map, but it is possible that these may be invalid if
+    # the monograph has been moved or fileset have been replaced.
+    fileset_row = Manifest.name_find_fileset(manifest_csv, file_name)
     if fileset_row['noid'].empty?
       puts "Error: no fileset row for resource #{resource_name}"
       link = fileset_row['link']

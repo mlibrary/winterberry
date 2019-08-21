@@ -44,10 +44,24 @@ module Manifest
     end
   end
 
-  def self.find_fileset(manifest_csv, file_name)
+  def self.name_find_fileset(manifest_csv, file_name)
     if file_name != nil
       file_name_base = File.basename(file_name, ".*")
       fileset_row = manifest_csv.find {|row| File.basename(row['file_name'], ".*") == file_name_base }
+      return fileset_row unless fileset_row == nil
+    end
+
+    return {
+              "noid" => "",
+              "resource_name" => "",
+              "link" => "",
+              "embed_code" => ""
+           }
+  end
+
+  def self.noid_find_fileset(manifest_csv, noid)
+    if noid != nil and !noid.empty?
+      fileset_row = manifest_csv.find {|row| row['noid'] == noid }
       return fileset_row unless fileset_row == nil
     end
 
