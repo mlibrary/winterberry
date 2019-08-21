@@ -97,13 +97,17 @@ project_dir_list.each do |project_dir|
   resource_map_csv.each do |row|
     file_name = row['file_name']
     resource_name = row['resource_name']
+    if resource_name == nil or resource_name.strip.empty?
+      puts "Warning: no resource  mapping found for file #{File.basename(file_name)}"
+      next
+    end
 
     fileset_row = Manifest.find_fileset(manifest_csv, resource_name)
     if fileset_row['noid'].empty?
       puts "Error: no fileset row for resource #{resource_name}"
       link = fileset_row['link']
     else
-      puts "Using resource #{resource_name}"
+      puts "File #{File.basename(file_name)} mapped to resource #{resource_name}"
       link = fileset_row['link'].match('^[^\(]+\(\"([^\"]+)\".*') {|m| m[1] }
     end
     action_row = {

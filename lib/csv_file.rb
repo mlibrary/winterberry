@@ -12,6 +12,7 @@ class CSVFile
       csv_data = CSV.parse(
                 csv_body,
                 :headers => true,
+                :return_headers => false,
                 :header_converters => lambda { |h| h.downcase.gsub(' ', '_') })
      #          :headers => true, :converters => :all,
     rescue Exception => e
