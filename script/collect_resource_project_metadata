@@ -109,7 +109,7 @@ project_dir_list.each do |project_dir|
     end
 
     # Attempt the monograph resource information from the manifest.
-    fileset_row = Manifest.find_fileset(manifest_csv, file_name)
+    fileset_row = Manifest.name_find_fileset(manifest_csv, file_name)
     if fileset_row['noid'].empty?
       puts "Warning: no resource entry found for file #{src}"
     else

@@ -169,7 +169,7 @@ noid_list.each do |noid|
     # edited later.
     src = attrs_h['src']
     file_name = File.basename(src)
-    fileset_row = Manifest.find_fileset(manifest_csv, file_name)
+    fileset_row = Manifest.name_find_fileset(manifest_csv, file_name)
     if fileset_row['noid'].empty?
       puts "Warning: no resource mapping found for file #{file_name}"
     else
