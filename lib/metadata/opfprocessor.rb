@@ -47,7 +47,12 @@ class OPFProcessor < Nokogiri::XML::SAX::Document
       if @current_content != nil
         prop = name == 'meta' ? attrs_h['property'] : name
         #puts "Prop: #{name} => #{prop}"
-        @opf_info.args[prop] = @current_content
+        #@opf_info.args[prop] = @current_content
+        if @opf_info.args.has_key?(prop)
+          @opf_info.args[prop] += ';' + @current_content
+        else
+          @opf_info.args[prop] = @current_content
+        end
       end
     end
     @current_attrs = nil

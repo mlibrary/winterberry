@@ -45,10 +45,17 @@ end
 noid_list = ARGV
 
 # Create the service object.
-service = HeliotropeService.new
+base = HeliotropeService.FULCRUM_API
+token = HeliotropeService.FULCRUM_TOKEN
+#base = HeliotropeService.PREVIEW_API
+#token = HeliotropeService.PREVIEW_TOKEN
+#base = HeliotropeService.STAGING_API
+#token = HeliotropeService.STAGING_TOKEN
+service = HeliotropeService.new(:base => base, :token => token)
 
 noid_list.each do |noid|
   # Attempt to download the monograph manifest.
+  puts "API: #{base}"
   service_response = service.monograph_noid_export(noid)
 
   if !service_response.empty?

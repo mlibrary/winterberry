@@ -1,9 +1,31 @@
 module Manifest
-  def self.find_ebook_isbn(manifest_csv, noid)
+
+  MONOGRAPH_FILE_NAME = '://:MONOGRAPH://:'
+
+  def self.find_monograph(manifest_csv)
     # Find monograph row.
+    monograph_row = manifest_csv.find {|row| row['file_name'] == MONOGRAPH_FILE_NAME }
+    if monograph_row == nil
+      puts "Error: no CSV monograph row"
+      return nil
+    end
+    return monograph_row
+  end
+
+  def self.noid_find_monograph(manifest_csv, noid)
+    # Find monograph row using noid.
     monograph_row = manifest_csv.find {|row| row['noid'] == noid }
     if monograph_row == nil
       puts "Error: no monograph row for noid #{noid}"
+      return nil
+    end
+    return monograph_row
+  end
+
+  def self.find_ebook_isbn(manifest_csv, noid)
+    # Find monograph row.
+    monograph_row = noid_find_monograph(manifest_csv, noid)
+    if monograph_row == nil
       return nil
     end
 

@@ -58,6 +58,8 @@ project_dir_list.each do |project_dir|
 
   # Locate the EPUB OPF file.
   Zip::File.open(epub_file) do |file|
+    csv_file = File.expand_path('metadata.csv', project_dir)
+
     opf_file_list = file.glob(File.join('**','*.opf'))
     if opf_file_list.count == 0
       puts "Error: OPF file not found for project #{File.basename(project_dir)}"
@@ -75,17 +77,30 @@ project_dir_list.each do |project_dir|
     cover_file_list = file.glob(File.join('**', cover_href))
     cover_file = cover_file_list.count == 0 ? nil : cover_file_list.first
 
+if false
     isbn = opf_info.args['dc:identifier'] + " (ebook)"
-    csv_file = File.expand_path('metadata.csv', project_dir)
+
+    creator_arg = opf_info.args['dc:creator']
+    creators = ''
+    creator_arg.split(';').each do |creator|
+      if !creator.include?(',')
+        lst = creator.split(' ')
+        creators += "#{lst.last}, #{lst[0..-2].join(' ')};"
+      end
+    end
+    creators = creators.chop
+
     CSV.open(
             csv_file,
             "w",
             :write_headers=> true,
-            :headers => [ "File Name", "Title", "Creator Display", "Publisher", "Pub Year", "ISBN(s)", "Representative Kind" ]
+            :headers => [ "File Name", "Identifier(s)", "Legacy ID", "Title", "Creator(s)", "Publisher", "Pub Year", "ISBN(s)", "Representative Kind" ]
           ) do |csv|
 
       csv_row = [
         "*** row intentionally left blank ***",
+          "",
+          "",
           "",
           "",
           "",
@@ -103,6 +118,8 @@ project_dir_list.each do |project_dir|
           "",
           "",
           "",
+          "",
+          "",
           "cover"
         ]
         csv << csv_row
@@ -110,6 +127,8 @@ project_dir_list.each do |project_dir|
 
       csv_row = [
         File.basename(epub_file),
+          "",
+          "",
         File.basename(epub_file),
         "",
         "",
@@ -121,8 +140,10 @@ project_dir_list.each do |project_dir|
 
       csv_row = [
         "://:MONOGRAPH://:",
+        File.basename(epub_file, ".*"),
+        File.basename(epub_file, ".*"),
         opf_info.args['dc:title'],
-        opf_info.args['dc:creator'],
+        creators,
         opf_info.args['dc:publisher'],
         opf_info.args['dc:date'],
         isbn,
@@ -130,6 +151,7 @@ project_dir_list.each do |project_dir|
       ]
       csv << csv_row
     end
+end
 
     bundle_file = File.expand_path(File.basename(epub_file, ".*") + "_bundle.zip", project_dir)
     if File.exists?(bundle_file)
@@ -142,5 +164,7 @@ project_dir_list.each do |project_dir|
       zfile.add(File.basename(epub_file), epub_file)
     end
   end
+
+  opf_proc.opf_info.args.clear
 end
 

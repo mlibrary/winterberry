@@ -1,0 +1,82 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require 'optparse'
+require 'ostruct'
+
+require 'csv'
+
+# Process the script parameters.
+options = OpenStruct.new
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} <csv_file> [<csv_file>..]"
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    puts opts
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  puts option_parser.help
+  return
+end
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, 'lib', 'csvfile')
+
+csv_file_list = ARGV
+csv_file_list.each do |csv_file|
+  csv_file = File.expand_path(csv_file)
+  if !File.exists?(csv_file) or !File.file?(csv_file)
+    puts "Error: invalid CSV file path #{File.basename(csv_file)}"
+    next
+  end
+  puts "Processing #{File.basename(csv_file)}"
+
+  new_csv_file = File.join(File.dirname(csv_file), File.basename(csv_file, ".*") + '_new' + File.extname(csv_file))
+  csv = CSVFile.read_file(:csv_path => csv_file)
+
+  heb_id = File.basename(File.dirname(csv_file))
+  heb_id = heb_id[0..16]
+  #puts "heb_id: #{heb_id}"
+
+  CSV.open(
+          new_csv_file,
+          "w",
+          :write_headers=> true,
+          :headers => ["File Name", "Identifier(s)", "Legacy ID", "Title", "Creator(s)", "Creator Display", "Publisher", "Pub Year", "ISBN(s)", "Representative Kind"]
+        ) do |new_csv|
+    csv.each do |row|
+
+      if row['file_name'] == '://:MONOGRAPH://:'
+        id_field = heb_id
+        creator = row['creator_display']
+        if !creator.include?(',')
+          lst = creator.split(' ')
+          creator = "#{lst.last}, #{lst[0..-2].join(' ')}"
+        end
+      else
+        id_field = ''
+        creator = ''
+      end
+      csv_row = [
+              row['file_name'],
+              id_field,
+              id_field,
+              row['title'],
+              creator,
+              row['creator_display'],
+              row['publisher'],
+              row['pub_year'],
+              row['isbn(s)'],
+              row['representative_kind']
+      ]
+
+      #puts "row: #{csv_row}"
+      new_csv << csv_row
+    end
+  end
+end
