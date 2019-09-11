@@ -1,0 +1,99 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require 'optparse'
+require 'ostruct'
+
+# Process the script parameters.
+options = OpenStruct.new
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} <epub_file> [<epub_file>..]"
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    puts opts
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  puts option_parser.help
+  return
+end
+
+epub_file_list = ARGV
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require 'fileutils'
+require 'nokogiri'
+require 'zip'
+
+require_relative File.join(root_dir, 'lib', 'resources')
+
+epub_file_list.each do |epub_file|
+  epub_file = File.expand_path(epub_file)
+  if !File.exist?(epub_file)
+    puts "Error: #{File.basename(epub_file)} does not exist."
+    next
+  end
+  puts "Processing #{File.basename(epub_file)}"
+
+  # Parse the epub files
+  Zip::File.open(epub_file) do |file|
+
+    opf_entry_list = file.glob(File.join('**', '*.opf'))
+    opf_entry = opf_entry_list.first
+    begin
+      opf_doc = Nokogiri::XML(opf_entry.get_input_stream.read, nil, 'UTF-8')
+    rescue Exception => e
+      puts e.message
+      next
+    end
+
+    para_counter = 0
+
+    itemref_list = opf_doc.xpath("//*[local-name()='spine']/*[local-name()='itemref']")
+    itemref_list.each do |itemref|
+      idref = itemref['idref']
+      item_path_list = opf_doc.xpath("//*[local-name()='manifest']/*[local-name()='item' and @id='#{idref}']/@href")
+      item_path = item_path_list.first
+      puts "Processing #{File.basename(item_path)}"
+      STDOUT.flush
+
+      item_entry_list = file.glob(File.join('**', item_path))
+      item_entry = item_entry_list.first
+      begin
+        item_doc = Nokogiri::XML(item_entry.get_input_stream.read, nil, 'UTF-8')
+      rescue Exception => e
+        puts e.message
+        next
+      end
+
+      paranum_list = item_doc.xpath("//*[@data-paranum!='']")
+      paranum_list.each do |paranum|
+        #puts "Removing paranum #{paranum['data-paranum']}"
+        paranum.remove_attribute('data-paranum')
+      end
+
+      #para_list = item_doc.xpath("//*[local-name()='p' and starts-with(@class, 'text_')]")
+      #para_list = item_doc.xpath("//*[local-name()='p' and starts-with(@class, 'text_') and (parent::*[local-name()!='div' or @class!='quotes'])]")
+      #para_list = item_doc.xpath("//*[local-name()='p' and starts-with(@class, 'text_') and (parent::*[local-name()!='div' or @class!='quotes'] or position()=1)]")
+	  para_list = item_doc.xpath("//*[local-name()='p' and starts-with(@class, 'text_') and (parent::*[local-name()!='td']) and (parent::*[local-name()!='div' or @class!='quotes'] or position()=1)]")
+      para_list.each do |para|
+        case para['class']
+        when "text_noindentb", "text_noindentc", "text_noindente"
+        else
+        para_counter += 1
+        para['data-paranum'] = para_counter
+        end
+      end
+
+      dest_file = File.join(File.dirname(epub_file), 'epub', item_path)
+      FileUtils.mkdir_p File.dirname(dest_file)
+      XMLUtil.save(item_doc, dest_file)
+    end
+    puts "para_counter: #{para_counter}"
+  end
+
+end
