@@ -57,8 +57,8 @@ class HeliotropeService
   # Configuration
   #
   def initialize(options = {})
-    @base = options[:base] || ENV['TURNSOLE_HELIOTROPE_API'] || HELIOTROPE_FULCRUM_API
-    @token = options[:token] || ENV['TURNSOLE_HELIOTROPE_TOKEN'] || HELIOTROPE_FULCRUM_TOKEN
+    @base = options[:base] || ENV['TURNSOLE_HELIOTROPE_API'] || @@FULCRUM_API
+    @token = options[:token] || ENV['TURNSOLE_HELIOTROPE_TOKEN'] || @@FULCRUM_TOKEN
     @open_timeout = options[:open_timeout] || 60 # seconds, 1 minute, opening a connection
     @timeout = options[:timeout] || 600          # seconds, 10 minutes, waiting for response
   end
