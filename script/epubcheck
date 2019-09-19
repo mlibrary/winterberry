@@ -7,7 +7,7 @@ require 'ostruct'
 # Process the script parameters.
 options = OpenStruct.new
 option_parser = OptionParser.new do |opts|
-  opts.banner = "Usage: #{File.basename(__FILE__)} <epub_file> [<epub_file>..]"
+  opts.banner = "Usage: #{File.basename(__FILE__)} <epub_file|epub_dir> [<epub_file|epub_dir>..]"
   opts.on_tail('-h', '--help', 'Print this help message') do
     puts opts
     exit 0
@@ -25,18 +25,18 @@ root_dir = File.dirname(script_dir)
 
 require_relative File.join(root_dir, 'lib', 'epubcheck')
 
-epub_file_list = ARGV
+epub_path_list = ARGV
 
-epub_file_list.each do |epub_file|
-  epub_file = File.expand_path(epub_file)
-  if !File.exist?(epub_file) or !File.file?(epub_file)
-    puts "Error: #{File.basename(epub_file)} is not a valid file."
+epub_path_list.each do |epub_path|
+  epub_path = File.expand_path(epub_path)
+  if !File.exist?(epub_path)
+    puts "Error: #{File.basename(epub_path)} does not exist."
     next
   end
 
-  log_file = File.join(File.dirname(epub_file), File.basename(epub_file, ".*") + "_log.xml")
+  log_file = File.join(File.dirname(epub_path), File.basename(epub_path, ".*") + "_log.xml")
   EpubCheck.check_file(
-      :epubfile => epub_file,
+      :epubpath => epub_path,
       :logfile => log_file
       )
 end
