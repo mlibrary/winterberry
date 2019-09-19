@@ -71,7 +71,7 @@ default_action = {
 # For each project directory, process the epub resources.
 project_dir_list.each do |project_dir|
   project_dir = File.expand_path(project_dir)
-  puts "Processing project #{File.basename(project_dir)}"
+  puts "*" * 10 + " #{File.basename(project_dir)} " + "*" * 10
 
   # Locate resource mapping file.
   epub_src_dir = File.join(project_dir, "epub", "META-INF", "src")

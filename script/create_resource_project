@@ -96,6 +96,8 @@ noid_list.each do |noid|
   # Use the noid to retrieve the monograph manifest. First look and see
   # the file exists in the input directory. If so, load it. Otherwise,
   # attempt to download it from Fulcrum.
+  puts "*" * 10 + " #{noid} " + "*" * 10
+
   src_manifest_file = File.join(source_root_dir, "#{noid}.csv")
   if File.exists?(src_manifest_file)
     puts "Loading manifest file #{File.basename(src_manifest_file)}"
