@@ -113,20 +113,20 @@ project_dir_list.each do |project_dir|
     # Attempt the monograph resource information from the manifest.
     fileset_row = Manifest.name_find_fileset(manifest_csv, file_name)
     if fileset_row['noid'].empty?
-      puts "Warning: no resource entry found for file #{src}"
+      puts "Warning: no NOID for resource entry #{file_name}"
     else
       resource_name = fileset_row['file_name']
-      puts "Name #{file_name} mapped to resource #{resource_name}"
-    end
+      puts "NOID #{fileset_row['noid']} found for name #{file_name}, resource #{resource_name}"
 
-    # Display a warning if the caption text is empty.
-    if info.caption.strip.empty?
-      puts "Warning: caption for #{file_name} is empty."
-    end
+      # Display a warning if the caption text is empty.
+      if info.caption.strip.empty?
+        puts "Warning: caption for #{file_name} is empty."
+      end
 
-    # Display a warning if the alternative text is empty.
-    if attrs_h['alt'].strip.empty?
-      puts "Warning: alt text for #{file_name} is empty."
+      # Display a warning if the alternative text is empty.
+      if attrs_h['alt'].strip.empty?
+        puts "Warning: alt text for #{file_name} is empty."
+      end
     end
 
     # Create an entry for this resource with its noid,
