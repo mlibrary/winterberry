@@ -119,6 +119,16 @@ project_dir_list.each do |project_dir|
       puts "Name #{file_name} mapped to resource #{resource_name}"
     end
 
+    # Display a warning if the caption text is empty.
+    if info.caption.strip.empty?
+      puts "Warning: caption for #{file_name} is empty."
+    end
+
+    # Display a warning if the alternative text is empty.
+    if attrs_h['alt'].strip.empty?
+      puts "Warning: alt text for #{file_name} is empty."
+    end
+
     # Create an entry for this resource with its noid,
     # caption/alt text.
     caption_row = {

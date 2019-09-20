@@ -130,7 +130,7 @@ noid_list.each do |noid|
   epub_file_name = Manifest.find_epub_file_name(manifest_csv)
   src_epub_file = File.join(source_dir, epub_file_name)
   if !File.exist?(src_epub_file)
-    puts "Error: no #{epub_file_name} not found for noid #{noid}"
+    puts "Error: #{epub_file_name} not found in manifest for noid #{noid}"
     next
   end
 
