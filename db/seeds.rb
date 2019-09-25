@@ -51,7 +51,7 @@ def load_copyholder(path)
     #puts "h: #{h.id}: #{h.heb_id}"
 
     item_list.each do |item|
-      Copyholder.first_or_initialize.tap do |ch|
+      Copyholder.create do |ch|
         ch.hebid_id = h.id
         ch.copyholder = item['copyholder'].strip
         ch.url = item['puburl'].strip
@@ -87,7 +87,7 @@ def load_related_title(path)
     h = Hebid.where(hebid: entry['heb_id']).first
 
     item_list.each do |item|
-      RelatedTitle.first_or_initialize.tap do |ch|
+      RelatedTitle.create do |ch|
         ch.hebid_id = h.id
         ch.related_hebid = item['related_hebid'].strip
         ch.related_title = item['related_title'].strip
@@ -120,7 +120,7 @@ def load_review(path)
     h = Hebid.where(hebid: entry['heb_id']).first
 
     item_list.each do |item|
-      Review.first_or_initialize.tap do |ch|
+      Review.create do |ch|
         ch.hebid_id = h.id
         ch.journal_abbrev = item['journal_abbrev'].strip
         ch.review_label = item['review_label'].strip
@@ -152,7 +152,7 @@ def load_series(path)
     h = Hebid.where(hebid: entry['heb_id']).first
 
     item_list.each do |item|
-      Series.first_or_initialize.tap do |ch|
+      Series.create do |ch|
         ch.hebid_id = h.id
         ch.title = item['series'].strip
 
