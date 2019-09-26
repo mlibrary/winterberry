@@ -1,5 +1,4 @@
-class RelatedTitle < ActiveRecord::Base
-  belongs_to :hebid
+class RelatedTitle < ApplicationRecord
   validates :related_hebid,
             presence: false
   validates :related_title,
@@ -7,7 +6,5 @@ class RelatedTitle < ActiveRecord::Base
   validates :related_authors,
             presence: false
   validates :related_pubinfo,
-            presence: true
-  validates :hebid_id,
             presence: true
 end

@@ -1,7 +1,8 @@
-class Series < ActiveRecord::Base
-  belongs_to :hebid
-  validates :title,
-            presence: true
-  validates :hebid_id,
-            presence: true
+class Series < ApplicationRecord
+  has_many :hebid_series
+  has_many :hebid, through: :hebid_series
+
+  validates :series_title,
+            presence: true,
+            uniqueness: { case_sensitive: false }
 end

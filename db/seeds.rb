@@ -20,9 +20,11 @@ def yml_load(path)
 end
 
 def load_hebid(path)
+  Hebid.delete_all
+
   yml_item_list = yml_load(path)
   yml_item_list.each_entry do |entry|
-    Hebid.where(hebid: entry["heb_id"]).first_or_initialize.tap do |item|
+    Hebid.create do |item|
       item.hebid = entry["heb_id"]
       if item.save
         puts "updated/created #{item.hebid}"
@@ -37,35 +39,17 @@ def load_copyholder(path)
   Copyholder.delete_all
 
   yml_item_list = yml_load(path)
+  puts "count: #{yml_item_list.count}"
   yml_item_list.each_entry do |entry|
-    #puts entry
+    Copyholder.create do |ch|
+      ch.copyholder = entry['copyholder'].strip
+      ch.url = entry['url'].strip
 
-    item_list = entry['items']
-    if item_list == nil
-      puts "Error: no items for #{entry['heb_id']}"
-      STDOUT.flush
-      next
-    end
-
-    h = Hebid.where(hebid: entry['heb_id']).first
-    #puts "h: #{h.id}: #{h.heb_id}"
-
-    item_list.each do |item|
-      Copyholder.first_or_initialize.tap do |ch|
-        ch.hebid_id = h.id
-        ch.copyholder = item['copyholder'].strip
-        ch.url = item['puburl'].strip
-        if ch.copyholder.empty?
-          ch.copyholder = ch.url
-          ch.url = ""
-        end
-
-        #puts "#{ch.hebid_id}: Copyholder => #{ch.copyholder} URL => #{ch.url}"
-        if ch.save
-          puts "updated/created #{ch.copyholder}"
-        else
-          puts "#{ch.copyholder} update/create FAILED #{ch.errors.messages.inspect}"
-        end
+      #puts "#{ch.hebid_id}: Copyholder => #{ch.copyholder} URL => #{ch.url}"
+      if ch.save
+        puts "Copyholder: updated/created #{ch.copyholder}"
+      else
+        puts "Copyholder: #{ch.copyholder} update/create FAILED #{ch.errors.messages.inspect}"
       end
     end
   end
@@ -87,7 +71,7 @@ def load_related_title(path)
     h = Hebid.where(hebid: entry['heb_id']).first
 
     item_list.each do |item|
-      RelatedTitle.first_or_initialize.tap do |ch|
+      RelatedTitle.create do |ch|
         ch.hebid_id = h.id
         ch.related_hebid = item['related_hebid'].strip
         ch.related_title = item['related_title'].strip
@@ -120,7 +104,7 @@ def load_review(path)
     h = Hebid.where(hebid: entry['heb_id']).first
 
     item_list.each do |item|
-      Review.first_or_initialize.tap do |ch|
+      Review.create do |ch|
         ch.hebid_id = h.id
         ch.journal_abbrev = item['journal_abbrev'].strip
         ch.review_label = item['review_label'].strip
@@ -141,6 +125,47 @@ def load_series(path)
 
   yml_item_list = yml_load(path)
   yml_item_list.each_entry do |entry|
+    Series.create do |ch|
+      ch.series_title = entry.strip
+
+      if ch.save
+        puts "Series: updated/created #{ch.series_title}"
+      else
+        puts "Series: #{ch.series_title} update/create FAILED #{ch.errors.messages.inspect}"
+      end
+    end
+  end
+end
+
+def load_subject(path)
+  Subject.delete_all
+
+  yml_item_list = yml_load(path)
+  yml_item_list.each_entry do |entry|
+    Subject.create do |ch|
+      ch.subject_title = entry.strip
+
+      if ch.save
+        puts "Subject: updated/created #{ch.subject_title}"
+      else
+        puts "Subject: #{ch.subject_title} update/create FAILED #{ch.errors.messages.inspect}"
+      end
+    end
+  end
+end
+
+def load_hebid_copyholders(path)
+  HebidCopyholder.delete_all
+
+  yml_item_list = yml_load(path)
+  yml_item_list.each_entry do |entry|
+
+    hebid = Hebid.where(hebid: entry['heb_id']).first
+    if hebid == nil
+      puts "Error: no entry for HEB #{entry['heb_id']}."
+      STDOUT.flush
+      next
+    end
 
     item_list = entry['items']
     if item_list == nil
@@ -149,25 +174,122 @@ def load_series(path)
       next
     end
 
-    h = Hebid.where(hebid: entry['heb_id']).first
-
     item_list.each do |item|
-      Series.first_or_initialize.tap do |ch|
-        ch.hebid_id = h.id
-        ch.title = item['series'].strip
+      copyholder_text = item['copyholder']
+      if copyholder_text == nil or copyholder_text.strip.empty?
+        copyholder_text = item['puburl']
+      end
+      copyholder = Copyholder.where(copyholder: copyholder_text).first
+      if copyholder == nil
+        puts "Error: no entry for copyholder #{copyholder_text}."
+        STDOUT.flush
+        next
+      end
 
+      HebidCopyholder.create do |ch|
+        ch.hebid_id = hebid.id
+        ch.copyholder_id = copyholder.id
         if ch.save
-          puts "updated/created #{ch.title}"
+          puts "HebidCopyholder: updated/created #{hebid.hebid}"
         else
-          puts "#{ch.title} update/create FAILED #{ch.errors.messages.inspect}"
+          puts "HebidCopyholder: #{hebid.hebid} update/create FAILED #{ch.errors.messages.inspect}"
         end
       end
     end
   end
 end
 
-#load_hebid(File.join("db", "yml", "hebid.yml"))
+def load_hebid_series(path)
+  HebidSeries.delete_all
+
+  yml_item_list = yml_load(path)
+  yml_item_list.each_entry do |entry|
+
+    hebid = Hebid.where(hebid: entry['heb_id']).first
+    if hebid == nil
+      puts "Error: no entry for HEB #{entry['heb_id']}."
+      STDOUT.flush
+      next
+    end
+
+    item_list = entry['items']
+    if item_list == nil
+      puts "Error: no items for #{entry['heb_id']}"
+      STDOUT.flush
+      next
+    end
+
+    item_list.each do |item|
+      series_text = item['series']
+      series = Series.where(series_title: series_text).first
+      if series == nil
+        puts "Error: no entry for series #{series_text} HEB #{entry['heb_id']}."
+        STDOUT.flush
+        next
+      end
+
+      HebidSeries.create do |ch|
+        ch.hebid_id = hebid.id
+        ch.series_id = series.id
+        if ch.save
+          puts "HebidSeries: updated/created #{hebid.hebid}"
+        else
+          puts "HebidSeries: #{hebid.hebid} update/create FAILED #{ch.errors.messages.inspect}"
+        end
+      end
+    end
+  end
+end
+
+def load_hebid_subjects(path)
+  HebidSubject.delete_all
+
+  yml_item_list = yml_load(path)
+  yml_item_list.each_entry do |entry|
+
+    hebid = Hebid.where(hebid: entry['heb_id']).first
+    if hebid == nil
+      puts "Error: no entry for HEB #{entry['heb_id']}."
+      STDOUT.flush
+      next
+    end
+
+    item_list = entry['items']
+    if item_list == nil
+      puts "Error: no items for #{entry['heb_id']}"
+      STDOUT.flush
+      next
+    end
+
+    item_list.each do |item|
+      subject_text = item['subject']
+      subject = Subject.where(subject_title: subject_text).first
+      if subject == nil
+        puts "Error: no entry for subject #{subject_text} HEB #{entry['heb_id']}."
+        STDOUT.flush
+        next
+      end
+
+      HebidSubject.create do |ch|
+        ch.hebid_id = hebid.id
+        ch.subject_id = subject.id
+        if ch.save
+          puts "HebidSubject: updated/created #{hebid.hebid}"
+        else
+          puts "HebidSubject: #{hebid.hebid} update/create FAILED #{ch.errors.messages.inspect}"
+        end
+      end
+    end
+  end
+end
+
+load_hebid(File.join("db", "yml", "hebid.yml"))
 load_copyholder(File.join("db", "yml", "copyholder.yml"))
-load_related_title(File.join("db", "yml", "related_title.yml"))
-load_review(File.join("db", "yml", "review.yml"))
+# TODO load_related_title(File.join("db", "yml", "related_title.yml"))
+# TODO load_review(File.join("db", "yml", "review.yml"))
 load_series(File.join("db", "yml", "series.yml"))
+load_subject(File.join("db", "yml", "subject.yml"))
+load_hebid_copyholders(File.join("db", "yml", "hebid_copyholders.yml"))
+load_hebid_series(File.join("db", "yml", "hebid_series.yml"))
+load_hebid_subjects(File.join("db", "yml", "hebid_subjects.yml"))
+

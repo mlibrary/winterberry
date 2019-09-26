@@ -1,7 +1,8 @@
-class Subject < ActiveRecord::Base
-  belongs_to :hebid
-  validates :title,
-            presence: true
-  validates :hebid_id,
-            presence: true
+class Subject < ApplicationRecord
+  has_many :hebid_subjects
+  has_many :hebid, through: :hebid_subjects
+
+  validates :subject_title,
+            presence: true,
+            uniqueness: { case_sensitive: false }
 end

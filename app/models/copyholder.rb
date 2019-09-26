@@ -1,9 +1,10 @@
-class Copyholder < ActiveRecord::Base
-  belongs_to :hebid
+class Copyholder < ApplicationRecord
+  has_many :hebid_copyholders
+  has_many :hebid, through: :hebid_copyholders
+
   validates :copyholder,
-            presence: true
+            presence: true,
+            uniqueness: { case_sensitive: false }
   validates :url,
             presence: false
-  validates :hebid_id,
-            presence: true
 end
