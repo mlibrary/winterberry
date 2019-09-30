@@ -70,3 +70,5 @@ gem 'rubyzip', '~> 1.2.2'
 
 # Adds support for heliotrope REST interface.
 gem 'turnsole', :git => 'https://github.com/mlibrary/turnsole'
+
+gem "image_size", "~> 2.0"
