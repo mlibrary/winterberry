@@ -1,0 +1,61 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require 'optparse'
+require 'ostruct'
+
+# Process the script parameters.
+options = OpenStruct.new
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} [task] [<hebdir>..]"
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    puts opts
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, 'lib', 'epubcheck')
+require_relative File.join(root_dir, 'config', 'application')
+
+require 'rake'
+
+task = ARGV[0]
+if task == nil or task.strip.empty?
+  task = "bundle"
+end
+
+hebdir_list = ARGV[1..-1]
+if hebdir_list.count == 0
+  hebdir_list = [ Dir.pwd ]
+end
+
+# Set JAVA_HOME as Java is used for XSLT 2.0 transformations.
+# Explicitly set for my laptop (Windows) or tang (Linux).
+if Gem.win_platform?
+  java_home = File.join(ENV['SYSTEMDRIVE'], "Program Files", "Java", "jre1.8.0_172")
+  hebrootdir = File.expand_path(File.join("~", "Documents", "GitHub", "hebdevel", "hebepub"))
+else
+  java_home = File.join(File::SEPARATOR, "usr", "lib", "jvm", "java-8-openjdk-amd64")
+  hebrootdir = ""
+end
+
+ENV['JAVA_HOME'] = java_home
+ENV['PATH'] = File.join(java_home, "bin") + Gem.path_separator + ENV['PATH']
+
+hebdir_list.each do |hebdir|
+  ENV['HEBDIR'] = File.expand_path(hebdir)
+  ENV['HEBROOTDIR'] = hebrootdir
+
+  Rails.application.load_tasks
+  if task != "clobber"
+    task = "winterberry:" + task
+  end
+  Rake::Task[task].invoke
+end
+
+

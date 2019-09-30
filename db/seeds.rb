@@ -292,4 +292,3 @@ load_subject(File.join("db", "yml", "subject.yml"))
 load_hebid_copyholders(File.join("db", "yml", "hebid_copyholders.yml"))
 load_hebid_series(File.join("db", "yml", "hebid_series.yml"))
 load_hebid_subjects(File.join("db", "yml", "hebid_subjects.yml"))
-
