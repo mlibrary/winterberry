@@ -215,7 +215,7 @@ namespace :winterberry do
     file CSVPATH => [ METAINFSRCDIR, CPHOLDERPATH, RELATEDPATH,
             REVIEWSPATH, SERIESPATH, SUBJECTPATH, ASSETSPATH, TEIPATH ] do
 
-        if !File.exist?(MARCPATH)
+        if File.exist?(SRCMARCPATH)
             cp(SRCMARCPATH, MARCPATH)
         end
 
