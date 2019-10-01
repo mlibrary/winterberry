@@ -13,8 +13,12 @@
 
     <xsl:output method="text" indent="no"/>
 
+    <!--
     <xsl:variable name="PROPERTIES"
                   select="'File Name,Identifier(s),Legacy ID,Title,Resource Type,Representative Kind,External Resource URL,Caption,Alternative Text,Copyright Holder,Allow High-Res Display?,Allow Download?,Copyright Status,Rights Granted,Rights Granted - Creative Commons,Permissions Expiration Date,After Expiration: Allow Display?,After Expiration: Allow Download?,Credit Line,Holding Contact,Exclusive to Fulcrum,Persistent ID - Display on Platform,Persistent ID - XML for CrossRef,Persistent ID - Handle,Content Type,Creator(s),Primary Creator Role,Additional Creator(s),Sort Date,Display Date,Series,Description,Keywords,Section,Language,Transcript,Translation,Publisher,Subject,ISBN(s),Buy Book URL,Pub Year,Pub Location'"/>
+    -->
+    <xsl:variable name="PROPERTIES"
+                  select="'File Name,Identifier(s),Title,Resource Type,Representative Kind,Caption,Alternative Text,Copyright Holder,Allow High-Res Display?,Allow Download?,Copyright Status,Holding Contact,Handle,Content Type,Creator(s),Primary Creator Role,Additional Creator(s),Series,Description,Keywords,Section,Language,Publisher,Subject,ISBN(s),Pub Year,Pub Location'"/>
     <xsl:variable name="propertyList" select="tokenize($PROPERTIES,',')"/>
     <xsl:variable name="propertyListCnt" select="count($propertyList)"/>
 
@@ -157,7 +161,7 @@
                         <xsl:value-of select="concat($dc-identifier,'.epub')"/>
                     </xsl:when>
                     <xsl:when test=". = 'Allow Download?'">
-                        <xsl:value-of select="'no'"/>
+                        <xsl:value-of select="'yes'"/>
                     </xsl:when>
                     <xsl:when test=". ='Representative Kind'">
                         <xsl:value-of select="'epub'"/>
@@ -317,7 +321,7 @@
                     <xsl:when test=". = 'File Name'">
                         <xsl:value-of select="$MONOGRAPH_MARKER"/>
                     </xsl:when>
-                    <xsl:when test=". = 'Identifier(s)' or . = 'Legacy ID'">
+                    <xsl:when test=". = 'Identifier(s)'">
                         <xsl:value-of select="$dc-identifier"/>
                     </xsl:when>
                     <xsl:when test=". = 'Title'">
@@ -329,7 +333,7 @@
                     <xsl:when test=". = 'Holding Contact'">
                         <xsl:value-of select="string-join($dc-holdercontact-list,$SEPARATOR_VALUE)"/>
                     </xsl:when>
-                    <xsl:when test=". = 'Persistent ID - Display on Platform'">
+                    <xsl:when test=". = 'Handle'">
                         <xsl:value-of select="string-join($dc-source-list,$SEPARATOR_VALUE)"/>
                     </xsl:when>
                     <xsl:when test=". = 'Creator(s)'">
