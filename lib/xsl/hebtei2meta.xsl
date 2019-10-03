@@ -18,7 +18,7 @@
                   select="'File Name,Identifier(s),Legacy ID,Title,Resource Type,Representative Kind,External Resource URL,Caption,Alternative Text,Copyright Holder,Allow High-Res Display?,Allow Download?,Copyright Status,Rights Granted,Rights Granted - Creative Commons,Permissions Expiration Date,After Expiration: Allow Display?,After Expiration: Allow Download?,Credit Line,Holding Contact,Exclusive to Fulcrum,Persistent ID - Display on Platform,Persistent ID - XML for CrossRef,Persistent ID - Handle,Content Type,Creator(s),Primary Creator Role,Additional Creator(s),Sort Date,Display Date,Series,Description,Keywords,Section,Language,Transcript,Translation,Publisher,Subject,ISBN(s),Buy Book URL,Pub Year,Pub Location'"/>
     -->
     <xsl:variable name="PROPERTIES"
-                  select="'File Name,Identifier(s),Title,Resource Type,Representative Kind,Caption,Alternative Text,Copyright Holder,Allow High-Res Display?,Allow Download?,Copyright Status,Holding Contact,Handle,Content Type,Creator(s),Primary Creator Role,Additional Creator(s),Series,Description,Keywords,Section,Language,Publisher,Subject,ISBN(s),Pub Year,Pub Location'"/>
+                  select="'File Name,Identifier(s),Title,Resource Type,Representative Kind,Caption,Alternative Text,Copyright Holder,Allow High-Res Display?,Allow Download?,Copyright Status,Holding Contact,Content Type,Creator(s),Primary Creator Role,Additional Creator(s),Series,Description,Keywords,Section,Language,Publisher,Subject,ISBN(s),Pub Year,Pub Location'"/>
     <xsl:variable name="propertyList" select="tokenize($PROPERTIES,',')"/>
     <xsl:variable name="propertyListCnt" select="count($propertyList)"/>
 
@@ -323,6 +323,10 @@
                     </xsl:when>
                     <xsl:when test=". = 'Identifier(s)'">
                         <xsl:value-of select="$dc-identifier"/>
+                        <xsl:if test="count($dc-source-list) > 0">
+                            <xsl:value-of select="$SEPARATOR_VALUE"/>
+                            <xsl:value-of select="string-join($dc-source-list,$SEPARATOR_VALUE)"/>
+                        </xsl:if>
                     </xsl:when>
                     <xsl:when test=". = 'Title'">
                         <xsl:value-of select="string-join($dc-title-list,$SEPARATOR_VALUE)"/>
@@ -333,9 +337,11 @@
                     <xsl:when test=". = 'Holding Contact'">
                         <xsl:value-of select="string-join($dc-holdercontact-list,$SEPARATOR_VALUE)"/>
                     </xsl:when>
+                    <!-- Don't set this
                     <xsl:when test=". = 'Handle'">
                         <xsl:value-of select="string-join($dc-source-list,$SEPARATOR_VALUE)"/>
                     </xsl:when>
+                    -->
                     <xsl:when test=". = 'Creator(s)'">
                         <xsl:value-of select="mlibxsl:strip_punctuation(string-join($dc-creator-list,$SEPARATOR_VALUE))"/>
                     </xsl:when>
