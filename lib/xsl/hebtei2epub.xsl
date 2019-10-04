@@ -236,12 +236,17 @@
                     </xsl:element>
                 </xsl:element>
                 -->
-                <xsl:call-template name="generateHtmlHead">
-                    <xsl:with-param name="title" select="$navHeader"/>
-                    <xsl:with-param name="prefix" select="''"/>
-                    <xsl:with-param name="width" select="'device-width'"/>
-                    <xsl:with-param name="height" select="'device-height'"/>
-                </xsl:call-template>
+                <xsl:element name="head" namespace="{$HTML_URL}">
+                    <xsl:element name="title" namespace="{$HTML_URL}">
+                        <xsl:value-of select="$navHeader"/>
+                    </xsl:element>
+                    <xsl:element name="meta" namespace="{$HTML_URL}">
+                        <xsl:attribute name="name" select="'viewport'"/>
+                        <xsl:attribute name="content" select="'width=device-width,height=device-height'"/>
+                    </xsl:element>
+                    <xsl:call-template name="insertStyles"/>
+                </xsl:element>
+
                 <xsl:element name="body" namespace="{$HTML_URL}">
                     <xsl:element name="nav" namespace="{$HTML_URL}">
                         <xsl:namespace name="epub" select="$OPS_URL"/>

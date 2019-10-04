@@ -1,0 +1,39 @@
+/* 
+	Temporarily, this CSS stylesheet has the settings for
+	fulcrum_enhanced.css until CSB is ready to interject
+	this stylesheet. This should always work, but once
+	CSB is updated, then this stylesheet should be set back
+	to the fulcrum_default.css settings.
+*/
+
+/* Display default media blocks, such as image thumbnails */
+.default-media-display {
+  display: block;
+}
+
+/* Display enhanced media blocks, such as Fulcrum embedded audio/video/images */
+.enhanced-media-display {
+  display: block;
+}
+
+/* Display enhanced media inline, such as links to Fulcrum resource pages */
+span.enhanced-media-display {
+  display: inline;
+}
+
+/* Classes used for formatting 1,2,3 digit footnote numbers. 
+   These need to remain in this stylesheet.
+*/
+.ofootnote_1digit{font-size: 90%; text-align: justify; margin-top: 0em; margin-bottom: 0em; margin-left: 2.0em; text-indent:-1.9em;}
+.ofootnote_2digit{font-size: 90%; text-align: justify; margin-top: 0em; margin-bottom: 0em; margin-left: 2.2em; text-indent:-1.8em;}
+.ofootnote_3digit{font-size: 90%; text-align: justify; margin-top: 0em; margin-bottom: 0em; margin-left: 2.1em; text-indent:-2.1em;}
+.label_1digit{margin-right: 1.0em;}
+
+/* Class used for displaying paragraph numbers */
+[data-paranum]::before {
+  content: attr(data-paranum) " ";
+  font-style: italic;
+  font-size: 80%;
+  padding-right: 10px;
+  color: #666;
+}
