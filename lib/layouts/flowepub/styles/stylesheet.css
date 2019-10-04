@@ -504,9 +504,9 @@ blockquote[class=epigraph] > p[class=bibl] {
     text-indent: 30px;
 }
 
-section {
-  page-break-after: always;
-  page-break-inside: avoid;
-  break-after: column;
+h4 {
+  break-before: column;
 }
-
+body section section:nth-of-type(1) h4 {
+ break-before: avoid;
+}
