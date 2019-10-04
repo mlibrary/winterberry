@@ -784,6 +784,21 @@
     </xsl:template>
 
     <xsl:template match="tei:note/tei:p[1]">
+        <!-- Added to support HELIO-2993 (Oplontis V1) -->
+        <xsl:variable name="noteId" select="../@xml:id"/>
+        <xsl:variable name="anchorNode" select="//*[@target=$noteId]"/>
+        <xsl:variable name="noteRef">
+            <xsl:choose>
+                <xsl:when test="exists($anchorNode)">
+                    <xsl:value-of select="concat(mlibxsl:genReference($anchorNode),'ref_',$noteId)"/>
+                </xsl:when>
+                <xsl:otherwise>
+                    <xsl:value-of select="'xxxxx'"/>
+                </xsl:otherwise>
+            </xsl:choose>
+        </xsl:variable>
+        <!-- HELIO-2993 -->
+
         <xsl:variable name="childList" select="./*[local-name()='figure' or local-name()='list' or local-name()='table' or local-name()='q' or local-name()='epigraph']"/>
         <xsl:choose>
             <xsl:when test="count($childList) > 0">
@@ -792,7 +807,17 @@
                         <xsl:attribute name="id" select="@xml:id"/>
                     </xsl:if>
                     <xsl:if test="exists(../@n)">
+                        <!-- Prior to HELIO-2993 (Oplontis V1)
                         <xsl:value-of select="concat(../@n,'. ')"/>
+                        -->
+                        <xsl:element name="span" namespace="{$HTML_URL}">
+                            <xsl:attribute name="class" select="'footnote_number'"/>
+                            <xsl:element name="a" namespace="{$HTML_URL}">
+                                <xsl:attribute name="href" select="$noteRef"/>
+                                <xsl:value-of select="../@n"/>
+                            </xsl:element>
+                            <xsl:value-of select="'. '"/>
+                        </xsl:element>
                     </xsl:if>
                     <xsl:apply-templates/>
                 </xsl:element>
@@ -803,7 +828,17 @@
                         <xsl:attribute name="id" select="@xml:id"/>
                     </xsl:if>
                     <xsl:if test="exists(../@n)">
+                        <!-- Prior to HELIO-2993 (Oplontis V1)
                         <xsl:value-of select="concat(../@n,'. ')"/>
+                        -->
+                        <xsl:element name="span" namespace="{$HTML_URL}">
+                            <xsl:attribute name="class" select="'footnote_number'"/>
+                            <xsl:element name="a" namespace="{$HTML_URL}">
+                                <xsl:attribute name="href" select="$noteRef"/>
+                                <xsl:value-of select="../@n"/>
+                            </xsl:element>
+                            <xsl:value-of select="'. '"/>
+                        </xsl:element>
                     </xsl:if>
                     <xsl:apply-templates/>
                 </xsl:element>
@@ -1072,6 +1107,10 @@
                     <xsl:if test="exists(@xml:id)">
                         <xsl:attribute name="id" select="@xml:id"/>
                     </xsl:if>
+                    <!-- Currently, Oplontis V1-2 only -->
+                    <xsl:if test="exists(@n)">
+                        <xsl:attribute name="data-paranum" select="@n"/>
+                    </xsl:if>
                     <xsl:apply-templates/>
                 </xsl:element>
             </xsl:when>
@@ -1079,6 +1118,10 @@
                 <xsl:element name="p" namespace="{$HTML_URL}">
                     <xsl:if test="exists(@xml:id)">
                         <xsl:attribute name="id" select="@xml:id"/>
+                    </xsl:if>
+                    <!-- Currently, Oplontis V1-2 only -->
+                    <xsl:if test="exists(@n)">
+                        <xsl:attribute name="data-paranum" select="@n"/>
                     </xsl:if>
                     <xsl:apply-templates/>
                 </xsl:element>
@@ -1283,6 +1326,7 @@
                 <xsl:choose>
                     <xsl:when test="exists($anchorNode)">
                         <xsl:variable name="href" select="mlibxsl:genReference($anchorNode)"/>
+                        <xsl:attribute name="id" select="concat('ref_', $anchorNode/@xml:id)"/>
                         <xsl:attribute name="href" select="$href"/>
                     </xsl:when>
                     <xsl:otherwise>
@@ -2031,6 +2075,12 @@
             <xsl:attribute name="property" select="'rendition:layout'"/>
             <xsl:value-of select="'reflowable'"/>
         </xsl:element>
+        <!-- Currently, Oplontis V1-2 only
+        <xsl:element name="meta" namespace="{$IDPF_URL}">
+            <xsl:attribute name="property" select="'rendition:flow'"/>
+            <xsl:value-of select="'scrolled-doc'"/>
+        </xsl:element>
+        -->
     </xsl:template>
 
     <xsl:template name="insertUnorderedList">
