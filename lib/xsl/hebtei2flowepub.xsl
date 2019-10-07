@@ -16,6 +16,10 @@
     <xsl:variable name="renditions" select="'flow'"/>
     <xsl:variable name="rendList" select="tokenize($renditions, ' ')"/>
 
+    <!-- Double link book footnotes -->
+    <xsl:key name="footnote_lookup" match="tei:ptr" use="@target"/>
+    <xsl:key name="footnoteref_lookup" match="*" use="@xml:id"/>
+
     <xsl:variable name="valueMaps">
         <xsl:element name="valueMaps">
             <xsl:element name="map">
@@ -776,21 +780,17 @@
         <xsl:element name="br" namespace="{$HTML_URL}"/>
     </xsl:template>
 
-    <xsl:template match="tei:note/tei:pCURRENT[1]">
-        <xsl:element name="p" namespace="{$HTML_URL}">
-            <xsl:value-of select="concat(../@n,'. ')"/>
-            <xsl:apply-templates/>
-        </xsl:element>
-    </xsl:template>
-
     <xsl:template match="tei:note/tei:p[1]">
         <!-- Added to support HELIO-2993 (Oplontis V1) -->
         <xsl:variable name="noteId" select="../@xml:id"/>
+        <!--
         <xsl:variable name="anchorNode" select="//*[@target=$noteId]"/>
+        -->
+        <xsl:variable name="anchorNode" select="key('footnote_lookup', $noteId)"/>
         <xsl:variable name="noteRef">
             <xsl:choose>
                 <xsl:when test="exists($anchorNode)">
-                    <xsl:value-of select="concat(mlibxsl:genReference($anchorNode),'ref_',$noteId)"/>
+                    <xsl:value-of select="mlibxsl:genPtrReference($anchorNode,concat('ref_',$noteId))"/>
                 </xsl:when>
                 <xsl:otherwise>
                     <xsl:value-of select="'xxxxx'"/>
@@ -1321,11 +1321,12 @@
                 <xsl:variable name="target" select="mlibxsl:mapTarget(@target)"/>
                 <!--
                 <xsl:message>@target=<xsl:value-of select="@target"/>,target=<xsl:value-of select="$target"/></xsl:message>
-                -->
                 <xsl:variable name="anchorNode" select="//*[@xml:id=$target][1]"/>
+                -->
+                <xsl:variable name="anchorNode" select="key('footnoteref_lookup',$target)"/>
                 <xsl:choose>
                     <xsl:when test="exists($anchorNode)">
-                        <xsl:variable name="href" select="mlibxsl:genReference($anchorNode)"/>
+                        <xsl:variable name="href" select="mlibxsl:genPtrReference($anchorNode,$anchorNode/@xml:id)"/>
                         <xsl:attribute name="id" select="concat('ref_', $anchorNode/@xml:id)"/>
                         <xsl:attribute name="href" select="$href"/>
                     </xsl:when>
@@ -1344,49 +1345,6 @@
             <xsl:apply-templates/>
         </xsl:element>
     </xsl:template>
-
-    <!--
-    <xsl:template match="tei:refCURRENT">
-
-        <xsl:element name="a" namespace="{$HTML_URL}">
-            <xsl:choose>
-                <xsl:when test="exists(@type)">
-                    <xsl:attribute name="class" select="@type"/>
-                    <xsl:choose>
-                        <xsl:when test="@type='url' and exists(@dlxs:url)">
-                            <xsl:attribute name="href" select="@dlxs:url"/>
-                        </xsl:when>
-                        <xsl:when test="exists(@source) and (@type='pdf' or @type='video' or @type='audio')">
-                            <xsl:variable name="asset" select="mlibxsl:genLinkReference(@source)"/>
-                            <xsl:variable name="href">
-                                <xsl:choose>
-                                    <xsl:when test="exists($asset)">
-                                        <xsl:value-of select="$asset/html:td[@class='link']"/>
-                                    </xsl:when>
-                                    <xsl:otherwise>
-                                        <xsl:value-of select="concat('https://quod.lib.umich.edu/a/acls/images/',@source)"/>
-                                    </xsl:otherwise>
-                                </xsl:choose>
-                            </xsl:variable>
-                            <xsl:attribute name="href" select="$href"/>
-                        </xsl:when>
-                        <xsl:when test="exists(@target)">
-                            <xsl:variable name="target" select="mlibxsl:mapTarget(@target)"/>
-                            <xsl:variable name="anchorNode" select="//*[@xml:id=$target][1]"/>
-                            <xsl:attribute name="href" select="mlibxsl:genReference($anchorNode)"/>
-                        </xsl:when>
-                    </xsl:choose>
-                </xsl:when>
-                <xsl:when test="exists(@target)">
-                    <xsl:variable name="target" select="mlibxsl:mapTarget(@target)"/>
-                    <xsl:variable name="anchorNode" select="//*[@xml:id=$target][1]"/>
-                    <xsl:attribute name="href" select="mlibxsl:genReference($anchorNode)"/>
-                </xsl:when>
-            </xsl:choose>
-            <xsl:apply-templates select="node()"/>
-        </xsl:element>
-    </xsl:template>
-    -->
 
     <xsl:template match="tei:ref">
 
@@ -2235,6 +2193,23 @@
 
         <xsl:variable name="parentId" select="$divNode/ancestor::*[local-name()='div'][last()]/@xml:id"/>
         <xsl:variable name="divId" select="$divNode/@xml:id"/>
+
+        <xsl:choose>
+            <xsl:when test="empty($parentId)">
+                <xsl:sequence select="concat($divId,'.xhtml')"/>
+            </xsl:when>
+            <xsl:otherwise>
+                <xsl:sequence select="concat($parentId,'.xhtml#',$divId)"/>
+            </xsl:otherwise>
+        </xsl:choose>
+        <xsl:sequence select="()"/>
+    </xsl:function>
+
+    <xsl:function name="mlibxsl:genPtrReference">
+        <xsl:param name="divNode"/>
+        <xsl:param name="divId"/>
+
+        <xsl:variable name="parentId" select="$divNode/ancestor::*[local-name()='div'][last()]/@xml:id"/>
 
         <xsl:choose>
             <xsl:when test="empty($parentId)">
