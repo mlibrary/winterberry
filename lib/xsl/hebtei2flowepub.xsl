@@ -2076,11 +2076,11 @@
             <xsl:value-of select="'reflowable'"/>
         </xsl:element>
         <!-- Currently, Oplontis V1-2 only
+        -->
         <xsl:element name="meta" namespace="{$IDPF_URL}">
             <xsl:attribute name="property" select="'rendition:flow'"/>
             <xsl:value-of select="'scrolled-doc'"/>
         </xsl:element>
-        -->
     </xsl:template>
 
     <xsl:template name="insertUnorderedList">
