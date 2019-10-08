@@ -1326,8 +1326,17 @@
                 <xsl:variable name="anchorNode" select="key('footnoteref_lookup',$target)"/>
                 <xsl:choose>
                     <xsl:when test="exists($anchorNode)">
+                        <!-- Want to prevent duplicate IDs. If there is only one reference
+                            to this target (which is almost always the case for a footnote)
+                            the set an ID on the reference for linking back from the target.
+                            Otherwise, if multiple references, do not add an ID since the
+                            target won't know which reference to link back to. Back button
+                            probably best choice here. -->
+                        <xsl:variable name="refNodeList" select="key('footnote_lookup',$target)"/>
+                        <xsl:if test="count($refNodeList) = 1">
+                            <xsl:attribute name="id" select="concat('ref','_', $anchorNode/@xml:id)"/>
+                        </xsl:if>
                         <xsl:variable name="href" select="mlibxsl:genPtrReference($anchorNode,$anchorNode/@xml:id)"/>
-                        <xsl:attribute name="id" select="concat('ref_', $anchorNode/@xml:id)"/>
                         <xsl:attribute name="href" select="$href"/>
                     </xsl:when>
                     <xsl:otherwise>
