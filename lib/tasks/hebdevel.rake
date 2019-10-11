@@ -44,6 +44,10 @@ require 'uri'
 
 require_relative "common.rb"
 
+if HEBDIR.empty?
+  return
+end
+
 require_relative "asset_list.rb"
 require_relative "resources.rb"
 

@@ -5,8 +5,8 @@
 # Process parameters passed as environment variables.
 #   HEBDIR            HEB book source directory
 
-HEBDIR=ENV['HEBDIR']
-ROOTDIR=ENV['HEBROOTDIR']
+HEBDIR=ENV['HEBDIR'] || ""
+ROOTDIR=ENV['HEBROOTDIR'] || ""
 
 # Determine the HEB ID. Assumes that
 # the last component of the HEB directory
@@ -41,7 +41,8 @@ if (!File.exists?(srcdlxspath))
     #srcdlxspath=SRCFIXEPUBDLXS
     srcdlxspath=File.join(SRCTIFSCANDIR, "#{HEBID}.xml")
     if (!File.exists?(srcdlxspath))
-        abort("Error: unknown HEB ID #{HEBID}")
+        puts "Error: unknown HEB ID #{HEBID}"
+        return
     end
 end
 LAYOUT=layout

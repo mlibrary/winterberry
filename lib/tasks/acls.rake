@@ -6,6 +6,10 @@
 
 require_relative "common.rb"
 
+if HEBDIR.empty?
+  return
+end
+
 namespace :acls do
 
     # Generate the paths to ACLS resource files.

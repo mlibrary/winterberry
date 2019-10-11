@@ -11,6 +11,10 @@ require 'rake/clean'
 
 require_relative "common.rb"
 
+if HEBDIR.empty?
+  return
+end
+
 namespace :fonts do
 
     # Fonts table markup

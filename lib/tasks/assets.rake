@@ -29,6 +29,10 @@ require 'image_size'
 
 require_relative "common.rb"
 
+if HEBDIR.empty?
+  return
+end
+
 namespace :assets do
 
     # Assets table markup

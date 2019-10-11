@@ -27,9 +27,9 @@ def load_hebid(path)
     Hebid.create do |item|
       item.hebid = entry["heb_id"]
       if item.save
-        puts "updated/created #{item.hebid}"
+        puts "Hebid: updated/created #{item.hebid}"
       else
-        puts "#{item.hebid} update/create FAILED #{item.errors.messages.inspect}"
+        puts "Hebid: #{item.hebid} update/create FAILED #{item.errors.messages.inspect}"
       end
     end
   end
@@ -283,12 +283,85 @@ def load_hebid_subjects(path)
   end
 end
 
+def load_hebid_related_titles(path)
+  HebidRelatedTitle.delete_all
+
+  yml_item_list = yml_load(path)
+  yml_item_list.each_entry do |entry|
+
+    hebid = Hebid.where(hebid: entry['heb_id']).first
+    if hebid == nil
+      puts "Error: no entry for HEB #{entry['heb_id']}."
+      STDOUT.flush
+      next
+    end
+
+    item_list = entry['items']
+    if item_list == nil
+      puts "Error: no items for #{entry['heb_id']}"
+      STDOUT.flush
+      next
+    end
+
+    item_list.each do |item|
+      HebidRelatedTitle.create do |ch|
+        ch.hebid_id = hebid.id
+        ch.related_hebid = item['related_hebid']
+        ch.related_title = item['related_title']
+        ch.related_authors = item['related_authors']
+        ch.related_pubinfo = item['related_pubinfo']
+        if ch.save
+          puts "HebidRelatedTitle: updated/created #{hebid.hebid}"
+        else
+          puts "HebidRelatedTitle: #{hebid.hebid} update/create FAILED #{ch.errors.messages.inspect}"
+        end
+      end
+    end
+  end
+end
+
+def load_hebid_reviews(path)
+  HebidReview.delete_all
+
+  yml_item_list = yml_load(path)
+  yml_item_list.each_entry do |entry|
+
+    hebid = Hebid.where(hebid: entry['heb_id']).first
+    if hebid == nil
+      puts "Error: no entry for HEB #{entry['heb_id']}."
+      STDOUT.flush
+      next
+    end
+
+    item_list = entry['items']
+    if item_list == nil
+      puts "Error: no items for #{entry['heb_id']}"
+      STDOUT.flush
+      next
+    end
+
+    item_list.each do |item|
+      HebidReview.create do |ch|
+        ch.hebid_id = hebid.id
+        ch.journal_abbrev = item['journal_abbrev']
+        ch.review_label = item['review_label']
+        ch.review_url = item['review_url']
+        if ch.save
+          puts "HebidReview: updated/created #{hebid.hebid}"
+        else
+          puts "HebidReview: #{hebid.hebid} update/create FAILED #{ch.errors.messages.inspect}"
+        end
+      end
+    end
+  end
+end
+
 load_hebid(File.join("db", "yml", "hebid.yml"))
 load_copyholder(File.join("db", "yml", "copyholder.yml"))
-# TODO load_related_title(File.join("db", "yml", "related_title.yml"))
-# TODO load_review(File.join("db", "yml", "review.yml"))
 load_series(File.join("db", "yml", "series.yml"))
 load_subject(File.join("db", "yml", "subject.yml"))
 load_hebid_copyholders(File.join("db", "yml", "hebid_copyholders.yml"))
 load_hebid_series(File.join("db", "yml", "hebid_series.yml"))
 load_hebid_subjects(File.join("db", "yml", "hebid_subjects.yml"))
+load_hebid_related_titles(File.join("db", "yml", "hebid_related_titles.yml"))
+load_hebid_reviews(File.join("db", "yml", "hebid_reviews.yml"))
