@@ -21,8 +21,21 @@ namespace :acls do
     task :files => [ CPHOLDERPATH, RELATEDPATH, REVIEWSPATH, SERIESPATH, SUBJECTPATH ]
 
     # Process copyholder
-    file CPHOLDERPATH => [ METAINFSRCDIR ] do
-        cpacls(ACLSCPHOLDERPATH, CPHOLDERPATH, "Copyright Holder")
+    file CPHOLDERPATH => [ :environment, METAINFSRCDIR ] do
+        #cpacls(ACLSCPHOLDERPATH, CPHOLDERPATH, "Copyright Holder")
+
+      heb = Hebid.find_by hebid: HEBID
+      if heb == nil
+        puts "Error: #{HEBID} record not found."
+        return
+      end
+
+      heading = "<tr><th class=\"copyholder\">Organization/Name</th><th class=\"puburl\">URL</th></tr>"
+      body = ""
+      heb.copyholders.each do |cp|
+        body += "<tr><td class=\"copyholder\">#{cp.copyholder}</td><td class=\"puburl\">#{cp.url}</td></tr>"
+      end
+      write_acls(CPHOLDERPATH, "Copyright Holder", heading, body)
     end
 
     # Process related titles
@@ -36,13 +49,39 @@ namespace :acls do
     end
 
     # Process series
-    file SERIESPATH => [ METAINFSRCDIR ] do
-        cpacls(ACLSSERIESPATH, SERIESPATH, "Series")
+    file SERIESPATH => [ :environment, METAINFSRCDIR ] do
+        #cpacls(ACLSSERIESPATH, SERIESPATH, "Series")
+
+      heb = Hebid.find_by hebid: HEBID
+      if heb == nil
+        puts "Error: #{HEBID} record not found."
+        return
+      end
+
+      heading = "<tr><th class=\"series\">Series</th></tr>"
+      body = ""
+      heb.series.each do |s|
+        body += "<tr><td class=\"series\">#{s.series_title}</td></tr>"
+      end
+      write_acls(SERIESPATH, "Series", heading, body)
     end
 
     # Process subject
-    file SUBJECTPATH => [ METAINFSRCDIR ] do
-        cpacls(ACLSSUBJECTPATH, SUBJECTPATH, "Subject")
+    file SUBJECTPATH => [ :environment, METAINFSRCDIR ] do
+        #cpacls(ACLSSUBJECTPATH, SUBJECTPATH, "Subject")
+
+      heb = Hebid.find_by hebid: HEBID
+      if heb == nil
+        puts "Error: #{HEBID} record not found."
+        return
+      end
+
+      heading = "<tr><th class=\"subject\">Subject</th></tr>"
+      body = ""
+      heb.series.each do |s|
+        body += "<tr><td class=\"subject\">#{s.subject_title}</td></tr>"
+      end
+      write_acls(SUBJECTPATH, "Subject", heading, body)
     end
 
     # Method for copying the resource file. If the resource
@@ -72,4 +111,11 @@ namespace :acls do
         end
     end
 
+    def write_acls(dest_file, caption, heading, body)
+      f_noext = File.basename(dest_file, File.extname(dest_file))
+      File.open(dest_file, "w") { |f|
+          f.write(sprintf(MARKUP_TBL, "#{HEBID}_#{f_noext}", HEBID, caption, heading, body))
+      }
+      puts "Created #{File.basename(dest_file)}"
+    end
 end
