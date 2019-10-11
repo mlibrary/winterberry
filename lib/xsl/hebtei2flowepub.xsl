@@ -1107,10 +1107,11 @@
                     <xsl:if test="exists(@xml:id)">
                         <xsl:attribute name="id" select="@xml:id"/>
                     </xsl:if>
-                    <!-- Currently, Oplontis V1-2 only -->
+                    <!-- Currently, Oplontis V1-2 only
                     <xsl:if test="exists(@n)">
                         <xsl:attribute name="data-paranum" select="@n"/>
                     </xsl:if>
+                    -->
                     <xsl:apply-templates/>
                 </xsl:element>
             </xsl:when>
@@ -1119,10 +1120,11 @@
                     <xsl:if test="exists(@xml:id)">
                         <xsl:attribute name="id" select="@xml:id"/>
                     </xsl:if>
-                    <!-- Currently, Oplontis V1-2 only -->
+                    <!-- Currently, Oplontis V1-2 only
                     <xsl:if test="exists(@n)">
                         <xsl:attribute name="data-paranum" select="@n"/>
                     </xsl:if>
+                    -->
                     <xsl:apply-templates/>
                 </xsl:element>
             </xsl:otherwise>

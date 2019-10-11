@@ -130,14 +130,6 @@ MARKUP_TBL = <<-MTBL
 </table>
 MTBL
 
-MARKUP_TBL_EMPTY = <<-MTBLE
-<?xml version="1.0" encoding="UTF-8"?>
-<table xmlns="http://www.w3.org/1999/xhtml" id="%s" title="%s" role="empty">
-<caption>%s</caption>
-<tbody><tr><td/></tr></tbody>
-</table>
-MTBLE
-
 directory HEBDIR
 directory METAINFSRCDIR
 

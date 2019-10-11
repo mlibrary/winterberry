@@ -289,7 +289,7 @@ namespace :winterberry do
                 rows += sprintf(MARKUP_ROW_SCANS, f_basename, format, width, height)
             }
         end
-        File.open(IMAGESPATH, "w") { |f| f.write(sprintf(MARKUP_TBL, "#{HEBID}_scans", HEBID, MARKUP_HEADER_SCANS, rows)) }
+        File.open(IMAGESPATH, "w") { |f| f.write(sprintf(MARKUP_TBL, "#{HEBID}_scans", HEBID, "Scans", MARKUP_HEADER_SCANS, rows)) }
 
         # Use XSLT to generate the updated epub structure.
         xslt(LAYOUTXSLPATH, TEIPATH)

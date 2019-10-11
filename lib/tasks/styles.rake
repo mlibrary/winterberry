@@ -46,7 +46,7 @@ namespace :styles do
 
         # Generate the HTML files for this HEB directory.
         File.open(STYLESPATH, "w") { |f|
-            f.write(sprintf(MARKUP_TBL, "#{HEBID}_stylesheets", HEBID, MARKUP_HEADER_STYLES, rows))
+            f.write(sprintf(MARKUP_TBL, "#{HEBID}_stylesheets", HEBID, "Stylesheets", MARKUP_HEADER_STYLES, rows))
         }
     end
 

@@ -48,7 +48,7 @@ namespace :fonts do
 
         # Generate the HTML files for this HEB directory.
         File.open(FONTSPATH, "w") { |f|
-            f.write(sprintf(MARKUP_TBL, "#{HEBID}_fonts", HEBID, MARKUP_HEADER_FONTS, rows))
+            f.write(sprintf(MARKUP_TBL, "#{HEBID}_fonts", HEBID, "Fonts", MARKUP_HEADER_FONTS, rows))
         }
     end
 

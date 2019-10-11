@@ -26,8 +26,6 @@ namespace :acls do
 
     # Process copyholder
     file CPHOLDERPATH => [ :environment, METAINFSRCDIR ] do
-        #cpacls(ACLSCPHOLDERPATH, CPHOLDERPATH, "Copyright Holder")
-
       heb = Hebid.find_by hebid: HEBID
       if heb == nil
         puts "Error: #{HEBID} record not found."
@@ -43,19 +41,51 @@ namespace :acls do
     end
 
     # Process related titles
-    file RELATEDPATH => [ METAINFSRCDIR ] do
-        cpacls(ACLSRELATEDPATH, RELATEDPATH, "Related Titles")
+    file RELATEDPATH => [ :environment, METAINFSRCDIR ] do
+      heb = Hebid.find_by hebid: HEBID
+      if heb == nil
+        puts "Error: #{HEBID} record not found."
+        return
+      end
+
+      related_title_list = HebidRelatedTitle.where(hebid_id: heb.id)
+      if related_title_list == nil
+        puts "Warning: #{HEBID} no related titles found"
+        return
+      end
+
+      heading = "<tr><th class=\"related_hebid\">HEB Id</th><th class=\"related_title\">Title</th><th class=\"related_authors\">Authors</th><th class=\"related_pubinfo\">Publication Information</th></tr>"
+      body = ""
+      related_title_list.each do |cp|
+        body += "<tr><td class=\"related_hebid\">#{cp.related_hebid}</td><td class=\"related_title\">#{cp.related_title}</td><td class=\"related_authors\">#{cp.related_authors}</td><td class=\"related_pubinfo\">#{cp.related_pubinfo}</td></tr>"
+      end
+      write_acls(RELATEDPATH, "Related Titles", heading, body)
     end
 
     # Process reviews
-    file REVIEWSPATH => [ METAINFSRCDIR ] do
-        cpacls(ACLSREVIEWSPATH, REVIEWSPATH, "Reviews")
+    file REVIEWSPATH => [ :environment, METAINFSRCDIR ] do
+      heb = Hebid.find_by hebid: HEBID
+      if heb == nil
+        puts "Error: #{HEBID} record not found."
+        return
+      end
+
+      review_list = HebidReview.where(hebid_id: heb.id)
+      if review_list == nil
+        puts "Warning: #{HEBID} no reviews found"
+        return
+      end
+
+      heading = "<tr><th class=\"journal_abbrev\">Journal Abbreviation</th><th class=\"review_label\">Label</th><th class=\"review_url\">URL</th></tr>"
+      body = ""
+      review_list.each do |cp|
+        body += "<tr><td class=\"journal_abbrev\">#{cp.journal_abbrev}</td><td class=\"review_label\">#{cp.review_label}</td><td class=\"review_url\">#{cp.review_url}</td></tr>"
+      end
+      write_acls(REVIEWSPATH, "Reviews", heading, body)
     end
 
     # Process series
     file SERIESPATH => [ :environment, METAINFSRCDIR ] do
-        #cpacls(ACLSSERIESPATH, SERIESPATH, "Series")
-
       heb = Hebid.find_by hebid: HEBID
       if heb == nil
         puts "Error: #{HEBID} record not found."
@@ -72,47 +102,18 @@ namespace :acls do
 
     # Process subject
     file SUBJECTPATH => [ :environment, METAINFSRCDIR ] do
-        #cpacls(ACLSSUBJECTPATH, SUBJECTPATH, "Subject")
-
       heb = Hebid.find_by hebid: HEBID
       if heb == nil
         puts "Error: #{HEBID} record not found."
         return
       end
 
-      heading = "<tr><th class=\"subject\">Subject</th></tr>"
+      heading = "<tr><th class=\"subject\">Subject Designation</th></tr>"
       body = ""
-      heb.series.each do |s|
+      heb.subjects.each do |s|
         body += "<tr><td class=\"subject\">#{s.subject_title}</td></tr>"
       end
-      write_acls(SUBJECTPATH, "Subject", heading, body)
-    end
-
-    # Method for copying the resource file. If the resource
-    # does not current reside in the epub directory structure,
-    # or the current file is out of date with the source, then
-    # copy resource into the epub directory structure.
-    #
-    # If the source resource file does not exist, then create
-    # file with an empty HTML table in the epub structure for
-    # this resource so when the TEI file is processed during
-    # metadata CSV generation, it can determine that the
-    # resource should not be used as xhtml file metadata or
-    # be included as a media asset.
-    def cpacls(srcfile, destfile, caption)
-        if File.exists?(srcfile)
-            # Source resource file exists, copy it out of date.
-            if !File.exists?(destfile) or File.mtime(destfile).to_f > File.mtime(srcfile).to_f
-                cp(srcfile, destfile)
-            end
-        else
-            # Generate the empty html table for this file.
-            print "Warning: #{srcfile} doesn't exist. Template created.\n"
-            f_noext = File.basename(destfile, File.extname(destfile))
-            File.open(destfile, "w") { |f|
-                f.write(sprintf(MARKUP_TBL_EMPTY, "#{HEBID}_#{f_noext}", HEBID, caption))
-            }
-        end
+      write_acls(SUBJECTPATH, "Subject Designation", heading, body)
     end
 
     def write_acls(dest_file, caption, heading, body)
