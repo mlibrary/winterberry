@@ -124,7 +124,8 @@ XHTMLDIR=File.join(OEBPSDIR, "xhtml")
 MARKUP_TBL = <<-MTBL
 <?xml version="1.0" encoding="UTF-8"?>
 <table xmlns="http://www.w3.org/1999/xhtml" id="%s" title="%s">
-<thead><tr>%s</tr></thead>
+<caption>%s</caption>
+<thead>%s</thead>
 <tbody>%s</tbody>
 </table>
 MTBL

@@ -230,7 +230,7 @@ namespace :assets do
 
         # Generate the assets.html HTML file that contains a
         # table listing the EPUB assets.
-        File.open(ASSETSPATH, "w") { |f| f.write(sprintf(MARKUP_TBL, "#{HEBID}_assets", HEBID, MARKUP_HEADER_ASSETS, rows)) }
+        File.open(ASSETSPATH, "w") { |f| f.write(sprintf(MARKUP_TBL, "#{HEBID}_assets", HEBID, "Assets", MARKUP_HEADER_ASSETS, rows)) }
     end
 
     def csv2media_assets(csv_path)
