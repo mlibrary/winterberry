@@ -434,6 +434,10 @@
   items:
   -
     subject: "European: 1800-present"
+- heb_id: heb00208.0001.001
+  items:
+  -
+    subject: "Middle Eastern 2: Ancient to 632"
 - heb_id: heb00212.0001.001
   items:
   -
@@ -9738,6 +9742,10 @@
   items:
   -
     subject: "Architectural History"
+- heb_id: heb05823.0001.001
+  items:
+  -
+    subject: "Architectural History"
 - heb_id: heb05825.0001.001
   items:
   -
@@ -15998,6 +16006,10 @@
   items:
   -
     subject: "Asian: China and Inner Asia"
+- heb_id: heb09180.0001.001
+  items:
+  -
+    subject: "Asian: China and Inner Asia"
 - heb_id: heb09182.0001.001
   items:
   -
@@ -16482,6 +16494,10 @@
   items:
   -
     subject: "Art History"
+- heb_id: heb30537.0001.001
+  items:
+  -
+    subject: "European 3: 400-1400"
 - heb_id: heb30542.0001.001
   items:
   -
@@ -18346,6 +18362,10 @@
   items:
   -
     subject: "Rhetoric"
+- heb_id: heb31695.0001.001
+  items:
+  -
+    subject: "Science & Technology"
 - heb_id: heb31697.0001.001
   items:
   -
@@ -20850,6 +20870,12 @@
   items:
   -
     subject: "Native Peoples of the Americas"
+- heb_id: heb33710.0001.001
+  items:
+  -
+    subject: "Architectural History"
+  -
+    subject: "European 3: 400-1400"
 - heb_id: heb33712.0001.001
   items:
   -
