@@ -4,6 +4,8 @@
 # is referenced by the epub TEI file when generating
 # the epub directory structure or the book metadata csv.
 
+require 'htmlentities'
+
 require_relative "common.rb"
 
 if HEBDIR.empty?
@@ -32,10 +34,11 @@ namespace :acls do
         return
       end
 
+      coder = HTMLEntities.new
       heading = "<tr><th class=\"copyholder\">Organization/Name</th><th class=\"puburl\">URL</th></tr>"
       body = ""
       heb.copyholders.each do |cp|
-        body += "<tr><td class=\"copyholder\">#{cp.copyholder}</td><td class=\"puburl\">#{cp.url}</td></tr>"
+        body += "<tr><td class=\"copyholder\">#{coder.encode(cp.copyholder)}</td><td class=\"puburl\">#{cp.url}</td></tr>"
       end
       write_acls(CPHOLDERPATH, "Copyright Holder", heading, body)
     end
@@ -54,10 +57,11 @@ namespace :acls do
         return
       end
 
+      coder = HTMLEntities.new
       heading = "<tr><th class=\"related_hebid\">HEB Id</th><th class=\"related_title\">Title</th><th class=\"related_authors\">Authors</th><th class=\"related_pubinfo\">Publication Information</th></tr>"
       body = ""
       related_title_list.each do |cp|
-        body += "<tr><td class=\"related_hebid\">#{cp.related_hebid}</td><td class=\"related_title\">#{cp.related_title}</td><td class=\"related_authors\">#{cp.related_authors}</td><td class=\"related_pubinfo\">#{cp.related_pubinfo}</td></tr>"
+        body += "<tr><td class=\"related_hebid\">#{cp.related_hebid}</td><td class=\"related_title\">#{coder.encode(cp.related_title)}</td><td class=\"related_authors\">#{coder.encode(cp.related_authors)}</td><td class=\"related_pubinfo\">#{coder.encode(cp.related_pubinfo)}</td></tr>"
       end
       write_acls(RELATEDPATH, "Related Titles", heading, body)
     end
@@ -76,10 +80,11 @@ namespace :acls do
         return
       end
 
+      coder = HTMLEntities.new
       heading = "<tr><th class=\"journal_abbrev\">Journal Abbreviation</th><th class=\"review_label\">Label</th><th class=\"review_url\">URL</th></tr>"
       body = ""
       review_list.each do |cp|
-        body += "<tr><td class=\"journal_abbrev\">#{cp.journal_abbrev}</td><td class=\"review_label\">#{cp.review_label}</td><td class=\"review_url\">#{cp.review_url}</td></tr>"
+        body += "<tr><td class=\"journal_abbrev\">#{coder.encode(cp.journal_abbrev)}</td><td class=\"review_label\">#{coder.encode(cp.review_label)}</td><td class=\"review_url\">#{cp.review_url}</td></tr>"
       end
       write_acls(REVIEWSPATH, "Reviews", heading, body)
     end
@@ -92,10 +97,11 @@ namespace :acls do
         return
       end
 
+      coder = HTMLEntities.new
       heading = "<tr><th class=\"series\">Series</th></tr>"
       body = ""
       heb.series.each do |s|
-        body += "<tr><td class=\"series\">#{s.series_title}</td></tr>"
+        body += "<tr><td class=\"series\">#{coder.encode(s.series_title)}</td></tr>"
       end
       write_acls(SERIESPATH, "Series", heading, body)
     end
@@ -108,10 +114,11 @@ namespace :acls do
         return
       end
 
+      coder = HTMLEntities.new
       heading = "<tr><th class=\"subject\">Subject Designation</th></tr>"
       body = ""
       heb.subjects.each do |s|
-        body += "<tr><td class=\"subject\">#{s.subject_title}</td></tr>"
+        body += "<tr><td class=\"subject\">#{coder.encode(s.subject_title)}</td></tr>"
       end
       write_acls(SUBJECTPATH, "Subject Designation", heading, body)
     end

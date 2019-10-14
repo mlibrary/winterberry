@@ -6,17 +6,28 @@ require "nokogiri"
 
 class EmptyTableParser < Nokogiri::XML::SAX::Document
     def initialize
-        @role_empty = false
+        @in_tbody = false
+        @role_empty = true
     end
 
     def start_element(name, attrs = [])
         # Handle each element, expecting the name and any attributes
         #puts "<#{name}: #{attrs.map {|x| x.inspect}.join(', ')}>"
         case name
-        when "table"
-            tbl = attrs.to_h
-            @role_empty = tbl['role'] == 'empty'
+        when "tbody"
+          @in_body = true
+        when "tr"
+          if @in_tbody
+            @role_empty = false
+          end
         end
+    end
+
+    def end_element(name)
+      case name
+        when "tbody"
+          @in_body = false
+      end
     end
 
     def is_empty?
