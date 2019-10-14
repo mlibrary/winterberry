@@ -6,6 +6,9 @@
 #   HEBDIR            HEB book source directory
 
 HEBDIR=ENV['HEBDIR'] || ""
+if HEBDIR.empty?
+  return
+end
 ROOTDIR=ENV['HEBROOTDIR'] || ""
 
 # Determine the HEB ID. Assumes that
