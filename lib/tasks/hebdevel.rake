@@ -59,10 +59,12 @@ namespace :winterberry do
 
     # Assets table markup
     MARKUP_HEADER_SCANS = <<-MHA
+    <tr>
     <th class="source">Source</th>
     <th class="format">Format</th>
     <th class="width">Width</th>
     <th class="height">Height</th>
+    </tr>
     MHA
 
     MARKUP_ROW_SCANS = <<-MRA
