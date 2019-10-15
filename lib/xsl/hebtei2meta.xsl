@@ -161,7 +161,7 @@
                         <xsl:value-of select="concat($dc-identifier,'.epub')"/>
                     </xsl:when>
                     <xsl:when test=". = 'Allow Download?'">
-                        <xsl:value-of select="'yes'"/>
+                        <xsl:value-of select="'no'"/>
                     </xsl:when>
                     <xsl:when test=". ='Representative Kind'">
                         <xsl:value-of select="'epub'"/>
