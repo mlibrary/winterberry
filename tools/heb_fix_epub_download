@@ -1,0 +1,55 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require 'optparse'
+require 'ostruct'
+
+# Process the script parameters.
+options = OpenStruct.new
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} noid [noid...]"
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    puts opts
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+noid_list = ARGV
+
+require 'csv'
+
+require_relative '../lib/csvfile'
+require_relative '../lib/services'
+require_relative '../lib/manifest'
+
+epub_noid_list = []
+noid_list.each do |noid|
+  csv_body = HeliotropeService.new.monograph_noid_export(noid)
+  manifest_csv = CSVFile.read(:csv_body => csv_body)
+  epub_fileset = epub_row = manifest_csv.find {|row| row['representative_kind'] == 'epub' }
+
+  puts "EPUB noid: #{epub_fileset['noid']}"
+  epub_noid_list << epub_fileset['noid']
+end
+
+CSV.open(
+        "round16_batch1_3_fix.csv",
+        "w",
+        :write_headers=> true,
+        :headers => ["NOID", "Allow Download?"]
+      ) do |csv|
+
+  epub_noid_list.each do |epub_noid|
+
+    csv_row = [
+            epub_noid,
+            "no"
+    ]
+    csv << csv_row
+  end
+end

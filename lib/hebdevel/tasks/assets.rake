@@ -29,14 +29,11 @@ require 'image_size'
 
 require_relative "common.rb"
 
-if HEBDIR.empty?
-  return
-end
-
 namespace :assets do
 
     # Assets table markup
     MARKUP_HEADER_ASSETS = <<-MHA
+    <tr>
     <th class="asset">Asset</th>
     <th class="assetpath">Path</th>
     <th class="mime-type">Mime Type</th>
@@ -50,6 +47,7 @@ namespace :assets do
     <th class="noid">NOID</th>
     <th class="link">Link</th>
     <th class="embed-markup">Embedded Markup</th>
+    </tr>
     MHA
 
     MARKUP_ROW_ASSETS = <<-MRA

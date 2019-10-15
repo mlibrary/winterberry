@@ -244,7 +244,9 @@
                         <xsl:attribute name="name" select="'viewport'"/>
                         <xsl:attribute name="content" select="'width=device-width,height=device-height'"/>
                     </xsl:element>
-                    <xsl:call-template name="insertStyles"/>
+                    <xsl:call-template name="insertStyles">
+                        <xsl:with-param name="prefix" select="''"/>
+                    </xsl:call-template>
                 </xsl:element>
 
                 <xsl:element name="body" namespace="{$HTML_URL}">

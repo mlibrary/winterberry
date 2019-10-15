@@ -44,25 +44,23 @@ require 'uri'
 
 require_relative "common.rb"
 
-if HEBDIR.empty?
-  return
-end
-
 require_relative "asset_list.rb"
 require_relative "resources.rb"
 
-require_relative "../xslt"
+require_relative "../../xslt"
 
-Dir.glob("#{TARGETRB}/*.rake").each { |r| import r }
+#Dir.glob("#{TARGETTASKS}/*.rake").each { |r| import r }
 
 namespace :winterberry do
 
     # Assets table markup
     MARKUP_HEADER_SCANS = <<-MHA
+    <tr>
     <th class="source">Source</th>
     <th class="format">Format</th>
     <th class="width">Width</th>
     <th class="height">Height</th>
+    </tr>
     MHA
 
     MARKUP_ROW_SCANS = <<-MRA
