@@ -9,10 +9,6 @@
 
 require_relative "common.rb"
 
-if HEBDIR.empty?
-  return
-end
-
 namespace :styles do
 
     # Styles table markup

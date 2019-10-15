@@ -6,9 +6,6 @@
 #   HEBDIR            HEB book source directory
 
 HEBDIR=ENV['HEBDIR'] || ""
-if HEBDIR.empty?
-  return
-end
 ROOTDIR=ENV['HEBROOTDIR'] || ""
 
 # Determine the HEB ID. Assumes that
@@ -20,10 +17,10 @@ OS=ENV['OS']
 
 # Determine process paths relative to this file.
 RAKEPATH="#{__FILE__}"
-TARGETRB=File.dirname(RAKEPATH)
-TARGETLIB=File.dirname(TARGETRB)
+TARGETTASKS=File.dirname(RAKEPATH)
+TARGETHEB=File.dirname(TARGETTASKS)
+TARGETLIB=File.dirname(TARGETHEB)
 TARGETDIR=File.dirname(TARGETLIB)
-TARGETBIN=File.join(TARGETDIR, "bin")
 
 # For fixepub, determine the source tif/png
 # images directories for this book
@@ -49,7 +46,7 @@ if (!File.exists?(srcdlxspath))
     end
 end
 LAYOUT=layout
-TARGETLAYOUTROOT=File.join(TARGETLIB, "layouts", LAYOUT)
+TARGETLAYOUTROOT=File.join(TARGETHEB, "layouts", LAYOUT)
 
 SRCDLXSPATH=srcdlxspath
 ORGSRCDLXSPATH=File.join(File.dirname(srcdlxspath),"#{HEBID}_dlxs_org.xml")
@@ -64,9 +61,9 @@ CHECKJAR=File.join(TARGETLIB, "jars", "epubcheck-jar-with-dependencies.jar")
 # DLXS => TEI
 # TEI => CSV
 # TEI => {fixepub,flowepub}
-TEIXSLPATH=File.join(TARGETLIB, "xsl", "hebdlxs2tei.xsl")
-METAXSLPATH=File.join(TARGETLIB, "xsl", "hebtei2meta.xsl")
-LAYOUTXSLPATH=File.join(TARGETLIB, "xsl", "hebtei2#{LAYOUT}.xsl")
+TEIXSLPATH=File.join(TARGETHEB, "xsl", "hebdlxs2tei.xsl")
+METAXSLPATH=File.join(TARGETHEB, "xsl", "hebtei2meta.xsl")
+LAYOUTXSLPATH=File.join(TARGETHEB, "xsl", "hebtei2#{LAYOUT}.xsl")
 
 # Set path for layout specific paths
 LAYOUTROOT=File.join(ROOTDIR, LAYOUT)

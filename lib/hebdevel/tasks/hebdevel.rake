@@ -44,16 +44,12 @@ require 'uri'
 
 require_relative "common.rb"
 
-if HEBDIR.empty?
-  return
-end
-
 require_relative "asset_list.rb"
 require_relative "resources.rb"
 
-require_relative "../xslt"
+require_relative "../../xslt"
 
-Dir.glob("#{TARGETRB}/*.rake").each { |r| import r }
+#Dir.glob("#{TARGETTASKS}/*.rake").each { |r| import r }
 
 namespace :winterberry do
 

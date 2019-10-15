@@ -8,19 +8,7 @@ require 'htmlentities'
 
 require_relative "common.rb"
 
-if HEBDIR.empty?
-  return
-end
-
-namespace :acls do
-
-    # Generate the paths to ACLS resource files.
-    ACLSDIR=File.join(RESOURCESDIR, "aclsdb")
-    ACLSCPHOLDERPATH=File.join(ACLSDIR, "copyholder", "#{HEBID}.html")
-    ACLSRELATEDPATH=File.join(ACLSDIR, "related_title", "#{HEBID}.html")
-    ACLSREVIEWSPATH=File.join(ACLSDIR, "reviews", "#{HEBID}.html")
-    ACLSSERIESPATH=File.join(ACLSDIR, "series", "#{HEBID}.html")
-    ACLSSUBJECTPATH=File.join(ACLSDIR, "subject", "#{HEBID}.html")
+namespace :winterberry do
 
     task :default => [ :files ]
 
