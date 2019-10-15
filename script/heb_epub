@@ -7,7 +7,7 @@ require 'ostruct'
 # Process the script parameters.
 options = OpenStruct.new
 option_parser = OptionParser.new do |opts|
-  opts.banner = "Usage: #{File.basename(__FILE__)} [task] [<hebdir>..]"
+  opts.banner = "Usage: #{File.basename(__FILE__)} [task] [hebdir]"
   opts.on_tail('-h', '--help', 'Print this help message') do
     puts opts
     exit 0
@@ -31,10 +31,7 @@ if task != "clobber"
   task = "winterberry:" + task
 end
 
-hebdir_list = ARGV[1..-1]
-if hebdir_list.count == 0
-  hebdir_list = [ Dir.pwd ]
-end
+heb_dir_list = ARGV.count > 1 ? ARGV[1..-1] : [ Dir.pwd ]
 
 # Set JAVA_HOME as Java is used for XSLT 2.0 transformations.
 # Explicitly set for my laptop (Windows) or tang (Linux).
@@ -47,19 +44,23 @@ else
 end
 
 ENV['JAVA_HOME'] = java_home
+ENV['HEBROOTDIR'] = hebrootdir
 ENV['PATH'] = File.join(java_home, "bin") + Gem.path_separator + ENV['PATH']
 
-hebdir_list.each do |hebdir|
-  ENV['HEBDIR'] = File.expand_path(hebdir)
-  ENV['HEBROOTDIR'] = hebrootdir
+Rails.application.load_tasks
 
-  Rails.application.load_tasks
-  Dir.glob(File.join(root_dir, "lib", "hebdevel", "tasks", "*.rake")).each do |rf|
-    Rake.load_rakefile rf
+# Traversing a list, but currently this only works for the first item.
+heb_dir_list.each do |heb_dir|
+  heb_dir = File.expand_path(heb_dir)
+  if !File.exists?(heb_dir) or !File.directory?(heb_dir)
+    abort("Error: no resource mapping file for project #{File.basename(heb_dir)}")
   end
 
+  puts File.basename(heb_dir)
+  STDOUT.flush
+
+  ENV['HEBDIR'] = File.expand_path(heb_dir)
+  Rake.load_rakefile File.join(root_dir, "lib", "hebdevel", "tasks", "hebdevel.rake")
   Rake::Task[task].invoke
-  Rake.application.clear
+  Rake::Task[task].reenable
 end
-
-

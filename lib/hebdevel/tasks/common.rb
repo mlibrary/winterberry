@@ -130,6 +130,25 @@ MARKUP_TBL = <<-MTBL
 </table>
 MTBL
 
+# Assets table markup
+MARKUP_HEADER_SCANS = <<-MHA
+<tr>
+<th class="source">Source</th>
+<th class="format">Format</th>
+<th class="width">Width</th>
+<th class="height">Height</th>
+</tr>
+MHA
+
+MARKUP_ROW_SCANS = <<-MRA
+<tr>
+<td class="source">%s</td>
+<td class="format">%s</td>
+<td class="width">%s</td>
+<td class="height">%s</td>
+</tr>
+MRA
+
 directory HEBDIR
 directory METAINFSRCDIR
 
