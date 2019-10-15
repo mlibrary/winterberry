@@ -73,3 +73,4 @@ gem "rubyzip", ">= 1.3.0"
 gem 'turnsole', :git => 'https://github.com/mlibrary/turnsole'
 
 gem "image_size", "~> 2.0"
+gem "yaml_db"
