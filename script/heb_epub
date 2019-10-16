@@ -52,9 +52,6 @@ Rails.application.load_tasks
 # Traversing a list, but currently this only works for the first item.
 heb_dir_list.each do |heb_dir|
   heb_dir = File.expand_path(heb_dir)
-  if !File.exists?(heb_dir) or !File.directory?(heb_dir)
-    abort("Error: no resource mapping file for project #{File.basename(heb_dir)}")
-  end
 
   puts File.basename(heb_dir)
   STDOUT.flush
