@@ -49,7 +49,9 @@ require_relative "resources.rb"
 
 require_relative "../../xslt"
 
-Dir.glob("#{TARGETTASKS}/*.rake").each { |r| import r }
+Dir.glob("#{TARGETTASKS}/*.rake").each do |r|
+  #import r
+end
 
 namespace :winterberry do
 

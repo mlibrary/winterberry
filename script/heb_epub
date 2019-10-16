@@ -60,7 +60,10 @@ heb_dir_list.each do |heb_dir|
   STDOUT.flush
 
   ENV['HEBDIR'] = File.expand_path(heb_dir)
-  Rake.load_rakefile File.join(root_dir, "lib", "hebdevel", "tasks", "hebdevel.rake")
+  Dir.glob(File.join(root_dir, "lib", "hebdevel", "tasks", "*.rake")).each do |r|
+    Rake.load_rakefile r
+  end
+  #Rake.load_rakefile File.join(root_dir, "lib", "hebdevel", "tasks", "hebdevel.rake")
   Rake::Task[task].invoke
   Rake::Task[task].reenable
 end

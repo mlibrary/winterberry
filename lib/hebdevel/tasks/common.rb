@@ -35,14 +35,14 @@ SRCFIXEPUBIMGS=File.join(SRCFIXEPUBDIR, HEBID, "OEBPS", "images")
 # Determine where the source DLXS XML file resides, thus
 # determining the book layout.
 layout="flowepub"
+layout_found = true
 srcdlxspath=File.join(ROOTDIR, layout, "dlxs", "#{HEBID}.xml")
 if (!File.exists?(srcdlxspath))
     layout="fixepub"
     #srcdlxspath=SRCFIXEPUBDLXS
     srcdlxspath=File.join(SRCTIFSCANDIR, "#{HEBID}.xml")
     if (!File.exists?(srcdlxspath))
-        puts "Error: unknown HEB ID #{HEBID}"
-        return
+        layout_found = false
     end
 end
 LAYOUT=layout
@@ -151,4 +151,9 @@ MRA
 
 directory HEBDIR
 directory METAINFSRCDIR
+
+if (!layout_found)
+    puts "Error: unknown HEB ID #{HEBID}"
+    return
+end
 
