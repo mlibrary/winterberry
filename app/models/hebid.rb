@@ -1,4 +1,6 @@
 class Hebid < ApplicationRecord
+  include Status
+
   has_many :hebid_copyholders
   has_many :copyholders, through: :hebid_copyholders
 
@@ -13,4 +15,6 @@ class Hebid < ApplicationRecord
             presence: true,
             uniqueness: { case_sensitive: false },
             length: { minimum: 17, maximum: 17 }
+  validates :status,
+            presence: false
 end

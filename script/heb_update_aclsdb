@@ -1,0 +1,99 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require 'optparse'
+require 'ostruct'
+
+# Process the script parameters.
+options = OpenStruct.new
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} metadata_file [metadata_file...]"
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    puts opts
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  puts option_parser.help
+  return
+end
+
+metadata_file_list = ARGV
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, 'config', 'application')
+
+require 'rake'
+
+require 'csvfile'
+
+Rails.application.load_tasks
+Rake.load_rakefile File.join(root_dir, "lib", "hebdevel", "tasks", "aclsdb.rake")
+
+metadata_file_list.each do |metadata_file|
+  metadata_file = File.expand_path(metadata_file)
+  if !File.exists?(metadata_file)
+    puts "Error: #{File.basename(metadata_file)} does not exist."
+    next
+  end
+
+  row_list = CSVFile.read_file(:csv_path => metadata_file)
+  row_list.each do |row|
+    #puts row.inspect
+
+    # Add HEB ID. If column present, must do this
+    # first so relationships to other columns can
+    # be established.
+    hebid = nil
+    if row.has_key?("identifier(s)")
+      # Add HEB ID.
+      hebid = row['identifier(s)'].strip
+      Rake::Task["aclsdb:add_identifier"].invoke(
+          :hebid => hebid
+          )
+      Rake::Task["aclsdb:add_identifier"].reenable
+    end
+
+    row.each do |key,value|
+
+      value_list = value.strip.split(";") if value != nil
+
+      task = "aclsdb:add_" + key
+
+      case key
+      when "identifier(s)"
+        # Skip, handled above
+
+      when "copyright_holder"
+        # Add Copyright Holders/Contacts
+        contact_list = row.has_key?('holding_contact') ? row['holding_contact'].strip.split(',') : Array.new(holder_list.count)
+        Rake::Task[task].invoke(
+            :hebid => hebid,
+            :value_list => value_list,
+            :contact_list => contact_list
+            )
+        Rake::Task[task].reenable
+
+      when "holding_contact"
+        # Skip, handled above.
+
+      else
+        if !Rake::Task.task_defined?(task)
+          puts "Warning: no task for column #{key}"
+          next
+        end
+
+        Rake::Task[task].invoke(
+            :hebid => hebid,
+            :value_list => value_list
+            )
+        Rake::Task[task].reenable
+      end
+    end
+  end
+end
+
