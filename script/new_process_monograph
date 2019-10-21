@@ -1,0 +1,533 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require 'optparse'
+require 'ostruct'
+
+# Process the script parameters.
+options = OpenStruct.new
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-e] [-s <source_root_dir>] [embed_resources|link_resources|update_metadata] <monograph_noid> [<monograph_noid>..]"
+  opts.on('-s', '--source_root_dir [DIRECTORY]', 'Root directory containing ebook source directories') do |source_root_dir|
+    options.source_root_dir = source_root_dir
+  end
+  opts.on('-e', '--execute', 'Execute embed|link actions') do |da|
+    options.execute = true
+  end
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    puts opts
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 2
+  puts option_parser.help
+  return
+end
+
+TASK_LIST = [ "embed_resources", "update_metadata" ]
+
+task = ARGV[0].downcase
+abort("Error: invalid task #{task}.") unless TASK_LIST.find {|t| t == task }
+puts "Invoking task #{task}"
+
+monograph_noid_list = ARGV[1..-1]
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+# Determine the directory containing the source monograph epubs, and
+# possibly the monograph manifest.
+source_root_dir = options.source_root_dir || ENV['WINTERBERRY_FULCRUM_UMP_DIR'] || Dir.pwd
+
+# Verify existence of the source/project root directories.
+source_root_dir = File.expand_path(source_root_dir)
+if !File.exists?(source_root_dir)
+  puts "Error: source directory #{source_root_dir} does not exist."
+  exit
+end
+
+require 'csv'
+require 'fileutils'
+require 'zip'
+
+require_relative File.join(root_dir, 'lib', 'csvfile')
+require_relative File.join(root_dir, 'lib', 'manifest')
+require_relative File.join(root_dir, 'lib', 'metadata')
+require_relative File.join(root_dir, 'lib', 'resources')
+require_relative File.join(root_dir, 'lib', 'services')
+
+# Initialize the processor that scans the monograph epub .xhtml
+# files and collects information concerning the contained resources.
+fig_proc = nil
+parser = nil
+
+resource_map_file_headers = [ "File Name", "Resource Name" ]
+caption_file_headers = [ "File Name", "Resource Name", "Alternative Text", "Caption" ]
+
+monograph_noid_list.each do |monograph_noid|
+  # Use the noid to retrieve the monograph manifest. First look and see
+  # the file exists in the input directory. If so, load it. Otherwise,
+  # attempt to download it from Fulcrum.
+  puts "*" * 10 + " #{monograph_noid} " + "*" * 10
+
+  puts "Downloading manifest file for noid #{monograph_noid}"
+  csv_body = HeliotropeService.new.monograph_noid_export(monograph_noid)
+  manifest_csv = CSVFile.read(:csv_body => csv_body)
+  next if manifest_csv == nil
+
+  # From the manifest, determine the ebook ISBN without dashes.
+  ebook_isbn = Manifest.find_ebook_isbn(manifest_csv, monograph_noid)
+  next if ebook_isbn == nil
+
+  # Find the ebook source folder
+  source_dir_list = Dir.glob(File.join(source_root_dir, "#{ebook_isbn}_*"))
+  if source_dir_list.count == 0
+    puts "Error: ebook source directory not found for noid #{monograph_noid}."
+    next
+  end
+  source_dir = source_dir_list[0]
+  puts "Multiple ebook source directories found for noid #{monograph_noid}. Using #{source_dir}" \
+        if source_dir_list.count > 1
+  puts "Using directory #{source_dir}" if source_dir_list.count == 1
+
+  # Determine if the resources directory exists.
+  resources_dir = File.join(source_dir, "resources")
+  if !File.exists?(resources_dir) or !File.directory?(resources_dir)
+    puts "Error: File.basename(resources_dir) is not a valid directory."
+    next
+  end
+
+  # Determine if the resources directory contains any files.
+  resource_file_list = Dir.glob(File.join(resources_dir, "*"))
+  if resource_file_list.count == 0
+    puts "Error: #{File.basename(resources_dir)} contains no resources."
+    next
+  end
+  puts "Resources directory exists containing #{resource_file_list.count} files."
+
+  # Determine if the user metadata CSV file exists.
+  user_metadata_file = File.join(resources_dir, "#{File.basename(source_dir)}.csv")
+  if !File.exists?(user_metadata_file)
+    puts "Error: user metadata file #{File.basename(user_metadata_file)} does not exist."
+    next
+  end
+  puts "User metadata file #{File.basename(user_metadata_file)} does exist."
+
+  # Find the epub file name and determine whether it exists.
+  epub_file_name = Manifest.find_epub_file_name(manifest_csv)
+  epub_file = File.join(source_dir, epub_file_name)
+  if !File.exist?(epub_file)
+    puts "Error: #{epub_file_name} not found in manifest for noid #{monograph_noid}"
+    next
+  end
+  puts "#{epub_file_name} found in manifest for noid #{monograph_noid}"
+
+  # Determine the resource_processing directory.
+  process_dir = File.join(source_dir, "resource_processing")
+
+  # Verify that the resource_processing directory exists.
+  if !File.exists?(process_dir) or !File.directory?(process_dir)
+    if task == "update_metadata"
+      FileUtils.mkdir_p process_dir
+    else
+      puts "Error: Directory #{File.basename(process_dir)} does not exist."
+      next
+    end
+  end
+  puts "Directory #{File.basename(process_dir)} does exist."
+
+  # Determine the project directory for storing the modified .xhtml
+  # and the OPF files.
+  dest_epub_dir = File.join(process_dir, "epub")
+
+  # Execute the task
+  case task
+
+  when "embed_resources", "link_resources"
+
+    # Create the default action object.
+    default_action_str = task == "embed_resources" ? "embed" : "link"
+    default_action = {
+                      "file_name" => "",
+                      "resource_name" => "",
+                      "resource_action" => default_action_str
+                     }
+
+    # Load the resource map file. It must exist.
+    resource_map_file = File.join(process_dir, "resource_map.csv")
+    if !File.exists?(resource_map_file)
+      puts "Error: resource map file #{File.basename(resource_map_file)} does not exist."
+      next
+    end
+    resource_map = CSVFile.read_file(
+        :csv_path => resource_map_file
+        )
+    puts "Using resource map file #{File.basename(resource_map_file)}"
+
+    # Generate the resource action list. If a resource map exists,
+    # use its list of files. Otherwise, use the list found in
+    # the monograph manifest.
+    actions_list = []
+    resource_map.each do |row|
+      file_name = row['file_name']
+      resource_name = row['resource_name']
+      if resource_name == nil or resource_name.strip.empty?
+        puts "Warning: no resource  mapping found for file #{File.basename(file_name)}"
+        next
+      end
+
+      # Use file_name to find manifest row. Could use the NOID found in
+      # the resource map, but it is possible that these may be invalid if
+      # the monograph has been moved or fileset have been replaced.
+      fileset_row = Manifest.name_find_fileset(manifest_csv, file_name)
+      if fileset_row['noid'].empty?
+        puts "Error: no fileset row for resource #{resource_name}"
+        link = fileset_row['link']
+      else
+        puts "File #{File.basename(file_name)} mapped to resource #{resource_name}"
+        link = fileset_row['link'].match('^[^\(]+\(\"([^\"]+)\".*') {|m| m[1] }
+      end
+      action_row = {
+            "file_name" => file_name,
+            "resource_action" => "default",
+            "resource_name" => resource_name,
+            "noid" => fileset_row['noid'],
+            "link" => link,
+            "embed_code" => fileset_row['embed_code']
+      }
+      actions_list << action_row
+    end
+
+    # Save the resource actions file complete with
+    # noid, link, and embed_code within the resource_processing
+    # directory.
+    resource_actions_file = File.join(process_dir, "resource_actions.csv")
+    puts "Saving resource action files #{File.basename(resource_actions_file)}"
+    CSV.open(
+            resource_actions_file,
+            "w",
+            :write_headers=> true,
+            :headers => ["File Name", "Resource Name", "Resource Action", "NOID", "Link", "Embed Code"]
+          ) do |csv|
+      actions_list.each do |action_row|
+
+        csv_row = [
+                action_row['file_name'],
+                action_row['resource_name'],
+                action_row['resource_action'],
+                action_row['noid'],
+                action_row['link'],
+                action_row['embed_code']
+        ]
+
+        csv << csv_row
+      end
+    end
+
+    # Save the resource actions file within a new epub structure
+    # for archival purposes.
+    epub_src_dir = File.join(dest_epub_dir, "META-INF", "src")
+    FileUtils.mkdir_p epub_src_dir
+    resource_actions_file = File.join(epub_src_dir, "resource_actions.csv")
+    CSV.open(
+            resource_actions_file,
+            "w",
+            :write_headers=> true,
+            :headers => ["File Name", "Resource Name", "Resource Action"]
+          ) do |csv|
+      actions_list.each do |action_row|
+
+        csv_row = [
+                action_row['file_name'],
+                action_row['resource_name'],
+                action_row['resource_action']
+        ]
+
+        csv << csv_row
+      end
+    end
+
+    resource_processor = ResourceProcessor.new(
+                :resource_metadata => manifest_csv,
+                :resource_actions => actions_list,
+                :default_action => default_action,
+                :options => options
+                )
+
+    html_path_update_list = []
+    remote_resources_list = []
+    opf_path = nil
+    opf_content = nil
+
+    # Provide the directory path for adding the stylesheet link.
+    # Possible option?
+    fulcrum_css_name = 'fulcrum_default.css'
+    fulcrum_src_css_file = File.join(root_dir, 'lib', 'css', fulcrum_css_name)
+    #fulcrum_css_dir = "../Styles"
+    fulcrum_dest_css_dir = "./"
+    fulcrum_dest_css_file = File.join(fulcrum_dest_css_dir, fulcrum_css_name)
+
+    # For each .xhtml file, process the resources.
+    Zip::File.open(epub_file) do |file|
+      file.each do |entry|
+
+        # Assign the output file name.
+        dest_file = File.join(dest_epub_dir, entry.name)
+        #entry.extract(dest_file)
+
+        if File.extname(entry.name) == ".opf"
+          # Found the OPF file. Save its name and content.
+          opf_path = entry.name
+          opf_content = entry.get_input_stream.read
+          next
+        end
+
+        if File.extname(entry.name) == ".xhtml"
+          # Found a xhtml file. Process the resources.
+          puts "Processing file #{entry.name}"
+          STDOUT.flush
+
+          # Create the XML tree.
+          content = entry.get_input_stream.read
+          begin
+            doc = Nokogiri::XML(content, nil, 'UTF-8')
+          rescue Exception => e
+            puts e.message
+            next
+          end
+
+          # Determine the list of actions completed.
+          # The -e flag must be specified for the actions
+          # to be completed.
+          action_list = resource_processor.process(doc)
+          result = action_list.index { |action| action.status == Action.COMPLETED }
+          if result
+
+            # At last one action was completed. Remember that this
+            # file was updated.
+            html_path_update_list << dest_file
+
+            # If resources were embedded, then we need to set the
+            # remote-resource property in the OPF file.
+            has_remote_resources = action_list.index { |action|
+                        action.status == Action.COMPLETED and action.resource_action['resource_action'] == "embed"
+            }
+            if has_remote_resources
+              remote_resources_list << dest_file
+            end
+
+            # Add the CSS stylesheet link that manages the Fulcrum resource display.
+            XMLUtil.add_css(doc, fulcrum_dest_css_file)
+            puts "Added CSS stylesheet \"#{fulcrum_css_name}\"."
+
+            # Save the modified xhtml file.
+            FileUtils.mkdir_p File.dirname(dest_file)
+            XMLUtil.save(doc, dest_file)
+          end
+          puts "\n"
+        end
+      end
+    end
+
+    if html_path_update_list.count > 0
+      # xhtml files were modified. Need to update the OPF file.
+      if opf_path == nil
+        puts "Error: OPF file not found."
+      elsif options.execute
+        # Create XML tree for the OPF file.
+        begin
+          doc = Nokogiri::XML(opf_content, nil, 'UTF-8')
+        rescue Exception => e
+          puts e.message
+          exit
+        end
+
+        # Locate the <manifest>.
+        manifest_node = doc.xpath("//*[local-name()='manifest']")
+        if manifest_node == nil
+          puts "No manifest node"
+        else
+          # Add the manifest entry for the Fulcrum CSS stylesheet.
+          # If another CSS stylesheet is present, add it after.
+          # Otherwise, add it as last child.
+          item_node = doc.create_element(
+                  "item",
+                  :href => fulcrum_dest_css_file,
+                  :id => "fulcrum_default",
+                  )
+          item_node['media-type'] = "text/css"
+
+          node_list = manifest_node.xpath("./*[local-name()='item' and @media-type='text/css']")
+          if node_list == nil
+            manifest_node.add_child(item_node)
+          else
+            node_list.last.add_next_sibling(item_node)
+          end
+
+          # Copy the Fulcrum CSS stylesheet into the epub structure.
+          FileUtils.cp(fulcrum_src_css_file, File.join(dest_epub_dir, "OEBPS", fulcrum_dest_css_file))
+        end
+
+        # Add remote resources to the OPF file.
+        puts "Adding remote resources to OPF file #{File.basename(opf_path)}"
+        remote_resources_list.each do |path|
+          path_basename = File.basename(path)
+          node_list = doc.xpath("//*[local-name()='manifest']/*[local-name()='item' and contains(@href, '#{path_basename}')]")
+          node_list.each do |node|
+            if node.has_attribute?("properties")
+              node['properties'] += " remote-resources"
+            else
+              node['properties'] = "remote-resources"
+            end
+          end
+        end
+
+        # Save the OPF file.
+        XMLUtil.save(doc, File.join(dest_epub_dir, opf_path))
+      end
+    end
+
+  when "update_metadata"
+
+    if fig_proc == nil
+      # Initialize the processor that scans the monograph epub .xhtml
+      # files and collects information concerning the contained resources.
+      fig_proc = FigureProcessor.new
+      parser = Nokogiri::XML::SAX::Parser.new(fig_proc)
+    end
+
+    # Scan the .xhtml files within the epub and collect the
+    # resource information.
+    Zip::File.open(epub_file) do |file|
+      file.each do |entry|
+        if File.extname(entry.name) == ".xhtml"
+          parser.parse(entry.get_input_stream.read)
+        end
+      end
+    end
+    ref_list = fig_proc.info_list
+
+    # For each resource referenced with the epub, associate its
+    # noid with the caption/alt text.
+    caption_list = []
+    resource_map_list = []
+    ref_list.each do |info|
+      attrs_h = info.attrs.to_h
+
+      # Determine the resource file name
+      src = attrs_h['src']
+      file_name = File.basename(src)
+
+      # Determine if this resource exists in the resources directory.
+      # Check on the basename as the reference extension and
+      # the resource extension can differ (.jpg => .pdf).
+      rfile_list = Dir.glob(File.join(resources_dir, "#{File.basename(file_name, File.extname(file_name))}.*"))
+      if rfile_list.count == 0
+        puts "Warning: resource #{src} does not exist."
+        next
+      end
+      rfile = rfile_list[0]
+      if rfile_list.count > 1
+        puts "Warning: resource #{src} has #{rfile_list.count} entries. Using #{File.basename(rfile)}."
+      end
+
+      # Create an entry for this resource with its noid,
+      # caption/alt text.
+      caption_row = {
+            "File Name" => src,
+            "Resource Name" => File.basename(rfile),
+            "Alternative Text" => attrs_h['alt'],
+            "Caption" => info.caption
+      #      "Alternative Text" => encoder.encode(attrs_h['alt']),
+      #      "Caption" => encoder.encode(info.caption)
+      }
+      caption_list << caption_row
+
+      resource_map_row = {
+            "File Name" => src,
+            "Resource Name" => File.basename(rfile)
+            }
+      resource_map_list << resource_map_row
+    end
+
+    # Create the resource ref to name mapping file.
+    resource_map_file = File.join(process_dir, "resource_map.csv")
+    CSV.open(
+            resource_map_file,
+            "w",
+            :write_headers=> true,
+            :headers => resource_map_file_headers
+          ) do |csv|
+
+      resource_map_list.each do |row|
+        csv << row
+      end
+    end
+    puts "Saved resource map file #{File.basename(resource_map_file)}."
+
+    # Save the captions in a CSV.
+    caption_file = File.join(process_dir, "captions.csv")
+    CSV.open(
+            caption_file,
+            "w",
+            :write_headers=> true,
+            :headers => caption_file_headers
+          ) do |csv|
+
+      caption_list.each do |row|
+        csv << row
+      end
+    end
+    puts "Saved captions/alt text file  #{File.basename(caption_file)}."
+
+    # Load the user metadata CSV file.
+    begin
+      user_metadata_csv = CSV.parse(
+                File.read(File.expand_path(user_metadata_file)),
+                :headers => true,
+                :return_headers => false
+                )
+    rescue Exception => e
+      puts e.message
+      return nil
+    end
+
+    # Traverse the user metadata file and insert the caption
+    # and alternative text. Save it to a new CSV file.
+    monograph_metadata_file = File.join(process_dir, File.basename(user_metadata_file))
+    CSV.open(
+            monograph_metadata_file,
+            "w",
+            :write_headers=> true,
+            :headers => user_metadata_csv.headers
+          ) do |csv|
+
+      user_metadata_csv.each do |row|
+        resource_name = row["File Name"]
+        base_resource_name = File.basename(resource_name, File.extname(resource_name))
+        caption_row = caption_list.find {|entry| File.basename(entry["File Name"], File.extname(entry["File Name"])) == base_resource_name }
+
+        new_row = {}
+        row.each do |key,value|
+          new_row[key] = value.force_encoding("UTF-8") if value != nil
+        end
+        if caption_row != nil
+          puts "Found caption/alt text for resource #{resource_name}."
+          new_row["Caption"] = caption_row["Caption"]
+          new_row["Alternative Text"] = caption_row["Alternative Text"]
+        else
+          puts "Warning: no caption/alt text found for resource #{resource_name}."
+        end
+
+        csv << new_row
+      end
+    end
+    puts "Saved user metadata file #{File.basename(monograph_metadata_file)}."
+
+    # Reset the processor for the next project directory.
+    fig_proc.reset
+  end
+
+end
