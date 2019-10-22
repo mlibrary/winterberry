@@ -25,7 +25,7 @@ if ARGV.count < 2
   return
 end
 
-TASK_LIST = [ "embed_resources", "update_metadata" ]
+TASK_LIST = [ "embed_resources", "resource_map", "update_metadata" ]
 
 task = ARGV[0].downcase
 abort("Error: invalid task #{task}.") unless TASK_LIST.find {|t| t == task }
@@ -127,17 +127,6 @@ monograph_noid_list.each do |monograph_noid|
   # Determine the resource_processing directory.
   process_dir = File.join(source_dir, "resource_processing")
 
-  # Verify that the resource_processing directory exists.
-  if !File.exists?(process_dir) or !File.directory?(process_dir)
-    if task == "update_metadata"
-      FileUtils.mkdir_p process_dir
-    else
-      puts "Error: Directory #{File.basename(process_dir)} does not exist."
-      next
-    end
-  end
-  puts "Directory #{File.basename(process_dir)} does exist."
-
   # Determine the project directory for storing the modified .xhtml
   # and the OPF files.
   dest_epub_dir = File.join(process_dir, "epub")
@@ -146,6 +135,12 @@ monograph_noid_list.each do |monograph_noid|
   case task
 
   when "embed_resources", "link_resources"
+
+    # Verify that the resource_processing directory exists.
+    if !File.exists?(process_dir) or !File.directory?(process_dir)
+      puts "Error: directory #{File.basename(process_dir)} is not a valid directory."
+      next
+    end
 
     # Create the default action object.
     default_action_str = task == "embed_resources" ? "embed" : "link"
@@ -389,7 +384,12 @@ monograph_noid_list.each do |monograph_noid|
       end
     end
 
-  when "update_metadata"
+  when "resource_map", "update_metadata"
+
+    if !File.exists?(process_dir)
+      FileUtils.mkdir_p process_dir
+    end
+    puts "Using processing directory #{File.basename(process_dir)}."
 
     if fig_proc == nil
       # Initialize the processor that scans the monograph epub .xhtml
@@ -435,9 +435,10 @@ monograph_noid_list.each do |monograph_noid|
 
       # Create an entry for this resource with its noid,
       # caption/alt text.
+      resource_name = File.basename(rfile)
       caption_row = {
             "File Name" => src,
-            "Resource Name" => File.basename(rfile),
+            "Resource Name" => resource_name,
             "Alternative Text" => attrs_h['alt'],
             "Caption" => info.caption
       #      "Alternative Text" => encoder.encode(attrs_h['alt']),
@@ -447,9 +448,11 @@ monograph_noid_list.each do |monograph_noid|
 
       resource_map_row = {
             "File Name" => src,
-            "Resource Name" => File.basename(rfile)
+            "Resource Name" => resource_name
             }
       resource_map_list << resource_map_row
+
+      puts "File reference #{src} ==> #{resource_name}."
     end
 
     # Create the resource ref to name mapping file.
@@ -467,64 +470,67 @@ monograph_noid_list.each do |monograph_noid|
     end
     puts "Saved resource map file #{File.basename(resource_map_file)}."
 
-    # Save the captions in a CSV.
-    caption_file = File.join(process_dir, "captions.csv")
-    CSV.open(
-            caption_file,
-            "w",
-            :write_headers=> true,
-            :headers => caption_file_headers
-          ) do |csv|
+    if task == "update_metadata"
 
-      caption_list.each do |row|
-        csv << row
-      end
-    end
-    puts "Saved captions/alt text file  #{File.basename(caption_file)}."
+      # Save the captions in a CSV.
+      caption_file = File.join(process_dir, "captions.csv")
+      CSV.open(
+              caption_file,
+              "w",
+              :write_headers=> true,
+              :headers => caption_file_headers
+            ) do |csv|
 
-    # Load the user metadata CSV file.
-    begin
-      user_metadata_csv = CSV.parse(
-                File.read(File.expand_path(user_metadata_file)),
-                :headers => true,
-                :return_headers => false
-                )
-    rescue Exception => e
-      puts e.message
-      return nil
-    end
-
-    # Traverse the user metadata file and insert the caption
-    # and alternative text. Save it to a new CSV file.
-    monograph_metadata_file = File.join(process_dir, File.basename(user_metadata_file))
-    CSV.open(
-            monograph_metadata_file,
-            "w",
-            :write_headers=> true,
-            :headers => user_metadata_csv.headers
-          ) do |csv|
-
-      user_metadata_csv.each do |row|
-        resource_name = row["File Name"]
-        base_resource_name = File.basename(resource_name, File.extname(resource_name))
-        caption_row = caption_list.find {|entry| File.basename(entry["File Name"], File.extname(entry["File Name"])) == base_resource_name }
-
-        new_row = {}
-        row.each do |key,value|
-          new_row[key] = value.force_encoding("UTF-8") if value != nil
+        caption_list.each do |row|
+          csv << row
         end
-        if caption_row != nil
-          puts "Found caption/alt text for resource #{resource_name}."
-          new_row["Caption"] = caption_row["Caption"]
-          new_row["Alternative Text"] = caption_row["Alternative Text"]
-        else
-          puts "Warning: no caption/alt text found for resource #{resource_name}."
-        end
-
-        csv << new_row
       end
+      puts "Saved captions/alt text file  #{File.basename(caption_file)}."
+
+      # Load the user metadata CSV file.
+      begin
+        user_metadata_csv = CSV.parse(
+                  File.read(File.expand_path(user_metadata_file)),
+                  :headers => true,
+                  :return_headers => false
+                  )
+      rescue Exception => e
+        puts e.message
+        return nil
+      end
+
+      # Traverse the user metadata file and insert the caption
+      # and alternative text. Save it to a new CSV file.
+      monograph_metadata_file = File.join(process_dir, File.basename(user_metadata_file))
+      CSV.open(
+              monograph_metadata_file,
+              "w",
+              :write_headers=> true,
+              :headers => user_metadata_csv.headers
+            ) do |csv|
+
+        user_metadata_csv.each do |row|
+          resource_name = row["File Name"]
+          base_resource_name = File.basename(resource_name, File.extname(resource_name))
+          caption_row = caption_list.find {|entry| File.basename(entry["File Name"], File.extname(entry["File Name"])) == base_resource_name }
+
+          new_row = {}
+          row.each do |key,value|
+            new_row[key] = value.force_encoding("UTF-8") if value != nil
+          end
+          if caption_row != nil
+            puts "Found caption/alt text for resource #{resource_name}."
+            new_row["Caption"] = caption_row["Caption"]
+            new_row["Alternative Text"] = caption_row["Alternative Text"]
+          else
+            puts "Warning: no caption/alt text found for resource #{resource_name}."
+          end
+
+          csv << new_row
+        end
+      end
+      puts "Saved user metadata file #{File.basename(monograph_metadata_file)}."
     end
-    puts "Saved user metadata file #{File.basename(monograph_metadata_file)}."
 
     # Reset the processor for the next project directory.
     fig_proc.reset
