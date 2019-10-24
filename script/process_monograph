@@ -55,10 +55,35 @@ require_relative File.join(root_dir, 'lib', 'metadata')
 require_relative File.join(root_dir, 'lib', 'resources')
 require_relative File.join(root_dir, 'lib', 'services')
 
+def read_csv(options = {})
+  csv_path = options[:csv_path]
+
+  begin
+    resource_map = CSV.parse(
+              File.read(File.expand_path(csv_path)),
+              :headers => true,
+              :return_headers => false
+              )
+  rescue Exception => e
+    puts e.message
+    return nil
+  end
+
+  resource_map
+end
+
 # Initialize the processor that scans the monograph epub .xhtml
 # files and collects information concerning the contained resources.
 fig_proc = nil
 parser = nil
+
+# Create the default action object.
+default_action_str = task == "embed_resources" ? "embed" : "link"
+default_action = {
+                  "file_name" => "",
+                  "resource_name" => "",
+                  "resource_action" => default_action_str
+                 }
 
 resource_map_file_headers = [ "File Name", "Resource Name" ]
 caption_file_headers = [ "File Name", "Resource Name", "Alternative Text", "Caption" ]
@@ -120,6 +145,16 @@ monograph_noid_list.each do |monograph_noid|
   # and the OPF files.
   dest_epub_dir = File.join(process_dir, "epub")
 
+  # Load the resource map file, if it exists.
+  resource_map = nil
+  resource_map_file = File.join(process_dir, "resource_map.csv")
+  if File.exists?(resource_map_file)
+    resource_map = read_csv(
+        :csv_path => resource_map_file
+        )
+    puts "Using resource map file #{File.basename(resource_map_file)}"
+  end
+
   # Execute the task
   case task
 
@@ -131,105 +166,114 @@ monograph_noid_list.each do |monograph_noid|
       next
     end
 
-    # Create the default action object.
-    default_action_str = task == "embed_resources" ? "embed" : "link"
-    default_action = {
-                      "file_name" => "",
-                      "resource_name" => "",
-                      "resource_action" => default_action_str
-                     }
-
-    # Load the resource map file. It must exist.
-    resource_map_file = File.join(process_dir, "resource_map.csv")
-    if !File.exists?(resource_map_file)
-      puts "Error: resource map file #{File.basename(resource_map_file)} does not exist."
+    # The resource map file is required. Abort if not loaded
+    if resource_map == nil
+      puts "Error: resource map file #{File.basename(resource_map_file)} must exist."
       next
     end
-    resource_map = CSVFile.read_file(
-        :csv_path => resource_map_file
-        )
-    puts "Using resource map file #{File.basename(resource_map_file)}"
 
-    # Generate the resource action list. If a resource map exists,
-    # use its list of files. Otherwise, use the list found in
-    # the monograph manifest.
+    # Load the resource actions file if it exists.
     actions_list = []
-    resource_map.each do |row|
-      file_name = row['file_name']
-      resource_name = row['resource_name']
-      if resource_name == nil or resource_name.strip.empty?
-        puts "Warning: no resource  mapping found for file #{File.basename(file_name)}"
-        next
-      end
-
-      # Use file_name to find manifest row. Could use the NOID found in
-      # the resource map, but it is possible that these may be invalid if
-      # the monograph has been moved or fileset have been replaced.
-      fileset_row = Manifest.name_find_fileset(manifest_csv, file_name)
-      if fileset_row['noid'].empty?
-        puts "Error: no fileset row for resource #{resource_name}"
-        link = fileset_row['link']
-      else
-        puts "File #{File.basename(file_name)} mapped to resource #{resource_name}"
-        link = fileset_row['link'].match('^[^\(]+\(\"([^\"]+)\".*') {|m| m[1] }
-      end
-      action_row = {
-            "file_name" => file_name,
-            "resource_action" => "default",
-            "resource_name" => resource_name,
-            "noid" => fileset_row['noid'],
-            "link" => link,
-            "embed_code" => fileset_row['embed_code']
-      }
-      actions_list << action_row
-    end
-
-    # Save the resource actions file complete with
-    # noid, link, and embed_code within the resource_processing
-    # directory.
     resource_actions_file = File.join(process_dir, "resource_actions.csv")
-    puts "Saving resource action files #{File.basename(resource_actions_file)}"
-    CSV.open(
-            resource_actions_file,
-            "w",
-            :write_headers=> true,
-            :headers => ["File Name", "Resource Name", "Resource Action", "NOID", "Link", "Embed Code"]
-          ) do |csv|
-      actions_list.each do |action_row|
+    if File.exists?(resource_actions_file)
+      resource_actions_csv = read_csv(
+            :csv_path => resource_actions_file
+            )
+      resource_actions_csv.each do |row|
+        action_row = {
+              "file_name" => row["File Name"],
+              "resource_name" => row["Resource Name"],
+              "resource_action" => row["Resource Action"],
+              "noid" => row['NOID'],
+              "link" => row["Link"],
+              "embed_code" => row["Embed Code"]
+              }
+        actions_list << action_row
+      end
 
-        csv_row = [
-                action_row['file_name'],
-                action_row['resource_name'],
-                action_row['resource_action'],
-                action_row['noid'],
-                action_row['link'],
-                action_row['embed_code']
-        ]
+      puts "Using resource action file #{File.basename(resource_actions_file)}"
+    else
 
-        csv << csv_row
+      # Generate the resource action list. If a resource map exists,
+      # use its list of files.
+      resource_map.each do |row|
+        file_name = row["File Name"]
+        resource_name = row["Resource Name"]
+        if resource_name == nil or resource_name.strip.empty?
+          puts "Warning: no resource  mapping found for file #{File.basename(file_name)}"
+          next
+        end
+
+        # Use file_name to find manifest row. Could use the NOID found in
+        # the resource map, but it is possible that these may be invalid if
+        # the monograph has been moved or fileset have been replaced.
+        fileset_row = Manifest.name_find_fileset(manifest_csv, file_name)
+        if fileset_row['noid'].empty?
+          puts "Error: no fileset row for resource #{resource_name}"
+          link = fileset_row['link']
+        else
+          puts "File #{File.basename(file_name)} mapped to resource #{resource_name}"
+          link = fileset_row['link'].match('^[^\(]+\(\"([^\"]+)\".*') {|m| m[1] }
+        end
+        action_row = {
+              "file_name" => file_name,
+              "resource_name" => resource_name,
+              "resource_action" => "default",
+              "noid" => fileset_row['noid'],
+              "link" => link,
+              "embed_code" => fileset_row['embed_code']
+        }
+        actions_list << action_row
+      end
+
+      # Save the resource actions file complete with
+      # noid, link, and embed_code within the resource_processing
+      # directory.
+      puts "Saving resource action files #{File.basename(resource_actions_file)}"
+      CSV.open(
+              resource_actions_file,
+              "w",
+              :write_headers=> true,
+              :headers => ["File Name", "Resource Name", "Resource Action", "NOID", "Link", "Embed Code"]
+            ) do |csv|
+        actions_list.each do |action_row|
+
+          csv_row = [
+                  action_row['file_name'],
+                  action_row['resource_name'],
+                  action_row['resource_action'],
+                  action_row['noid'],
+                  action_row['link'],
+                  action_row['embed_code']
+          ]
+
+          csv << csv_row
+        end
       end
     end
 
-    # Save the resource actions file within a new epub structure
-    # for archival purposes.
-    epub_src_dir = File.join(dest_epub_dir, "META-INF", "src")
-    FileUtils.mkdir_p epub_src_dir
-    resource_actions_file = File.join(epub_src_dir, "resource_actions.csv")
-    CSV.open(
-            resource_actions_file,
-            "w",
-            :write_headers=> true,
-            :headers => ["File Name", "Resource Name", "Resource Action"]
-          ) do |csv|
-      actions_list.each do |action_row|
+    if options.execute
+      # Save the resource actions file within a new epub structure
+      # for archival purposes.
+      epub_src_dir = File.join(dest_epub_dir, "META-INF", "src")
+      FileUtils.mkdir_p epub_src_dir
+      resource_actions_file = File.join(epub_src_dir, "resource_actions.csv")
+      CSV.open(
+              resource_actions_file,
+              "w",
+              :write_headers=> true,
+              :headers => ["File Name", "Resource Name", "Resource Action"]
+            ) do |csv|
+        actions_list.each do |action_row|
 
-        csv_row = [
-                action_row['file_name'],
-                action_row['resource_name'],
-                action_row['resource_action']
-        ]
+          csv_row = [
+                  action_row['file_name'],
+                  action_row['resource_name'],
+                  action_row['resource_action']
+          ]
 
-        csv << csv_row
+          csv << csv_row
+        end
       end
     end
 
@@ -375,14 +419,6 @@ monograph_noid_list.each do |monograph_noid|
 
   when "resource_map", "update_metadata"
 
-    # Determine if the user metadata CSV file exists.
-    user_metadata_file = File.join(resources_dir, "#{File.basename(monograph_dir)}.csv")
-    if !File.exists?(user_metadata_file)
-      puts "Error: user metadata file #{File.basename(user_metadata_file)} does not exist."
-      next
-    end
-    puts "User metadata file #{File.basename(user_metadata_file)} does exist."
-
     if !File.exists?(process_dir)
       FileUtils.mkdir_p process_dir
     end
@@ -406,68 +442,92 @@ monograph_noid_list.each do |monograph_noid|
     end
     ref_list = fig_proc.info_list
 
-    # For each resource referenced with the epub, associate its
-    # noid with the caption/alt text.
-    caption_list = []
-    resource_map_list = []
-    ref_list.each do |info|
-      attrs_h = info.attrs.to_h
+    if resource_map == nil
+      resource_map_list = []
+      ref_list.each do |info|
+        attrs_h = info.attrs.to_h
 
-      # Determine the resource file name
-      src = attrs_h['src']
-      file_name = File.basename(src)
+        # Determine the resource file name
+        src = attrs_h['src']
+        file_name = File.basename(src)
 
-      # Determine if this resource exists in the resources directory.
-      # Check on the basename as the reference extension and
-      # the resource extension can differ (.jpg => .pdf).
-      rfile_list = Dir.glob(File.join(resources_dir, "#{File.basename(file_name, File.extname(file_name))}.*"))
-      if rfile_list.count == 0
-        puts "Warning: resource #{src} does not exist."
-        next
+        # Determine if this resource exists in the resources directory.
+        # Check on the basename as the reference extension and
+        # the resource extension can differ (.jpg => .pdf).
+        rfile_list = Dir.glob(File.join(resources_dir, "#{File.basename(file_name, File.extname(file_name))}.*"))
+        if rfile_list.count == 0
+          puts "Warning: resource #{src} does not exist."
+          next
+        end
+        rfile = rfile_list[0]
+        if rfile_list.count > 1
+          puts "Warning: resource #{src} has #{rfile_list.count} entries. Using #{File.basename(rfile)}."
+        end
+
+        # Create an entry for this resource with its noid,
+        # caption/alt text.
+        resource_name = File.basename(rfile)
+        resource_map_row = {
+              "File Name" => src,
+              "Resource Name" => resource_name
+              }
+        resource_map_list << resource_map_row
+
+        puts "File reference #{src} ==> #{resource_name}."
       end
-      rfile = rfile_list[0]
-      if rfile_list.count > 1
-        puts "Warning: resource #{src} has #{rfile_list.count} entries. Using #{File.basename(rfile)}."
+
+      # Create the resource ref to name mapping file.
+      resource_map_file = File.join(process_dir, "resource_map.csv")
+      CSV.open(
+              resource_map_file,
+              "w",
+              :write_headers=> true,
+              :headers => resource_map_file_headers
+            ) do |csv|
+
+        resource_map_list.each do |row|
+          csv << row
+        end
       end
+      puts "Saved resource map file #{File.basename(resource_map_file)}."
 
-      # Create an entry for this resource with its noid,
-      # caption/alt text.
-      resource_name = File.basename(rfile)
-      caption_row = {
-            "File Name" => src,
-            "Resource Name" => resource_name,
-            "Alternative Text" => attrs_h['alt'],
-            "Caption" => info.caption
-      #      "Alternative Text" => encoder.encode(attrs_h['alt']),
-      #      "Caption" => encoder.encode(info.caption)
-      }
-      caption_list << caption_row
-
-      resource_map_row = {
-            "File Name" => src,
-            "Resource Name" => resource_name
-            }
-      resource_map_list << resource_map_row
-
-      puts "File reference #{src} ==> #{resource_name}."
+      resource_map = read_csv(
+            :csv_path => resource_map_file
+            )
     end
-
-    # Create the resource ref to name mapping file.
-    resource_map_file = File.join(process_dir, "resource_map.csv")
-    CSV.open(
-            resource_map_file,
-            "w",
-            :write_headers=> true,
-            :headers => resource_map_file_headers
-          ) do |csv|
-
-      resource_map_list.each do |row|
-        csv << row
-      end
-    end
-    puts "Saved resource map file #{File.basename(resource_map_file)}."
 
     if task == "update_metadata"
+
+      # For each resource referenced with the epub, associate its
+      # noid with the caption/alt text.
+      caption_list = []
+      ref_list.each do |info|
+        attrs_h = info.attrs.to_h
+
+        # Determine the resource file name
+        src = attrs_h['src']
+        file_name = File.basename(src)
+        resource_row = resource_map.find {|entry| entry["File Name"] == src }
+        if resource_row == nil
+          puts "Warning: resource reference #{src} not found in resource map."
+          resource_name = file_name
+        else
+          resource_name = resource_row["Resource Name"]
+        end
+        puts "Reference #{src} ==> #{resource_name}"
+
+        # Create an entry for this resource with its noid,
+        # caption/alt text.
+        caption_row = {
+              "File Name" => src,
+              "Resource Name" => resource_name,
+              "Alternative Text" => attrs_h['alt'],
+              "Caption" => info.caption
+        #      "Alternative Text" => encoder.encode(attrs_h['alt']),
+        #      "Caption" => encoder.encode(info.caption)
+        }
+        caption_list << caption_row
+      end
 
       # Save the captions in a CSV.
       caption_file = File.join(process_dir, "captions.csv")
@@ -484,17 +544,18 @@ monograph_noid_list.each do |monograph_noid|
       end
       puts "Saved captions/alt text file  #{File.basename(caption_file)}."
 
-      # Load the user metadata CSV file.
-      begin
-        user_metadata_csv = CSV.parse(
-                  File.read(File.expand_path(user_metadata_file)),
-                  :headers => true,
-                  :return_headers => false
-                  )
-      rescue Exception => e
-        puts e.message
-        return nil
+      # Determine if the user metadata CSV file exists.
+      user_metadata_file = File.join(resources_dir, "#{File.basename(monograph_dir)}.csv")
+      if !File.exists?(user_metadata_file)
+        puts "Error: user metadata file #{File.basename(user_metadata_file)} does not exist."
+        next
       end
+      puts "User metadata file #{File.basename(user_metadata_file)} does exist."
+
+      # Load the user metadata CSV file.
+      user_metadata_csv = read_csv(
+                :csv_path => user_metadata_file
+                )
 
       # Traverse the user metadata file and insert the caption
       # and alternative text. Save it to a new CSV file.
@@ -508,8 +569,7 @@ monograph_noid_list.each do |monograph_noid|
 
         user_metadata_csv.each do |row|
           resource_name = row["File Name"]
-          base_resource_name = File.basename(resource_name, File.extname(resource_name))
-          caption_row = caption_list.find {|entry| File.basename(entry["File Name"], File.extname(entry["File Name"])) == base_resource_name }
+          caption_row = caption_list.find {|entry| entry["Resource Name"] == resource_name }
 
           new_row = {}
           row.each do |key,value|
