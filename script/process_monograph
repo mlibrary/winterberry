@@ -55,23 +55,6 @@ require_relative File.join(root_dir, 'lib', 'metadata')
 require_relative File.join(root_dir, 'lib', 'resources')
 require_relative File.join(root_dir, 'lib', 'services')
 
-def read_csv(options = {})
-  csv_path = options[:csv_path]
-
-  begin
-    resource_map = CSV.parse(
-              File.read(File.expand_path(csv_path)),
-              :headers => true,
-              :return_headers => false
-              )
-  rescue Exception => e
-    puts e.message
-    return nil
-  end
-
-  resource_map
-end
-
 # Initialize the processor that scans the monograph epub .xhtml
 # files and collects information concerning the contained resources.
 fig_proc = nil
@@ -86,6 +69,8 @@ default_action = {
                  }
 
 resource_map_file_headers = [ "File Name", "Resource Name" ]
+resource_action_short_file_headers = ["File Name", "Resource Name", "Resource Action"]
+resource_action_full_file_headers = ["File Name", "Resource Name", "Resource Action", "NOID", "Link", "Embed Code"]
 caption_file_headers = [ "File Name", "Resource Name", "Alternative Text", "Caption" ]
 
 monograph_noid_list.each do |monograph_noid|
@@ -149,7 +134,7 @@ monograph_noid_list.each do |monograph_noid|
   resource_map = nil
   resource_map_file = File.join(process_dir, "resource_map.csv")
   if File.exists?(resource_map_file)
-    resource_map = read_csv(
+    resource_map = CSVFile.read_file(
         :csv_path => resource_map_file
         )
     puts "Using resource map file #{File.basename(resource_map_file)}"
@@ -176,17 +161,17 @@ monograph_noid_list.each do |monograph_noid|
     actions_list = []
     resource_actions_file = File.join(process_dir, "resource_actions.csv")
     if File.exists?(resource_actions_file)
-      resource_actions_csv = read_csv(
+      resource_actions_csv = CSVFile.read_file(
             :csv_path => resource_actions_file
             )
       resource_actions_csv.each do |row|
         action_row = {
-              "file_name" => row["File Name"],
-              "resource_name" => row["Resource Name"],
-              "resource_action" => row["Resource Action"],
-              "noid" => row['NOID'],
-              "link" => row["Link"],
-              "embed_code" => row["Embed Code"]
+              "file_name" => row["file_name"],
+              "resource_name" => row["resource_name"],
+              "resource_action" => row["resource_action"],
+              "noid" => row['noid'],
+              "link" => row["link"],
+              "embed_code" => row["embed_code"]
               }
         actions_list << action_row
       end
@@ -197,8 +182,8 @@ monograph_noid_list.each do |monograph_noid|
       # Generate the resource action list. If a resource map exists,
       # use its list of files.
       resource_map.each do |row|
-        file_name = row["File Name"]
-        resource_name = row["Resource Name"]
+        file_name = row["file_name"]
+        resource_name = row["resource_name"]
         if resource_name == nil or resource_name.strip.empty?
           puts "Warning: no resource  mapping found for file #{File.basename(file_name)}"
           next
@@ -234,7 +219,7 @@ monograph_noid_list.each do |monograph_noid|
               resource_actions_file,
               "w",
               :write_headers=> true,
-              :headers => ["File Name", "Resource Name", "Resource Action", "NOID", "Link", "Embed Code"]
+              :headers => resource_action_full_file_headers
             ) do |csv|
         actions_list.each do |action_row|
 
@@ -262,7 +247,7 @@ monograph_noid_list.each do |monograph_noid|
               resource_actions_file,
               "w",
               :write_headers=> true,
-              :headers => ["File Name", "Resource Name", "Resource Action"]
+              :headers => resource_action_short_file_headers
             ) do |csv|
         actions_list.each do |action_row|
 
@@ -468,8 +453,8 @@ monograph_noid_list.each do |monograph_noid|
         # caption/alt text.
         resource_name = File.basename(rfile)
         resource_map_row = {
-              "File Name" => src,
-              "Resource Name" => resource_name
+              "file_name" => src,
+              "resource_name" => resource_name
               }
         resource_map_list << resource_map_row
 
@@ -486,12 +471,16 @@ monograph_noid_list.each do |monograph_noid|
             ) do |csv|
 
         resource_map_list.each do |row|
-          csv << row
+          csv_row = {
+                      "File Name" => row["file_name"],
+                      "Resource Name" => row["resource_name"]
+                      }
+          csv << csv_row
         end
       end
       puts "Saved resource map file #{File.basename(resource_map_file)}."
 
-      resource_map = read_csv(
+      resource_map = CSVFile.read_file(
             :csv_path => resource_map_file
             )
     end
@@ -507,24 +496,24 @@ monograph_noid_list.each do |monograph_noid|
         # Determine the resource file name
         src = attrs_h['src']
         file_name = File.basename(src)
-        resource_row = resource_map.find {|entry| entry["File Name"] == src }
+        resource_row = resource_map.find {|entry| entry["file_name"] == src }
         if resource_row == nil
           puts "Warning: resource reference #{src} not found in resource map."
           resource_name = file_name
         else
-          resource_name = resource_row["Resource Name"]
+          resource_name = resource_row["resource_name"]
         end
         puts "Reference #{src} ==> #{resource_name}"
 
         # Create an entry for this resource with its noid,
         # caption/alt text.
         caption_row = {
-              "File Name" => src,
-              "Resource Name" => resource_name,
-              "Alternative Text" => attrs_h['alt'],
-              "Caption" => info.caption
-        #      "Alternative Text" => encoder.encode(attrs_h['alt']),
-        #      "Caption" => encoder.encode(info.caption)
+              "file_name" => src,
+              "resource_name" => resource_name,
+              "alternative_text" => attrs_h['alt'],
+              "caption" => info.caption
+        #      "alternative_text" => encoder.encode(attrs_h['alt']),
+        #      "caption" => encoder.encode(info.caption)
         }
         caption_list << caption_row
       end
@@ -539,7 +528,13 @@ monograph_noid_list.each do |monograph_noid|
             ) do |csv|
 
         caption_list.each do |row|
-          csv << row
+          csv_row = {
+                      "File Name" => row["file_name"],
+                      "Resource Name" => row["resource_name"],
+                      "Alternative Text" => row["alternative_text"],
+                      "Caption" => row["caption"]
+                    }
+          csv << csv_row
         end
       end
       puts "Saved captions/alt text file  #{File.basename(caption_file)}."
@@ -553,9 +548,16 @@ monograph_noid_list.each do |monograph_noid|
       puts "User metadata file #{File.basename(user_metadata_file)} does exist."
 
       # Load the user metadata CSV file.
-      user_metadata_csv = read_csv(
-                :csv_path => user_metadata_file
-                )
+      begin
+        user_metadata_csv = CSV.parse(
+                  File.read(File.expand_path(user_metadata_file)),
+                  :headers => true,
+                  :return_headers => false
+                  )
+      rescue Exception => e
+        puts e.message
+        return nil
+      end
 
       # Traverse the user metadata file and insert the caption
       # and alternative text. Save it to a new CSV file.
@@ -569,7 +571,7 @@ monograph_noid_list.each do |monograph_noid|
 
         user_metadata_csv.each do |row|
           resource_name = row["File Name"]
-          caption_row = caption_list.find {|entry| entry["Resource Name"] == resource_name }
+          caption_row = caption_list.find {|entry| entry["resource_name"] == resource_name }
 
           new_row = {}
           row.each do |key,value|
@@ -577,8 +579,8 @@ monograph_noid_list.each do |monograph_noid|
           end
           if caption_row != nil
             puts "Found caption/alt text for resource #{resource_name}."
-            new_row["Caption"] = caption_row["Caption"]
-            new_row["Alternative Text"] = caption_row["Alternative Text"]
+            new_row["Caption"] = caption_row["caption"]
+            new_row["Alternative Text"] = caption_row["alternative_text"]
           else
             puts "Warning: no caption/alt text found for resource #{resource_name}."
           end
