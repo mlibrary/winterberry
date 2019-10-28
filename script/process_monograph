@@ -400,6 +400,52 @@ monograph_noid_list.each do |monograph_noid|
         # Save the OPF file.
         XMLUtil.save(doc, File.join(dest_epub_dir, opf_path))
       end
+
+      # Create the new epub. Remove the old one if it exists.
+      processed_epub_file = File.join(process_dir, File.basename(epub_file))
+      FileUtils.remove_file(processed_epub_file, true)
+
+      # Create the new epub by reading the original one,
+      # and replacing the files found in the epub directory.
+      Zip::File.open(epub_file, false) do |input_file|
+        Zip::File.open(processed_epub_file, true) do |output_file|
+
+          # Replace existing entries.
+          input_file.each do |input_entry|
+            new_entry = File.expand_path(input_entry.name, dest_epub_dir)
+            if File.exists?(new_entry)
+              puts "Replacing file #{input_entry.name}"
+              output_file.get_output_stream(input_entry.name) do |output_entry_stream|
+                output_entry_stream.write(File.read(new_entry))
+              end
+            else
+              puts "Using file #{input_entry.name}"
+              input_entry.get_input_stream do |input_entry_stream|
+                output_file.get_output_stream(input_entry.name) do |output_entry_stream|
+                  output_entry_stream.write(input_entry_stream.read)
+                end
+              end
+            end
+          end
+
+          # Add any new entries.
+          dest_epub_file_list = Dir.glob(File.join(dest_epub_dir, "**", "*"))
+          dest_epub_file_list.each do |dest_epub_file|
+            dest_epub_file_name = dest_epub_file.delete_prefix(dest_epub_dir + File::SEPARATOR)
+            if !input_file.find_entry(dest_epub_file_name)
+              if File.directory?(dest_epub_file)
+                puts "Adding new directory #{dest_epub_file_name}"
+                output_file.mkdir(dest_epub_file_name)
+              else
+                puts "Adding new file #{dest_epub_file_name}"
+                output_file.get_output_stream(dest_epub_file_name) do |output_entry_stream|
+                  output_entry_stream.write(File.read(dest_epub_file))
+                end
+              end
+            end
+          end
+        end
+      end
     end
 
   when "resource_map", "update_metadata"
