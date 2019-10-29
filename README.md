@@ -11,7 +11,7 @@ the publishing division of [University of Michigan Library](https://www.lib.umic
 It is a codebase for a Rails application that provides support for the 
 [Fulcrum](https://www.fulcrum.org) publishing platform. 
 
-Usage documentation can be found on the repository [Wiki](https://github.com/mlibrary/winterberry/wiki) and in the [Fulcrum-Dev Confluence Space](https://tools.lib.umich.edu/confluence/display/FUL/Fulcrum-Dev).
+Usage documentation can be found on the repository [Wiki](https://github.com/mlibrary/winterberry/wiki).
 
 ## Prerequisites
 * Ruby 2.5.6.
