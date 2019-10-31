@@ -1,9 +1,9 @@
 # winterberry
 
 ## Table of Contents
-* Introduction
-* Prerequisites
-* Setup
+* [Introduction](#introduction)
+* [Prerequisites](#prerequisites)
+* [Setup](#setup)
 
 ## Introduction
 This repository is managed by [Michigan Publishing](https://www.publishing.umich.edu), 
