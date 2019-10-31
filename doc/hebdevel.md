@@ -458,7 +458,7 @@ For [fixepub](#fixepub_dir), the above files are not removed and also the follow
 
 Below is a description of the [ROOTDIR](#rootdir)**/target** directory and the files contained within:
 
-* **bin** - contains bash shell script for invoking the genertion process.
+* **bin** - contains bash shell script for invoking the generation process.
   * <a name="hebepub">_hebepub_</a> - script for invoking the epub/bundle generation process. The script iterates over the list specified HEB directories and invokes a series of **rake** tasks on each. It also sets a few environment specific variables (development or production) used by the **rake** tasks. See the script for more information.
 * **layouts** - contains files specific to a layout.
     * **fixepub** - contains files specific to the fixed page layout.

@@ -1,0 +1,639 @@
+<p>This document provides the details for the generation of HEB EPUB books, including both fixed and flowable layout books.</p>
+<p>The root directory location for the HEB EPUB books is the following:</p>
+<p style="margin-left: 30.0px;"><strong><ac:structured-macro ac:name="anchor" ac:schema-version="1" ac:macro-id="bbe2f138-e993-4220-9400-db95a47424ab"><ac:parameter ac:name="">ROOTDIR</ac:parameter></ac:structured-macro>ROOTDIR = tang.umdl.umich.edu:/quod-prep/prep/a/acls/hebepub</strong></p>
+<p>This location contains the following directories:</p>
+<ul>
+    <li><span><strong><span style="color: rgb(0,0,0);">fixepub</span></strong><span style="color: rgb(0,0,0);"> - directory contains the fixed layout book specifics. See </span>
+        <ac:link ac:anchor="Layouts">
+            <ri:content-entity ri:content-id="54069889" />
+        </ac:link><span style="color: rgb(0,0,0);"> for more information.</span></span>
+    </li>
+    <li><span><span style="color: rgb(0,0,0);"><span><strong><span style="color: rgb(0,0,0);">flowepub </span></strong><span style="color: rgb(0,0,0);">- directory contains the flowable layout book specifics. See <ac:link ac:anchor="Layouts"><ri:content-entity ri:content-id="54069889" /></ac:link></span><span style="color: rgb(0,0,0);">&nbsp;for more information.</span></span><br /></span>
+        </span>
+    </li>
+    <li><span><span style="color: rgb(0,0,0);"><span><span style="color: rgb(0,0,0);"><span><strong><span style="color: rgb(0,0,0);">resources </span></strong><span style="color: rgb(0,0,0);">- directory contains the source for resources used for generating a EPUB. See section </span><span style="color: rgb(0,51,102);"><ac:link ac:anchor="Resources"><ri:content-entity ri:content-id="54069889" /></ac:link> </span><span style="color: rgb(0,0,0);">for more information.</span></span><br /></span>
+        </span>
+        </span>
+        </span>
+    </li>
+    <li><span><span style="color: rgb(0,0,0);"><span><span style="color: rgb(0,0,0);"><span><span style="color: rgb(0,0,0);"><span><strong><span style="color: rgb(0,0,0);">target </span></strong><span style="color: rgb(0,0,0);">- directory contains the files used to automate the generation process. See section </span>
+        <ac:link ac:anchor="Implementation">
+            <ri:content-entity ri:content-id="54069889" />
+        </ac:link><span style="color: rgb(0,0,0);"> for more information.</span></span><br /></span>
+        </span>
+        </span>
+        </span>
+        </span>
+        </span>
+    </li>
+</ul>
+<h1>Table of Contents</h1>
+<p>
+    <ac:structured-macro ac:name="toc" ac:schema-version="1" ac:macro-id="e611c96d-deb2-4761-980d-6f3c7467d953">
+        <ac:parameter ac:name="style">none</ac:parameter>
+        <ac:parameter ac:name="printable">false</ac:parameter>
+    </ac:structured-macro>
+</p>
+<h1>Layouts</h1>
+<p><span style="color: rgb(0,0,0);">The process for generating a HEB EPUB archive differs based on the layout of the book. Currently, each layout has its own directory within the </span><span style="color: rgb(0,255,0);"><ac:link ac:anchor="ROOTDIR"><ri:content-entity ri:content-id="54069889" /></ac:link> </span><span style="color: rgb(0,0,0);">location where the book source resides and any specific resources needed to generate the book. Below are the contents found within a layout directory:</span></p>
+<ul>
+    <li style="list-style-type: disc;">
+        <p><strong>books </strong><span>- this directory contains the books for the specified layout. Within this directory, each book has a directory with the book HEB ID as the name. See section </span>
+            <ac:link ac:anchor="HEBBookSourceStructure">
+                <ri:content-entity ri:content-id="54069889" />
+                <ac:plain-text-link-body>
+                    <![CDATA[HEB Book Source Structure]]>
+                </ac:plain-text-link-body>
+            </ac:link><span> for more information.</span></p>
+    </li>
+    <li style="list-style-type: disc;">
+        <p><strong>dlxs </strong><span>- this directory contains the original source DLXS XML files. For </span><strong>flowepub</strong><span>, the contents is the list of XML files with the HEB ID as the name.<br /><br /></span><span>For </span><strong>fixepub</strong><span>, this is a link to the directory&nbsp;</span><strong>tang.umdl.umich.edu:/n1/obj/h/e/b&nbsp;</strong><span>and the contents consists of a list of directories, one for each HEB book, with the name being the book HEB ID. Each book directory contains the source DLXS XML file and all original page scans.</span></p>
+    </li>
+</ul>
+<h1>Resources</h1>
+<p><span style="color: rgb(0,0,0);">The </span><span style="color: rgb(0,0,0);">resources </span><span style="color: rgb(0,0,0);">directory contains the source for the following information used for generating a HEB EPUB:</span></p>
+<ul>
+    <li style="list-style-type: disc;">
+        <p><strong>aclsdb </strong><span>- directory containing information provided by ACLS for HEB books. This information includes:</span></p>
+    </li>
+    <ul>
+        <li style="list-style-type: circle;">
+            <p><strong><ac:structured-macro ac:name="anchor" ac:schema-version="1" ac:macro-id="1d903574-0c2e-47f9-8e01-15f7f32f4689"><ac:parameter ac:name="">copyholder</ac:parameter></ac:structured-macro>copyholder </strong><span>- if a HEB book has copyright information, then this directory contains a HTML file with the name of the book HEB ID that consists of a table listing the copyright holder organizations and a URL contact for each.</span></p>
+        </li>
+        <li style="list-style-type: circle;">
+            <p><strong><ac:structured-macro ac:name="anchor" ac:schema-version="1" ac:macro-id="9713e812-abf4-437a-9e8a-ee23089efb87"><ac:parameter ac:name="">related_title</ac:parameter></ac:structured-macro>related_title </strong><span>- &nbsp;if a HEB book has related titles, then this directory contains a HTML file with the name of the book HEB ID that consists of a table listing the related titles.</span></p>
+        </li>
+        <li style="list-style-type: circle;">
+            <p><strong><ac:structured-macro ac:name="anchor" ac:schema-version="1" ac:macro-id="ca9d0137-a2f3-4f44-b124-584b2ea07bb9"><ac:parameter ac:name="">reviews</ac:parameter></ac:structured-macro>reviews </strong><span>- if a HEB book has reviews, then this directory contains a HTML file with the name of the book HEB ID that consists of a table listing the reviews.</span></p>
+        </li>
+        <li style="list-style-type: circle;">
+            <p><strong><ac:structured-macro ac:name="anchor" ac:schema-version="1" ac:macro-id="5bbbc974-25d3-41ed-a0b2-0ace5aaf405d"><ac:parameter ac:name="">series</ac:parameter></ac:structured-macro>series </strong><span>- if a HEB book has series designations, then this directory contains a HTML file with the name of the book HEB ID that consists of a table listing the designations.</span></p>
+        </li>
+        <li style="list-style-type: circle;">
+            <p><strong><ac:structured-macro ac:name="anchor" ac:schema-version="1" ac:macro-id="526da3b6-fd45-4a57-9c06-230d701d507b"><ac:parameter ac:name="">subject</ac:parameter></ac:structured-macro>subject </strong><span>- if a HEB book has subject designations, then this directory contains a HTML file with the name of the book HEB ID that consists of a table listing the subjects.</span></p>
+        </li>
+    </ul>
+    <li style="list-style-type: disc;">
+        <p><strong><ac:structured-macro ac:name="anchor" ac:schema-version="1" ac:macro-id="bec226d1-c425-4baf-b2b8-b196a983d514"><ac:parameter ac:name="">assets</ac:parameter></ac:structured-macro>assets</strong><span> - directory containing all assets for all HEB books, including cover image, audio, video, and PDF files.</span><span><br class="kix-line-break" /></span><span><br class="kix-line-break" /></span><strong>NOTE</strong><span>: this directory is a link to the following directory:&nbsp;</span><strong>tang.umdl.umich.edu:/n1/web/a/acls/images<br /><br /></strong></p>
+    </li>
+    <li style="list-style-type: disc;">
+        <p><strong><ac:structured-macro ac:name="anchor" ac:schema-version="1" ac:macro-id="6ec7dd4e-e37f-45b8-bd3d-9b23a22c18d4"><ac:parameter ac:name="">asset_links</ac:parameter></ac:structured-macro>asset_links </strong><span>- if a HEB book currently has a Fulcrum monograph page with assets listed on the Media tab, then this directory contains a CSV file with the name of the book HEB ID that contains the information for each book asset. </span></p>
+    </li>
+    <li style="list-style-type: disc;">
+        <p><strong><span style="color: rgb(0,0,0);"><ac:structured-macro ac:name="anchor" ac:schema-version="1" ac:macro-id="48f406ec-5630-4ad6-a7f4-7a1d00bdb651"><ac:parameter ac:name="">marc</ac:parameter></ac:structured-macro>marc </span></strong><span style="color: rgb(0,0,0);">- if a HEB book has a MARC record, then this directory contains a XML file representation of the record. The file name is the first 5 digits of the HEB ID.</span></p>
+    </li>
+</ul>
+<h1>HEB Book Source Structure</h1>
+<p><span style="color: rgb(0,0,0);">The EPUB source for a HEB book can be found in a directory at the following path:</span></p>
+<p style="margin-left: 30.0px;"><span style="color: rgb(0,0,0);"><span class="Apple-tab-span"> </span></span><strong><span style="color: rgb(17,85,204);"><span style="color: rgb(0,255,0);"><ac:link ac:anchor="ROOTDIR"><ri:content-entity ri:content-id="54069889" /></ac:link></span></span><span style="color: rgb(0,0,0);">/</span></strong><span style="color: rgb(0,0,0);"><em>layout</em>/<em>hebxxxxx.xxxx.xxx</em></span></p>
+<p><span style="color: rgb(0,0,0);">where </span><em><span style="color: rgb(0,0,0);">layout </span></em><span style="color: rgb(0,0,0);">is either </span><strong><span style="color: rgb(0,0,0);">fixepub </span></strong><span style="color: rgb(0,0,0);">or </span><strong><span style="color: rgb(0,0,0);">flowepub</span></strong><span style="color: rgb(0,0,0);"> and </span><em><span style="color: rgb(0,0,0);">hebxxxxx.xxxx.xxx</span></em><span style="color: rgb(0,0,0);"> is the HEB ID assigned to the book. For example, the source for the fixed layout book with ID </span><span style="color: rgb(0,0,0);"><strong>heb04015.0001.001</strong> can be found in the following directory:</span></p>
+<p style="margin-left: 30.0px;"><span><span style="color: rgb(0,0,0);"><span class="Apple-tab-span"> </span></span><strong><span style="color: rgb(0,255,0);"><ac:link ac:anchor="ROOTDIR"><ri:content-entity ri:content-id="54069889" /></ac:link></span><span style="color: rgb(0,0,0);">/fixepub/heb04015.0001.001</span></strong></span>
+</p>
+<p><br /></p>
+<p><span style="color: rgb(0,0,0);">The source directory</span><span style="color: rgb(0,0,0);"> </span><span style="color: rgb(0,0,0);">for the HEB book with the ID </span><span style="color: rgb(0,0,0);">hebxxxxx.xxxx.xxx</span><span style="color: rgb(0,0,0);"> has the following layout:</span></p>
+<ul>
+    <li style="list-style-type: disc;">
+        <p><strong><ac:structured-macro ac:name="anchor" ac:schema-version="1" ac:macro-id="070d3e9a-94f8-465b-801c-05f1dc78d6fd"><ac:parameter ac:name="">epub</ac:parameter></ac:structured-macro>epub</strong><span> - directory containing the unzipped EPUB book structure, including:</span></p>
+    </li>
+    <ul>
+        <li style="list-style-type: circle;">
+            <p><strong>mimetype</strong></p>
+        </li>
+        <li style="list-style-type: circle;">
+            <p><strong>META-INF/{container,metadata}.xml</strong></p>
+        </li>
+        <li style="list-style-type: circle;">
+            <p><strong><ac:structured-macro ac:name="anchor" ac:schema-version="1" ac:macro-id="b363fbe6-25ae-47c9-ad5b-994d3251e6af"><ac:parameter ac:name="">METAINFSRC</ac:parameter></ac:structured-macro>META-INF/src</strong><span> - this directory contains the source XML files used to generate this EPUB, including the original DLXS and TEI XML. The allows for the book source to be contained within the EPUB archive itself. Below is a list of the expected contents:</span></p>
+        </li>
+        <ul>
+            <li style="list-style-type: square;">
+                <p><strong><ac:structured-macro ac:name="anchor" ac:schema-version="1" ac:macro-id="f55219f2-5967-48da-b0b1-e92d057aa830"><ac:parameter ac:name="">heb_dlxs_xml</ac:parameter></ac:structured-macro>hebxxxxx.xxxx.xxx_dlxs.xml</strong><span> - DLXS XML source for the book.</span></p>
+            </li>
+            <li style="list-style-type: square;">
+                <p><strong><ac:structured-macro ac:name="anchor" ac:schema-version="1" ac:macro-id="5041a385-0f26-43de-8413-9c1f3b3e16b3"><ac:parameter ac:name="">heb_dlxs_org_xml</ac:parameter></ac:structured-macro>hebxxxxx.xxxx.xxx_dlxs_org.xml</strong><span> - original DLXS XML source for the book. This is present only if it required modification before being processed.</span></p>
+            </li>
+            <li style="list-style-type: square;">
+                <p><strong><ac:structured-macro ac:name="anchor" ac:schema-version="1" ac:macro-id="5b559e4e-03f6-4f6d-a74c-a531eeeacd9d"><ac:parameter ac:name="">heb_tei_xml</ac:parameter></ac:structured-macro>hebxxxxx.xxxx.xxx_tei.xml</strong><span> - TEI XML source generated by transformation of the DLXS XML source. This file is used to generate the EPUB archive.</span></p>
+            </li>
+            <li style="list-style-type: square;">
+                <p><strong><ac:structured-macro ac:name="anchor" ac:schema-version="1" ac:macro-id="024a1aae-c793-4108-bf43-ee54b76875da"><ac:parameter ac:name="">assets_html</ac:parameter></ac:structured-macro>assets.html</strong><span> - HTML table referenced by the TEI XML file that lists all assets associated with this book, including cover images, book images, audio, video, PDFs, etc. For each asset, a column exists indicating the following concerning each asset:</span></p>
+                <ul>
+                    <li style="list-style-type: square;">
+                        <p><span>full path.</span></p>
+                    </li>
+                    <li style="list-style-type: square;">
+                        <p><span>mime-type.</span></p>
+                    </li>
+                    <li style="list-style-type: square;">
+                        <p><span>whether it should be included in the EPUB archive.</span></p>
+                    </li>
+                    <li style="list-style-type: square;">
+                        <p><span>whether it should be listed in the monograph Media tab.</span></p>
+                    </li>
+                    <li style="list-style-type: square;">
+                        <p><span>whether it is a cover image.</span></p>
+                    </li>
+                    <li style="list-style-type: square;">
+                        <p><span>whether is a hi-resolution version of the image (determined by the -lg suffix on the file name).</span></p>
+                    </li>
+                    <li style="list-style-type: square;">
+                        <p><span>width in pixels, if asset is an image.</span></p>
+                    </li>
+                    <li style="list-style-type: square;">
+                        <p>height in pixels,&nbsp;if asset is an image.</p>
+                    </li>
+                    <li style="list-style-type: square;">
+                        <p><span>title if asset has previously been uploaded to Fulcrum.&nbsp;Generated from the contents of&nbsp;<span style="color: rgb(0,255,0);"><ac:link ac:anchor="asset_links"><ri:content-entity ri:content-id="54069889" /></ac:link></span>..</span>
+                        </p>
+                    </li>
+                    <li style="list-style-type: square;">
+                        <p><span>NOID if asset has previously been uploaded to Fulcrum.&nbsp;Generated from the contents of&nbsp;<span style="color: rgb(0,255,0);"><ac:link ac:anchor="asset_links"><ri:content-entity ri:content-id="54069889" /></ac:link></span>.</span>
+                        </p>
+                    </li>
+                    <li style="list-style-type: square;">
+                        <p><span>URL link to asset page,&nbsp;if asset has previously been uploaded to Fulcrum.&nbsp;Generated from the contents of&nbsp;<span style="color: rgb(0,255,0);"><ac:link ac:anchor="asset_links"><ri:content-entity ri:content-id="54069889" /></ac:link></span>.</span>
+                        </p>
+                    </li>
+                    <li style="list-style-type: square;">
+                        <p><span>embed code markup&nbsp;if asset has previously been uploaded to Fulcrum.<br class="kix-line-break" /></span><span><br class="kix-line-break" /></span><strong>NOTE</strong><span><strong>:</strong> for fixed layout books, the page scans are not included in this list.<br /><br /></span></p>
+                    </li>
+                </ul>
+            </li>
+            <li style="list-style-type: square;">
+                <p><strong><ac:structured-macro ac:name="anchor" ac:schema-version="1" ac:macro-id="f24ac1f4-2cc4-4c9d-8147-dda714135c9a"><ac:parameter ac:name="">copyholder_html</ac:parameter></ac:structured-macro>copyholder.html</strong><span> - copy of </span><span style="color: rgb(0,255,0);"><ac:link ac:anchor="copyholder"><ri:content-entity ri:content-id="54069889" /></ac:link></span><span>.</span></p>
+            </li>
+            <li style="list-style-type: square;">
+                <p><strong><ac:structured-macro ac:name="anchor" ac:schema-version="1" ac:macro-id="be1d5883-00ed-428e-b1c3-f9d701100aeb"><ac:parameter ac:name="">fonts_html</ac:parameter></ac:structured-macro>fonts.html</strong><span> - HTML table referenced by the TEI XML file that lists all fonts to be included within the EPUB archive. </span></p>
+            </li>
+            <li style="list-style-type: square;">
+                <p><strong><ac:structured-macro ac:name="anchor" ac:schema-version="1" ac:macro-id="085f8264-f7d4-4137-b501-1b4b2a2b718b"><ac:parameter ac:name="">images_html</ac:parameter></ac:structured-macro>images.html</strong><span> - HTML table referenced by the TEI XML file that lists all images referenced by the book. For each image, a column exists indicating the format, width, and height. Useful for setting the </span><span>viewport </span><span>metadata within a fixed layout page scan HTML file.</span></p>
+            </li>
+            <li style="list-style-type: square;">
+                <p><strong><ac:structured-macro ac:name="anchor" ac:schema-version="1" ac:macro-id="e2053b7b-0434-4bc3-9d7b-cdb23a673765"><ac:parameter ac:name="">marc_xml</ac:parameter></ac:structured-macro>marc.xml</strong><span> - copy of </span><span style="color: rgb(0,255,0);"><ac:link ac:anchor="marc"><ri:content-entity ri:content-id="54069889" /></ac:link></span><span>.</span></p>
+            </li>
+            <li style="list-style-type: square;">
+                <p><strong><ac:structured-macro ac:name="anchor" ac:schema-version="1" ac:macro-id="f95b94cb-bf73-421a-b4fc-00485e1e46e0"><ac:parameter ac:name="">related_title_html</ac:parameter></ac:structured-macro>related.html</strong><span> - copy of </span><span style="color: rgb(0,255,0);"><ac:link ac:anchor="related_title"><ri:content-entity ri:content-id="54069889" /></ac:link></span><span>. If not empty, then this file is uploaded to Fulcrum and used as the contents to the monograph page Related Titles tab.</span></p>
+            </li>
+            <li style="list-style-type: square;">
+                <p><strong><ac:structured-macro ac:name="anchor" ac:schema-version="1" ac:macro-id="4e705ce0-6ba1-4095-8554-6826fd3a204d"><ac:parameter ac:name="">reviews_html</ac:parameter></ac:structured-macro>reviews.html</strong><span> - copy of </span><span style="color: rgb(0,255,0);"><ac:link ac:anchor="reviews"><ri:content-entity ri:content-id="54069889" /></ac:link></span><span>. If not empty, then this file is uploaded to Fulcrum and used as the contents to the monograph page Reviews tab.</span></p>
+            </li>
+            <li style="list-style-type: square;">
+                <p><strong><ac:structured-macro ac:name="anchor" ac:schema-version="1" ac:macro-id="25aecccc-bdf3-495b-84ef-3ddaa5ff89cf"><ac:parameter ac:name="">series_html</ac:parameter></ac:structured-macro>series.html</strong><span> - copy of </span><span style="color: rgb(0,255,0);"><ac:link ac:anchor="series"><ri:content-entity ri:content-id="54069889" /></ac:link></span><span>.</span></p>
+            </li>
+            <li style="list-style-type: square;">
+                <p><strong><ac:structured-macro ac:name="anchor" ac:schema-version="1" ac:macro-id="4249d298-0a03-430f-9b5e-34fd4ba03848"><ac:parameter ac:name="">stylesheets_html</ac:parameter></ac:structured-macro>stylesheets.html</strong><span> - HTML table referenced by the TEI XML file that lists all CSS stylesheets to be included within the EPUB archive.</span></p>
+            </li>
+            <li style="list-style-type: square;">
+                <p><strong><ac:structured-macro ac:name="anchor" ac:schema-version="1" ac:macro-id="5aed4fe1-dc09-4619-8e55-4fe40aa159f9"><ac:parameter ac:name="">subject_html</ac:parameter></ac:structured-macro>subject.html</strong><span> - copy of </span><span style="color: rgb(0,255,0);"><ac:link ac:anchor="subject"><ri:content-entity ri:content-id="54069889" /></ac:link></span><span>.</span></p>
+            </li>
+        </ul>
+        <li style="list-style-type: circle;">
+            <p><strong><ac:structured-macro ac:name="anchor" ac:schema-version="1" ac:macro-id="4b3f9ea5-da54-4ad5-930d-014087a64af5"><ac:parameter ac:name="">OEBPS</ac:parameter></ac:structured-macro>OEBPS</strong><span> - contains the book content.</span></p>
+        </li>
+        <ul>
+            <li style="list-style-type: square;">
+                <p><strong><ac:structured-macro ac:name="anchor" ac:schema-version="1" ac:macro-id="4aa28ab0-bc35-4624-beb0-f6516559581a"><ac:parameter ac:name="">fonts_dir</ac:parameter></ac:structured-macro>fonts </strong><span>- directory containing the book font files listed in the </span><span style="color: rgb(0,255,0);"><ac:link ac:anchor="fonts_html"><ri:content-entity ri:content-id="54069889" /><ac:plain-text-link-body><![CDATA[fonts.html]]></ac:plain-text-link-body></ac:link></span><span> file. This directory is present only for <strong>flowepub</strong>.</span></p>
+            </li>
+            <li style="list-style-type: square;">
+                <p><strong><ac:structured-macro ac:name="anchor" ac:schema-version="1" ac:macro-id="843e3c38-e8d2-411a-8130-c05154ec0c5c"><ac:parameter ac:name="">images_dir</ac:parameter></ac:structured-macro>images </strong><span>- directory containing the images listed in the </span><span style="color: rgb(0,255,0);"><ac:link ac:anchor="images_html"><ri:content-entity ri:content-id="54069889" /><ac:plain-text-link-body><![CDATA[images.html]]></ac:plain-text-link-body></ac:link></span><span> file. The book cover images reside here. For the fixed layout books, the page scan images reside here. For&nbsp;<strong>flowepub</strong>, all images referenced by the </span><span style="color: rgb(0,255,0);"><span style="color: rgb(0,255,0);"><ac:link ac:anchor="heb_tei_xml"><ri:content-entity ri:content-id="54069889" /><ac:plain-text-link-body><![CDATA[hebxxxxx.xxxx.xxx_tei.xml]]></ac:plain-text-link-body></ac:link></span></span><span> file reside here.</span></p>
+            </li>
+            <li style="list-style-type: square;">
+                <p><strong><ac:structured-macro ac:name="anchor" ac:schema-version="1" ac:macro-id="13d3cea0-6e94-4afc-b4b3-6060cf0ef4eb"><ac:parameter ac:name="">styles_dir</ac:parameter></ac:structured-macro>styles </strong><span>- directory containing the CSS stylesheet files listed in the </span><span style="color: rgb(0,255,0);"><ac:link ac:anchor="stylesheets_html"><ri:content-entity ri:content-id="54069889" /><ac:plain-text-link-body><![CDATA[stylesheets.html]]></ac:plain-text-link-body></ac:link></span><span> file.</span></p>
+            </li>
+            <li style="list-style-type: square;">
+                <p><strong><ac:structured-macro ac:name="anchor" ac:schema-version="1" ac:macro-id="f74f76a5-a979-4453-837e-2165d8f78b2a"><ac:parameter ac:name="">xhtml_dir</ac:parameter></ac:structured-macro>xhtml </strong><span>- directory containing the HTML/XHTML files for this book.</span></p>
+            </li>
+            <li style="list-style-type: square;">
+                <p><strong>content_{fixed_ocr,fixed_scan,flow}.opf</strong><span> - EPUB package file. For </span><strong>fixepub</strong><span>, there exists two files, one for the page scan rendition (</span><strong>content_fixed_scan.opf</strong><span>) and the second for the text OCR rendition (<strong>content_fixed_ocr.opf</strong>). For </span><strong>flowepub</strong><span>, there is one file (</span><strong>content_flow.opf</strong><span>).</span></p>
+            </li>
+            <li style="list-style-type: square;">
+                <p><strong>toc_{fixed_ocr,fixed_scan, flow}.xhtml</strong><span> - EPUB TOC files. For </span><strong>fixepub</strong><span>, there exists two files, one for the page scan rendition (</span><strong>toc_fixed_scan.xthml</strong><span>) and the second for the text OCR rendition (</span><strong>toc_fixed_ocr.xhtml</strong><span>). For </span><strong>flowepub</strong><span>, there is one file (</span><strong>toc_flow.xhtml</strong><span>).</span></p>
+            </li>
+            <li style="list-style-type: square;">
+                <p><strong>page_list_{fixed_ocr,fixed_scan,flow}.xhtml</strong><span> - EPUB page list files. For </span><strong>fixepub</strong><span>, there exists two files, one for the page scan rendition (</span><strong>pagelist_fixed_scan.xhtml</strong><span>) and the second for the text OCR rendition (</span><strong>pagelist_fixed_ocr.xhtml</strong><span>). For </span><strong>flowepub</strong><span>, there is one file (</span><strong>pagelist_flow.xhtml</strong><span>).</span></p>
+            </li>
+            <li style="list-style-type: square;">
+                <p><strong>chapter_list_{fixed_ocr,fixed_scan,flow}.xhtml</strong><span> - EPUB chapter list files. For </span><strong>fixepub</strong><span>, there exists two files, one for the page scan rendition (</span><strong>chapterlist_fixed_scan.xthml</strong><span>) and the second for the text OCR rendition (</span><strong>chapterlist_fixed_ocr.xhtml</strong><span>). For </span><strong>flowepub</strong><span>, there is one file (</span><strong>chapterlist_flow.xhtml</strong><span>).</span></p>
+            </li>
+        </ul>
+    </ul>
+    <li style="list-style-type: disc;">
+        <p><strong><ac:structured-macro ac:name="anchor" ac:schema-version="1" ac:macro-id="2144a12d-9129-40df-8ced-1693e182cdf3"><ac:parameter ac:name="">heb_epub</ac:parameter></ac:structured-macro>hebxxxxx.xxxx.xxx.epub </strong><span>- archive of the </span><span><ac:link ac:anchor="epub"><ri:content-entity ri:content-id="54069889" /></ac:link> </span><span>directory described above.</span></p>
+    </li>
+    <li style="list-style-type: disc;">
+        <p><strong><ac:structured-macro ac:name="anchor" ac:schema-version="1" ac:macro-id="2ec856fe-dff7-423d-8db5-6daef5079372"><ac:parameter ac:name="">heb_metadata_csv</ac:parameter></ac:structured-macro>hebxxxxx.xxxx.xxx_metadata.csv</strong><span> - CSV file the contains the metadata for this book, including the monograph information, asset information, </span><span style="color: rgb(0,255,0);"><ac:link ac:anchor="reviews_html"><ri:content-entity ri:content-id="54069889" /><ac:plain-text-link-body><![CDATA[reviews.html]]></ac:plain-text-link-body></ac:link></span><span>, </span><span style="color: rgb(0,255,0);"><ac:link ac:anchor="related_title_html"><ri:content-entity ri:content-id="54069889" /><ac:plain-text-link-body><![CDATA[related_title.html]]></ac:plain-text-link-body></ac:link></span><span>, and the cover image.</span></p>
+    </li>
+    <li style="list-style-type: disc;">
+        <p><strong><ac:structured-macro ac:name="anchor" ac:schema-version="1" ac:macro-id="f3e6d8e1-5e10-4609-97c7-c1d824a0357a"><ac:parameter ac:name="">heb_zip</ac:parameter></ac:structured-macro>hebxxxxx.xxxx.xxx.zip </strong><span>- zip file that can be used as a Fulcrum bundle for upload to create a new monograph. The following may be included:</span></p>
+    </li>
+    <ul>
+        <li style="list-style-type: circle;">
+            <p><strong>hebxxxxx.xxxx.xxx_metadata.csv</strong></p>
+        </li>
+        <li style="list-style-type: circle;">
+            <p><strong>hebxxxxx.xxxx.xxx-lg.jpg</strong><span> - book cover image.</span></p>
+        </li>
+        <li style="list-style-type: circle;">
+            <p><strong>hebxxxxx.xxxx.xxx.epub</strong></p>
+        </li>
+        <li style="list-style-type: circle;">
+            <p><span style="color: rgb(0,255,0);"><ac:link ac:anchor="related_title_html"><ri:content-entity ri:content-id="54069889" /><ac:plain-text-link-body><![CDATA[related_title.html]]></ac:plain-text-link-body></ac:link></span><span> - if not empty.</span></p>
+        </li>
+        <li style="list-style-type: circle;">
+            <p><span style="color: rgb(0,255,0);"><ac:link ac:anchor="reviews_html"><ri:content-entity ri:content-id="54069889" /><ac:plain-text-link-body><![CDATA[reviews.html]]></ac:plain-text-link-body></ac:link></span><span> - if not empty.</span></p>
+        </li>
+        <li style="list-style-type: circle;">
+            <p><span>Media assets &nbsp;- the book media assets listed in the&nbsp;</span><span style="color: rgb(0,255,0);"><ac:link ac:anchor="assets_html"><ri:content-entity ri:content-id="54069889" /><ac:plain-text-link-body><![CDATA[assets.html]]></ac:plain-text-link-body></ac:link></span><span>.</span></p>
+        </li>
+    </ul>
+    <li style="list-style-type: disc;">
+        <p><strong><ac:structured-macro ac:name="anchor" ac:schema-version="1" ac:macro-id="979c53f4-80f1-431d-9495-bb815f3c7fec"><ac:parameter ac:name="">epubcheck_xml</ac:parameter></ac:structured-macro>epubcheck.xml</strong><span> - may exists as a result of an invocation of the </span><span>check </span><span>production. Contains the output from </span><span><strong>epubcheck</strong>&nbsp;</span><span>validation.</span></p>
+    </li>
+</ul>
+<h1>Process Invocation</h1>
+<p><span style="color: rgb(0,0,0);">The command for invoking any process is the bash script </span><em><span style="color: rgb(0,0,0);"><ac:link ac:anchor="hebepub"><ri:content-entity ri:content-id="54069889" /></ac:link></span></em><span style="color: rgb(0,0,0);"> found within the </span><span style="color: rgb(0,255,0);"><ac:link ac:anchor="ROOTDIR"><ri:content-entity ri:content-id="54069889" /></ac:link></span><span style="color: rgb(0,0,0);">/</span><span style="color: rgb(0,0,0);">target/bin</span><span style="color: rgb(0,0,0);"> directory. The syntax for this command is:</span></p>
+<p><span style="color: rgb(0,255,0);"><ac:link ac:anchor="hebepub"><ri:content-entity ri:content-id="54069889" /></ac:link></span><em><span style="color: rgb(0,0,0);"> production [hebDir&hellip;]</span></em></p>
+<ul>
+    <li style="list-style-type: disc;">
+        <p><em>production</em></p>
+    </li>
+    <ul>
+        <li style="list-style-type: circle;">
+            <p><em>bundle </em><span>- generates a </span><span style="color: rgb(17,85,204);"><ac:link ac:anchor="Process4-GenerateFulcrumMonographBundleArchive"><ri:content-entity ri:content-id="54069889" /><ac:plain-text-link-body><![CDATA[Fulcrum monograph bundle]]></ac:plain-text-link-body></ac:link></span><span>. </span></p>
+        </li>
+        <li style="list-style-type: circle;">
+            <p><em>check</em><span> - performs </span>
+                <ac:link ac:anchor="Process3-EPUBStructureValidation">
+                    <ri:content-entity ri:content-id="54069889" />
+                    <ac:plain-text-link-body>
+                        <![CDATA[EPUB Structure Validation]]>
+                    </ac:plain-text-link-body>
+                </ac:link><span>.</span></p>
+        </li>
+        <li style="list-style-type: circle;">
+            <p><em>clobber</em><span> - removes HEB source directory files thus allowing it to be re-generated. See </span><span style="color: rgb(0,51,102);"><ac:link ac:anchor="Process6-ClobberSourceFiles"><ri:content-entity ri:content-id="54069889" /><ac:plain-text-link-body><![CDATA[Clobber Source Files]]></ac:plain-text-link-body></ac:link></span><span>.</span></p>
+        </li>
+        <li style="list-style-type: circle;">
+            <p><em>convert</em><span> - for fixepub, converts original HEB source page scan files from TIF/JP2 to PNG.</span></p>
+        </li>
+        <li style="list-style-type: circle;">
+            <p><em>epub</em><span> - generates the </span><span style="color: rgb(17,85,204);"><ac:link ac:anchor="Process2-GenerateEPUBArchive"><ri:content-entity ri:content-id="54069889" /><ac:plain-text-link-body><![CDATA[HEB EPUB Archive]]></ac:plain-text-link-body></ac:link></span><span>.</span></p>
+        </li>
+    </ul>
+    <li style="list-style-type: disc;">
+        <p><em>hebDir</em><span> = path to 1 or more HEB EPUB source directories. If no directory is specified, then the current directory is assumed. If the specified directory does not exist, then a directory will be created.</span></p>
+    </li>
+</ul>
+<p><span><br /><span style="color: rgb(0,0,0);">This script sets required environment variables and traverses the list of specified HEB source directories, invoking a Rake task specified by the </span><span style="color: rgb(0,0,0);">production </span><span style="color: rgb(0,0,0);">parameter on each. See </span><span style="color: rgb(0,255,0);"><ac:link ac:anchor="rakefile"><ri:content-entity ri:content-id="54069889" /></ac:link></span><span style="color: rgb(0,0,0);"> for the details.</span></span>
+</p>
+<p><span style="color: rgb(0,0,0);">Below are example invocations:</span></p>
+<ol>
+    <li style="list-style-type: decimal;">
+        <p><span>For the XML title </span><strong>hebxxxxx.xxxx.xxx</strong><span>, the following commands will generate the book EPUB archive file:</span><span><br class="kix-line-break" /></span><span><br class="kix-line-break" /></span><em>cd /quod-prep/prep/a/acls/hebepub</em><span><br class="kix-line-break" /></span><em><span style="color: rgb(17,85,204);"><span style="color: rgb(0,255,0);"><span style="color: rgb(0,51,102);">target/bin/</span><ac:link ac:anchor="hebepub"><ri:content-entity ri:content-id="54069889" /></ac:link></span></span> epub flowepub/books/hebxxxxx.xxxx.xxx<br class="kix-line-break" /></em><span><br class="kix-line-break" /></span><span>The resulting EPUB archive file is stored at</span><span><br class="kix-line-break" /></span><strong>flowepub/books/hebxxxxx.xxxx.xxx/hebxxxxx.xxxx.xxx.epub</strong><span>.<br /><br /></span></p>
+    </li>
+    <li style="list-style-type: decimal;">
+        <p><span>For the backlist title </span><strong>hebxxxxx.xxxx.xxx</strong><span>, the following commands will generate the book Fulcrum bundle file:</span><span><br class="kix-line-break" /></span><span><br class="kix-line-break" /></span><em>cd /quod-prep/prep/a/acls/hebepub</em><span><br class="kix-line-break" /></span><em><span style="color: rgb(0,255,0);"><span style="color: rgb(0,51,102);">target/bin/</span><ac:link ac:anchor="hebepub"><ri:content-entity ri:content-id="54069889" /></ac:link></span> bundle &nbsp;fixepub/books/hebxxxxx.xxxx.xxx</em><span><br class="kix-line-break" /></span><span><br class="kix-line-break" /></span><span>The resulting bundle file is stored at</span><span><br class="kix-line-break" /></span><strong>fixepub/books/hebxxxxx.xxxx.xxx/hebxxxxx.xxxx.xxx.zip</strong><span>.<br /><br /></span></p>
+    </li>
+    <li style="list-style-type: decimal;">
+        <p><span>The following commands will rebuild the bundle file for backlist title </span><strong>hebxxxxx.xxxx.xxx</strong><span>:</span><span><br class="kix-line-break" /></span><span><br class="kix-line-break" /></span><em>cd /quod-prep/prep/a/acls/hebepub<br class="kix-line-break" /><span style="color: rgb(0,255,0);"><span style="color: rgb(0,51,102);">target/bin/</span><ac:link ac:anchor="hebepub"><ri:content-entity ri:content-id="54069889" /></ac:link></span> clobber fixepub/books/hebxxxxx.xxxx.xxx<br class="kix-line-break" /><span style="color: rgb(0,255,0);"><span style="color: rgb(0,51,102);">target/bin/</span><ac:link ac:anchor="hebepub"><ri:content-entity ri:content-id="54069889" /></ac:link></span> bundle &nbsp;fixepub/books/hebxxxxx.xxxx.xxx<br /><br /></em></p>
+    </li>
+    <li style="list-style-type: decimal;">
+        <p><span>The following commands will invoke </span><strong>epubcheck</strong><span> on the specified EPUB source directory:</span><span><br class="kix-line-break" /></span><span><br class="kix-line-break" /></span><em>cd /quod-prep/prep/a/acls/hebepub<br class="kix-line-break" /><span style="color: rgb(0,255,0);"><span style="color: rgb(0,51,102);">target/bin/</span><ac:link ac:anchor="hebepub"><ri:content-entity ri:content-id="54069889" /></ac:link></span> check &nbsp;fixepub/books/hebxxxxx.xxxx.xxx</em><span><br class="kix-line-break" /></span><span><br class="kix-line-break" /></span><span>The output from epubcheck is stored in the file</span><span><br class="kix-line-break" /></span><strong>fixepub/books/hebxxxxx.xxxx.xxx/<ac:link ac:anchor="epubcheck_xml"><ri:content-entity ri:content-id="54069889" /><ac:plain-text-link-body><![CDATA[epubcheck.xml]]></ac:plain-text-link-body></ac:link><br /><br /></strong></p>
+    </li>
+    <li style="list-style-type: decimal;">
+        <p><span>The following commands will convert page scan TIF images to PNG for backlist title <strong>hebxxxxx.xxxx.xxx</strong>:</span><span><br class="kix-line-break" /></span><span><br class="kix-line-break" /></span><em>cd /quod-prep/prep/a/acls/hebepub<br class="kix-line-break" /><span style="color: rgb(0,255,0);"><span style="color: rgb(0,51,102);">target/bin/</span><ac:link ac:anchor="hebepub"><ri:content-entity ri:content-id="54069889" /></ac:link></span> convert &nbsp;fixepub/books/hebxxxxx.xxxx.xxx</em><span><br class="kix-line-break" /></span><span><br class="kix-line-break" /></span><span>The new PNG files are stored in the directory:</span><span><br class="kix-line-break" /></span><strong>fixepub/books/hebxxxxx.xxxx.xxx/epub/OEBPS/images</strong></p>
+    </li>
+</ol>
+<p><span style="color: rgb(0,0,0);"><br /></span></p>
+<p><span style="color: rgb(0,0,0);">The following sections describe the steps necessary to perform the HEB EPUB processes.</span></p>
+<h2>Process 1 - Convert Page Scans (fixepub only)</h2>
+<p><span style="color: rgb(0,0,0);">For </span><strong><span style="color: rgb(0,0,0);">fixepub </span></strong><span style="color: rgb(0,0,0);">books, original page scan files for the book are expected to reside in the following directory:</span></p>
+<p style="margin-left: 30.0px;"><strong><span style="color: rgb(17,85,204);"><span style="color: rgb(0,255,0);"><ac:link ac:anchor="ROOTDIR"><ri:content-entity ri:content-id="54069889" /></ac:link></span></span><span style="color: rgb(0,0,0);">/lfixepub/dlxs/hebxxxxx.xxxx.xxx</span></strong></p>
+<p><span style="color: rgb(0,0,0);">where </span><strong><span style="color: rgb(0,0,0);">hebxxxxx.xxxx.xxx</span></strong><span style="color: rgb(0,0,0);"> is the HEB ID assigned to the book. The file format is expected to be either TIF or JP2. The EPUB specification does not support TIF, so it is necessary to convert the original scans to PNG.</span></p>
+<p><span style="color: rgb(0,0,0);">The conversion can be done by invoking the following commands:</span></p>
+<p style="margin-left: 30.0px;"><span style="color: rgb(0,0,0);"><em>cd /quod-prep/prep/a/acls/hebepub</em><br /><em><span style="color: rgb(0,255,0);"><span style="color: rgb(0,51,102);">target/bin/</span>
+    <ac:link ac:anchor="hebepub">
+        <ri:content-entity ri:content-id="54069889" />
+    </ac:link>
+    </span> convert layout/hebxxxxx.xxxx.xxx</em><br /></span>
+</p>
+<p><span><span style="color: rgb(0,0,0);">The new PNG files are stored in the </span><span style="color: rgb(0,255,0);"><ac:link ac:anchor="images_dir"><ri:content-entity ri:content-id="54069889" /><ac:plain-text-link-body><![CDATA[images]]></ac:plain-text-link-body></ac:link></span><span style="color: rgb(0,0,0);"> directory within the </span><strong><span style="color: rgb(0,0,0);">hebxxxxx.xxxx.xxx</span></strong><span style="color: rgb(0,0,0);"> book source directory.</span></span>
+</p>
+<h2>Process 2 - Generate EPUB Archive</h2>
+<p><span style="color: rgb(0,0,0);">Below are the process steps necessary to generate the HEB book EPUB archive. The following commands can be used to invoke this process and generate a HEB EPUB for the book with the ID </span><strong><span style="color: rgb(0,0,0);">hebxxxxx.xxxx.xxx</span></strong><span style="color: rgb(0,0,0);">:</span></p>
+<p style="margin-left: 30.0px;"><span style="color: rgb(0,0,0);"><em>cd /quod-prep/prep/a/acls/hebepub</em><br /><em><span style="color: rgb(0,255,0);"><span style="color: rgb(0,51,102);">target/bin/</span>
+    <ac:link ac:anchor="hebepub">
+        <ri:content-entity ri:content-id="54069889" />
+    </ac:link>
+    </span> epub layout/hebxxxxx.xxxx.xxx</em><br /></span>
+</p>
+<h3>Step 2.1 - Copy DLXS XML Source</h3>
+<p><span style="color: rgb(0,0,0);">The book DLXS XML source is expected to be found at the path listed in the table below and copied to path </span><span style="color: rgb(0,255,0);"><ac:link ac:anchor="heb_dlxs_xml"><ri:content-entity ri:content-id="54069889" /><ac:plain-text-link-body><![CDATA[hebxxxxx.xxxx.xxx_dlxs.xml]]></ac:plain-text-link-body></ac:link></span><span style="color: rgb(0,0,0);">.</span><span style="color: rgb(0,0,0);"><br class="kix-line-break" /></span></p>
+<table class="wrapped" style="margin-left: 30.0px;">
+    <colgroup>
+        <col />
+        <col />
+    </colgroup>
+    <tbody style="margin-left: 30.0px;">
+        <tr style="margin-left: 30.0px;">
+            <td style="margin-left: 30.0px;">
+                <p style="margin-left: 30.0px;"><strong><span style="color: rgb(0,0,0);">Layout</span></strong></p>
+            </td>
+            <td style="margin-left: 30.0px;">
+                <p style="margin-left: 30.0px;"><strong><span style="color: rgb(0,0,0);">Source Path</span></strong></p>
+            </td>
+        </tr>
+        <tr style="margin-left: 30.0px;">
+            <td style="margin-left: 30.0px;">
+                <p style="margin-left: 30.0px;"><span style="color: rgb(0,0,0);">fixepub</span></p>
+            </td>
+            <td style="margin-left: 30.0px;">
+                <p style="margin-left: 30.0px;"><strong><span style="color: rgb(0,255,0);"><ac:link ac:anchor="ROOTDIR"><ri:content-entity ri:content-id="54069889" /></ac:link></span><span style="color: rgb(0,0,0);">/fixepub/dlxs/hebxxxxx.xxxx.xxx/hebxxxxx.xxxx.xxx.xml</span></strong></p>
+            </td>
+        </tr>
+        <tr style="margin-left: 30.0px;">
+            <td style="margin-left: 30.0px;">
+                <p style="margin-left: 30.0px;"><span style="color: rgb(0,0,0);">flowepub</span></p>
+            </td>
+            <td style="margin-left: 30.0px;">
+                <p style="margin-left: 30.0px;"><strong><span style="color: rgb(0,255,0);"><ac:link ac:anchor="ROOTDIR"><ri:content-entity ri:content-id="54069889" /></ac:link></span><span style="color: rgb(0,0,0);">/flowepub/dlxs/hebxxxxx.xxxx.xxx.xml</span></strong></p>
+            </td>
+        </tr>
+    </tbody>
+</table>
+<h3>Step 2.2 - Copy Resource Files</h3>
+<p><span><span style="color: rgb(0,0,0);">The following resources are copied from their source paths into the </span><span style="color: rgb(0,51,102);"><ac:link ac:anchor="METAINFSRC"><ri:content-entity ri:content-id="54069889" /><ac:plain-text-link-body><![CDATA[META-INF/src]]></ac:plain-text-link-body></ac:link></span><span style="color: rgb(0,0,0);">&nbsp;directory and referenced by the </span><span style="color: rgb(0,255,0);"><span style="color: rgb(0,255,0);"><ac:link ac:anchor="heb_tei_xml"><ri:content-entity ri:content-id="54069889" /><ac:plain-text-link-body><![CDATA[hebxxxxx.xxxx.xxx_tei.xml]]></ac:plain-text-link-body></ac:link></span></span><span style="color: rgb(0,0,0);"> file:</span></span>
+</p>
+<table class="wrapped" style="margin-left: 30.0px;">
+    <colgroup>
+        <col style="width: 154.0px;" />
+        <col style="width: 447.0px;" />
+    </colgroup>
+    <tbody style="margin-left: 30.0px;">
+        <tr style="margin-left: 30.0px;">
+            <th style="margin-left: 30.0px;">
+                <p style="margin-left: 30.0px;"><strong><span style="color: rgb(0,0,0);">Resource</span></strong></p>
+            </th>
+            <td style="margin-left: 30.0px;">
+                <p style="margin-left: 30.0px;"><strong><span style="color: rgb(0,0,0);">Source Paths</span></strong></p>
+            </td>
+        </tr>
+        <tr style="margin-left: 30.0px;">
+            <th style="margin-left: 30.0px;">
+                <p style="margin-left: 30.0px;"><span style="color: rgb(0,255,0);"><ac:link ac:anchor="marc_xml"><ri:content-entity ri:content-id="54069889" /><ac:plain-text-link-body><![CDATA[marc.xml]]></ac:plain-text-link-body></ac:link></span></p>
+            </th>
+            <td style="margin-left: 30.0px;">
+                <p style="margin-left: 30.0px;"><strong><span style="color: rgb(0,255,0);"><ac:link ac:anchor="ROOTDIR"><ri:content-entity ri:content-id="54069889" /></ac:link></span><span style="color: rgb(0,0,0);">/resources/marc/hebxxxxx.xml</span></strong></p>
+            </td>
+        </tr>
+        <tr style="margin-left: 30.0px;">
+            <th style="margin-left: 30.0px;">
+                <p style="margin-left: 30.0px;"><span style="color: rgb(0,255,0);"><ac:link ac:anchor="copyholder_html"><ri:content-entity ri:content-id="54069889" /><ac:plain-text-link-body><![CDATA[copyholder.html]]></ac:plain-text-link-body></ac:link></span></p>
+            </th>
+            <td style="margin-left: 30.0px;">
+                <p style="margin-left: 30.0px;"><strong><span style="color: rgb(0,255,0);"><ac:link ac:anchor="ROOTDIR"><ri:content-entity ri:content-id="54069889" /></ac:link></span><span style="color: rgb(0,0,0);">/resources/aclsdb/copyholder/hebxxxxx.xxxx.xxx.xml</span></strong></p>
+            </td>
+        </tr>
+        <tr style="margin-left: 30.0px;">
+            <th style="margin-left: 30.0px;">
+                <p style="margin-left: 30.0px;"><span style="color: rgb(0,255,0);"><ac:link ac:anchor="related_title_html"><ri:content-entity ri:content-id="54069889" /><ac:plain-text-link-body><![CDATA[related_title.html]]></ac:plain-text-link-body></ac:link></span></p>
+            </th>
+            <td style="margin-left: 30.0px;">
+                <p style="margin-left: 30.0px;"><strong><span style="color: rgb(0,255,0);"><ac:link ac:anchor="ROOTDIR"><ri:content-entity ri:content-id="54069889" /></ac:link></span><span style="color: rgb(0,0,0);">/resources/aclsdb/related_title/hebxxxxx.xxxx.xxx.xml</span></strong></p>
+            </td>
+        </tr>
+        <tr style="margin-left: 30.0px;">
+            <th style="margin-left: 30.0px;">
+                <p style="margin-left: 30.0px;"><span style="color: rgb(0,255,0);"><ac:link ac:anchor="reviews_html"><ri:content-entity ri:content-id="54069889" /><ac:plain-text-link-body><![CDATA[reviews.html]]></ac:plain-text-link-body></ac:link></span></p>
+            </th>
+            <td style="margin-left: 30.0px;">
+                <p style="margin-left: 30.0px;"><strong><span style="color: rgb(0,255,0);"><ac:link ac:anchor="ROOTDIR"><ri:content-entity ri:content-id="54069889" /></ac:link></span><span style="color: rgb(0,0,0);">/resources/aclsdb/reviews/hebxxxxx.xxxx.xxx.xml</span></strong></p>
+            </td>
+        </tr>
+        <tr style="margin-left: 30.0px;">
+            <th style="margin-left: 30.0px;">
+                <p style="margin-left: 30.0px;"><span style="color: rgb(0,255,0);"><ac:link ac:anchor="series_html"><ri:content-entity ri:content-id="54069889" /><ac:plain-text-link-body><![CDATA[series.html]]></ac:plain-text-link-body></ac:link></span></p>
+            </th>
+            <td style="margin-left: 30.0px;">
+                <p style="margin-left: 30.0px;"><strong><span style="color: rgb(0,255,0);"><ac:link ac:anchor="ROOTDIR"><ri:content-entity ri:content-id="54069889" /></ac:link></span><span style="color: rgb(0,0,0);">/resources/aclsdb/series/hebxxxxx.xxxx.xxx.xml</span></strong></p>
+            </td>
+        </tr>
+        <tr style="margin-left: 30.0px;">
+            <th style="margin-left: 30.0px;">
+                <p style="margin-left: 30.0px;"><span style="color: rgb(0,255,0);"><ac:link ac:anchor="subject_html"><ri:content-entity ri:content-id="54069889" /><ac:plain-text-link-body><![CDATA[subject.html]]></ac:plain-text-link-body></ac:link></span></p>
+            </th>
+            <td style="margin-left: 30.0px;">
+                <p style="margin-left: 30.0px;"><strong><span style="color: rgb(0,255,0);"><ac:link ac:anchor="ROOTDIR"><ri:content-entity ri:content-id="54069889" /></ac:link></span><span style="color: rgb(0,0,0);">/resources/aclsdb/subject/hebxxxxx.xxxx.xxx.xml</span></strong></p>
+            </td>
+        </tr>
+    </tbody>
+</table>
+<h3>Step 2.3 - Copy Font Files (flowepub only)</h3>
+<p><span><span style="color: rgb(0,0,0);">The font files are found in the directory</span></span>
+</p>
+<p style="margin-left: 30.0px;"><strong><span style="color: rgb(0,255,0);"><ac:link ac:anchor="ROOTDIR"><ri:content-entity ri:content-id="54069889" /></ac:link></span><span style="color: rgb(0,0,0);">/flowepub/fonts</span></strong></p>
+<p><span><span style="color: rgb(0,0,0);">and copied into the </span><span style="color: rgb(0,255,0);"><ac:link ac:anchor="fonts_dir"><ri:content-entity ri:content-id="54069889" /><ac:plain-text-link-body><![CDATA[fonts]]></ac:plain-text-link-body></ac:link></span><span style="color: rgb(0,0,0);"> directory. The </span><span style="color: rgb(0,255,0);"><ac:link ac:anchor="fonts_html"><ri:content-entity ri:content-id="54069889" /><ac:plain-text-link-body><![CDATA[fonts.html]]></ac:plain-text-link-body></ac:link></span><span style="color: rgb(0,0,0);"> file is generated during this step. For </span><strong><span style="color: rgb(0,0,0);">fixepub</span></strong><span style="color: rgb(0,0,0);">, currently there are no fonts to include. So, this file is empty.</span></span>
+</p>
+<h3>Step 2.4 - Copy Stylesheet Files</h3>
+<p><span><span style="color: rgb(0,0,0);">The CSS stylesheet file(s) are found in the directory</span></span>
+</p>
+<p style="margin-left: 30.0px;"><span><span style="color: rgb(0,255,0);"><strong><ac:link ac:anchor="ROOTDIR"><ri:content-entity ri:content-id="54069889" /></ac:link></strong></span><span style="color: rgb(0,0,0);">/</span><em><span style="color: rgb(0,0,0);">layout</span></em><span style="color: rgb(0,0,0);">/<strong>styles</strong></span></span>
+</p>
+<p><span><span style="color: rgb(0,0,0);">where </span><em><span style="color: rgb(0,0,0);">layout </span></em><span style="color: rgb(0,0,0);">is either </span><strong><span style="color: rgb(0,0,0);">fixepub </span></strong><span style="color: rgb(0,0,0);">or </span><strong><span style="color: rgb(0,0,0);">flowepub </span></strong><span style="color: rgb(0,0,0);">and are copied into the </span><span style="color: rgb(0,255,0);"><ac:link ac:anchor="styles_dir"><ri:content-entity ri:content-id="54069889" /><ac:plain-text-link-body><![CDATA[styles]]></ac:plain-text-link-body></ac:link></span><span style="color: rgb(0,0,0);"> directory. The </span><span style="color: rgb(0,255,0);"><ac:link ac:anchor="stylesheets_html"><ri:content-entity ri:content-id="54069889" /><ac:plain-text-link-body><![CDATA[stylesheets.html]]></ac:plain-text-link-body></ac:link></span><span style="color: rgb(0,0,0);"> file is generated during this step.</span></span>
+</p>
+<h3>Step 2.5 - Determine Book Assets</h3>
+<p><span><span style="color: rgb(0,0,0);">Assets include book cover image/audio/video/PDF/etc files. These files use the book HEB ID as the prefix for the filename and are expected to reside in the directory:</span></span>
+</p>
+<p style="margin-left: 30.0px;"><strong><span style="color: rgb(0,255,0);"><ac:link ac:anchor="ROOTDIR"><ri:content-entity ri:content-id="54069889" /></ac:link></span><span style="color: rgb(0,0,0);">/resources/assets</span></strong></p>
+<p><span><span style="color: rgb(0,0,0);">No files are copied during this step. The </span><span style="color: rgb(0,255,0);"><ac:link ac:anchor="assets_html"><ri:content-entity ri:content-id="54069889" /><ac:plain-text-link-body><![CDATA[assets.html]]></ac:plain-text-link-body></ac:link></span><span style="color: rgb(0,0,0);"> file is generated.</span></span>
+</p>
+<h3>Step 2.6 - Generate TEI XML File</h3>
+<p><span style="color: rgb(0,0,0);">Transform the DLXS XML file </span><span style="color: rgb(0,255,0);"><ac:link ac:anchor="heb_dlxs_xml"><ri:content-entity ri:content-id="54069889" /><ac:plain-text-link-body><![CDATA[hebxxxxx.xxxx.xxx_dlxs.xml]]></ac:plain-text-link-body></ac:link></span><span style="color: rgb(0,0,0);"> to the TEI XML file </span><span style="color: rgb(0,255,0);"><ac:link ac:anchor="heb_tei_xml"><ri:content-entity ri:content-id="54069889" /><ac:plain-text-link-body><![CDATA[hebxxxxx.xxxx.xxx_tei.xml]]></ac:plain-text-link-body></ac:link></span><span style="color: rgb(0,0,0);"> using the XSLT stylesheet </span><span style="color: rgb(0,255,0);"><ac:link ac:anchor="hebdlxs2tei_xsl"><ri:content-entity ri:content-id="54069889" /><ac:plain-text-link-body><![CDATA[hebdlxs2tei.xsl]]></ac:plain-text-link-body></ac:link></span><span style="color: rgb(0,0,0);">.</span></p>
+<h3>Step 2.7 - Copy Book Cover Image(s)</h3>
+<p>The cover image(s) are located at the path:</p>
+<p style="margin-left: 30.0px;"><strong><span style="color: rgb(0,255,0);"><ac:link ac:anchor="ROOTDIR"><ri:content-entity ri:content-id="54069889" /></ac:link></span>/resources/assets/hebxxxxx.xxxx.xxx.jpg</strong></p>
+<p style="margin-left: 30.0px;"><strong><span style="color: rgb(0,255,0);"><ac:link ac:anchor="ROOTDIR"><ri:content-entity ri:content-id="54069889" /></ac:link></span>/resources/assets/hebxxxxx.xxxx.xxx-lg.jpg</strong> (higher resolution, may not be present)</p>
+<p>and copied in the <span style="color: rgb(0,255,0);"><ac:link ac:anchor="images_dir"><ri:content-entity ri:content-id="54069889" /><ac:plain-text-link-body><![CDATA[images]]></ac:plain-text-link-body></ac:link></span> directory.</p>
+<h3>Step 2.8 - Determine Image Dimensions (fixepub only)</h3>
+<p><span><span style="color: rgb(0,0,0);">For </span><strong><span style="color: rgb(0,0,0);">fixepub </span></strong><span style="color: rgb(0,0,0);">only, all images found in the </span><span style="color: rgb(0,255,0);"><ac:link ac:anchor="images_dir"><ri:content-entity ri:content-id="54069889" /><ac:plain-text-link-body><![CDATA[images]]></ac:plain-text-link-body></ac:link></span><span style="color: rgb(0,0,0);"> directory, including cover images and page scan image files (see </span><span style="color: rgb(17,85,204);"><ac:link ac:anchor="Process1 - Convert Page Scans (fixepub only)"><ri:content-entity ri:content-id="54069889" /><ac:plain-text-link-body><![CDATA[Process 1]]></ac:plain-text-link-body></ac:link></span><span style="color: rgb(0,0,0);">) are used as input for generating the </span><span style="color: rgb(0,255,0);"><ac:link ac:anchor="images_html"><ri:content-entity ri:content-id="54069889" /><ac:plain-text-link-body><![CDATA[images.html]]></ac:plain-text-link-body></ac:link></span><span style="color: rgb(0,0,0);"> file.</span></span>
+</p>
+<h3>Step 2.9 - Generate EPUB Structure</h3>
+<p><span><span style="color: rgb(0,0,0);">The TEI XML file </span><span style="color: rgb(0,255,0);"><ac:link ac:anchor="heb_tei_xml"><ri:content-entity ri:content-id="54069889" /><ac:plain-text-link-body><![CDATA[hebxxxxx.xxxx.xxx_tei.xml]]></ac:plain-text-link-body></ac:link></span><span style="color: rgb(0,0,0);"> contains references to the resources (</span><span style="color: rgb(0,255,0);"><ac:link ac:anchor="marc.xml"><ri:content-entity ri:content-id="54069889" /></ac:link></span><span style="color: rgb(0,0,0);">, </span><span style="color: rgb(0,255,0);"><ac:link ac:anchor="copyholder_html"><ri:content-entity ri:content-id="54069889" /><ac:plain-text-link-body><![CDATA[copyholder.html]]></ac:plain-text-link-body></ac:link></span><span style="color: rgb(0,0,0);">, </span><span style="color: rgb(0,255,0);"><ac:link ac:anchor="related_title_html"><ri:content-entity ri:content-id="54069889" /><ac:plain-text-link-body><![CDATA[related_title.html]]></ac:plain-text-link-body></ac:link></span><span style="color: rgb(0,0,0);">, </span><span style="color: rgb(0,255,0);"><ac:link ac:anchor="reviews_html"><ri:content-entity ri:content-id="54069889" /><ac:plain-text-link-body><![CDATA[reviews.html]]></ac:plain-text-link-body></ac:link></span><span style="color: rgb(0,0,0);">, </span><span style="color: rgb(0,255,0);"><ac:link ac:anchor="series_html"><ri:content-entity ri:content-id="54069889" /><ac:plain-text-link-body><![CDATA[series.html]]></ac:plain-text-link-body></ac:link></span><span style="color: rgb(0,0,0);">, </span><span style="color: rgb(0,255,0);"><ac:link ac:anchor="subject_html"><ri:content-entity ri:content-id="54069889" /><ac:plain-text-link-body><![CDATA[subject.html]]></ac:plain-text-link-body></ac:link></span><span style="color: rgb(0,0,0);">), fonts (</span><span style="color: rgb(0,255,0);"><ac:link ac:anchor="fonts_html"><ri:content-entity ri:content-id="54069889" /><ac:plain-text-link-body><![CDATA[fonts.html]]></ac:plain-text-link-body></ac:link></span><span style="color: rgb(0,0,0);">), CSS stylesheets <span style="color: rgb(0,255,0);">(</span></span><span style="color: rgb(0,255,0);"><ac:link ac:anchor="stylesheets_html"><ri:content-entity ri:content-id="54069889" /><ac:plain-text-link-body><![CDATA[stylesheets.html]]></ac:plain-text-link-body></ac:link></span><span style="color: rgb(0,0,0);">), and book assets (</span><span style="color: rgb(0,255,0);"><ac:link ac:anchor="assets_html"><ri:content-entity ri:content-id="54069889" /><ac:plain-text-link-body><![CDATA[assets.html]]></ac:plain-text-link-body></ac:link></span><span style="color: rgb(0,0,0);">). It is used as the input to a XSLT transformation to produce the EPUB book content found in the </span><span style="color: rgb(0,255,0);"><ac:link ac:anchor="OEBPS"><ri:content-entity ri:content-id="54069889" /></ac:link></span><span style="color: rgb(0,0,0);"> directory. The XSLT stylesheet </span><span style="color: rgb(0,255,0);"><ac:link ac:anchor="hebtei2fixepub_xsl"><ri:content-entity ri:content-id="54069889" /><ac:plain-text-link-body><![CDATA[hebtei2fixepub.xsl]]></ac:plain-text-link-body></ac:link></span><span style="color: rgb(0,0,0);"> (fixepub) and </span><span style="color: rgb(0,255,0);"><ac:link ac:anchor="hebtei2flowepub_xsl"><ri:content-entity ri:content-id="54069889" /><ac:plain-text-link-body><![CDATA[hebtei2flowepub.xsl]]></ac:plain-text-link-body></ac:link></span><span style="color: rgb(0,0,0);"> (flowepub) are used for the transformation.</span></span>
+</p>
+<h3>Step 2.10 - Copy Image Files / Determine Image Dimensions (flowepub only)</h3>
+<p><span><span style="color: rgb(0,0,0);">For </span><span style="color: rgb(0,0,0);"><strong>flowepub</strong> </span><span style="color: rgb(0,0,0);">only, all images referenced by the </span><span style="color: rgb(0,0,0);">TEI XML file </span><span style="color: rgb(0,255,0);"><ac:link ac:anchor="heb_tei_xml"><ri:content-entity ri:content-id="54069889" /><ac:plain-text-link-body><![CDATA[hebxxxxx.xxxx.xxx_tei.xml]]></ac:plain-text-link-body></ac:link></span><span style="color: rgb(0,0,0);"> are copied to the </span><span style="color: rgb(0,255,0);"><ac:link ac:anchor="images_dir"><ri:content-entity ri:content-id="54069889" /><ac:plain-text-link-body><![CDATA[images]]></ac:plain-text-link-body></ac:link></span><span style="color: rgb(0,0,0);"> directory. Then </span><span style="color: rgb(0,0,0);">all images found in the </span><span style="color: rgb(0,255,0);"><ac:link ac:anchor="images_dir"><ri:content-entity ri:content-id="54069889" /><ac:plain-text-link-body><![CDATA[images]]></ac:plain-text-link-body></ac:link></span><span style="color: rgb(0,0,0);"> directory, including cover images, are used as input for generating the </span><span style="color: rgb(0,255,0);"><ac:link ac:anchor="images_html"><ri:content-entity ri:content-id="54069889" /><ac:plain-text-link-body><![CDATA[images.html]]></ac:plain-text-link-body></ac:link></span><span style="color: rgb(0,0,0);"> file.</span></span>
+</p>
+<h3>Step 2.11 - Zip EPUB Structure</h3>
+<p><span><span style="color: rgb(0,0,0);">The </span><span style="color: rgb(0,255,0);"><ac:link ac:anchor="heb_epub"><ri:content-entity ri:content-id="54069889" /><ac:plain-text-link-body><![CDATA[hebxxxxx.xxxx.xxx.epub]]></ac:plain-text-link-body></ac:link></span><span style="color: rgb(0,0,0);"> file is generated by zipping the contents of the </span><span style="color: rgb(0,255,0);"><ac:link ac:anchor="epub_dir"><ri:content-entity ri:content-id="54069889" /><ac:plain-text-link-body><![CDATA[epub]]></ac:plain-text-link-body></ac:link></span><span style="color: rgb(0,0,0);"> directory.</span></span>
+</p>
+<h2>Process 3 - EPUB Structure Validation</h2>
+<p><span style="color: rgb(0,0,0);">Any HEB EPUB directory can be validated by invoking the following commands:</span></p>
+<p style="margin-left: 30.0px;"><em><span style="color: rgb(0,0,0);">cd /quod-prep/prep/a/acls/hebepub</span><span style="color: rgb(0,0,0);"><br class="kix-line-break" /></span><span style="color: rgb(0,0,0);"><span class="Apple-tab-span"> </span></span><span style="color: rgb(0,0,0);"><span style="color: rgb(0,255,0);"><span style="color: rgb(0,51,102);">target/bin/</span><ac:link ac:anchor="hebepub"><ri:content-entity ri:content-id="54069889" /></ac:link></span> check layout/books/hebxxxxx.xxxx.xxx</span></em></p>
+<p><span style="color: rgb(0,0,0);">where </span><span style="color: rgb(0,0,0);">layout</span><span style="color: rgb(0,0,0);"> is either </span><strong><span style="color: rgb(0,0,0);">fixepub</span></strong><span style="color: rgb(0,0,0);"> or </span><strong><span style="color: rgb(0,0,0);">flowepub</span></strong><span style="color: rgb(0,0,0);">. The results can be found in the file</span></p>
+<p style="margin-left: 30.0px;"><span style="color: rgb(0,255,0);"><strong><ac:link ac:anchor="ROOTDIR"><ri:content-entity ri:content-id="54069889" /></ac:link></strong></span><span style="color: rgb(0,0,0);"><em>/layout</em>/books/hebxxxxx.xxxx.xxx/</span><span style="color: rgb(0,255,0);"><ac:link ac:anchor="epubcheck_xml"><ri:content-entity ri:content-id="54069889" /><ac:plain-text-link-body><![CDATA[epubcheck.xml]]></ac:plain-text-link-body></ac:link></span></p>
+<h2>Process 4 - Generate Fulcrum Monograph Bundle Archive</h2>
+<p><span style="color: rgb(0,0,0);">To create a new monograph for a HEB EPUB, the </span><span style="color: rgb(0,255,0);"><ac:link ac:anchor="heb_zip"><ri:content-entity ri:content-id="54069889" /><ac:plain-text-link-body><![CDATA[hebxxxxx.xxxx.xxx.zip]]></ac:plain-text-link-body></ac:link></span><span style="color: rgb(0,0,0);"> may be generated by invoking the following commands:</span></p>
+<p style="margin-left: 30.0px;"><em><span style="color: rgb(0,0,0);">cd /quod-prep/prep/a/acls/hebepub</span><span style="color: rgb(0,0,0);"><br class="kix-line-break" /></span><span style="color: rgb(0,0,0);"><span class="Apple-tab-span"> </span></span><span style="color: rgb(0,0,0);"><span style="color: rgb(0,255,0);"><span style="color: rgb(0,51,102);">target/bin/</span><ac:link ac:anchor="hebepub"><ri:content-entity ri:content-id="54069889" /></ac:link></span> bundle layout/hebxxxxx.xxxx.xxx</span></em></p>
+<p><span style="color: rgb(0,0,0);">where </span><em><span style="color: rgb(0,0,0);">layout</span></em><span style="color: rgb(0,0,0);"> is either </span><strong><span style="color: rgb(0,0,0);">fixepub</span></strong><span style="color: rgb(0,0,0);"> or </span><strong><span style="color: rgb(0,0,0);">flowepub</span></strong><span style="color: rgb(0,0,0);">.&nbsp;</span><span style="color: rgb(0,0,0);">Below are the process steps for generating the bundle. This process may invoke <ac:link ac:anchor="Process2-GenerateEPUBArchive"><ri:content-entity ri:content-id="54069889" /><ac:plain-text-link-body><![CDATA[Process 2]]></ac:plain-text-link-body></ac:link> if the <ac:link ac:anchor="heb_epub"><ri:content-entity ri:content-id="54069889" /><ac:plain-text-link-body><![CDATA[hebdxxxx.xxxx.xxx.epub]]></ac:plain-text-link-body></ac:link> has not been previously generated.</span></p>
+<h3>Step 4.1 - Generate Monograph Metadata CSV</h3>
+<p><span><span style="color: rgb(0,0,0);">The TEI XML file </span><span style="color: rgb(0,255,0);"><ac:link ac:anchor="heb_tei_xml"><ri:content-entity ri:content-id="54069889" /><ac:plain-text-link-body><![CDATA[hebxxxxx.xxxx.xxx_tei.xml]]></ac:plain-text-link-body></ac:link></span><span style="color: rgb(0,0,0);"> is used as the input to a XSLT transformation to produce the monograph metadata file </span><span style="color: rgb(0,255,0);"><ac:link ac:anchor="heb_metadata_csv"><ri:content-entity ri:content-id="54069889" /><ac:plain-text-link-body><![CDATA[hebxxxxx.xxxx.xxx_metadata.csv]]></ac:plain-text-link-body></ac:link></span><span style="color: rgb(0,0,0);">. The XSLT stylesheet </span><span style="color: rgb(0,255,0);"><ac:link ac:anchor="hebtei2meta_xsl"><ri:content-entity ri:content-id="54069889" /><ac:plain-text-link-body><![CDATA[hebtei2meta.xsl]]></ac:plain-text-link-body></ac:link></span><span style="color: rgb(0,0,0);"> is used for the transformation.</span></span>
+</p>
+<h3>Step 4.2 - Determine Media Assets</h3>
+<p><span><span style="color: rgb(0,0,0);">The <ac:link ac:anchor="assets_html"><ri:content-entity ri:content-id="54069889" /><ac:plain-text-link-body><![CDATA[assets.html]]></ac:plain-text-link-body></ac:link></span><span style="color: rgb(0,0,0);">&nbsp;file is used to determine the assets that are to be uploaded to Fulcrum and listed on the monograph Media tab.</span></span>
+</p>
+<h3>Step 4.3 - Zip Monograph Bundle</h3>
+<p><span><span style="color: rgb(0,0,0);">The </span><span style="color: rgb(0,255,0);"><ac:link ac:anchor="heb_zip"><ri:content-entity ri:content-id="54069889" /><ac:plain-text-link-body><![CDATA[hebxxxxx.xxxx.xxx.zip]]></ac:plain-text-link-body></ac:link></span><span style="color: rgb(0,0,0);"> can be generated as the necessary files have been generated.</span></span>
+</p>
+<h2>Process 5 - Add Asset Links</h2>
+<p><span style="color: rgb(0,0,0);">Links to existing Fulcrum Media asset pages may be added to an EPUB by performing the following steps:</span></p>
+<ol>
+    <li style="list-style-type: decimal;">
+        <p><span>Download the asset CSV file from the Fulcrum monograph page.</span></p>
+    </li>
+    <li style="list-style-type: decimal;">
+        <p><span>Rename the CSV using HEB ID, </span><strong>hebxxxxx.xxxx.xxx.csv</strong><span>, and store it in the </span><strong><span style="color: rgb(0,255,0);"><ac:link ac:anchor="ROOTDIR"><ri:content-entity ri:content-id="54069889" /></ac:link></span>/resources/asset_links</strong><span> directory.</span></p>
+    </li>
+    <li style="list-style-type: decimal;">
+        <p><span>Invoke the commands in the section </span><span style="color: rgb(17,85,204);"><ac:link ac:anchor="Process2-GenerateEPUBArchive"><ri:content-entity ri:content-id="54069889" /><ac:plain-text-link-body><![CDATA[Generate EPUB Archive]]></ac:plain-text-link-body></ac:link></span><span> to regenerate the EPUB archive.</span></p>
+    </li>
+    <li style="list-style-type: decimal;">
+        <p><span>Replace or re-version the EPUB archive file asset on the Fulcrum monograph page.</span></p>
+    </li>
+</ol>
+<h2>Process 6 - Clobber Source Files</h2>
+<p><span style="color: rgb(0,0,0);">To re-generate either a HEB EPUB or Fulcrum bundle, invoke the following commands:</span></p>
+<p style="margin-left: 30.0px;"><span style="color: rgb(0,0,0);"><em>cd /quod-prep/prep/a/acls/hebepub</em><br /><em><span style="color: rgb(0,255,0);"><span style="color: rgb(0,51,102);">target/bin/</span>
+    <ac:link ac:anchor="hebepub">
+        <ri:content-entity ri:content-id="54069889" />
+    </ac:link>
+    </span> clobber layout/hebxxxxx.xxxx.xxx</em><br /></span>
+</p>
+<p><span style="color: rgb(0,0,0);"> This removes the necessary files to allow the HEB book source directory to be rebuilt from scratch. This removes all files except the following:</span></p>
+<ul>
+    <li style="list-style-type: disc;">
+        <p><span style="color: rgb(17,85,204);"><span style="color: rgb(0,51,102);"><ac:link ac:anchor="heb_dlxs_xml"><ri:content-entity ri:content-id="54069889" /><ac:plain-text-link-body><![CDATA[hebxxxxx.xxxx.xxx_dlxs.xml]]></ac:plain-text-link-body></ac:link></span></span>&nbsp;- this file may have been modified by hand to generate this book. So this file is not removed.</p>
+    </li>
+    <li style="list-style-type: disc;">
+        <p><span style="color: rgb(0,255,0);"><ac:link ac:anchor="heb_dlxs_org_xml"><ri:content-entity ri:content-id="54069889" /><ac:plain-text-link-body><![CDATA[hebxxxxx.xxxx.xxx_dlxs_org.xml]]></ac:plain-text-link-body></ac:link></span>&nbsp;- if present, preserve the original DLXS XML source.</p>
+    </li>
+</ul>
+<p><span style="color: rgb(0,0,0);">For </span><strong><span style="color: rgb(0,0,0);">fixepub</span></strong><span style="color: rgb(0,0,0);">, the above files are not removed and also the following is not removed:</span></p>
+<ul>
+    <li style="list-style-type: disc;">
+        <p><span style="color: rgb(0,255,0);"><ac:link ac:anchor="images_dir"><ri:content-entity ri:content-id="54069889" /><ac:plain-text-link-body><![CDATA[images]]></ac:plain-text-link-body></ac:link></span><span style="color: rgb(0,0,0);"> directory. Since often TIF files have been converted to PNG and this process can be time consuming, the page scans are not removed.</span></p>
+    </li>
+</ul>
+<h1>Implementation</h1>
+<p><span style="color: rgb(0,0,0);">Below is a description of the </span><strong><span style="color: rgb(0,255,0);"><ac:link ac:anchor="ROOTDIR"><ri:content-entity ri:content-id="54069889" /></ac:link></span><span style="color: rgb(0,0,0);">/target </span></strong><span style="color: rgb(0,0,0);">directory and the files contained within:</span></p>
+<ul>
+    <li style="list-style-type: disc;">
+        <p><strong>bin</strong><span> - contains bash shell script for invoking the genertion process.</span></p>
+    </li>
+    <ul>
+        <li style="list-style-type: circle;">
+            <p><em><ac:structured-macro ac:name="anchor" ac:schema-version="1" ac:macro-id="f8ed81c3-1e26-4cb5-8e51-880375a470a4"><ac:parameter ac:name="">hebepub</ac:parameter></ac:structured-macro>hebepub</em><span> - script for invoking the epub/bundle generation process. The script iterates over the list specified HEB directories and invokes a series of </span><span><strong>rake</strong> </span><span>tasks on each. It also sets a few environment specific variables (development or production) used by the </span><strong>rake </strong><span>tasks. See the script for more information.</span></p>
+        </li>
+    </ul>
+    <li style="list-style-type: circle;">
+        <p><strong>layouts</strong> - contains files specific to a layout.</p>
+        <ul>
+            <li><strong>fixepub</strong> - contains files specific to the fixed page layout.
+                <ul>
+                    <li><strong>styles</strong> -&nbsp;<span style="color: rgb(0,0,0);">directory containing the CSS stylesheets to be included in the&nbsp;</span><span style="color: rgb(0,255,0);"><ac:link ac:anchor="styles_dir"><ri:content-entity ri:content-id="54069889" /><ac:plain-text-link-body><![CDATA[styles]]></ac:plain-text-link-body></ac:link></span><span style="color: rgb(0,0,0);">&nbsp;directory of a HEB EPUB archive.</span></li>
+                </ul>
+            </li>
+            <li><strong>flowepub</strong> -&nbsp;contains files specific to the flowable page layout.<br />
+                <ul>
+                    <li style="list-style-type: disc;">
+                        <p><strong>fonts&nbsp;</strong>- directory containing the fonts to be included in the&nbsp;<span style="color: rgb(0,255,0);"><ac:link ac:anchor="fonts_dir"><ri:content-entity ri:content-id="54069889" /><ac:plain-text-link-body><![CDATA[fonts]]></ac:plain-text-link-body></ac:link></span>&nbsp;directory of a HEB EPUB archive.</p>
+                    </li>
+                    <li style="list-style-type: disc;">
+                        <p><strong><span style="color: rgb(0,0,0);">styles&nbsp;</span></strong><span style="color: rgb(0,0,0);">- directory containing the CSS stylesheets to be included in the&nbsp;</span><span style="color: rgb(0,255,0);"><ac:link ac:anchor="styles_dir"><ri:content-entity ri:content-id="54069889" /><ac:plain-text-link-body><![CDATA[styles]]></ac:plain-text-link-body></ac:link></span><span style="color: rgb(0,0,0);">&nbsp;directory of a HEB EPUB archive.</span></p>
+                    </li>
+                </ul>
+            </li>
+        </ul>
+    </li>
+    <li style="list-style-type: disc;">
+        <p><strong>lib</strong><span> - contains files to support the above described scripts</span><span>.</span></p>
+    </li>
+    <ul>
+        <li style="list-style-type: circle;">
+            <p><strong>jars </strong><span>- directory contains the following Java jar files:</span></p>
+        </li>
+        <ul>
+            <li style="list-style-type: square;">
+                <p><strong>epubcheck-jar-with-dependencies.jar</strong><span> - epubcheck jar file from w3c/epubcheck GitHub. provides support for the </span><em><ac:link ac:anchor="hebepub"><ri:content-entity ri:content-id="54069889" /><ac:plain-text-link-body><![CDATA[hebepub ]]></ac:plain-text-link-body></ac:link>check </em><span>production.</span></p>
+            </li>
+            <li style="list-style-type: square;">
+                <p><strong>hebimg-jar-with-dependencies.jar</strong><span> - &nbsp;provides support for the </span><em><ac:link ac:anchor="hebepub"><ri:content-entity ri:content-id="54069889" /></ac:link> convert</em><span> production. Includes support for image formats except jp2.</span></p>
+            </li>
+            <li style="list-style-type: square;">
+                <p><strong>hebimgjp2-jar-with-dependencies.jar</strong><span> - &nbsp;provides support for the </span><em><ac:link ac:anchor="hebepub"><ri:content-entity ri:content-id="54069889" /></ac:link> convert</em><span> production. Support for image formats except tif.</span></p>
+            </li>
+            <li style="list-style-type: square;">
+                <p><strong>hebxslt-jar-with-dependencies.jar</strong><span> - provides support for the </span><em><ac:link ac:anchor="hebepub"><ri:content-entity ri:content-id="54069889" /></ac:link> epub | bundle </em><span>productions. Invokes a XSLT 3.0 processor.</span></p>
+            </li>
+        </ul>
+        <li style="list-style-type: circle;">
+            <p><strong>rake</strong><span>&nbsp;- directory contains the following Ruby and Rake task files:</span></p>
+        </li>
+        <ul>
+            <li style="list-style-type: square;">
+                <p><strong><ac:structured-macro ac:name="anchor" ac:schema-version="1" ac:macro-id="b8466ea9-d474-4c9f-a566-1eff83305fae"><ac:parameter ac:name="">rakefile</ac:parameter></ac:structured-macro>rakefile </strong><span>- top level Rake task file that implements the process productions described in section </span><span style="color: rgb(17,85,204);"><ac:link ac:anchor="ProcessInvocation"><ri:content-entity ri:content-id="54069889" /><ac:plain-text-link-body><![CDATA[Process Invocation]]></ac:plain-text-link-body></ac:link></span><span>.</span></p>
+            </li>
+            <li style="list-style-type: square;">
+                <p><strong>acls.rake</strong><span> - Rake task file imported by </span><span style="color: rgb(0,255,0);"><ac:link ac:anchor="rakefile"><ri:content-entity ri:content-id="54069889" /></ac:link></span><span> that implements the dependencies for the ACLS provided files, including </span><span style="color: rgb(0,255,0);"><ac:link ac:anchor="copyholder_html"><ri:content-entity ri:content-id="54069889" /><ac:plain-text-link-body><![CDATA[copyholder.html]]></ac:plain-text-link-body></ac:link></span><span>, </span><span style="color: rgb(0,255,0);"><ac:link ac:anchor="related_title_html"><ri:content-entity ri:content-id="54069889" /><ac:plain-text-link-body><![CDATA[related_title.html]]></ac:plain-text-link-body></ac:link></span><span>, </span><span style="color: rgb(0,255,0);"><ac:link ac:anchor="reviews_html"><ri:content-entity ri:content-id="54069889" /><ac:plain-text-link-body><![CDATA[reviews.html]]></ac:plain-text-link-body></ac:link></span><span>, </span><span style="color: rgb(0,255,0);"><ac:link ac:anchor="series_html"><ri:content-entity ri:content-id="54069889" /><ac:plain-text-link-body><![CDATA[series.html]]></ac:plain-text-link-body></ac:link></span><span>, and </span><span style="color: rgb(0,255,0);"><ac:link ac:anchor="subject_html"><ri:content-entity ri:content-id="54069889" /><ac:plain-text-link-body><![CDATA[subject.html]]></ac:plain-text-link-body></ac:link></span><span>.</span></p>
+            </li>
+            <li style="list-style-type: square;">
+                <p><strong>assets.rake</strong><span> - Rake task file imported by </span><span style="color: rgb(0,255,0);"><ac:link ac:anchor="rakefile"><ri:content-entity ri:content-id="54069889" /></ac:link></span><span> </span><span>that implements the dependencies for the </span><span style="color: rgb(0,255,0);"><ac:link ac:anchor="assets_html"><ri:content-entity ri:content-id="54069889" /><ac:plain-text-link-body><![CDATA[assets.html]]></ac:plain-text-link-body></ac:link></span><span> file.</span></p>
+            </li>
+            <li style="list-style-type: square;">
+                <p><strong>fonts.rake</strong><span> - Rake task file imported by </span><span style="color: rgb(0,255,0);"><ac:link ac:anchor="rakefile"><ri:content-entity ri:content-id="54069889" /></ac:link></span><span> </span><span>that implements the dependencies for the </span><span style="color: rgb(0,255,0);"><ac:link ac:anchor="fonts_html"><ri:content-entity ri:content-id="54069889" /><ac:plain-text-link-body><![CDATA[fonts.html]]></ac:plain-text-link-body></ac:link></span><span> file.</span></p>
+            </li>
+            <li style="list-style-type: square;">
+                <p><span><strong>Gemfile</strong> - Gem file listed required gems.</span></p>
+            </li>
+            <li style="list-style-type: square;">
+                <p><strong>styles.rake</strong><span> - Rake task file imported by </span><span style="color: rgb(0,255,0);"><ac:link ac:anchor="rakefile"><ri:content-entity ri:content-id="54069889" /></ac:link></span><span> </span><span>that implements the dependencies for the </span><span style="color: rgb(0,255,0);"><ac:link ac:anchor="stylesheets_html"><ri:content-entity ri:content-id="54069889" /><ac:plain-text-link-body><![CDATA[stylesheets.html]]></ac:plain-text-link-body></ac:link></span><span> file.</span></p>
+            </li>
+            <li style="list-style-type: square;">
+                <p><strong>common.rb</strong><span> - sets the value of path variables that are shared by the rest of the Ruby and Rake task files, such paths to the EPUB source files and the </span><span>target </span><span>directory files.</span></p>
+            </li>
+            <li style="list-style-type: square;">
+                <p><strong>AssetListener.rb</strong><span> - Ruby class file implementing a listener used during parsing of the </span><span style="color: rgb(0,255,0);"><ac:link ac:anchor="assets_html"><ri:content-entity ri:content-id="54069889" /><ac:plain-text-link-body><![CDATA[assets.html]]></ac:plain-text-link-body></ac:link></span><span> and </span><span style="color: rgb(0,255,0);"><ac:link ac:anchor="links_html"><ri:content-entity ri:content-id="54069889" /><ac:plain-text-link-body><![CDATA[links.html]]></ac:plain-text-link-body></ac:link></span><span> files.</span></p>
+            </li>
+            <li style="list-style-type: square;">
+                <p><span><strong>EmptyListener.rb</strong> -&nbsp;Ruby class file implementing a listener used for parsing&nbsp;<ac:link ac:anchor="related_title_html"><ri:content-entity ri:content-id="54069889" /><ac:plain-text-link-body><![CDATA[related_title.html]]></ac:plain-text-link-body></ac:link>&nbsp;and&nbsp;<ac:link ac:anchor="reviews_html"><ri:content-entity ri:content-id="54069889" /><ac:plain-text-link-body><![CDATA[reviews.html]]></ac:plain-text-link-body></ac:link>&nbsp;to determine if they are empty. If so, these files are not included in the Fulcrum bundle <ac:link ac:anchor="heb_zip"><ri:content-entity ri:content-id="54069889" /><ac:plain-text-link-body><![CDATA[hebxxxxx.xxxx.xxx.zip]]></ac:plain-text-link-body></ac:link></span></p>
+            </li>
+        </ul>
+        <li style="list-style-type: circle;">
+            <p><strong>xsl </strong><span>- directory contains the following XSLT files:</span></p>
+        </li>
+        <ul>
+            <li style="list-style-type: square;">
+                <p><strong><ac:structured-macro ac:name="anchor" ac:schema-version="1" ac:macro-id="5f601ac8-19f6-4c9a-9a18-4558462f6e71"><ac:parameter ac:name="">hebdlxs2tei_xsl</ac:parameter></ac:structured-macro>hebdlxs2tei.xsl</strong><span> - transforms DLXS XML file </span><span style="color: rgb(0,255,0);"><ac:link ac:anchor="heb_dlxs_xml"><ri:content-entity ri:content-id="54069889" /><ac:plain-text-link-body><![CDATA[hebxxxxx.xxxx.xxx_dlxs.xml]]></ac:plain-text-link-body></ac:link></span><span> to TEI XML file </span><span style="color: rgb(0,255,0);"><ac:link ac:anchor="heb_tei_xml"><ri:content-entity ri:content-id="54069889" /><ac:plain-text-link-body><![CDATA[hebxxxxx.xxxx.xxx_tei.xml]]></ac:plain-text-link-body></ac:link></span><span>. See process </span><span style="color: rgb(17,85,204);"><ac:link ac:anchor="Step2.6-GenerateTEIXMLFile"><ri:content-entity ri:content-id="54069889" /><ac:plain-text-link-body><![CDATA[Step 2.6 - Generate TEI XML File]]></ac:plain-text-link-body></ac:link></span><span>.</span></p>
+            </li>
+            <li style="list-style-type: square;">
+                <p><strong><ac:structured-macro ac:name="anchor" ac:schema-version="1" ac:macro-id="0d78b1dd-f61d-441b-8575-3c215185a4db"><ac:parameter ac:name="">hebtei2fixepub_xsl</ac:parameter></ac:structured-macro>hebtei2fixepub.xsl</strong><span> - transforms TEI XML file </span><span style="color: rgb(0,255,0);"><ac:link ac:anchor="heb_tei_xml"><ri:content-entity ri:content-id="54069889" /><ac:plain-text-link-body><![CDATA[hebxxxxx.xxxx.xxx_tei.xml]]></ac:plain-text-link-body></ac:link></span><span> to fixed layout </span><span style="color: rgb(17,85,204);"><ac:link ac:anchor="HEBBookSourceStructure"><ri:content-entity ri:content-id="54069889" /><ac:plain-text-link-body><![CDATA[HEB Book Source Structure]]></ac:plain-text-link-body></ac:link></span><span>. See process </span><span style="color: rgb(17,85,204);"><ac:link ac:anchor="Step2.9-GenerateEPUBStructure"><ri:content-entity ri:content-id="54069889" /><ac:plain-text-link-body><![CDATA[Step 2.9 - Generate EPUB Structure]]></ac:plain-text-link-body></ac:link></span><span>.</span></p>
+            </li>
+            <li style="list-style-type: square;">
+                <p><strong><ac:structured-macro ac:name="anchor" ac:schema-version="1" ac:macro-id="9a667ac2-281d-4acf-b328-aa5e2369cdf8"><ac:parameter ac:name="">hebtei2flowepub_xsl</ac:parameter></ac:structured-macro>hebtei2flowepub.xsl</strong><span> - transforms TEI XML file </span><span style="color: rgb(0,255,0);"><ac:link ac:anchor="heb_tei_xml"><ri:content-entity ri:content-id="54069889" /><ac:plain-text-link-body><![CDATA[hebxxxxx.xxxx.xxx_tei.xml]]></ac:plain-text-link-body></ac:link></span><span> to flowable layout <ac:link ac:anchor="HEBBookSourceStructure"><ri:content-entity ri:content-id="54069889" /><ac:plain-text-link-body><![CDATA[HEB Book Source Structure]]></ac:plain-text-link-body></ac:link></span><span>. See process <ac:link ac:anchor="Step2.9-GenerateEPUBStructure"><ri:content-entity ri:content-id="54069889" /><ac:plain-text-link-body><![CDATA[Step 2.9 - Generate EPUB Structure]]></ac:plain-text-link-body></ac:link></span><span>.</span></p>
+            </li>
+            <li style="list-style-type: square;">
+                <p><strong><ac:structured-macro ac:name="anchor" ac:schema-version="1" ac:macro-id="8975c4e1-d6ff-42f3-98b5-bf5afd7af3dd"><ac:parameter ac:name="">hebtei2meta_xsl</ac:parameter></ac:structured-macro>hebtei2meta.xsl</strong><span> - transforms TEI XML file </span><span style="color: rgb(0,255,0);"><ac:link ac:anchor="heb_tei_xml"><ri:content-entity ri:content-id="54069889" /><ac:plain-text-link-body><![CDATA[hebxxxxx.xxxx.xxx_tei.xml]]></ac:plain-text-link-body></ac:link></span><span> to the Fulcrum monograph metadata CSV file </span><span style="color: rgb(0,255,0);"><ac:link ac:anchor="heb_metadata_csv"><ri:content-entity ri:content-id="54069889" /><ac:plain-text-link-body><![CDATA[hebxxxxx.xxxx.xxx_metadata.csv]]></ac:plain-text-link-body></ac:link></span><span>.</span></p>
+            </li>
+            <li style="list-style-type: square;">
+                <p><strong>heblib.xsl</strong><span> - shared XSL file that sets constants used by the above XSLT files.</span></p>
+            </li>
+            <li style="list-style-type: square;">
+                <p><strong>heblibtei.xsl</strong><span> - shared XSL file that sets variables used by the XSLT files </span><span style="color: rgb(0,255,0);"><ac:link ac:anchor="hebtei2fixepub_xsl"><ri:content-entity ri:content-id="54069889" /><ac:plain-text-link-body><![CDATA[hebtei2fixepub.xsl]]></ac:plain-text-link-body></ac:link></span><span>, </span><span style="color: rgb(0,255,0);"><ac:link ac:anchor="hebtei2flowepub_xsl"><ri:content-entity ri:content-id="54069889" /><ac:plain-text-link-body><![CDATA[hebtei2flowepub.xsl]]></ac:plain-text-link-body></ac:link></span><span>, and </span><span style="color: rgb(0,255,0);"><ac:link ac:anchor="hebtei2meta_xsl"><ri:content-entity ri:content-id="54069889" /><ac:plain-text-link-body><![CDATA[hebtei2meta.xsl]]></ac:plain-text-link-body></ac:link></span><span>.</span></p>
+            </li>
+            <li style="list-style-type: square;">
+                <p><strong><span style="color: rgb(0,0,0);">hebtei2epub.xsl</span></strong><span style="color: rgb(0,0,0);"> - shared XSL file that sets variables and defines templates used by the XSLT files </span><span style="color: rgb(0,255,0);"><ac:link ac:anchor="hebtei2fixepub_xsl"><ri:content-entity ri:content-id="54069889" /><ac:plain-text-link-body><![CDATA[hebtei2fixepub.xsl]]></ac:plain-text-link-body></ac:link></span><span style="color: rgb(0,0,0);"> and </span><span style="color: rgb(0,255,0);"><ac:link ac:anchor="hebtei2flowepub_xsl"><ri:content-entity ri:content-id="54069889" /><ac:plain-text-link-body><![CDATA[hebtei2flowepub.xsl]]></ac:plain-text-link-body></ac:link></span><span style="color: rgb(0,0,0);">.</span></p>
+            </li>
+        </ul>
+    </ul>
+</ul>
+<p><br /></p>
+<p><br /></p>
