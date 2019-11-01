@@ -1,13 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--Arbortext, Inc., 1988-2016, v.4002-->
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
 <title>HEB EPUB Generation</title>
 </head>
-<body><h1>HEB EPUB Generation</h1><section id="Introduction"><?Pub Dtl?><h2
->Introduction</h2><p>This document provides the details for the generation
-of HEB EPUB books, including both fixed and flowable layout books.</p
-><p>The root directory location for the HEB EPUB books is the following:</p
-><p><strong><a name="ROOTDIR">ROOTDIR</a>= tang.umdl.umich.edu:/quod-prep/prep/a/acls/hebepub</strong
+<body><h1>HEB EPUB Generation</h1><section id="Introduction"><h2>Introduction</h2
+><p>This document provides the details for the generation of HEB EPUB
+books, including both fixed and flowable layout books.</p><p>The root
+directory location for the HEB EPUB books is the following:</p><p
+><strong><a name="ROOTDIR">ROOTDIR</a>= tang.umdl.umich.edu:/quod-prep/prep/a/acls/hebepub</strong
 > </p><p>This location contains the following directories:</p><ul>
 <li><strong>fixepub</strong> - directory contains the fixed layout
 book specifics. See <a href="#Layouts">Layouts</a> for more information.</li>
@@ -19,12 +20,12 @@ resources used for generating a EPUB. See section <a href="#Resources"
 <li><strong>target</strong> - directory contains the files used to
 automate the generation process. See section <a href="#Implementation"
 >Implementation</a> for more information.</li>
-</ul></section><section id="Layouts"><?Pub Dtl?><h2>Layouts</h2><p
->The process for generating a HEB EPUB archive differs based on the
-layout of the book. Currently, each layout has its own directory within
-the <a href="#ROOTDIR">ROOTDIR</a> location where the book source
-resides and any specific resources needed to generate the book. Below
-are the contents found within a layout directory:</p><ul>
+</ul></section><section id="Layouts"><h2>Layouts</h2><p>The process
+for generating a HEB EPUB archive differs based on the layout of the
+book. Currently, each layout has its own directory within the <a
+href="#ROOTDIR">ROOTDIR</a> location where the book source resides
+and any specific resources needed to generate the book. Below are
+the contents found within a layout directory:</p><ul>
 <li><p><strong>books</strong> - this directory contains the books
 for the specified layout. Within this directory, each book has a directory
 with the book HEB ID as the name. See section <a
@@ -38,9 +39,9 @@ is the list of XML files with the HEB ID as the name.</p><p>For <strong
 HEB book, with the name being the book HEB ID. Each book directory
 contains the source DLXS XML file and all original page scans.</p
 ></li>
-</ul></section><section id="Resources"><?Pub Dtl?><h2>Resources</h2
-><p>The resources directory contains the source for the following
-information used for generating a HEB EPUB:</p><ul>
+</ul></section><section id="Resources"><h2>Resources</h2><p>The resources
+directory contains the source for the following information used for
+generating a HEB EPUB:</p><ul>
 <li><p><strong>aclsdb </strong>- directory containing information
 provided by ACLS for HEB books. This information includes:</p><ul>
 <li><p><strong><a name="copyholder">copyholder </a></strong> - if
@@ -56,7 +57,7 @@ the related titles.</p></li>
 has reviews, then this directory contains a HTML file with the name
 of the book HEB ID that consists of a table listing the reviews.</p
 ></li>
-<li><p><strong><a name="series">series </a></strong> - if a HEB book
+<li><p><strong><a name="series">series</a></strong> - if a HEB book
 has series designations, then this directory contains a HTML file
 with the name of the book HEB ID that consists of a table listing
 the designations.</p> </li>
@@ -79,11 +80,11 @@ asset.</p></li>
 a MARC record, then this directory contains a XML file representation
 of the record. The file name is the first 5 digits of the HEB ID.</p
 ></li>
-</ul></section><section id="HEB-Book-Source-Structure"><?Pub Dtl?><h2
->HEB Book Source Structure</h2><p>The EPUB source for a HEB book can
-be found in a directory at the following path:</p><p><strong><a
-href="#ROOTDIR">ROOTDIR</a>/</strong><em>layout</em>/<em>hebxxxxx.xxxx.xxx</em
-></p><p>where <em>layout </em>is either <strong>fixepub</strong> or <strong
+</ul></section><section id="HEB-Book-Source-Structure"><h2>HEB Book
+Source Structure</h2><p>The EPUB source for a HEB book can be found
+in a directory at the following path:</p><p><strong><a href="#ROOTDIR"
+>ROOTDIR</a>/</strong><em>layout</em>/<em>hebxxxxx.xxxx.xxx</em></p
+><p>where <em>layout </em>is either <strong>fixepub</strong> or <strong
 >flowepub</strong> and <em>hebxxxxx.xxxx.xxx</em> is the HEB ID assigned
 to the book. For example, the source for the fixed layout book with
 ID <strong>heb04015.0001.001</strong> can be found in the following
@@ -293,29 +294,28 @@ href="#hebepub">hebepub</a> convert &#xa0;fixepub/books/hebxxxxx.xxxx.xxx</em
 ></p><p>The new PNG files are stored in the directory:</p><p><strong
 >fixepub/books/hebxxxxx.xxxx.xxx/epub/OEBPS/images</strong></p></li>
 </ol><p>The following sections describe the steps necessary to perform
-the HEB EPUB processes.</p><section id="Convert-Page-Scans"><?Pub Dtl?><h3
->Process 1 - Convert Page Scans (fixepub only)</h3><p>For <strong
->fixepub</strong> books, original page scan files for the book are
-expected to reside in the following directory:</p><p><strong><a
-href="#ROOTDIR">ROOTDIR</a>/lfixepub/dlxs/hebxxxxx.xxxx.xxx</strong
-></p><p>where <strong>hebxxxxx.xxxx.xxx</strong> is the HEB ID assigned
-to the book. The file format is expected to be either TIF or JP2.
-The EPUB specification does not support TIF, so it is necessary to
-convert the original scans to PNG.</p><p>The conversion can be done
-by invoking the following commands:</p><p><em>cd /quod-prep/prep/a/acls/hebepub</em
-></p><p><em>target/bin/<a href="#hebepub">hebepub</a> convert layout/hebxxxxx.xxxx.xxx</em
-></p><p>The new PNG files are stored in the <a href="#images_dir"
->images</a> directory within the <strong>hebxxxxx.xxxx.xxx</strong
-> book source directory. </p></section><section
-id="Generate-EPUB-Archive"><?Pub Dtl?><h3>Process 2 - Generate EPUB
-Archive</h3><p>Below are the process steps necessary to generate the
-HEB book EPUB archive. The following commands can be used to invoke
-this process and generate a HEB EPUB for the book with the ID <strong
->hebxxxxx.xxxx.xxx</strong>:</p><p><em>cd /quod-prep/prep/a/acls/hebepub</em
+the HEB EPUB processes.</p><section id="Convert-Page-Scans"><h3>Process
+1 - Convert Page Scans (fixepub only)</h3><p>For <strong>fixepub</strong
+> books, original page scan files for the book are expected to reside
+in the following directory:</p><p><strong><a href="#ROOTDIR">ROOTDIR</a
+>/lfixepub/dlxs/hebxxxxx.xxxx.xxx</strong></p><p>where <strong>hebxxxxx.xxxx.xxx</strong
+> is the HEB ID assigned to the book. The file format is expected
+to be either TIF or JP2. The EPUB specification does not support TIF,
+so it is necessary to convert the original scans to PNG.</p><p>The
+conversion can be done by invoking the following commands:</p><p><em
+>cd /quod-prep/prep/a/acls/hebepub</em></p><p><em>target/bin/<a
+href="#hebepub">hebepub</a> convert layout/hebxxxxx.xxxx.xxx</em></p
+><p>The new PNG files are stored in the <a href="#images_dir">images</a
+> directory within the <strong>hebxxxxx.xxxx.xxx</strong> book source
+directory. </p></section><section id="Generate-EPUB-Archive"><h3>Process
+2 - Generate EPUB Archive</h3><p>Below are the process steps necessary
+to generate the HEB book EPUB archive. The following commands can
+be used to invoke this process and generate a HEB EPUB for the book
+with the ID <strong>hebxxxxx.xxxx.xxx</strong>:</p><p><em>cd /quod-prep/prep/a/acls/hebepub</em
 ></p><p><em>target/bin/<a href="#hebepub">hebepub</a>  epub layout/hebxxxxx.xxxx.xxx</em
-></p><section id="Copy-DLXS-XML-Source"><?Pub Dtl?><h4>Step 2.1 -
-Copy DLXS XML Source</h4><p>The book DLXS XML source is expected to
-be found at the path listed in the table below and copied to path <a
+></p><section id="Copy-DLXS-XML-Source"><h4>Step 2.1 - Copy DLXS XML
+Source</h4><p>The book DLXS XML source is expected to be found at
+the path listed in the table below and copied to path <a
 href="#heb_dlxs_xml">hebxxxxx.xxxx.xxx_dlxs.xml</a>.</p><table
 class="wrapped" style="margin-left: 30.0px;">
 <colgroup>
@@ -339,10 +339,10 @@ class="wrapped" style="margin-left: 30.0px;">
 >/flowepub/dlxs/hebxxxxx.xxxx.xxx.xml</strong></p></td>
 </tr>
 </tbody>
-</table></section><section id="Copy-Resource-Files"><?Pub Dtl?><h4
->Step 2.2 - Copy Resource Files</h4><p>The following resources are
-copied from their source paths into the <a href="#METAINFSRC">METAINFSRC</a
->&#xa0;directory and referenced by the <a href="#heb_tei_xml">hebxxxxx.xxxx.xxx_tei.xml</a
+</table></section><section id="Copy-Resource-Files"><h4>Step 2.2 -
+Copy Resource Files</h4><p>The following resources are copied from
+their source paths into the <a href="#METAINFSRC">METAINFSRC</a>&#xa0;directory
+and referenced by the <a href="#heb_tei_xml">hebxxxxx.xxxx.xxx_tei.xml</a
 > file: </p><table class="wrapped" style="margin-left: 30.0px;">
 <colgroup>
 <col style="width: 154.0px;"/>
@@ -391,47 +391,46 @@ copied from their source paths into the <a href="#METAINFSRC">METAINFSRC</a
 >/resources/aclsdb/subject/hebxxxxx.xxxx.xxx.xml</strong></p></td>
 </tr>
 </tbody>
-</table></section><section id="Copy-Font-Files"><?Pub Dtl?><h4>Step
-2.3 - Copy Font Files (flowepub only)</h4><p>The font files are found
-in the directory </p><p><strong><a href="#ROOTDIR">ROOTDIR</a>/flowepub/fonts</strong
+</table></section><section id="Copy-Font-Files"><h4>Step 2.3 - Copy
+Font Files (flowepub only)</h4><p>The font files are found in the
+directory </p><p><strong><a href="#ROOTDIR">ROOTDIR</a>/flowepub/fonts</strong
 ></p><p>and copied into the <a href="#fonts_dir">fonts</a> directory.
 The <a href="#fonts_html">fonts.html</a> file is generated during
 this step. For <strong>fixepub</strong>, currently there are no fonts
 to include. So, this file is empty.</p></section><section
-id="Copy-Stylesheet-Files"><?Pub Dtl?><h4>Step 2.4 - Copy Stylesheet
-Files</h4><p>The CSS stylesheet file(s) are found in the directory </p
-><p><strong><a href="#ROOTDIR">ROOTDIR</a></strong>/<em>layout</em
->/<strong>styles</strong></p><p>where <em>layout</em> is either <strong
->fixepub </strong>or <strong>flowepub</strong> and are copied into
-the <a href="#styles_dir">styles</a> directory. The <a
-href="#stylesheets_html">stylesheets.html</a> file is generated during
-this step.</p></section><section id="Determine-Book-Assets"><?Pub Dtl?><h4
->Step 2.5 - Determine Book Assets</h4><p>Assets include book cover
-image/audio/video/PDF/etc files. These files use the book HEB ID as
-the prefix for the filename and are expected to reside in the directory:</p
-><p><strong><a href="#ROOTDIR">ROOTDIR</a>/resources/assets</strong
-></p><p>No files are copied during this step. The <a href="#assets_html"
->assets.html</a> file is generated.</p></section><section
-id="Generate-TEI-XML-File"><?Pub Dtl?><h4>Step 2.6 - Generate TEI
-XML File</h4><p>Transform the DLXS XML file <a href="#heb_dlxs_xml"
+id="Copy-Stylesheet-Files"><h4>Step 2.4 - Copy Stylesheet Files</h4
+><p>The CSS stylesheet file(s) are found in the directory </p><p><strong
+><a href="#ROOTDIR">ROOTDIR</a></strong>/<em>layout</em>/<strong>styles</strong
+></p><p>where <em>layout</em> is either <strong>fixepub </strong>or <strong
+>flowepub</strong> and are copied into the <a href="#styles_dir">styles</a
+> directory. The <a href="#stylesheets_html">stylesheets.html</a> file
+is generated during this step.</p></section><section
+id="Determine-Book-Assets"><h4>Step 2.5 - Determine Book Assets</h4
+><p>Assets include book cover image/audio/video/PDF/etc files. These
+files use the book HEB ID as the prefix for the filename and are expected
+to reside in the directory:</p><p><strong><a href="#ROOTDIR">ROOTDIR</a
+>/resources/assets</strong></p><p>No files are copied during this
+step. The <a href="#assets_html">assets.html</a> file is generated.</p
+></section><section id="Generate-TEI-XML-File"><h4>Step 2.6 - Generate
+TEI XML File</h4><p>Transform the DLXS XML file <a href="#heb_dlxs_xml"
 >hebxxxxx.xxxx.xxx_dlxs.xml</a> to the TEI XML file <a
 href="#heb_tei_xml">hebxxxxx.xxxx.xxx_tei.xml</a> using the XSLT stylesheet <a
 href="#hebdlxs2tei_xsl">hebdlxs2tei.xsl</a>.</p></section><section
-id="Copy-Book-Cover-Images"><?Pub Dtl?><h4>Step 2.7 - Copy Book Cover
-Image(s)</h4><p>The cover image(s) are located at the path:</p><p
-><strong><a href="#ROOTDIR">ROOTDIR</a>/resources/assets/hebxxxxx.xxxx.xxx.jpg</strong
+id="Copy-Book-Cover-Images"><h4>Step 2.7 - Copy Book Cover Image(s)</h4
+><p>The cover image(s) are located at the path:</p><p><strong><a
+href="#ROOTDIR">ROOTDIR</a>/resources/assets/hebxxxxx.xxxx.xxx.jpg</strong
 ></p><p><strong><a href="#ROOTDIR">ROOTDIR</a>/resources/assets/hebxxxxx.xxxx.xxx-lg.jpg</strong
 > (higher resolution, may not be present)</p><p>and copied in the <a
 href="#images_dir">images</a> directory.</p></section><section
-id="Determine-Image-Dimensions"><?Pub Dtl?><h4>Step 2.8 - Determine
-Image Dimensions (fixepub only)</h4><p>For <strong>fixepub</strong
-> only, all images found in the <a href="#images_dir">images</a> directory,
-including cover images and page scan image files (see <a
+id="Determine-Image-Dimensions"><h4>Step 2.8 - Determine Image Dimensions
+(fixepub only)</h4><p>For <strong>fixepub</strong> only, all images
+found in the <a href="#images_dir">images</a> directory, including
+cover images and page scan image files (see <a
 href="#Convert-Page-Scans">Process 1 - Convert Page Scans (fixepub
 only)</a>) are used as input for generating the <a href="#images_html"
 >images.html</a> file.</p></section><section
-id="Generate-EPUB-Structure"><?Pub Dtl?><h4>Step 2.9 - Generate EPUB
-Structure</h4><p>The TEI XML file <a href="#heb_tei_xml">hebxxxxx.xxxx.xxx_tei.xml</a
+id="Generate-EPUB-Structure"><h4>Step 2.9 - Generate EPUB Structure</h4
+><p>The TEI XML file <a href="#heb_tei_xml">hebxxxxx.xxxx.xxx_tei.xml</a
 > contains references to the resources (<a href="#marc_xml">marc.xml</a
 >, <a href="#copyholder_html">copyholder.html</a>, <a
 href="#related_html">related.html</a>, <a href="#reviews_html">reviews.html</a
@@ -444,33 +443,31 @@ found in the <a href="#OEBPS">OEBPS</a> directory. The XSLT stylesheet <a
 href="#hebtei2fixepub_xsl">hebtei2fixepub.xsl</a> (fixepub) and <a
 href="#hebtei2flowepub_xsl">hebtei2flowepub.xsl</a> (flowepub) are
 used for the transformation.</p></section><section
-id="Copy-Image-Files-Determine-Image-Dimensions"><?Pub Dtl?><h4>Step
-2.10 - Copy Image Files / Determine Image Dimensions (flowepub only)</h4
-><p>For <strong>flowepub</strong> only, all images referenced by the
-TEI XML file <a href="#heb_tei_xml">hebxxxxx.xxxx.xxx_tei.xml</a> are
-copied to the <a href="#images_dir">images</a> directory. Then all
-images found in the <a href="#images_dir">images</a> directory, including
-cover images, are used as input for generating the <a
-href="#images_html">images.html</a> file.</p></section><section
-id="Zip-EPUB-Structure"><?Pub Dtl?><h4>Step 2.11 - Zip EPUB Structure</h4
-><p>The <a href="#heb_epub">hebxxxxx.xxxx.xxx.epub</a> file is generated
-by zipping the contents of the <a href="#epub_dir">epub</a> directory.</p
-></section></section><section id="EPUB-Structure-Validation"><?Pub Dtl?><h3
->Process 3 - EPUB Structure Validation</h3><p>Any HEB EPUB directory
-can be validated by invoking the following commands:</p><p><em>cd
-/quod-prep/prep/a/acls/hebepub</em></p><p><em>target/bin/<a
-href="#hebepub">hebepub</a> check layout/books/hebxxxxx.xxxx.xxx</em
+id="Copy-Image-Files-Determine-Image-Dimensions"><h4>Step 2.10 - Copy
+Image Files / Determine Image Dimensions (flowepub only)</h4><p>For <strong
+>flowepub</strong> only, all images referenced by the TEI XML file <a
+href="#heb_tei_xml">hebxxxxx.xxxx.xxx_tei.xml</a> are copied to the <a
+href="#images_dir">images</a> directory. Then all images found in
+the <a href="#images_dir">images</a> directory, including cover images,
+are used as input for generating the <a href="#images_html">images.html</a
+> file.</p></section><section id="Zip-EPUB-Structure"><h4>Step 2.11
+- Zip EPUB Structure</h4><p>The <a href="#heb_epub">hebxxxxx.xxxx.xxx.epub</a
+> file is generated by zipping the contents of the <a href="#epub_dir"
+>epub</a> directory.</p></section></section><section
+id="EPUB-Structure-Validation"><h3>Process 3 - EPUB Structure Validation</h3
+><p>Any HEB EPUB directory can be validated by invoking the following
+commands:</p><p><em>cd /quod-prep/prep/a/acls/hebepub</em></p><p><em
+>target/bin/<a href="#hebepub">hebepub</a> check layout/books/hebxxxxx.xxxx.xxx</em
 ></p><p>where layout is either <strong>fixepub</strong> or <strong
 >flowepub</strong>. The results can be found in the file</p><p><strong
 ><a href="#ROOTDIR">ROOTDIR</a></strong><em>/layout</em>/books/hebxxxxx.xxxx.xxx/<a
 href="#epubcheck_xml">epubcheck.xml</a></p></section><section
-id="Generate-Fulcrum-Monograph-Bundle-Archive"><?Pub Dtl?><h3>Process
-4 - Generate Fulcrum Monograph Bundle Archive</h3><p>To create a new
-monograph for a HEB EPUB, the <a href="#heb_zip">hebxxxxx.xxxx.xxx.zip</a
-> may be generated by invoking the following commands:</p><p><em>cd
-/quod-prep/prep/a/acls/hebepub</em></p><p><em> target/bin/<a
-href="#hebepub">hebepub</a> bundle layout/hebxxxxx.xxxx.xxx</em></p
-><p>where <em>layout</em> is either <strong>fixepub</strong> or <strong
+id="Generate-Fulcrum-Monograph-Bundle-Archive"><h3>Process 4 - Generate
+Fulcrum Monograph Bundle Archive</h3><p>To create a new monograph
+for a HEB EPUB, the <a href="#heb_zip">hebxxxxx.xxxx.xxx.zip</a> may
+be generated by invoking the following commands:</p><p><em>cd /quod-prep/prep/a/acls/hebepub</em
+></p><p><em> target/bin/<a href="#hebepub">hebepub</a> bundle layout/hebxxxxx.xxxx.xxx</em
+></p><p>where <em>layout</em> is either <strong>fixepub</strong> or <strong
 >flowepub</strong>.&#xa0;Below are the process steps for generating
 the bundle. This process may invoke <a href="#Generate-EPUB-Archive"
 >Process 2 - Generate EPUB Archive</a> if the <a href="#heb_epub"
@@ -481,16 +478,16 @@ Monograph Metadata CSV</h4><p>The TEI XML file <a href="#heb_tei_xml"
 to produce the monograph metadata file <a href="#heb_metadata_csv"
 >hebxxxxx.xxxx.xxx_metadata.csv</a>. The XSLT stylesheet <a
 href="#hebtei2meta_xsl">hebtei2meta.xsl</a> is used for the transformation.</p
-></section><section id="Determine-Media-Assets"><?Pub Dtl?><h4>Step
-4.2 - Determine Media Assets</h4><p>The <a href="#assets_html">assets.html</a
->&#xa0;file is used to determine the assets that are to be uploaded
-to Fulcrum and listed on the monograph Media tab.</p></section><section
-id="Zip-Monograph-Bundle"><?Pub Dtl?><h4>Step 4.3 - Zip Monograph
-Bundle</h4><p>The <a href="#heb_zip">hebxxxxx.xxxx.xxx.zip</a> can
-be generated as the necessary files have been generated.</p></section
-></section><section id="Add-Asset-Links"><?Pub Dtl?><h3>Process 5
-- Add Asset Links</h3><p>Links to existing Fulcrum Media asset pages
-may be added to an EPUB by performing the following steps:</p><ol>
+></section><section id="Determine-Media-Assets"><h4>Step 4.2 - Determine
+Media Assets</h4><p>The <a href="#assets_html">assets.html</a>&#xa0;file
+is used to determine the assets that are to be uploaded to Fulcrum
+and listed on the monograph Media tab.</p></section><section
+id="Zip-Monograph-Bundle"><h4>Step 4.3 - Zip Monograph Bundle</h4
+><p>The <a href="#heb_zip">hebxxxxx.xxxx.xxx.zip</a> can be generated
+as the necessary files have been generated.</p></section></section
+><section id="Add-Asset-Links"><h3>Process 5 - Add Asset Links</h3
+><p>Links to existing Fulcrum Media asset pages may be added to an
+EPUB by performing the following steps:</p><ol>
 <li><p>Download the asset CSV file from the Fulcrum monograph page.</p
 ></li>
 <li><p>Rename the CSV using HEB ID, <strong>hebxxxxx.xxxx.xxx.csv</strong
@@ -501,9 +498,9 @@ href="#Generate-EPUB-Archive">Process 2 - Generate EPUB Archive</a
 > to regenerate the EPUB archive</p></li>
 <li><p>Replace or re-version the EPUB archive file asset on the Fulcrum
 monograph page.</p></li>
-</ol></section><section id="Clobber-Source-Files"><?Pub Dtl?><h3>Process
-6 - Clobber Source Files</h3><p>To re-generate either a HEB EPUB or
-Fulcrum bundle, invoke the following commands:</p><p><em>cd /quod-prep/prep/a/acls/hebepub</em
+</ol></section><section id="Clobber-Source-Files"><h3>Process 6 -
+Clobber Source Files</h3><p>To re-generate either a HEB EPUB or Fulcrum
+bundle, invoke the following commands:</p><p><em>cd /quod-prep/prep/a/acls/hebepub</em
 ></p><p><em>target/bin/<a href="#hebepub">hebepub</a> clobber layout/hebxxxxx.xxxx.xxx</em
 ></p><p> This removes the necessary files to allow the HEB book source
 directory to be rebuilt from scratch. This removes all files except
@@ -518,10 +515,9 @@ and also the following is not removed:</p><ul>
 <li> <p><a href="#images_dir">images</a> directory. Since often TIF
 files have been converted to PNG and this process can be time consuming,
 the page scans are not removed.</p></li>
-</ul></section></section><section id="Implementation"><?Pub Dtl?><h3
->Implementation</h3><p>Below is a description of the <strong><a
-href="#ROOTDIR">ROOTDIR</a>/target</strong> directory and the files
-contained within:</p><ul>
+</ul></section></section><section id="Implementation"><h3>Implementation</h3
+><p>Below is a description of the <strong><a href="#ROOTDIR">ROOTDIR</a
+>/target</strong> directory and the files contained within:</p><ul>
 <li><p><strong>bin</strong> - contains bash shell script for invoking
 the genertion process.</p><ul>
 <li><p><em><a name="hebepub">hebepub</a></em> - script for invoking
