@@ -38,7 +38,5 @@ vendor/*
 # Tools
 /tools/*
 
-# epubcheck
-/lib/epubcheck/*
 
 
