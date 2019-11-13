@@ -23,8 +23,8 @@ class FigureProcessor < Nokogiri::XML::SAX::Document
       @info_list << ElementInfo.new(name, attrs)
     end
 
-    clss = attrs_h['class']
-    if @figcap_stack.count > 0 or (attrs_h.has_key?('class') and (clss == 'figcap' or clss == 'figh'))
+    if @figcap_stack.count > 0 or name == 'figcaption' or \
+            (attrs_h.has_key?('class') and (attrs_h['class'] == 'figcap' or attrs_h['class'] == 'figh'))
       # This element is a caption, so prepare to grab its text content.
       @figcap_stack.push(name)
     end

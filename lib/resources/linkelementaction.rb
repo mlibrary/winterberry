@@ -14,11 +14,12 @@ class LinkElementAction < Action
     end
 
     container = resource_node.node_name == 'p' ? resource_node.parent : resource_node
-    caption = container.xpath(".//*[local-name()='p' and (@class='image_caption' or @class='figh')]")
+    #caption = container.xpath(".//*[local-name()='p' and (@class='image_caption' or @class='figh')]")
+    caption = container.xpath(".//*[local-name()='figcaption' or @class='image_caption' or @class='figh']")
     if caption == nil or caption.count == 0
       container.add_child(link_fragment)
     else
-      c = caption[0]
+      c = caption.last
       text_node = c.document.create_text_node(" ")
       c.add_child(text_node)
       c.add_child(link_fragment)

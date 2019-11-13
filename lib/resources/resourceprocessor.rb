@@ -30,6 +30,7 @@ class ResourceProcessor
 
 	def resources(doc)
 		#doc.xpath("//*[@class='fig' or @class='rb']")
-		doc.xpath("//*[@class='fig']") + doc.xpath("//*[@class='rb']")
+		#doc.xpath("//*[@class='fig']") + doc.xpath("//*[@class='rb']")
+		doc.xpath("//*[local-name()='figure' or @class='fig' or @class='rb']")
 	end
 end

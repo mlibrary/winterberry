@@ -11,7 +11,11 @@ class EmbedElementAction < Action
       resource_node.node_name = "div"
     end
 
-    emb_fragment = embed_fragment
+    emb_fragment = embed_fragment()
+    if emb_fragment == nil
+      @status = @@FAILED
+      return
+    end
 
     # May have an issue if the img_node has @{id,style,class}
     # Wrap a div around both containers and add these attrs?
@@ -19,16 +23,12 @@ class EmbedElementAction < Action
     img_node.add_next_sibling(def_container)
     def_container.add_child(img_node)
 
-    emb_container = embed_container
-    emb_container.add_child(embed_fragment)
+    emb_container = embed_container()
+    emb_container.add_child(emb_fragment)
 
     def_container.add_next_sibling(emb_container)
 
     @status = @@COMPLETED
-  end
-
-  def resource_action
-    @action_args[:resource_action]
   end
 
   def to_s
