@@ -1,7 +1,7 @@
 class EpubCheck
   JAR_PATH = File.join(__dir__, 'epubcheck', 'epubcheck.jar')
-  CMD_STR_EPUB = "-q -o \"%s\" \"%s\""
-  CMD_STR_EPUBDIR = "-q -o \"%s\" -mode exp \"%s\""
+  CMD_STR_EPUB = "--version -q -o \"%s\" \"%s\""
+  CMD_STR_EPUBDIR = "--version -q -o \"%s\" -mode exp \"%s\""
   CMD_STR_ALL = "java -jar \"%s\" %s"
 
   def self.check_file(args)
@@ -20,8 +20,8 @@ class EpubCheck
 
   def self.execute(opts_str)
     java_cmd_str = sprintf(CMD_STR_ALL, JAR_PATH, opts_str)
-    puts java_cmd_str
-    STDOUT.flush
+    #puts java_cmd_str
+    #STDOUT.flush
 
     ok = system(java_cmd_str)
     status = $?
