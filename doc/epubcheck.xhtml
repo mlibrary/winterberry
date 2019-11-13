@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<html lang="en" xml:lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>Validating an EPUB</title>
+</head>
+<body><h1>Validating an EPUB</h1><p><a
+href="https://github.com/w3c/epubcheck">EPUBCheck</a> is a tool to
+validate the conformance of EPUB publications against the EPUB specifications.
+EPUBCheck is open source software, maintained by the&#xa0;<a
+href="http://www.daisy.org/">DAISY Consortium</a>&#xa0;on behalf of
+the&#xa0;<a href="https://www.w3.org/publishing/epubcheck_fundraising"
+>W3C</a>.</p><p>There are 2 scripts available for invoking the <a
+href="https://github.com/w3c/epubcheck">EPUBCheck</a> tool. They reside
+at the following directory location:</p><p><b>ROOTDIR</b> = tang.umdl.umich.edu:/quod-prep/prep/a/acls/hebepub/winterberry</p
+><p>Each script allows for the specification of one or more path arguments.
+A path argument may be an EPUB file or a directory of an expanded
+EPUB file.</p><p><strong>NOTE: If the path argument is a directory, <a
+href="https://github.com/w3c/epubcheck">EPUBCheck</a> will first create
+a zip file of the directory and assign the directory name adding the
+extension <i>.epub</i>. If a file with the same name exists, the tool
+will overwrite the file without any warning.</strong></p><p>See the
+descriptions below for each script:</p><ul>
+<li><p><u><b>epubcheck_list</b></u> - this script provides a simple
+interface to the <a href="https://github.com/w3c/epubcheck">EPUBCheck</a
+> tool. Below is the script syntax:</p><p><b>ROOTDIR/script/epubcheck_list</b
+> <i>&lt;epub_file|epub_dir> [epub_file|epub_dir...]</i> </p><p>The
+tool is invoked for each path argument specified. The result of the
+validation is an XML file that is stored in the same directory that
+contains the specified argument. The name assigned to the result file
+is the same as the argument with the suffix <i>_log.xml</i> added.</p
+><p>For example, the following command will validate the EPUB files <i
+>/my_dir1/my_epub1.epub</i> and <i>/my_dir2/my_epub2.epub</i>. The
+validation results are stored in the files <i>/my_dir1/my_epub1_log.xml</i
+> and <i>/my_dir2/my_epub2_log.xml</i>.</p><p><b>ROOTDIR/script/epubcheck_list</b
+> <i>/my_dir1/my_epub1.epub /my_dir2/my_epub2.epub</i></p></li>
+<li><p><u><b>epubcheck</b></u> - this script provides the full interface
+to the <a href="https://github.com/w3c/epubcheck">EPUBCheck</a> tool.
+Below is the script syntax:</p><p><b>ROOTDIR/script/epubcheck</b> <i
+> &lt;options> &lt;epub_file|epub_dir></i></p><p>All options are supported,
+but only one EPUB file or directory can be specified. See the <a
+href="https://github.com/w3c/epubcheck/wiki">EPUBCheck Wiki</a> for
+the command line options and syntax.</p><p>For example, the following
+command will validate the EPUB file <i>/my_dir1/my_epub1.epub</i> and
+store the validation results in the file <i>/my_dir1/my_epub1_log.xml</i
+>.</p><p><b>ROOTDIR/script/epubcheck</b> <i>-q -o /mydir1/my_epub1_log.xml
+/my_dir1/my_epub1.epub</i></p></li>
+</ul></body>
+</html>

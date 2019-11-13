@@ -1,43 +1,10 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
-require 'optparse'
-require 'ostruct'
-
-# Process the script parameters.
-options = OpenStruct.new
-option_parser = OptionParser.new do |opts|
-  opts.banner = "Usage: #{File.basename(__FILE__)} <epub_file|epub_dir> [<epub_file|epub_dir>..]"
-  opts.on_tail('-h', '--help', 'Print this help message') do
-    puts opts
-    exit 0
-  end
-end
-option_parser.parse!(ARGV)
-if ARGV.count < 1
-  puts option_parser.help
-  return
-end
-
 # Determine the root directory of the code base.
 script_dir = File.expand_path(File.dirname(__FILE__))
 root_dir = File.dirname(script_dir)
 
 require_relative File.join(root_dir, 'lib', 'epubcheck')
 
-epub_path_list = ARGV
-
-epub_path_list.each do |epub_path|
-  epub_path = File.expand_path(epub_path)
-  if !File.exist?(epub_path)
-    puts "Error: #{File.basename(epub_path)} does not exist."
-    next
-  end
-
-  log_file = File.join(File.dirname(epub_path), File.basename(epub_path, ".*") + "_log.xml")
-  EpubCheck.check_file(
-      :epubpath => epub_path,
-      :logfile => log_file
-      )
-end
-
+EpubCheck.invoke(ARGV)
