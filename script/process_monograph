@@ -192,7 +192,7 @@ monograph_noid_list.each do |monograph_noid|
         # Use file_name to find manifest row. Could use the NOID found in
         # the resource map, but it is possible that these may be invalid if
         # the monograph has been moved or fileset have been replaced.
-        fileset_row = Manifest.name_find_fileset(manifest_csv, file_name)
+        fileset_row = Manifest.name_find_fileset(manifest_csv, resource_name)
         if fileset_row['noid'].empty?
           puts "Error: no fileset row for resource #{resource_name}"
           link = fileset_row['link']
@@ -332,7 +332,13 @@ monograph_noid_list.each do |monograph_noid|
             end
 
             # Add the CSS stylesheet link that manages the Fulcrum resource display.
-            XMLUtil.add_css(doc, fulcrum_dest_css_file)
+            level = File.dirname(entry.name).split(File::SEPARATOR).count
+            if level == 1
+              XMLUtil.add_css(doc, fulcrum_dest_css_file)
+            else
+              fpath = (('..' + File::SEPARATOR) * (level-1)) + fulcrum_css_name
+              XMLUtil.add_css(doc, fpath)
+            end
             puts "Added CSS stylesheet \"#{fulcrum_css_name}\"."
 
             # Save the modified xhtml file.
@@ -412,17 +418,20 @@ monograph_noid_list.each do |monograph_noid|
 
           # Replace existing entries.
           input_file.each do |input_entry|
-            new_entry = File.expand_path(input_entry.name, dest_epub_dir)
-            if File.exists?(new_entry)
-              puts "Replacing file #{input_entry.name}"
-              output_file.get_output_stream(input_entry.name) do |output_entry_stream|
-                output_entry_stream.write(File.read(new_entry))
-              end
-            else
-              puts "Using file #{input_entry.name}"
-              input_entry.get_input_stream do |input_entry_stream|
+            if !input_entry.name_is_directory?
+              new_entry = File.expand_path(input_entry.name, dest_epub_dir)
+
+              if File.exists?(new_entry)
+                puts "Replacing file #{input_entry.name}"
                 output_file.get_output_stream(input_entry.name) do |output_entry_stream|
-                  output_entry_stream.write(input_entry_stream.read)
+                  output_entry_stream.write(File.read(new_entry))
+                end
+              else
+                puts "Using file #{input_entry.name}"
+                input_entry.get_input_stream do |input_entry_stream|
+                  output_file.get_output_stream(input_entry.name) do |output_entry_stream|
+                    output_entry_stream.write(input_entry_stream.read)
+                  end
                 end
               end
             end
@@ -488,11 +497,13 @@ monograph_noid_list.each do |monograph_noid|
         rfile_list = Dir.glob(File.join(resources_dir, "#{File.basename(file_name, File.extname(file_name))}.*"))
         if rfile_list.count == 0
           puts "Warning: resource #{src} does not exist."
-          next
-        end
-        rfile = rfile_list[0]
-        if rfile_list.count > 1
-          puts "Warning: resource #{src} has #{rfile_list.count} entries. Using #{File.basename(rfile)}."
+          #next
+          rfile = file_name
+        else
+          rfile = rfile_list[0]
+          if rfile_list.count > 1
+            puts "Warning: resource #{src} has #{rfile_list.count} entries. Using #{File.basename(rfile)}."
+          end
         end
 
         # Create an entry for this resource with its noid,

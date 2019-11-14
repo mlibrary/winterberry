@@ -36,16 +36,23 @@ module Manifest
       return nil
     end
 
+    # Look for OA ISBN first, then the ebook ISBN.
     ebook_isbns = isbns.split(';').select {|isbn|
-      isbn.strip.downcase.match('[0-9]+[ ]+\(ebook\)')
+      isbn.strip.downcase.match('[0-9]+[ ]+\(open access\)')
     }
+    if ebook_isbns.empty?
+      ebook_isbns = isbns.split(';').select {|isbn|
+        isbn.strip.downcase.match('[0-9]+[ ]+\(ebook\)')
+      }
+    end
+
     if ebook_isbns.empty?
       puts "Error: no ebook isbn found for noid #{noid}"
       return nil
     end
     puts "Warning: multiple ebook isbns found for noid #{noid}" if ebook_isbns.count > 1
 
-    ebook_isbn = ebook_isbns[0].sub('(ebook)', '').strip.gsub('-', '')
+    ebook_isbn = ebook_isbns[0].sub(/\([^\)]*\)/, '').strip.gsub('-', '')
     return ebook_isbn
   end
 
