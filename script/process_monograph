@@ -471,6 +471,9 @@ monograph_noid_list.each do |monograph_noid|
       parser = Nokogiri::XML::SAX::Parser.new(fig_proc)
     end
 
+    # Reset the processor for the next project directory.
+    fig_proc.reset
+
     # Scan the .xhtml files within the epub and collect the
     # resource information.
     Zip::File.open(epub_file) do |file|
@@ -647,9 +650,6 @@ monograph_noid_list.each do |monograph_noid|
       end
       puts "Saved user metadata file #{File.basename(monograph_metadata_file)}."
     end
-
-    # Reset the processor for the next project directory.
-    fig_proc.reset
   end
 
 end
