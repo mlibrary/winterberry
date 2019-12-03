@@ -1,0 +1,54 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require 'optparse'
+require 'ostruct'
+
+# Process the script parameters.
+options = OpenStruct.new
+options.gen_html = false
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-h] dlxs_file [dlxs_file...]"
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    puts opts
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  puts option_parser.help
+  return
+end
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require 'uri'
+require 'fileutils'
+
+require_relative File.join(root_dir, 'lib', 'xslt')
+
+dlxchunk_xsl_file = File.join(root_dir, "lib", "journal", "xsl", "dlxschunk.xsl")
+
+dlxs_file_list = ARGV
+dlxs_file_list.each do |dlxs_file|
+  dlxs_file = File.expand_path(dlxs_file)
+  if !File.file?(dlxs_file)
+      puts "Error: invalid file #{dlxs_file}"
+      next
+  end
+
+  output_dir = File.join(File.dirname(dlxs_file), File.basename(dlxs_file, ".*") + "_output")
+  FileUtils.mkdir_p output_dir
+
+  output_uri = URI(output_dir)
+  params = {}
+  params["output_dir"] = "file:///" + output_uri.to_s + "/"
+  XSLT.transform(
+          :xslpath => dlxchunk_xsl_file,
+          :srcpath => dlxs_file,
+          :parameters => params
+          )
+end
+

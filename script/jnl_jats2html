@@ -1,0 +1,48 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require 'optparse'
+require 'ostruct'
+
+# Process the script parameters.
+options = OpenStruct.new
+options.gen_html = false
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} jats_file [jats_file...]"
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    puts opts
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  puts option_parser.help
+  return
+end
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+jats_file_list = ARGV
+
+require 'uri'
+
+require_relative File.join(root_dir, 'lib', 'xslt')
+
+jats2html_xsl_file = File.join(root_dir, "lib", "journal", "xsl", "jats-html.xsl")
+
+jats_file_list.each do |jats_file|
+    jats_file = File.expand_path(jats_file)
+    if !File.file?(jats_file)
+        puts "Error: invalid file #{jats_file}"
+        next
+    end
+
+    html_file = File.join(File.dirname(jats_file), File.basename(jats_file, ".*") + ".html")
+    XSLT.transform(
+            :xslpath => jats2html_xsl_file,
+            :srcpath => jats_file,
+            :destpath => html_file
+            )
+end
