@@ -1,0 +1,76 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+if !ENV['HOSTNAME'].start_with?('tang')
+  puts "Hey, you must use tang to run this script!!"
+  exit
+end
+
+require 'optparse'
+require 'ostruct'
+
+# Process the script parameters.
+options = OpenStruct.new
+options.gen_html = false
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} monograph_noid [monograph_noid...]"
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    puts opts
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 0
+  puts option_parser.help
+  return
+end
+
+monograph_noid_list = ARGV
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, 'lib', 'csvfile')
+require_relative File.join(root_dir, 'lib', 'manifest')
+require_relative File.join(root_dir, 'lib', 'services')
+
+monograph_noid_list.each do |monograph_noid|
+  puts "*" * 10 + " #{monograph_noid} " + "*" * 10
+
+  puts "Downloading manifest file for noid #{monograph_noid}"
+  STDOUT.flush
+
+  csv_body = HeliotropeService.new.monograph_noid_export(monograph_noid)
+  if csv_body
+  manifest_csv = CSVFile.read(:csv_body => csv_body)
+  next if manifest_csv == nil
+
+  monograph_row = Manifest.noid_find_monograph(manifest_csv, monograph_noid)
+  next if monograph_row == nil
+
+  link = monograph_row['link'].match('^[^\(]+\(\"([^\"]+)\".*') {|m| m[1] }
+  link.delete_prefix!('https://www.fulcrum.org')
+
+  line = "#{monograph_row['noid']},#{link}\\n"
+
+  manifest_csv.each do |row|
+    next if row == monograph_row
+    next if row['noid'].downcase.start_with?('translation')
+
+    link = row['link'].match('^[^\(]+\(\"([^\"]+)\".*') {|m| m[1] }
+    link.delete_prefix!('https://www.fulcrum.org')
+    line += "#{row['noid']},#{link}\\n"
+  end
+
+  # Making Fulcrum handles
+  ok = system("printf #{line}")
+  #ok = system("printf #{line} | /quod-dev/bin/f/fulcrum_helpers/makeFulcrumHandles.pl -h")
+  status = $?
+
+  case ok
+  when true
+  else
+    puts "System call failed (status = #{status})"
+  end
+end

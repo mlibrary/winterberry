@@ -44,12 +44,7 @@ class HeliotropeService
       e.message
     end
 
-    if response == nil || !response.success?
-      puts "Warning: no manifest found for noid #{noid}"
-      return ""
-    end
-
-    puts "Manifest found for noid #{noid}"
+    return nil if response == nil || !response.success?
     return response.body
   end
 
