@@ -70,6 +70,7 @@ gem 'nokogiri', '~> 1.10.4'
 gem "rubyzip", ">= 1.3.0"
 
 # Adds support for heliotrope REST interface.
+gem 'faraday'
 gem 'turnsole', :git => 'https://github.com/mlibrary/turnsole'
 
 gem "image_size", "~> 2.0"
