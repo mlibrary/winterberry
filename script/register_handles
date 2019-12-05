@@ -3,7 +3,7 @@
 
 if !ENV['HOSTNAME'].start_with?('tang')
   puts "Hey, you must use tang to run this script!!"
-  exit
+  #exit
 end
 
 require 'optparse'
@@ -22,7 +22,7 @@ end
 option_parser.parse!(ARGV)
 if ARGV.count < 0
   puts option_parser.help
-  return
+  exit
 end
 
 monograph_noid_list = ARGV
@@ -38,11 +38,13 @@ require_relative File.join(root_dir, 'lib', 'services')
 monograph_noid_list.each do |monograph_noid|
   puts "*" * 10 + " #{monograph_noid} " + "*" * 10
 
-  puts "Downloading manifest file for noid #{monograph_noid}"
+  csv_body = HeliotropeService.new.monograph_noid_export(monograph_noid)
+  if csv_body == nil
+    puts "Error: unable to retrieve manifest file for noid #{monograph_noid}"
+  end
+  puts "Downloaded manifest file for noid #{monograph_noid}"
   STDOUT.flush
 
-  csv_body = HeliotropeService.new.monograph_noid_export(monograph_noid)
-  if csv_body
   manifest_csv = CSVFile.read(:csv_body => csv_body)
   next if manifest_csv == nil
 
