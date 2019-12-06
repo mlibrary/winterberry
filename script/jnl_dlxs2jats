@@ -8,7 +8,7 @@ require 'ostruct'
 options = OpenStruct.new
 options.gen_html = false
 option_parser = OptionParser.new do |opts|
-  opts.banner = "Usage: #{File.basename(__FILE__)} [-h] dlxs_file [dlxs_file...]"
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-h] monograph_dir [monograph_dir...]"
   opts.on('-h', '--html', 'Generate HTML') do |da|
     options.gen_html = true
   end
@@ -27,7 +27,7 @@ end
 script_dir = File.expand_path(File.dirname(__FILE__))
 root_dir = File.dirname(script_dir)
 
-dlxs_file_list = ARGV
+monograph_dir_list = ARGV
 
 require 'uri'
 
@@ -36,26 +36,41 @@ require_relative File.join(root_dir, 'lib', 'xslt')
 dlxs2jats_xsl_file = File.join(root_dir, "lib", "journal", "xsl", "dlxs2jats.xsl")
 jats2html_xsl_file = File.join(root_dir, "lib", "journal", "xsl", "jats-html.xsl")
 
-dlxs_file_list.each do |dlxs_file|
-    dlxs_file = File.expand_path(dlxs_file)
-    if !File.file?(dlxs_file)
-        puts "Error: invalid file #{dlxs_file}"
-        next
-    end
+monograph_dir_list.each do |monograph_dir|
+  # Verify the directory path.
+  monograph_dir = File.expand_path(monograph_dir)
+  if !File.directory?(monograph_dir)
+    puts "Error: invalid directory #{monograph_dir}"
+    next
+  end
 
-    jats_file = File.join(File.dirname(dlxs_file), File.basename(dlxs_file, ".*") + "_jats.xml")
+  # Construct the DLXS and JATS file paths.
+  dlxs_file = File.join(monograph_dir, File.basename(monograph_dir) + ".xml")
+  jats_file = File.join(File.dirname(dlxs_file), File.basename(dlxs_file, ".*") + "_jats.xml")
+
+  # Pass the resource file names as a parameter to the XSLT.
+  resource_file_list = Dir.glob(File.join(monograph_dir, "resources", "*"))
+  resource_list_param = ""
+  resource_file_list.each do |resource_file|
+    resource_list_param = ";#{File.basename(resource_file, ".*")}:#{File.basename(resource_file)}"
+  end
+  resource_list_param = resource_list_param[1..-1]
+  params = {
+              "image_list" => resource_list_param
+           }
+  XSLT.transform(
+          :xslpath => dlxs2jats_xsl_file,
+          :srcpath => dlxs_file,
+          :destpath => jats_file,
+          :parameters => params
+          )
+
+  if options.gen_html
+    html_file = File.join(File.dirname(jats_file), File.basename(jats_file, ".*") + ".html")
     XSLT.transform(
-            :xslpath => dlxs2jats_xsl_file,
-            :srcpath => dlxs_file,
-            :destpath => jats_file
+            :xslpath => jats2html_xsl_file,
+            :srcpath => jats_file,
+            :destpath => html_file
             )
-
-    if options.gen_html
-      html_file = File.join(File.dirname(jats_file), File.basename(jats_file, ".*") + ".html")
-      XSLT.transform(
-              :xslpath => jats2html_xsl_file,
-              :srcpath => jats_file,
-              :destpath => html_file
-              )
   end
 end

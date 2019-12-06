@@ -6,10 +6,24 @@
         xmlns:xi="http://www.w3.org/2001/XInclude"
         xmlns:xlink="http://www.w3.org/1999/xlink"
         xmlns:dlxs="http://mlib.umich.edu/namespace/dlxs"
-        exclude-result-prefixes="xs xi dlxs"
+        xmlns:mlibxsl="http://www.mlib.umich.edu/namespace/mlibxsl"
+        exclude-result-prefixes="xs xi dlxs mlibxsl"
         version="2.0">
 
     <xsl:output method="xml" doctype-public="-//NLM//DTD JATS (Z39.96) Journal Publishing DTD with MathML3 v1.3d1 20190831//EN" doctype-system="http://jats.nlm.nih.gov/publishing/1.3d1/JATS-journalpublishing1-mathml3.dtd" xpath-default-namespace="" indent="yes"/>
+
+    <xsl:param name="image_list" required="no"/>
+
+    <xsl:variable name="image_doc">
+        <xsl:element name="imagedoc">
+            <xsl:for-each select="tokenize($image_list,';')">
+                <xsl:element name="image">
+                    <xsl:attribute name="entity" select="tokenize(.,':')[1]"/>
+                    <xsl:attribute name="path" select="tokenize(.,':')[2]"/>
+                </xsl:element>
+            </xsl:for-each>
+        </xsl:element>
+    </xsl:variable>
 
     <xsl:template match="DLPSTEXTCLASS">
         <xsl:element name="article">
@@ -176,6 +190,21 @@
         </xsl:element>
     </xsl:template>
 
+    <xsl:template match="TABLE/CAPTION">
+        <xsl:apply-templates select="@*"/>
+
+        <xsl:choose>
+            <xsl:when test="count(P) = 0">
+                <xsl:element name="p">
+                    <xsl:apply-templates/>
+                </xsl:element>
+            </xsl:when>
+            <xsl:otherwise>
+                <xsl:apply-templates/>
+            </xsl:otherwise>
+        </xsl:choose>
+    </xsl:template>
+
     <xsl:template match="P">
         <xsl:element name="p">
             <xsl:if test="@TYPE">
@@ -240,7 +269,7 @@
     <xsl:template match="FIGURE[@TYPE='inline']">
         <xsl:element name="inline-graphic">
             <xsl:if test="exists(@ENTITY)">
-                <xsl:attribute name="xlink:href" select="concat('resources/',@ENTITY,'.jpg')"/>
+                <xsl:attribute name="xlink:href" select="mlibxsl:make-resource-path(@ENTITY)"/>
                 <xsl:apply-templates select="@*[name()!='ENTITY' and name()!='TYPE']|node()"/>
             </xsl:if>
         </xsl:element>
@@ -259,7 +288,7 @@
             <xsl:apply-templates select="@*[name()!='ENTITY' and name()!='REND']|*[local-name()!='HEAD']"/>
             <xsl:if test="exists(@ENTITY)">
                 <xsl:element name="graphic">
-                    <xsl:attribute name="xlink:href" select="concat('resources/',@ENTITY,'.jpg')"/>
+                    <xsl:attribute name="xlink:href" select="mlibxsl:make-resource-path(@ENTITY)"/>
                 </xsl:element>
             </xsl:if>
         </xsl:element>
@@ -354,7 +383,7 @@
             <xsl:apply-templates select="@*"/>
 
             <xsl:choose>
-                <xsl:when test="count(element()) = 0">
+                <xsl:when test="count(P) = 0">
                     <xsl:element name="p">
                         <xsl:apply-templates/>
                     </xsl:element>
@@ -402,26 +431,16 @@
 
     <xsl:template match="NOTE1/TABLE">
         <xsl:element name="p">
-            <xsl:element name="table-wrap">
-                <xsl:element name="table">
-                    <xsl:apply-templates select="@*[name()!='REND']"/>
-                    <xsl:element name="tbody">
-                        <xsl:apply-templates select="node()"/>
-                    </xsl:element>
-                </xsl:element>
-            </xsl:element>
+            <xsl:call-template name="add-table">
+                <xsl:with-param name="node" select="."/>
+            </xsl:call-template>
         </xsl:element>
     </xsl:template>
 
     <xsl:template match="TABLE">
-        <xsl:element name="table-wrap">
-            <xsl:element name="table">
-                <xsl:apply-templates select="@*[name()!='REND']"/>
-                <xsl:element name="tbody">
-                    <xsl:apply-templates select="node()"/>
-                </xsl:element>
-            </xsl:element>
-        </xsl:element>
+        <xsl:call-template name="add-table">
+            <xsl:with-param name="node" select="."/>
+        </xsl:call-template>
     </xsl:template>
 
     <xsl:template match="ROW">
@@ -576,6 +595,30 @@
         </xsl:element>
     </xsl:template>
 
+    <xsl:template name="add-table">
+        <xsl:param name="node"/>
+
+        <xsl:element name="table-wrap">
+            <xsl:if test="count($node/HEAD) > 0">
+                <xsl:element name="caption">
+                    <xsl:apply-templates select="$node/HEAD"/>
+                </xsl:element>
+            </xsl:if>
+            <xsl:element name="table">
+                <xsl:apply-templates select="$node/@*[name()!='REND']"/>
+                <xsl:element name="tbody">
+                    <xsl:apply-templates select="$node/*[local-name()!='HEAD' and local-name()!='CAPTION']"/>
+                </xsl:element>
+            </xsl:element>
+            <xsl:if test="exists($node/CAPTION)">
+                <xsl:element name="table-wrap-foot">
+                    <xsl:apply-templates select="$node/CAPTION"/>
+                </xsl:element>
+            </xsl:if>
+        </xsl:element>
+
+    </xsl:template>
+
     <xsl:template name="set-reference-attributes">
         <xsl:param name="refNode"/>
 
@@ -615,4 +658,10 @@
         </xsl:element>
     </xsl:template>
 
+    <xsl:function name="mlibxsl:make-resource-path">
+        <xsl:param name="entity"/>
+
+        <xsl:variable name="item" select="$image_doc/imagedoc/image[@entity=$entity]"/>
+        <xsl:sequence select="$item/@path"/>
+    </xsl:function>
 </xsl:stylesheet>
