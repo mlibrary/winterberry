@@ -7,7 +7,7 @@ require "nokogiri"
 require_relative 'elementinfo'
 
 class FigureProcessor < Nokogiri::XML::SAX::Document
-  attr_reader :info_list
+  attr_reader :info_list, :file_name
 
   def initialize(p_info_list = [])
     @info_list = p_info_list
@@ -20,7 +20,7 @@ class FigureProcessor < Nokogiri::XML::SAX::Document
     attrs_h = attrs.to_h
     if attrs_h.has_key?('alt')
       # This element has @alt, so grab it.
-      @info_list << ElementInfo.new(name, attrs)
+      @info_list << ElementInfo.new(@file_name, name, attrs)
     end
 
     if @figcap_stack.count > 0 or name == 'figcaption' or \
@@ -55,5 +55,10 @@ class FigureProcessor < Nokogiri::XML::SAX::Document
     @info_list = []
     @figcap_stack = []
     @fig_caption = ''
+    @file_name = ''
+  end
+
+  def set_file_name(nme)
+    @file_name = nme
   end
 end

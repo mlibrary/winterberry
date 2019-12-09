@@ -479,6 +479,7 @@ monograph_noid_list.each do |monograph_noid|
     Zip::File.open(epub_file) do |file|
       file.each do |entry|
         if File.extname(entry.name) == ".xhtml"
+          fig_proc.set_file_name(entry.name)
           parser.parse(entry.get_input_stream.read)
         end
       end
@@ -551,6 +552,7 @@ monograph_noid_list.each do |monograph_noid|
       # noid with the caption/alt text.
       caption_list = []
       ref_list.each do |info|
+        src_file_name = info.file_name
         attrs_h = info.attrs.to_h
 
         # Determine the resource file name
@@ -563,7 +565,7 @@ monograph_noid_list.each do |monograph_noid|
         else
           resource_name = resource_row["resource_name"]
         end
-        puts "Reference #{src} ==> #{resource_name}"
+        puts "#{File.basename(src_file_name)} Reference #{src} ==> #{resource_name}"
 
         # Create an entry for this resource with its noid,
         # caption/alt text.
