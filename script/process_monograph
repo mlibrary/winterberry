@@ -565,7 +565,7 @@ monograph_noid_list.each do |monograph_noid|
         else
           resource_name = resource_row["resource_name"]
         end
-        puts "#{File.basename(src_file_name)} Reference #{src} ==> #{resource_name}"
+        puts "#{File.basename(src_file_name)} reference #{src} ==> #{resource_name}"
 
         # Create an entry for this resource with its noid,
         # caption/alt text.
