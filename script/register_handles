@@ -12,24 +12,32 @@ require 'ostruct'
 # Process the script parameters.
 options = OpenStruct.new
 option_parser = OptionParser.new do |opts|
-  opts.banner = "Usage: #{File.basename(__FILE__)} monograph_noid [monograph_noid...]"
+  opts.banner = "Usage: #{File.basename(__FILE__)} output_dir monograph_noid [monograph_noid...]"
   opts.on_tail('-h', '--help', 'Print this help message') do
     puts opts
     exit 0
   end
 end
 option_parser.parse!(ARGV)
-if ARGV.count < 1
+if ARGV.count < 2
   puts option_parser.help
-  exit
+  exit 0
 end
 
-monograph_noid_list = ARGV
+output_dir = ARGV[0]
+monograph_noid_list = ARGV[1..-1]
 
 # Determine the root directory of the code base.
 script_dir = File.expand_path(File.dirname(__FILE__))
 root_dir = File.dirname(script_dir)
 
+output_dir = File.expand_path(output_dir)
+if !File.directory?(output_dir)
+  puts "Error: output directory #{output_dir} is not valid."
+  exit 1
+end
+
+require 'date'
 require 'fileutils'
 
 require_relative File.join(root_dir, 'lib', 'csvfile')
@@ -55,8 +63,9 @@ monograph_noid_list.each do |monograph_noid|
   link = monograph_row['link'].match('^[^\(]+\(\"([^\"]+)\".*') {|m| m[1] }
   link.delete_prefix!('https://www.fulcrum.org')
 
-  row_list = []
-  row_list << "#{monograph_row['noid']},#{link}"
+  row_list =  [
+                "#{monograph_row['noid']},#{link}"
+              ]
 
   manifest_csv.each do |row|
     next if row == monograph_row
@@ -76,8 +85,11 @@ monograph_noid_list.each do |monograph_noid|
   end
 
   # Making Fulcrum handles
-  ok = system("cat #{resource_file}")
-  #ok = system("cat resources.csv | /quod-dev/bin/f/fulcrum_helpers/makeFulcrumHandles.pl -h")
+  bname = "batch" + DateTime.now.strftime("%Y-%m-%d")
+  hdl_file = File.join(output_dir,  bname + ".hdl")
+  #ok = system("cat resources.csv > #{hdl_file}")
+  #ok = system("echo /quod-dev/bin/f/fulcrum_helpers/makeFulcrumHandles.pl -h -d \"#{output_dir}\" >> #{hdl_file}")
+  ok = system("cat resources.csv | /quod-dev/bin/f/fulcrum_helpers/makeFulcrumHandles.pl -h -d \"#{output_dir}\"")
   status = $?
   FileUtils.rm_f resource_file
   
@@ -85,5 +97,11 @@ monograph_noid_list.each do |monograph_noid|
   when true
   else
     puts "System call failed (status = #{status})"
+    next
   end
+
+  # Rename the output file from makeFulcrumHandles.pl
+  # to avoid it from being overwritten
+  new_hdl_file = File.join(output_dir, bname + "_#{monograph_noid}" + ".hdl")
+  FileUtils.mv(hdl_file, new_hdl_file)
 end
