@@ -50,6 +50,7 @@ monograph_noid_list.each do |monograph_noid|
   csv_body = HeliotropeService.new.monograph_noid_export(monograph_noid)
   if csv_body == nil
     puts "Error: unable to retrieve manifest file for noid #{monograph_noid}"
+    next
   end
   puts "Downloaded manifest file for noid #{monograph_noid}"
   STDOUT.flush
