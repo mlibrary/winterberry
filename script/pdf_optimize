@@ -1,0 +1,40 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require 'optparse'
+require 'ostruct'
+
+# Process the script parameters.
+options = OpenStruct.new
+options.resize_pct = 100
+options.dimen_threshold = 2000
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-r resize_pct] [-t dimen_threshold] pdf_file [pdf_file...]"
+  opts.on('-r', '--resize_pct [pct]', 'Image resize percentage') do |resize_pct|
+    options.resize_pct = resize_pct
+  end
+  opts.on('-t', '--dimen_threshold [pct]', 'Image dimension threshold') do |dimen_threshold|
+    options.dimen_threshold = dimen_threshold
+  end
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    puts opts
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  puts option_parser.help
+  return
+end
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "pdfutil", "pdfutil")
+
+PdfUtil.optimize(
+    :resize_pct => options.resize_pct,
+    :dimen_threshold => options.dimen_threshold,
+    :pdf_file_list => ARGV
+    )
