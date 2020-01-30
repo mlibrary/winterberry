@@ -86,7 +86,7 @@ monograph_noid_list.each do |monograph_noid|
   end
 
   # Making Fulcrum handles
-  bname = "batch" + DateTime.now.strftime("%Y-%m-%d")
+  bname = "batch." + DateTime.now.strftime("%Y-%m-%d")
   hdl_file = File.join(output_dir,  bname + ".hdl")
   #ok = system("cat resources.csv > #{hdl_file}")
   #ok = system("echo /quod-dev/bin/f/fulcrum_helpers/makeFulcrumHandles.pl -h -d \"#{output_dir}\" >> #{hdl_file}")
