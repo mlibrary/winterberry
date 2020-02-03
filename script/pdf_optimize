@@ -6,10 +6,14 @@ require 'ostruct'
 
 # Process the script parameters.
 options = OpenStruct.new
+options.cover_format = nil
 options.resize_pct = 100
 options.dimen_threshold = 2000
 option_parser = OptionParser.new do |opts|
-  opts.banner = "Usage: #{File.basename(__FILE__)} [-r resize_pct] [-t dimen_threshold] pdf_file [pdf_file...]"
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-c bmp|jpeg|jpeg2000|png] [-r resize_pct] [-t dimen_threshold] pdf_file [pdf_file...]"
+  opts.on('-c', '--cover_format [format]', 'Extract cover format') do |cover_format|
+    options.cover_format = cover_format
+  end
   opts.on('-r', '--resize_pct [pct]', 'Image resize percentage') do |resize_pct|
     options.resize_pct = resize_pct
   end
@@ -44,6 +48,7 @@ ENV['JAVA_HOME'] = java_home
 ENV['PATH'] = File.join(java_home, "bin") + Gem.path_separator + ENV['PATH']
 
 PdfUtil.optimize(
+    :cover_format => options.cover_format,
     :resize_pct => options.resize_pct,
     :dimen_threshold => options.dimen_threshold,
     :pdf_file_list => ARGV

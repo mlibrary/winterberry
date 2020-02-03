@@ -3,10 +3,19 @@ class PdfUtil
   CMD_STR_ALL = "java -jar \"%s\" %s"
 
   def self.optimize(args = {})
+    cover_format = args[:cover_format]
     resize_pct = args[:resize_pct]
     dimen_threshold = args[:dimen_threshold]
     pdf_file_list = args[:pdf_file_list]
-    execute("optimize #{resize_pct} #{dimen_threshold} #{pdf_file_list.join(' ')}")
+
+    cmd = [ "optimize" ]
+    if cover_format != nil
+      cmd << "-cover #{cover_format}"
+    end
+    cmd << resize_pct
+    cmd << dimen_threshold
+    cmd << pdf_file_list
+    execute(cmd.join(' '))
   end
 
   def self.execute(opts_str)
