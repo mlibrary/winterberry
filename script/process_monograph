@@ -102,7 +102,7 @@ monograph_noid_list.each do |monograph_noid|
   # Determine if the resources directory exists.
   resources_dir = File.join(monograph_dir, "resources")
   if !File.exists?(resources_dir) or !File.directory?(resources_dir)
-    puts "Error: File.basename(resources_dir) is not a valid directory."
+    puts "Error: #{File.basename(resources_dir)} is not a valid directory."
     next
   end
 
