@@ -6,13 +6,21 @@ require 'ostruct'
 
 # Process the script parameters.
 options = OpenStruct.new
-options.cover_format = nil
+options.cover_format = "png"
+options.cover_page = 0
+options.image_format = "jpeg"
 options.resize_pct = 100
 options.dimen_threshold = 2000
 option_parser = OptionParser.new do |opts|
-  opts.banner = "Usage: #{File.basename(__FILE__)} [-c bmp|jpeg|jpeg2000|png] [-r resize_pct] [-t dimen_threshold] pdf_file [pdf_file...]"
-  opts.on('-c', '--cover_format [format]', 'Extract cover format') do |cover_format|
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-c format] [-f format] [-p cover_page] [-r resize_pct] [-t dimen_threshold] pdf_file [pdf_file...]"
+  opts.on('-c', '--cover_format [format]', 'Extract cover format [bmp|jpeg|jpeg2000|png]') do |cover_format|
     options.cover_format = cover_format
+  end
+  opts.on('-f', '--image_format [format]', 'Image format [bmp|jpeg|jpeg2000|png]') do |image_format|
+    options.image_format = image_format
+  end
+  opts.on('-p', '--cover_page [0-9]+', 'Extract cover page') do |cover_page|
+    options.cover_page = cover_page
   end
   opts.on('-r', '--resize_pct [pct]', 'Image resize percentage') do |resize_pct|
     options.resize_pct = resize_pct
@@ -49,6 +57,7 @@ ENV['PATH'] = File.join(java_home, "bin") + Gem.path_separator + ENV['PATH']
 
 PdfUtil.optimize(
     :cover_format => options.cover_format,
+    :cover_page => options.cover_page,
     :resize_pct => options.resize_pct,
     :dimen_threshold => options.dimen_threshold,
     :pdf_file_list => ARGV

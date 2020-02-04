@@ -4,16 +4,18 @@ class PdfUtil
 
   def self.optimize(args = {})
     cover_format = args[:cover_format]
+    cover_page = args[:cover_page]
+    image_format = args[:image_format]
     resize_pct = args[:resize_pct]
     dimen_threshold = args[:dimen_threshold]
     pdf_file_list = args[:pdf_file_list]
 
     cmd = [ "optimize" ]
-    if cover_format != nil
-      cmd << "-cover #{cover_format}"
-    end
-    cmd << resize_pct
-    cmd << dimen_threshold
+    cmd << "-cover_format #{cover_format}" unless cover_format.nil?
+    cmd << "-cover_page #{cover_page}" unless cover_page.nil?
+    cmd << "-image_format #{image_format}" unless image_format.nil?
+    cmd << "-resize_pct #{resize_pct}" unless resize_pct.nil?
+    cmd << "-dimen_threshold #{dimen_threshold}" unless dimen_threshold.nil?
     cmd << pdf_file_list
     execute(cmd.join(' '))
   end

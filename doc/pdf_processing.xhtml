@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--Arbortext, Inc., 1988-2016, v.4002-->
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>PDF Processing</title>
+</head>
+<body><section id="PDF_Processing"><h1>PDF Processing</h1><p>Currently,
+a PDF can be processed in the following manner:</p><ol>
+<li><p>Selected Images within the PDF can be resized by a specified
+percentage.</p></li>
+<li><p>Selected Images within the PDF can be converted to a specified
+format.</p></li>
+<li><p>A page index representing the cover image can be specified
+and extracted to a specified format.</p></li>
+</ol><p>The script for performing the processing resides at the following
+location:</p><p><strong>ROOTDIR = tang.umdl.umich.edu:/quod-prep/prep/a/acls/hebepub/winterberry/script/pdf_optimize</strong
+></p><p>Below is the list of possible parameters:</p><pre><code><b
+>usage: optimize [options] pdf_file [pdf_file...]
+ -c,--cover_format       Cover format [bmp|jpeg|jpeg2000|png]
+ -f,--image_format       Image format [bmp|jpeg|jpeg2000|png]
+ -p,--cover_page         Cover page [0-9]+
+ -r,--resize_pct         Resize %
+ -t,--dimen_threshold    Dimension threshold [0-9]+</b></code></pre
+><p>Below are a few sample invocations:</p><ol>
+<li><p>To maintain the original size of all images within a PDF and
+use the JPEG format, invoke the following command:</p><p><code><b
+>pdf_optimize -f jpeg pdf_file1 pdf_file2</b></code></p></li>
+<li><p>To resize all images within a PDF to be 80% of their original
+size and use the JPEG format, invoke the following command:</p><p
+><code><b>pdf_optimize -r 80 -f jpeg pdf_file1 pdf_file2</b></code
+></p></li>
+<li><p>To resize all images within a PDF to be 80% of their original
+size, use the JPEG format, and extract the first page as the cover
+in the PNG format, invoke the following command:</p><p><code><b>pdf_optimize
+-r 80 -f jpeg -c png -p 0 pdf_file1 pdf_file2</b></code></p></li>
+<li><p>To resize all images within a PDF with a dimension of 1000
+or greater to be 80% of their original size and use the JPEG format,
+invoke the following command:</p><p><code><b>pdf_optimize -r 80 -f
+jpeg -t 1000 pdf_file1 pdf_file2</b></code></p></li>
+</ol></section></body>
+</html>
