@@ -17,26 +17,30 @@ and extracted to a specified format.</p></li>
 location:</p><p><strong>ROOTDIR = tang.umdl.umich.edu:/quod-prep/prep/a/acls/hebepub/winterberry/script/pdf_optimize</strong
 ></p><p>Below is the list of possible parameters:</p><pre><code><b
 >usage: optimize [options] pdf_file [pdf_file...]
- -c,--cover_format       Cover format [bmp|jpeg|jpeg2000|png]
- -f,--image_format       Image format [bmp|jpeg|jpeg2000|png]
- -p,--cover_page         Cover page [0-9]+
- -r,--resize_pct         Resize %
- -t,--dimen_threshold    Dimension threshold [0-9]+</b></code></pre
-><p>Below are a few sample invocations:</p><ol>
+ -c,--cover_format       Cover format [bmp|jpeg|jpeg2000|png]. If not specified, then no cover is extracted.
+ -f,--image_format       Image format [bmp|jpeg|jpeg2000|png]. The default is jpeg.
+ -p,--cover_page         Cover page [0-9]+. The --cover_format option must also be specified. Default is 0.
+ -r,--resize_pct         Resize %. The default is 100.
+ -t,--dimen_threshold    Dimension threshold [0-9]+. The default is 0.</b
+></code></pre><p>The resulting PDF will have the suffix <i>_optimize_{resize_pct}pct</i
+> appended to its filename. For example, if the specified PDF has
+the filename <i>ebookISBN</i> and it is resized to be 80% as the <code
+>&#x2013;resize_pct 80</code> option is provided, then the resulting
+PDF will have the name <i>ebookISBN_optimize_80pct.pdf</i>.</p><p
+>Below are a few sample invocations:</p><ol>
 <li><p>To maintain the original size of all images within a PDF and
 use the JPEG format, invoke the following command:</p><p><code><b
->pdf_optimize -f jpeg pdf_file1 pdf_file2</b></code></p></li>
+>pdf_optimize -f jpeg pdf_file1</b></code></p></li>
 <li><p>To resize all images within a PDF to be 80% of their original
 size and use the JPEG format, invoke the following command:</p><p
-><code><b>pdf_optimize -r 80 -f jpeg pdf_file1 pdf_file2</b></code
-></p></li>
+><code><b>pdf_optimize -r 80 -f jpeg pdf_file1</b></code></p></li>
 <li><p>To resize all images within a PDF to be 80% of their original
 size, use the JPEG format, and extract the first page as the cover
 in the PNG format, invoke the following command:</p><p><code><b>pdf_optimize
--r 80 -f jpeg -c png -p 0 pdf_file1 pdf_file2</b></code></p></li>
-<li><p>To resize all images within a PDF with a dimension of 1000
-or greater to be 80% of their original size and use the JPEG format,
-invoke the following command:</p><p><code><b>pdf_optimize -r 80 -f
-jpeg -t 1000 pdf_file1 pdf_file2</b></code></p></li>
+-r 80 -f jpeg -c png -p 0 pdf_file1</b></code></p></li>
+<li><p>To resize all images within a PDF with both the width and height
+dimensions 1000 pixels or greater to be 80% of their original size
+and use the JPEG format, invoke the following command:</p><p><code
+><b>pdf_optimize -r 80 -f jpeg -t 1000 pdf_file1</b></code></p></li>
 </ol></section></body>
 </html>
