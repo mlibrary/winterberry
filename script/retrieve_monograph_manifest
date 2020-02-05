@@ -55,7 +55,7 @@ service = HeliotropeService.new(:base => base, :token => token)
 
 noid_list.each do |noid|
   # Attempt to download the monograph manifest.
-  puts "API: #{base}"
+  #puts "API: #{base}"
   service_response = service.monograph_noid_export(noid)
 
   if !service_response.empty?

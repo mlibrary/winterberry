@@ -11,27 +11,30 @@ require 'ostruct'
 
 # Process the script parameters.
 options = OpenStruct.new
+options.output_dir = Dir.pwd
 option_parser = OptionParser.new do |opts|
-  opts.banner = "Usage: #{File.basename(__FILE__)} output_dir monograph_noid [monograph_noid...]"
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-d output_dir] monograph_noid [monograph_noid...]"
+  opts.on('-d', '--output_dir [DIRECTORY]', 'Output directory') do |output_dir|
+    options.output_dir = output_dir
+  end
   opts.on_tail('-h', '--help', 'Print this help message') do
     puts opts
     exit 0
   end
 end
 option_parser.parse!(ARGV)
-if ARGV.count < 2
+if ARGV.count < 1
   puts option_parser.help
   exit 0
 end
 
-output_dir = ARGV[0]
-monograph_noid_list = ARGV[1..-1]
+monograph_noid_list = ARGV
 
 # Determine the root directory of the code base.
 script_dir = File.expand_path(File.dirname(__FILE__))
 root_dir = File.dirname(script_dir)
 
-output_dir = File.expand_path(output_dir)
+output_dir = File.expand_path(options.output_dir)
 if !File.directory?(output_dir)
   puts "Error: output directory #{output_dir} is not valid."
   exit 1
@@ -78,7 +81,7 @@ monograph_noid_list.each do |monograph_noid|
   end
 
   # Write the temp file. system command may strip out the newlines
-  resource_file = File.expand_path("resources.csv")
+  resource_file = File.join(output_dir, "resources.csv")
   File.open(resource_file, "w") do |fp|
     row_list.each do |row|
       fp.puts row
@@ -88,9 +91,12 @@ monograph_noid_list.each do |monograph_noid|
   # Making Fulcrum handles
   bname = "batch." + DateTime.now.strftime("%Y-%m-%d")
   hdl_file = File.join(output_dir,  bname + ".hdl")
+  log_file = File.join(output_dir,  bname + ".log")
   #ok = system("cat resources.csv > #{hdl_file}")
   #ok = system("echo /quod-dev/bin/f/fulcrum_helpers/makeFulcrumHandles.pl -h -d \"#{output_dir}\" >> #{hdl_file}")
   ok = system("cat resources.csv | /quod-dev/bin/f/fulcrum_helpers/makeFulcrumHandles.pl -h -d \"#{output_dir}\"")
+  #ok = true
+  #puts "cat resources.csv | /quod-dev/bin/f/fulcrum_helpers/makeFulcrumHandles.pl -h -d \"#{output_dir}\""
   status = $?
   FileUtils.rm_f resource_file
   
@@ -104,5 +110,11 @@ monograph_noid_list.each do |monograph_noid|
   # Rename the output file from makeFulcrumHandles.pl
   # to avoid it from being overwritten
   new_hdl_file = File.join(output_dir, bname + "_#{monograph_noid}" + ".hdl")
-  FileUtils.mv(hdl_file, new_hdl_file)
+  new_log_file = File.join(output_dir, bname + "_#{monograph_noid}" + ".log")
+  if File.exists?(hdl_file)
+    FileUtils.mv(hdl_file, new_hdl_file)
+  end
+  if File.exists?(log_file)
+    FileUtils.mv(log_file, new_log_file)
+  end
 end
