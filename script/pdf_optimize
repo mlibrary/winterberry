@@ -10,7 +10,7 @@ options.cover_format = "png"
 options.cover_page = 0
 options.image_format = "jpeg"
 options.resize_pct = 100
-options.dimen_threshold = 2000
+options.dimen_threshold = 0
 option_parser = OptionParser.new do |opts|
   opts.banner = "Usage: #{File.basename(__FILE__)} [-c format] [-f format] [-p cover_page] [-r resize_pct] [-t dimen_threshold] pdf_file [pdf_file...]"
   opts.on('-c', '--cover_format [format]', 'Extract cover format [bmp|jpeg|jpeg2000|png]') do |cover_format|
@@ -25,7 +25,7 @@ option_parser = OptionParser.new do |opts|
   opts.on('-r', '--resize_pct [pct]', 'Image resize percentage') do |resize_pct|
     options.resize_pct = resize_pct
   end
-  opts.on('-t', '--dimen_threshold [pct]', 'Image dimension threshold') do |dimen_threshold|
+  opts.on('-t', '--dimen_threshold [dimen]', 'Image dimension threshold') do |dimen_threshold|
     options.dimen_threshold = dimen_threshold
   end
   opts.on_tail('-h', '--help', 'Print this help message') do
