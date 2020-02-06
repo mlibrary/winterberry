@@ -45,8 +45,9 @@ in the PNG format, invoke the following command:</p>
 </li>
 <li><p>To resize all images within a PDF with both the width and height
 dimensions 1000 pixels or greater to be 80% of their original size
-and use the JPEG format, invoke the following command:</p>
-<p><code><b>ROOTDIR</b>/script/pdf_optimize -r 80 -f jpeg -t 1000 /mnt/umptmm/MPS/BAR/compression/9781407336138/9781407336138.pdf</code></p>
+and use the JPEG format, invoke the following command (NOTE: in this example,
+the nice command sets the scheduling priority to the least favorable value of 19):</p>
+<p><code>nice -19 <b>ROOTDIR</b>/script/pdf_optimize -r 80 -f jpeg -t 1000 /mnt/umptmm/MPS/BAR/compression/9781407336138/9781407336138.pdf</code></p>
 </li>
 </ol>
 </section>
