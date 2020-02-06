@@ -11,8 +11,8 @@ class PdfUtil
     pdf_file_list = args[:pdf_file_list]
 
     cmd = [ "optimize" ]
-    cmd << "-cover_format #{cover_format}" unless cover_format.nil?
-    cmd << "-cover_page #{cover_page}" unless cover_page.nil?
+    cmd << "-cover_format #{cover_format}" unless cover_format.nil? or cover_format.empty?
+    cmd << "-cover_page #{cover_page}" unless cover_page.nil? or cover_format.nil? or cover_format.empty?
     cmd << "-image_format #{image_format}" unless image_format.nil?
     cmd << "-resize_pct #{resize_pct}" unless resize_pct.nil?
     cmd << "-dimen_threshold #{dimen_threshold}" unless dimen_threshold.nil?
