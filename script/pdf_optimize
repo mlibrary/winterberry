@@ -6,7 +6,7 @@ require 'ostruct'
 
 # Process the script parameters.
 options = OpenStruct.new
-options.cover_format = "png"
+options.cover_format = ""
 options.cover_page = 0
 options.image_format = "jpeg"
 options.resize_pct = 100
