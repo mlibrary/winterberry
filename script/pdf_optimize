@@ -13,19 +13,19 @@ options.resize_pct = 100
 options.dimen_threshold = 0
 option_parser = OptionParser.new do |opts|
   opts.banner = "Usage: #{File.basename(__FILE__)} [-c format] [-f format] [-p cover_page] [-r resize_pct] [-t dimen_threshold] pdf_file [pdf_file...]"
-  opts.on('-c', '--cover_format [format]', 'Extract cover format [bmp|jpeg|jpeg2000|png]') do |cover_format|
+  opts.on('-c', '--cover_format [format]', 'Extract cover in the format [bmp|jpeg|jpeg2000|png].') do |cover_format|
     options.cover_format = cover_format
   end
-  opts.on('-f', '--image_format [format]', 'Image format [bmp|jpeg|jpeg2000|png]') do |image_format|
+  opts.on('-f', '--image_format [format]', 'Resize images in the format [bmp|jpeg|jpeg2000|png]. The default is jpeg.') do |image_format|
     options.image_format = image_format
   end
-  opts.on('-p', '--cover_page [0-9]+', 'Extract cover page') do |cover_page|
+  opts.on('-p', '--cover_page [0-9]+', 'Cover page index [0-9]+. The --cover_format option must also be specified. Default is 0.') do |cover_page|
     options.cover_page = cover_page
   end
-  opts.on('-r', '--resize_pct [pct]', 'Image resize percentage') do |resize_pct|
+  opts.on('-r', '--resize_pct [pct]', 'Resize %. The default is 100.') do |resize_pct|
     options.resize_pct = resize_pct
   end
-  opts.on('-t', '--dimen_threshold [dimen]', 'Image dimension threshold') do |dimen_threshold|
+  opts.on('-t', '--dimen_threshold [dimen]', 'Dimension threshold [0-9]+. The default is 0.') do |dimen_threshold|
     options.dimen_threshold = dimen_threshold
   end
   opts.on_tail('-h', '--help', 'Print this help message') do
@@ -33,10 +33,17 @@ option_parser = OptionParser.new do |opts|
     exit 0
   end
 end
-option_parser.parse!(ARGV)
+begin
+  option_parser.parse!(ARGV)
+rescue OptionParser::InvalidOption => e
+  puts "Syntax error: #{e.message}"
+  puts
+  puts option_parser.help
+  exit 1
+end
 if ARGV.count < 1
   puts option_parser.help
-  return
+  exit 0
 end
 
 # Determine the root directory of the code base.
