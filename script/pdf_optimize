@@ -46,6 +46,8 @@ if ARGV.count < 1
   exit 0
 end
 
+pdf_file_list = ARGV
+
 # Determine the root directory of the code base.
 script_dir = File.expand_path(File.dirname(__FILE__))
 root_dir = File.dirname(script_dir)
@@ -59,6 +61,19 @@ else
   java_home = File.join(File::SEPARATOR, "usr", "lib", "jvm", "java-8-openjdk-amd64")
 end
 
+# Determine if one of the PDFs has a file size > 1GB.
+# If so, then increase the Java heap space.
+java_vm_args = ""
+pdf_file_list.each do |pdf_file|
+  pdf_file = File.expand_path(pdf_file)
+  szeMB = (File.size(pdf_file).to_f / 2**20).round(2)
+  if szeMB > 1000.0
+    puts "#{File.basename(pdf_file)}: #{szeMB}, increasing heap space."
+    java_vm_args = "-Xms8192m -Xmx8192m"
+    break
+  end
+end
+
 ENV['JAVA_HOME'] = java_home
 ENV['PATH'] = File.join(java_home, "bin") + Gem.path_separator + ENV['PATH']
 
@@ -67,5 +82,6 @@ PdfUtil.optimize(
     :cover_page => options.cover_page,
     :resize_pct => options.resize_pct,
     :dimen_threshold => options.dimen_threshold,
-    :pdf_file_list => ARGV
+    :pdf_file_list => pdf_file_list,
+    :vm_args => java_vm_args
     )
