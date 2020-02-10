@@ -54,7 +54,7 @@ require_relative File.join(root_dir, "lib", "pdfutil", "pdfutil")
 
 # Set JAVA_HOME. Explicitly set for my laptop (Windows) or tang (Linux).
 if Gem.win_platform?
-  java_home = File.join(ENV['SYSTEMDRIVE'], "Program Files", "Java", "jre1.8.0_151")
+  java_home = File.join(ENV['SYSTEMDRIVE'], "Program Files", "Java", "jdk1.8.0_241")
 else
   java_home = File.join(File::SEPARATOR, "usr", "lib", "jvm", "java-8-openjdk-amd64")
 end
