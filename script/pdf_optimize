@@ -6,8 +6,10 @@ require 'ostruct'
 
 # Process the script parameters.
 options = OpenStruct.new
+options.compression_level = 70
 options.cover_format = ""
 options.cover_page = 0
+options.delete_dir = false
 options.image_format = "jpeg"
 options.resize_pct = 100
 options.dimen_threshold = 0
@@ -16,8 +18,14 @@ option_parser = OptionParser.new do |opts|
   opts.on('-c', '--cover_format [format]', 'Extract cover in the format [bmp|jpeg|jpeg2000|png].') do |cover_format|
     options.cover_format = cover_format
   end
+  opts.on('-d', '--delete_dir', 'Extract cover in the format [bmp|jpeg|jpeg2000|png].') do |dd|
+    options.delete_dir = true
+  end
   opts.on('-f', '--image_format [format]', 'Resize images in the format [bmp|jpeg|jpeg2000|png]. The default is jpeg.') do |image_format|
     options.image_format = image_format
+  end
+  opts.on('-l', '--compression_level [pct]', 'Compression level %. The default is 70.') do |compression_level|
+    options.compression_level = compression_level
   end
   opts.on('-p', '--cover_page [0-9]+', 'Cover page index [0-9]+. The --cover_format option must also be specified. Default is 0.') do |cover_page|
     options.cover_page = cover_page
@@ -46,8 +54,6 @@ if ARGV.count < 1
   exit 0
 end
 
-pdf_file_list = ARGV
-
 # Determine the root directory of the code base.
 script_dir = File.expand_path(File.dirname(__FILE__))
 root_dir = File.dirname(script_dir)
@@ -61,27 +67,15 @@ else
   java_home = File.join(File::SEPARATOR, "usr", "lib", "jvm", "java-8-openjdk-amd64")
 end
 
-# Determine if one of the PDFs has a file size > 1GB.
-# If so, then increase the Java heap space.
-java_vm_args = ""
-pdf_file_list.each do |pdf_file|
-  pdf_file = File.expand_path(pdf_file)
-  szeMB = (File.size(pdf_file).to_f / 2**20).round(2)
-  if szeMB > 1000.0
-    puts "#{File.basename(pdf_file)}: #{szeMB}, increasing heap space."
-    java_vm_args = "-Xms8192m -Xmx8192m"
-    break
-  end
-end
-
 ENV['JAVA_HOME'] = java_home
 ENV['PATH'] = File.join(java_home, "bin") + Gem.path_separator + ENV['PATH']
 
 PdfUtil.optimize(
+    :compression_level => options.compression_level,
+    :delete_dir => options.delete_dir,
     :cover_format => options.cover_format,
     :cover_page => options.cover_page,
     :resize_pct => options.resize_pct,
     :dimen_threshold => options.dimen_threshold,
-    :pdf_file_list => pdf_file_list,
-    :vm_args => java_vm_args
+    :pdf_file_list => ARGV
     )
