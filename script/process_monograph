@@ -642,7 +642,13 @@ monograph_noid_list.each do |monograph_noid|
           if caption_row != nil
             puts "Found caption/alt text for resource #{resource_name}."
             new_row["Caption"] = caption_row["caption"]
+            if new_row["Caption"].nil? or new_row["Caption"].empty?
+              puts "Warning: no caption text found for resource #{resource_name}."
+            end
             new_row["Alternative Text"] = caption_row["alternative_text"]
+            if new_row["Alternative Text"].nil? or new_row["Alternative Text"].empty?
+              puts "Warning: no alt text found for resource #{resource_name}."
+            end
           else
             puts "Warning: no caption/alt text found for resource #{resource_name}."
           end
