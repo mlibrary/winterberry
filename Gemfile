@@ -64,7 +64,7 @@ gem 'csv'
 
 # Adds support for XML/HTML files
 gem 'htmlentities'
-gem 'nokogiri', '~> 1.10.4'
+gem 'nokogiri', '~> 1.10.8'
 
 # Adds support for processing ZIP files.
 gem "rubyzip", ">= 1.3.0"
