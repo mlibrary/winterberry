@@ -92,13 +92,13 @@ monograph_noid_list.each do |monograph_noid|
   bname = "batch." + DateTime.now.strftime("%Y-%m-%d")
   hdl_file = File.join(output_dir,  bname + ".hdl")
   log_file = File.join(output_dir,  bname + ".log")
-  #ok = system("cat resources.csv > #{hdl_file}")
+  #ok = system("cat \"#{resource_file}\" > #{hdl_file}")
   #ok = system("echo /quod-dev/bin/f/fulcrum_helpers/makeFulcrumHandles.pl -h -d \"#{output_dir}\" >> #{hdl_file}")
-  ok = system("cat resources.csv | /quod-dev/bin/f/fulcrum_helpers/makeFulcrumHandles.pl -h -d \"#{output_dir}\"")
+  ok = system("cat \"#{resource_file}\" | /quod-dev/bin/f/fulcrum_helpers/makeFulcrumHandles.pl -h -d \"#{output_dir}\"")
   #ok = true
-  #puts "cat resources.csv | /quod-dev/bin/f/fulcrum_helpers/makeFulcrumHandles.pl -h -d \"#{output_dir}\""
+  #puts "cat \"#{resource_file}\" | /quod-dev/bin/f/fulcrum_helpers/makeFulcrumHandles.pl -h -d \"#{output_dir}\""
   status = $?
-  FileUtils.rm_f resource_file
+  #FileUtils.rm_f resource_file
   
   case ok
   when true
