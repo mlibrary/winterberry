@@ -16,7 +16,8 @@ class ImgProcessor < FragmentProcessor
       if fragment.node.name == 'img'
         # Image fragment. Just add object to list. No caption.
         img = new_info(
-                :node => fragment.node
+                :node => fragment.node,
+                :name => args[:name]
               )
         @img_list << img
         next
@@ -42,6 +43,7 @@ class ImgProcessor < FragmentProcessor
           caption = caption_ndx == -1 ? nil : captions_list[caption_ndx]
           @img_list << new_info(
                   :node=> node,
+                  :name => args[:name],
                   :caption=> caption
               )
         else

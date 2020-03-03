@@ -16,8 +16,12 @@ require 'ostruct'
 options = OpenStruct.new
 options.publisher_dir = Dir.pwd
 options.update_fmsl = true
+options.use_map = true
 option_parser = OptionParser.new do |opts|
-  opts.banner = "Usage: #{File.basename(__FILE__)} [-nofmsl] [-p directory] <isbn> [<isbn>...]"
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-map] [-nofmsl] [-p directory] <isbn> [<isbn>...]"
+  opts.on('-map', '--map', 'Overwrite existing resource map file.') do |da|
+    options.use_map = false
+  end
   opts.on('-nofmsl', '--nofmsl', 'Do not update FMSL.') do |da|
     options.update_fmsl = false
   end
@@ -42,6 +46,7 @@ if !File.directory?(publisher_dir)
   exit 1
 end
 update_fmsl = options.update_fmsl
+use_map = options.use_map
 
 # Determine the root directory of the code base.
 script_dir = File.expand_path(File.dirname(__FILE__))
@@ -49,7 +54,7 @@ root_dir = File.dirname(script_dir)
 
 require 'fileutils'
 
-require_relative File.join(root_dir, "lib", "fragmentmetadata")
+require_relative File.join(root_dir, "lib", "monograph")
 require_relative File.join(root_dir, "lib", "epubprocessor")
 require_relative File.join(root_dir, "lib", "csvfile_new")
 
@@ -95,7 +100,7 @@ isbn_list.each do |isbn|
   # Determine if the resource map file exists. If not,
   # then one needs to be generated.
   resource_map_file = File.join(processing_dir, "resource_map.csv")
-  resource_map_exists = File.exists?(resource_map_file)
+  resource_map_exists = File.exists?(resource_map_file) && use_map
 
   if resource_map_exists
     puts "INFO: using existing resource map file #{File.basename(resource_map_file)}"
@@ -133,7 +138,6 @@ isbn_list.each do |isbn|
     # Determine the headers to use for the resource info
     # CSV.
     headers = resource_map_file_headers
-    #imgprocessor.map.first.each do |key,value|
     imgprocessor.img_list.first.map.each do |key,value|
       headers << key
     end
@@ -161,6 +165,9 @@ isbn_list.each do |isbn|
           rname = resource_map.find {|row| row['File Name'] == ref }
           resource_name = rname.nil? ? File.basename(ref) : rname['Resource Name']
         end
+        puts "Warning: #{row.name}: no resource found for reference \"#{ref}\". Using name \"#{resource_name}\"." \
+            if rname.nil?
+        #puts "#{row.name},\"#{ref}\"," if rname.nil?
 
         # Add the "File Name" and "Resource Name" values.
         crow[resource_map_file_headers[0]] = ref
@@ -239,7 +246,7 @@ isbn_list.each do |isbn|
         resource_name = fmsl_row['File Name']
         resource_row = resource_info_csv.find {|row| row['Resource Name'] == resource_name }
         if resource_row.nil?
-          puts "Warning: No alt text/caption found for resource #{resource_name}."
+          puts "Warning: No alt text/caption found for resource \"#{resource_name}\"."
           next
         end
 
@@ -248,20 +255,20 @@ isbn_list.each do |isbn|
         epub_alt = resource_row["alt"]
         epub_caption = resource_row["caption"]
 
-        puts "Warning: no alt text found within EPUB for resource #{resource_name}." \
+        puts "Warning: no alt text found within EPUB for resource \"#{resource_name}\"." \
             if epub_alt.nil? or epub_alt.empty?
-        puts "Warning: overwriting FMSL alt text with EPUB alt text for resource #{resource_name}" \
+        puts "Warning: overwriting FMSL alt text with EPUB alt text for resource \"#{resource_name}\"" \
             if !(alt.nil? or alt.empty?) and !(epub_alt.nil? or epub_alt.empty?)
             #unless (alt.nil? or alt.empty?) and !(epub_alt.nil? or epub_alt.empty?)
-        puts "INFO: updating FMSL alt text with EPUB alt text for resource #{resource_name}" \
+        puts "INFO: updating FMSL alt text with EPUB alt text for resource \"#{resource_name}\"" \
             if (alt.nil? or alt.empty?) and !(epub_alt.nil? or epub_alt.empty?)
         fmsl_row["Alternative Text"] = epub_alt unless epub_alt.nil? or epub_alt.empty?
 
-        puts "Warning: no caption found within EPUB for resource #{resource_name}." \
+        puts "Warning: no caption found within EPUB for resource \"#{resource_name}\"." \
             if epub_caption.nil? or epub_caption.empty?
-        puts "Warning: overwriting FMSL caption with EPUB caption for resource #{resource_name}" \
+        puts "Warning: overwriting FMSL caption with EPUB caption for resource \"#{resource_name}\"" \
             if !(caption.nil? or caption.empty?) and !(epub_caption.nil? or epub_caption.empty?)
-        puts "INFO: updating FMSL caption with EPUB caption for resource #{resource_name}" \
+        puts "INFO: updating FMSL caption with EPUB caption for resource \"#{resource_name}\"" \
             if (caption.nil? or caption.empty?) and !(epub_caption.nil? or epub_caption.empty?)
         fmsl_row["Caption"] = epub_caption unless epub_caption.nil? or epub_caption.empty?
       end
