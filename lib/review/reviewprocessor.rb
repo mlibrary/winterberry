@@ -24,7 +24,11 @@ class ReviewProcessor < FragmentProcessor
         x = ".//*[#{class_xpath(classes)}]" if children.nil? and !classes.nil?
         nodes = fragment.node.xpath(x)
         nodes.each do |node|
-          fragment.has_elements[node.name] = true if fragment.has_elements.has_key?(node.name)
+          node_name = node.name
+          if !node.namespace.nil? and !node.namespace.prefix.nil?
+            node_name = node.namespace.prefix + ":" + node.name
+          end
+          fragment.has_elements[node_name] = true if fragment.has_elements.has_key?(node_name)
           fragment.has_elements["@#{node['class']}"] = true if fragment.has_elements.has_key?("@#{node['class']}")
         end
       end
@@ -38,7 +42,7 @@ class ReviewProcessor < FragmentProcessor
 
   def element_xpath(elements = [])
     xpath = elements.collect do |e|
-      "local-name()=\"#{e}\""
+      e.index(":").nil? ? "local-name()=\"#{e}\"" : "name()=\"#{e}\""
     end
     return "#{xpath.join(' or ')}"
   end

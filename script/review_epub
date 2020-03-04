@@ -1,6 +1,9 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
+# Script performs a specified set of markup reviews for one
+# or more specified EPUBs.
+
 require 'optparse'
 require 'ostruct'
 
@@ -8,6 +11,7 @@ require 'ostruct'
 options = OpenStruct.new
 options.publisher_dir = Dir.pwd
 options.reviews = {
+        :package => true,
         :figure => true,
         :image => false,
         :link => false,
@@ -15,11 +19,11 @@ options.reviews = {
         :table => true
     }
 option_parser = OptionParser.new do |opts|
-  opts.banner = "Usage: #{File.basename(__FILE__)} [-link] [-list] epub_file [epub_file...]"
-  opts.on('-link', '--link', 'Review links.') do |da|
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-k] [-l] epub_file [epub_file...]"
+  opts.on('-k', '--link', 'Review links.') do |da|
     options.reviews[:link] = true
   end
-  opts.on('-list', '--list', 'Review lists.') do |da|
+  opts.on('-l', '--list', 'Review lists.') do |da|
     options.reviews[:list] = true
   end
   opts.on_tail('-h', '--help', 'Print this help message') do
@@ -47,6 +51,7 @@ review_processors = {
         :image => ImgProcessor.new,
         :link => LinkProcessor.new,
         :list => ListProcessor.new,
+        :package => PackageProcessor.new,
         :table => TableProcessor.new
     }
 processors = []

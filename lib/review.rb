@@ -7,5 +7,7 @@ module Review
   require_relative 'review/imgprocessor'
   require_relative 'review/linkprocessor'
   require_relative 'review/listprocessor'
+  require_relative 'review/packagemetadataprocessor'
+  require_relative 'review/packageprocessor'
   require_relative 'review/tableprocessor'
 end

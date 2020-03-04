@@ -1,7 +1,6 @@
 require_relative 'epub'
 
 class EpubProcessor
-
   def self.process(args = {})
     case
     when args.has_key?(:epub_file)
@@ -23,7 +22,10 @@ class EpubProcessor
     raise "Error: no processors specified." if processors.nil? or processors.empty?
 
     item_fragments = {}
-    epub.spine_items.each do |item|
+
+    epub_items = [ epub.opf_item ] + epub.spine_items
+
+    epub_items.each do |item|
       fragments_list = []
       processors.each do |proc|
         fragments = proc.process(

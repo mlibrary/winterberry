@@ -11,11 +11,21 @@ class Epub
     reset
   end
 
+  def opf_item
+    do_init
+    return @opf_item
+  end
+
+  def metadata
+    do_init
+    return @metadata
+  end
+
   def spine_items
     do_init
     return unless @spine_items.nil?
 
-    opf_dir = File.dirname(@opf.name)
+    opf_dir = File.dirname(@opf_item.name)
     @spine_items = []
     itemref_list = @spine.node.xpath(".//*[local-name()='itemref']")
     itemref_list.each do |itemref|
@@ -33,7 +43,7 @@ class Epub
 
   def reset
     @file = nil
-    @opf = nil
+    @opf_item = nil
     @metadata = nil
     @manifest = nil
     @spine = nil
@@ -61,20 +71,21 @@ class Epub
       root_elem = fragment_list.first.node
       opf_file = root_elem['full-path']
       opf_dir = File.dirname(opf_file)
-      @opf = file.glob(opf_file).first
+      @opf_item = file.glob(opf_file).first
 
       @metadata = @@elem_processor.process(
-            :content => @opf.get_input_stream.read,
+            :content => @opf_item.get_input_stream.read,
             :containers => [ 'metadata' ]
           ).first
       @manifest = @@elem_processor.process(
-            :content => @opf.get_input_stream.read,
+            :content => @opf_item.get_input_stream.read,
             :containers => [ 'manifest' ]
           ).first
       @spine = @@elem_processor.process(
-            :content => @opf.get_input_stream.read,
+            :content => @opf_item.get_input_stream.read,
             :containers => [ 'spine' ]
           ).first
+
     end
   end
 end
