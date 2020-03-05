@@ -14,19 +14,15 @@ require 'ostruct'
 
 # Process the script parameters.
 options = OpenStruct.new
-options.publisher_dir = Dir.pwd
 options.update_fmsl = true
 options.use_map = true
 option_parser = OptionParser.new do |opts|
-  opts.banner = "Usage: #{File.basename(__FILE__)} [-map] [-nofmsl] [-p directory] <isbn> [<isbn>...]"
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-map] [-nofmsl] <monograph_dir> [<monograph_dir>...]"
   opts.on('-map', '--map', 'Overwrite existing resource map file.') do |da|
     options.use_map = false
   end
   opts.on('-nofmsl', '--nofmsl', 'Do not update FMSL.') do |da|
     options.update_fmsl = false
-  end
-  opts.on('-p', '--publisher_directory [DIRECTORY]', 'Publisher site directory') do |publisher_dir|
-    options.publisher_dir = publisher_dir
   end
   opts.on_tail('-h', '--help', 'Print this help message') do
     puts opts
@@ -39,12 +35,7 @@ if ARGV.count < 1
   return
 end
 
-isbn_list = ARGV
-publisher_dir = File.expand_path(options.publisher_dir)
-if !File.directory?(publisher_dir)
-  puts "Error: source directory #{publisher_dir} does not exist."
-  exit 1
-end
+monograph_dir_list = ARGV
 update_fmsl = options.update_fmsl
 use_map = options.use_map
 
@@ -62,19 +53,8 @@ resource_map_file_headers = [ "File Name", "Resource Name" ]
 
 imgprocessor = nil
 
-isbn_list.each do |isbn|
-  puts "*** Processing ISBN #{isbn} ***"
-
-  # Find the monograph directory.
-  monograph_dir_list = Dir.glob(File.join(publisher_dir, "#{isbn}_*"))
-  if monograph_dir_list.count == 0
-    puts "Error: no monograph directory for ISBN #{isbn}."
-    next
-  end
-  monograph_dir = monograph_dir_list.first
-  puts "Warning: multiple monograph directories for ISBN #{isbn}. Using #{File.basename(monograph_dir)}." \
-        if monograph_dir_list.count > 1
-  puts "Using monograph directory #{File.basename(monograph_dir)}." if monograph_dir_list.count == 1
+monograph_dir_list.each do |monograph_dir|
+  puts "*** Processing Monograph directory #{monograph_dir} ***"
 
   # Find the monograph resources directory.
   resources_dir = File.join(monograph_dir, "resources")
@@ -165,9 +145,10 @@ isbn_list.each do |isbn|
           rname = resource_map.find {|row| row['File Name'] == ref }
           resource_name = rname.nil? ? File.basename(ref) : rname['Resource Name']
         end
+        puts "INFO:    #{row.name}: mapping reference \"#{ref}\" to resource \"#{resource_name}\"." \
+            unless rname.nil?
         puts "Warning: #{row.name}: no resource found for reference \"#{ref}\". Using name \"#{resource_name}\"." \
             if rname.nil?
-        #puts "#{row.name},\"#{ref}\"," if rname.nil?
 
         # Add the "File Name" and "Resource Name" values.
         crow[resource_map_file_headers[0]] = ref
