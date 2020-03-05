@@ -70,7 +70,7 @@ default_action = {
 
 resource_map_file_headers = [ "File Name", "Resource Name" ]
 resource_action_short_file_headers = ["File Name", "Resource Name", "Resource Action"]
-resource_action_full_file_headers = ["File Name", "Resource Name", "Resource Action", "NOID", "Link", "Embed Code"]
+resource_action_full_file_headers = ["File Name", "Resource Name", "Resource Action", "NOID", "Resource Type", "Link", "Embed Code"]
 caption_file_headers = [ "File Name", "Resource Name", "Alternative Text", "Caption" ]
 
 monograph_noid_list.each do |monograph_noid|
@@ -205,6 +205,7 @@ monograph_noid_list.each do |monograph_noid|
               "resource_name" => resource_name,
               "resource_action" => "default",
               "noid" => fileset_row['noid'],
+              "resource_type" => fileset_row['resource_type'],
               "link" => link,
               "embed_code" => fileset_row['embed_code']
         }
@@ -228,6 +229,7 @@ monograph_noid_list.each do |monograph_noid|
                   action_row['resource_name'],
                   action_row['resource_action'],
                   action_row['noid'],
+                  action_row['resource_type'],
                   action_row['link'],
                   action_row['embed_code']
           ]

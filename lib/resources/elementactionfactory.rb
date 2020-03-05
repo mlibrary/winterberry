@@ -10,7 +10,12 @@ class ElementActionFactory
 
     case action_str
     when "embed"
-      return EmbedElementAction.new(args)
+      resource_metadata = args[:resource_metadata]
+      resource_type = resource_metadata['resource_type']
+
+      return resource_type == 'interactive map' ? \
+              EmbedMapAction.new(args) : \
+              EmbedElementAction.new(args)
     when "link"
       return LinkElementAction.new(args)
     when "remove"

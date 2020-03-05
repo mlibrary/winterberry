@@ -22,6 +22,7 @@ class ResourceProcessor
           action.process
         end
         puts action
+        puts action.message unless action.message.nil? or action.message.empty?
       end
 		end
 
