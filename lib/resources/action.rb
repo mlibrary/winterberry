@@ -68,7 +68,7 @@ class Action
 
   def self.find_caption(container)
     caption = container.xpath(".//*[local-name()='figcaption' or @class='figcap' or @class='figh']")
-    return caption.last
+    return caption
   end
 
   def self.COMPLETED

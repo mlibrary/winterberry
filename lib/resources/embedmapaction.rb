@@ -39,11 +39,11 @@ class EmbedMapAction < Action
     resource_node['data-href'] = data_href
     resource_node['data-title'] = data_title
 
-    figcaption = Action.find_caption(resource_node)
-    if !figcaption.nil?
+    caption = Action.find_caption(resource_node)
+    if !caption.nil? and !caption.empty?
       markup = '<p class="CAP" data-resource-trigger="modal">An interactive version can be found in the Fulcrum edition.</p>'
       fragment = Nokogiri::XML::DocumentFragment.parse(markup)
-      figcaption.add_child(fragment)
+      caption.last.add_child(fragment)
     end
 
     @status = @@COMPLETED

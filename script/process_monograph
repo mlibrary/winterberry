@@ -79,10 +79,13 @@ monograph_noid_list.each do |monograph_noid|
   # attempt to download it from Fulcrum.
   puts "*" * 10 + " #{monograph_noid} " + "*" * 10
 
-  puts "Downloading manifest file for noid #{monograph_noid}"
   csv_body = HeliotropeService.new.monograph_noid_export(monograph_noid)
   manifest_csv = CSVFile.read(:csv_body => csv_body)
-  next if manifest_csv == nil
+  if manifest_csv.nil?
+    puts "Error: downloading manifest for noid #{monograph_noid}."
+    next
+  end
+  puts "Downloaded manifest for noid #{monograph_noid}"
 
   # From the manifest, determine the ebook ISBN without dashes.
   ebook_isbn = Manifest.find_ebook_isbn(manifest_csv, monograph_noid)
