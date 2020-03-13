@@ -59,7 +59,7 @@ module Manifest
   def self.find_epub_file_name(manifest_csv)
     epub_row = manifest_csv.find {|row| row['representative_kind'] == 'epub' }
     if epub_row == nil
-      puts "Error: no epub row for noid #{noid}"
+      puts "Error: no epub row found."
       return nil
     end
     epub_file_name = epub_row['file_name']

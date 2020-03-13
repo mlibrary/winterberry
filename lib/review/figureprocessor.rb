@@ -22,10 +22,11 @@ class FigureProcessor < ReviewProcessor
               :content => fragment.node.to_xml
           )
 
+      # Determine if figure has a caption.
       caption_elem = ""
       fragment.has_elements.each do |elem_name, exists|
         if exists
-          fragment.review_msg_list << "Figure INFO:           has #{elem_name}"
+          #fragment.review_msg_list << "Figure INFO:           has #{elem_name}"
           caption_elem = elem_name if caption_elem.empty?
         end
       end

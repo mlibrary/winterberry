@@ -119,6 +119,10 @@ monograph_noid_list.each do |monograph_noid|
 
   # Find the epub file name and determine whether it exists.
   epub_file_name = Manifest.find_epub_file_name(manifest_csv)
+  if epub_file_name.nil?
+    epub_file_name = File.basename(ebook_isbn) + ".epub"
+    puts "Warning: epub representative row not found in manifest for noid #{monograph_noid}. Using file name #{epub_file_name}."
+  end
   epub_file = File.join(monograph_dir, epub_file_name)
   if !File.exist?(epub_file)
     puts "Error: #{epub_file_name} not found in manifest for noid #{monograph_noid}"

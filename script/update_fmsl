@@ -54,23 +54,24 @@ resource_map_file_headers = [ "File Name", "Resource Name" ]
 imgprocessor = nil
 
 monograph_dir_list.each do |monograph_dir|
-  puts "*** Processing Monograph directory #{monograph_dir} ***"
+  monograph_dir = File.expand_path(monograph_dir)
+  puts "*** Processing Monograph directory #{File.basename(monograph_dir)} ***"
 
   # Find the monograph resources directory.
   resources_dir = File.join(monograph_dir, "resources")
   if !File.directory?(resources_dir)
-    puts "Error: no resources directory found for ISBN #{isbm}."
+    puts "Error: no resources directory found for monograph #{monograph_dir}."
     next
   end
 
   # Find the EPUB.
   epub_file_list = Dir.glob(File.join(monograph_dir, "*.epub"))
   if epub_file_list.count == 0
-    puts "Error: no EPUB found for ISBN #{isbn}."
+    puts "Error: no EPUB found for ISBN #{monograph_dir}."
     next
   end
   epub_file = epub_file_list.first
-  puts "Warning: multiple EPUBs for ISBN #{isbn}. Using #{File.basename(epub_file)}." \
+  puts "Warning: multiple EPUBs for ISBN #{monograph_dir}. Using #{File.basename(epub_file)}." \
         if epub_file_list.count > 1
   puts "Using EPUB #{File.basename(epub_file)}." if epub_file_list.count == 1
 
@@ -205,9 +206,10 @@ monograph_dir_list.each do |monograph_dir|
       # Update the FMSL.
 
       # Find the monograph source FMSL.
-      fmsl_file_list = Dir.glob(File.join(resources_dir, "#{isbn}_*"))
+      fmsl_file_pattern = File.basename(monograph_dir) + ".csv"
+      fmsl_file_list = Dir.glob(File.join(resources_dir, fmsl_file_pattern))
       if fmsl_file_list.count == 0
-        puts "Error: no FMSL found for ISBN #{isbn}."
+        puts "Error: no FMSL found for monograph #{monograph_dir}."
         next
       end
       fmsl_file = fmsl_file_list.first
@@ -239,7 +241,7 @@ monograph_dir_list.each do |monograph_dir|
         puts "Warning: no alt text found within EPUB for resource \"#{resource_name}\"." \
             if epub_alt.nil? or epub_alt.empty?
         puts "Warning: overwriting FMSL alt text with EPUB alt text for resource \"#{resource_name}\"" \
-            if !(alt.nil? or alt.empty?) and !(epub_alt.nil? or epub_alt.empty?)
+            if !(alt.nil? or alt.empty?) and !(epub_alt.nil? or epub_alt.empty?) and alt != epub_alt
             #unless (alt.nil? or alt.empty?) and !(epub_alt.nil? or epub_alt.empty?)
         puts "INFO: updating FMSL alt text with EPUB alt text for resource \"#{resource_name}\"" \
             if (alt.nil? or alt.empty?) and !(epub_alt.nil? or epub_alt.empty?)
@@ -248,7 +250,7 @@ monograph_dir_list.each do |monograph_dir|
         puts "Warning: no caption found within EPUB for resource \"#{resource_name}\"." \
             if epub_caption.nil? or epub_caption.empty?
         puts "Warning: overwriting FMSL caption with EPUB caption for resource \"#{resource_name}\"" \
-            if !(caption.nil? or caption.empty?) and !(epub_caption.nil? or epub_caption.empty?)
+            if !(caption.nil? or caption.empty?) and !(epub_caption.nil? or epub_caption.empty?) and caption != epub_caption
         puts "INFO: updating FMSL caption with EPUB caption for resource \"#{resource_name}\"" \
             if (caption.nil? or caption.empty?) and !(epub_caption.nil? or epub_caption.empty?)
         fmsl_row["Caption"] = epub_caption unless epub_caption.nil? or epub_caption.empty?
