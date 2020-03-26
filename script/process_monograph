@@ -396,6 +396,7 @@ monograph_noid_list.each do |monograph_noid|
 
           # Copy the Fulcrum CSS stylesheet into the epub structure.
           FileUtils.cp(fulcrum_src_css_file, File.join(dest_epub_dir, "OEBPS", fulcrum_dest_css_file))
+          #FileUtils.cp(fulcrum_src_css_file, File.join(dest_epub_dir, "OPS", fulcrum_dest_css_file))
         end
 
         # Add remote resources to the OPF file.

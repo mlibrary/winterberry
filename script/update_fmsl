@@ -50,6 +50,7 @@ require_relative File.join(root_dir, "lib", "epubprocessor")
 require_relative File.join(root_dir, "lib", "csvfile_new")
 
 resource_map_file_headers = [ "File Name", "Resource Name" ]
+blank_row_file_name = "***row left intentionally blank***"
 
 imgprocessor = nil
 
@@ -67,11 +68,11 @@ monograph_dir_list.each do |monograph_dir|
   # Find the EPUB.
   epub_file_list = Dir.glob(File.join(monograph_dir, "*.epub"))
   if epub_file_list.count == 0
-    puts "Error: no EPUB found for ISBN #{monograph_dir}."
+    puts "Error: no EPUB found for monograph #{monograph_dir}."
     next
   end
   epub_file = epub_file_list.first
-  puts "Warning: multiple EPUBs for ISBN #{monograph_dir}. Using #{File.basename(epub_file)}." \
+  puts "Warning: multiple EPUBs for monograph #{monograph_dir}. Using #{File.basename(epub_file)}." \
         if epub_file_list.count > 1
   puts "Using EPUB #{File.basename(epub_file)}." if epub_file_list.count == 1
 
@@ -206,8 +207,7 @@ monograph_dir_list.each do |monograph_dir|
       # Update the FMSL.
 
       # Find the monograph source FMSL.
-      fmsl_file_pattern = File.basename(monograph_dir) + ".csv"
-      fmsl_file_list = Dir.glob(File.join(resources_dir, fmsl_file_pattern))
+      fmsl_file_list = Dir.glob(File.join(resources_dir, "*.csv"))
       if fmsl_file_list.count == 0
         puts "Error: no FMSL found for monograph #{monograph_dir}."
         next
@@ -223,6 +223,14 @@ monograph_dir_list.each do |monograph_dir|
         puts "Error: reading FMSL #{File.basename(fmsl_file)}."
         next
       end
+
+      # Look for the dreaded blank second line.
+      blank_row = fmsl_csv[0]
+      if blank_row['File Name'].downcase != blank_row_file_name
+        puts "Error: no blank row found. Skipping."
+        next
+      end
+      puts "INFO: found blank row"
 
       # Update the alt text and caption information in the FMSL.
       fmsl_csv.each do |fmsl_row|
