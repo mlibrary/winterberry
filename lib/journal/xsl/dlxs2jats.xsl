@@ -25,6 +25,9 @@
         </xsl:element>
     </xsl:variable>
 
+    <xsl:variable name="abstractDiv"
+                  select="/DLPSTEXTCLASS/TEXT//*[local-name()='DIV1' and ./*[local-name()='HEAD' and lower-case(string())='abstract']]"/>
+
     <xsl:template match="DLPSTEXTCLASS">
         <xsl:element name="article">
             <xsl:namespace name="xlink" select="'http://www.w3.org/1999/xlink'"/>
@@ -57,8 +60,38 @@
                 <xsl:element name="title-group">
                     <xsl:apply-templates select="FILEDESC/TITLESTMT/TITLE[@TYPE='main' or not(exists(@TYPE))]"/>
                 </xsl:element>
+                <xsl:variable name="authorList"
+                              select="/DLPSTEXTCLASS/TEXT//DIV1/P[@TYPE='author']"/>
                 <xsl:element name="contrib-group">
-                    <xsl:apply-templates select="FILEDESC/SOURCEDESC/BIBL/AUTHORIND"/>
+                    <xsl:for-each select="FILEDESC/SOURCEDESC/BIBL/AUTHORIND">
+                        <xsl:variable name="ndx" select="position()"/>
+                        <xsl:element name="contrib">
+                            <xsl:attribute name="contrib-type" select="'author'"/>
+                            <xsl:apply-templates select="."/>
+
+                            <xsl:variable name="authorNode" select="$authorList[$ndx]"/>
+                            <xsl:if test="exists($authorNode)">
+                                <xsl:variable name="institution"
+                                              select="$authorNode/following-sibling::*[@TYPE='author-notes' and not(exists(REF[@TYPE='url']))]"/>
+                                <xsl:variable name="email"
+                                              select="$authorNode/following-sibling::*[@TYPE='author-notes' and exists(REF[@TYPE='url'])]"/>
+                                <xsl:if test="exists($institution) or exists($email)">
+                                    <xsl:element name="address">
+                                        <xsl:if test="exists($institution)">
+                                            <xsl:element name="institution">
+                                                <xsl:value-of select="$institution[1]"/>
+                                            </xsl:element>
+                                        </xsl:if>
+                                        <xsl:if test="exists($email)">
+                                            <xsl:element name="email">
+                                                <xsl:value-of select="$email[1]"/>
+                                            </xsl:element>
+                                        </xsl:if>
+                                    </xsl:element>
+                                </xsl:if>
+                            </xsl:if>
+                        </xsl:element>
+                    </xsl:for-each>
                 </xsl:element>
                 <xsl:apply-templates select="FILEDESC/PUBLICATIONSTMT/DATE[@TYPE='sort']"/>
                 <xsl:apply-templates select="FILEDESC/SOURCEDESC/BIBL/BIBLSCOPE[@TYPE='volno']"/>
@@ -67,11 +100,23 @@
                         <xsl:apply-templates select="FILEDESC/PUBLICATIONSTMT/AVAILABILITY/P"/>
                     </xsl:element>
                 </xsl:if>
-                <xsl:if test="exists(/DLPSTEXTCLASS/TEXT/FRONT/DIV1)">
-                    <xsl:element name="abstract">
-                        <xsl:apply-templates select="/DLPSTEXTCLASS/TEXT/FRONT/DIV1"/>
-                    </xsl:element>
-                </xsl:if>
+
+                <xsl:choose>
+                    <xsl:when test="exists($abstractDiv)">
+                        <xsl:element name="abstract">
+                            <xsl:call-template name="add-section">
+                                <xsl:with-param name="divNode" select="$abstractDiv"/>
+                            </xsl:call-template>
+                        </xsl:element>
+                    </xsl:when>
+                    <!--
+                    <xsl:when test="exists(/DLPSTEXTCLASS/TEXT/FRONT/DIV1)">
+                        <xsl:element name="abstract">
+                            <xsl:apply-templates select="/DLPSTEXTCLASS/TEXT/FRONT/DIV1"/>
+                        </xsl:element>
+                    </xsl:when>
+                    -->
+                </xsl:choose>
             </xsl:element>
         </xsl:element>
     </xsl:template>
@@ -134,16 +179,76 @@
 
     <xsl:template match="FILEDESC/SOURCEDESC/BIBL/AUTHORIND">
         <xsl:variable name="nameList" select="tokenize(., ',')"/>
+        <xsl:element name="name">
+            <xsl:choose>
+                <xsl:when test="count($nameList) > 1">
+                    <xsl:element name="surname">
+                        <xsl:value-of select="normalize-space($nameList[1])"/>
+                    </xsl:element>
+                    <xsl:element name="given-names">
+                        <xsl:value-of select="normalize-space($nameList[2])"/>
+                    </xsl:element>
+                </xsl:when>
+                <xsl:when test="count(tokenize(.,'[ ]+')) > 1">
+                    <xsl:element name="surname">
+                        <xsl:value-of select="normalize-space($nameList[2])"/>
+                    </xsl:element>
+                    <xsl:element name="given-names">
+                        <xsl:value-of select="normalize-space($nameList[1])"/>
+                    </xsl:element>
+                </xsl:when>
+                <xsl:otherwise>
+                    <xsl:value-of select="."/>
+                </xsl:otherwise>
+            </xsl:choose>
+        </xsl:element>
+    </xsl:template>
+
+    <xsl:template match="FILEDESC_OLD/SOURCEDESC/BIBL/AUTHORIND">
+        <xsl:variable name="nameList" select="tokenize(., ',')"/>
         <xsl:element name="contrib">
             <xsl:attribute name="contrib-type" select="'author'"/>
             <xsl:element name="name">
-                <xsl:element name="surname">
-                    <xsl:value-of select="normalize-space($nameList[1])"/>
-                </xsl:element>
-                <xsl:element name="given-names">
-                    <xsl:value-of select="normalize-space($nameList[2])"/>
-                </xsl:element>
+                <xsl:choose>
+                    <xsl:when test="count($nameList) > 1">
+                        <xsl:element name="surname">
+                            <xsl:value-of select="normalize-space($nameList[1])"/>
+                        </xsl:element>
+                        <xsl:element name="given-names">
+                            <xsl:value-of select="normalize-space($nameList[2])"/>
+                        </xsl:element>
+                    </xsl:when>
+                    <xsl:when test="count(tokenize(.,'[ ]+')) > 1">
+                        <xsl:element name="surname">
+                            <xsl:value-of select="normalize-space($nameList[2])"/>
+                        </xsl:element>
+                        <xsl:element name="given-names">
+                            <xsl:value-of select="normalize-space($nameList[1])"/>
+                        </xsl:element>
+                    </xsl:when>
+                    <xsl:otherwise>
+                        <xsl:value-of select="."/>
+                    </xsl:otherwise>
+                </xsl:choose>
             </xsl:element>
+            <xsl:variable name="institution"
+                          select="/DLPSTEXTCLASS/TEXT//DIV1/P[@TYPE='author-notes' and not(exists(REF[@TYPE='url']))]"/>
+            <xsl:variable name="email"
+                          select="/DLPSTEXTCLASS/TEXT//DIV1/P[@TYPE='author-notes' and exists(REF[@TYPE='url'])]"/>
+            <xsl:if test="exists($institution) or exists($email)">
+                <xsl:element name="address">
+                    <xsl:if test="exists($institution)">
+                        <xsl:element name="institution">
+                            <xsl:value-of select="$institution"/>
+                        </xsl:element>
+                    </xsl:if>
+                    <xsl:if test="exists($email)">
+                        <xsl:element name="email">
+                            <xsl:value-of select="$email"/>
+                        </xsl:element>
+                    </xsl:if>
+                </xsl:element>
+            </xsl:if>
         </xsl:element>
     </xsl:template>
 
@@ -170,18 +275,26 @@
         <xsl:apply-templates select="@*|node()"/>
     </xsl:template>
 
-    <xsl:template match="DIV1|DIV2|DIV3|DIV4">
-        <xsl:element name="sec">
-            <xsl:choose>
-                <xsl:when test="exists(*[local-name()='HEAD'])">
-                    <xsl:apply-templates select="*[local-name()='HEAD']"/>
-                </xsl:when>
-                <xsl:otherwise>
-                    <xsl:element name="title"/>
-                </xsl:otherwise>
-            </xsl:choose>
-            <xsl:apply-templates select="*[local-name()!='HEAD']"/>
+    <xsl:template match="BODY">
+        <xsl:element name="body">
+            <xsl:apply-templates select="/DLPSTEXTCLASS/TEXT/FRONT/*"/>
+            <xsl:apply-templates select="@*|node()"/>
         </xsl:element>
+    </xsl:template>
+
+    <xsl:template match="DIV1|DIV2|DIV3|DIV4">
+        <xsl:choose>
+            <xsl:when test="lower-case(./HEAD)='abstract' or exists(./P[@TYPE='author'])">
+                <!-- This should be the abtract and should have
+                    been processed by the HEADER. Skip. -->
+                <xsl:message>Skip <xsl:value-of select="local-name(.)"/></xsl:message>
+            </xsl:when>
+            <xsl:otherwise>
+                <xsl:call-template name="add-section">
+                    <xsl:with-param name="divNode" select="."/>
+                </xsl:call-template>
+            </xsl:otherwise>
+        </xsl:choose>
     </xsl:template>
 
     <xsl:template match="HEAD">
@@ -190,20 +303,7 @@
         </xsl:element>
     </xsl:template>
 
-    <xsl:template match="TABLE/CAPTION">
-        <xsl:apply-templates select="@*"/>
-
-        <xsl:choose>
-            <xsl:when test="count(P) = 0">
-                <xsl:element name="p">
-                    <xsl:apply-templates/>
-                </xsl:element>
-            </xsl:when>
-            <xsl:otherwise>
-                <xsl:apply-templates/>
-            </xsl:otherwise>
-        </xsl:choose>
-    </xsl:template>
+    <xsl:template match="P[@TYPE='title' or @TYPE='author' or @TYPE='author-notes']"/>
 
     <xsl:template match="P">
         <xsl:element name="p">
@@ -302,7 +402,32 @@
         </xsl:element>
     </xsl:template>
 
-    <xsl:template match="NOTE1[position()=1]">
+    <xsl:template match="NOTE1[@TYPE='sidebar']">
+        <xsl:element name="boxed-text">
+            <xsl:if test="exists(@ID)">
+                <xsl:attribute name="id" select="@ID"/>
+            </xsl:if>
+            <xsl:attribute name="position" select="'float'"/>
+            <xsl:apply-templates select="*"/>
+        </xsl:element>
+    </xsl:template>
+
+    <xsl:template match="NOTE1[preceding-sibling::*[position()=1 and local-name()!='NOTE1'] and following-sibling::*[position()=1 and local-name()='NOTE1']]">
+        <xsl:element name="fn-group">
+            <xsl:call-template name="add-footnote">
+                <xsl:with-param name="fnNode" select="."/>
+            </xsl:call-template>
+            <xsl:for-each select="following-sibling::*[local-name()='NOTE1']">
+                <xsl:call-template name="add-footnote">
+                    <xsl:with-param name="fnNode" select="."/>
+                </xsl:call-template>
+            </xsl:for-each>
+        </xsl:element>
+    </xsl:template>
+
+    <xsl:template match="NOTE1[preceding-sibling::*[position()=1 and local-name()='NOTE1']]"/>
+
+    <xsl:template match="NOTE1_OLD[position()=1]">
         <xsl:element name="fn-group">
             <xsl:call-template name="add-footnote">
                 <xsl:with-param name="fnNode" select="."/>
@@ -397,6 +522,7 @@
 
     <xsl:template match="LISTBIBL">
         <xsl:element name="list">
+            <xsl:attribute name="list-type" select="'ordered'"/>
             <xsl:apply-templates select="@*|node()"/>
         </xsl:element>
     </xsl:template>
@@ -441,6 +567,25 @@
         <xsl:call-template name="add-table">
             <xsl:with-param name="node" select="."/>
         </xsl:call-template>
+    </xsl:template>
+
+    <xsl:template match="TABLE/HEAD">
+        <!-- Handled in TABLE template -->
+    </xsl:template>
+
+    <xsl:template match="TABLE/CAPTION">
+        <xsl:apply-templates select="@*"/>
+
+        <xsl:choose>
+            <xsl:when test="count(P) = 0">
+                <xsl:element name="p">
+                    <xsl:apply-templates/>
+                </xsl:element>
+            </xsl:when>
+            <xsl:otherwise>
+                <xsl:apply-templates/>
+            </xsl:otherwise>
+        </xsl:choose>
     </xsl:template>
 
     <xsl:template match="ROW">
@@ -511,7 +656,7 @@
         </xsl:choose>
     </xsl:template>
 
-    <xsl:template match="FRONT|LB|MILESTONE|NOTE1[position()>1]"/>
+    <xsl:template match="FRONT|LB|MILESTONE"/>
 
     <xsl:template match="element()">
         <xsl:element name="{lower-case(local-name())}">
@@ -528,6 +673,22 @@
         <!--
         <xsl:value-of select="." disable-output-escaping="no"/>
         -->
+    </xsl:template>
+
+    <xsl:template name="add-section">
+        <xsl:param name="divNode"/>
+
+        <xsl:element name="sec">
+            <xsl:choose>
+                <xsl:when test="exists($divNode/*[local-name()='HEAD'])">
+                    <xsl:apply-templates select="$divNode/*[local-name()='HEAD']"/>
+                </xsl:when>
+                <xsl:otherwise>
+                    <xsl:element name="title"/>
+                </xsl:otherwise>
+            </xsl:choose>
+            <xsl:apply-templates select="$divNode/*[local-name()!='HEAD']"/>
+        </xsl:element>
     </xsl:template>
 
     <xsl:template name="add-inline-style">

@@ -50,9 +50,10 @@ monograph_dir_list.each do |monograph_dir|
 
   # Pass the resource file names as a parameter to the XSLT.
   resource_file_list = Dir.glob(File.join(monograph_dir, "resources", "*"))
+
   resource_list_param = ""
   resource_file_list.each do |resource_file|
-    resource_list_param = ";#{File.basename(resource_file, ".*")}:#{File.basename(resource_file)}"
+    resource_list_param += ";#{File.basename(resource_file, '.*')}:#{File.join("resources", File.basename(resource_file))}"
   end
   resource_list_param = resource_list_param[1..-1]
   params = {
