@@ -1,0 +1,110 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require 'optparse'
+require 'ostruct'
+
+# Process the script parameters.
+options = OpenStruct.new
+options.journal_dir = Dir.pwd
+options.generate_html = false
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-d journal_dir] [-w] [journal_name...]"
+  opts.on('-d', '--directory [DIRECTORY]', 'Journal directory') do |da|
+    options.journal_dir = da
+  end
+  opts.on('-w', '--html', 'Generate HTML') do |da|
+    options.generate_html = true
+  end
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    puts opts
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+
+# Journal directory exists?
+journal_dir = File.expand_path(options.journal_dir)
+if !File.directory?(journal_dir)
+  puts "Error: journal directory not found \"#{journal_dir}."
+  exit 1
+end
+
+# Journal directory valid?
+dlxs_dir = File.join(journal_dir, "dlxs")
+resources_dir = File.join(journal_dir, "resources")
+if !File.directory?(dlxs_dir) or !File.directory?(resources_dir)
+  puts "Error: journal directory invalid \"#{File.basename(journal_dir)}."
+  exit 1
+end
+
+journal_name_list = ARGV
+if journal_name_list.empty?
+  journal_name_list = []
+  Dir.glob(File.join(dlxs_dir, "*.xml")).each do |dlxs_file|
+    journal_name_list << File.basename(dlxs_file, ".*")
+  end
+end
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, 'lib', 'xslt')
+
+require 'fileutils'
+
+dlxs2jats_xsl_file = File.join(root_dir, "lib", "journal", "xsl", "dlxs2jats.xsl")
+jats2html_xsl_file = File.join(root_dir, "lib", "journal", "xsl", "jats-html.xsl")
+
+journal_name_list.each do |journal_name|
+  dlxs_file = File.join(dlxs_dir, journal_name + ".xml")
+  if !File.exists?(dlxs_file)
+    puts "#{journal_name}: ERROR no DLXS file."
+    next
+  end
+
+  article_dir = File.join(journal_dir, journal_name)
+  FileUtils.mkdir_p article_dir
+
+  # Pass the resource file names as a parameter to the XSLT.
+  resource_file_list = Dir.glob(File.join(resources_dir, "#{journal_name}*"))
+
+  resource_file_list.each do |resource_file|
+    puts "Copying resource #{File.basename(resource_file)}"
+    FileUtils.cp(resource_file, article_dir)
+  end
+
+  resource_list_param = ""
+  resource_file_list.each do |resource_file|
+    key = File.basename(resource_file, '.*')
+    if key.end_with?("-lg")
+      key = key[0..-4]
+    end
+    #resource_list_param += ";#{key}:#{File.join("resources", File.basename(resource_file))}"
+    resource_list_param += ";#{key}:#{File.basename(resource_file)}"
+  end
+
+  resource_list_param = resource_list_param[1..-1]
+  params = {
+              "image_list" => resource_list_param
+           }
+
+  jats_file = File.join(article_dir, journal_name + "_jats.xml")
+
+  puts "#{journal_name}: #{File.basename(dlxs_file)} ==> #{File.basename(jats_file)}"
+  rc = XSLT.transform(
+          :xslpath => dlxs2jats_xsl_file,
+          :srcpath => dlxs_file,
+          :destpath => jats_file,
+          :parameters => params
+          )
+  if rc and options.generate_html
+    html_file = File.join(File.dirname(jats_file), File.basename(jats_file, ".*") + ".html")
+    XSLT.transform(
+            :xslpath => jats2html_xsl_file,
+            :srcpath => jats_file,
+            :destpath => html_file
+            )
+  end
+end

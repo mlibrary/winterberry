@@ -27,5 +27,6 @@ class XSLT
     else
       puts "Transform failed (status = #{status})"
     end
+    return ok
   end
 end
