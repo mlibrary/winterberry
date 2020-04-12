@@ -10,14 +10,16 @@ class Resource
 	end
 
   def resource_metadata(file_path)
-    @resource_metadata.find { |row| row['file_name'] == file_path } unless @resource_metadata == nil
+    #@resource_metadata.find { |row| row['file_name'] == file_path } unless @resource_metadata.nil?
+    fileset = @resource_metadata.fileset(file_path) unless @resource_metadata.nil?
+    return fileset
   end
 
   def clone_default_action(args)
     action = @default_action.clone
     action['resource_name'] = args[:resource_name]
     action['file_name'] = args[:file_name]
-    action
+    return action
   end
 
   def c_resource_action(field, path)

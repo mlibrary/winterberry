@@ -29,7 +29,7 @@ require 'fileutils'
 require 'nokogiri'
 require 'zip'
 
-require_relative File.join(root_dir, 'lib', 'resources')
+require_relative File.join(root_dir, 'lib', 'resources_old')
 
 epub_file_list.each do |epub_file|
   epub_file = File.expand_path(epub_file)

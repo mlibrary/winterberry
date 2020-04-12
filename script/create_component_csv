@@ -32,7 +32,7 @@ fail "Error: output directory #{output_dir} is not valid." unless File.directory
 script_dir = File.expand_path(File.dirname(__FILE__))
 root_dir = File.dirname(script_dir)
 
-require_relative File.join(root_dir, "lib", "manifest_new")
+require_relative File.join(root_dir, "lib", "manifest")
 
 components_list = []
 monograph_noid_list.each do |monograph_noid|

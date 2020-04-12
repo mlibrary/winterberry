@@ -25,7 +25,7 @@ end
 script_dir = File.expand_path(File.dirname(__FILE__))
 root_dir = File.dirname(script_dir)
 
-require_relative File.join(root_dir, 'lib', 'csvfile')
+require_relative File.join(root_dir, 'lib', 'csvfile_old')
 
 csv_file_list = ARGV
 csv_file_list.each do |csv_file|

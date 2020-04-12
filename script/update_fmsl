@@ -47,9 +47,9 @@ require 'fileutils'
 
 require_relative File.join(root_dir, "lib", "monograph")
 require_relative File.join(root_dir, "lib", "epubprocessor")
-require_relative File.join(root_dir, "lib", "csvfile_new")
+require_relative File.join(root_dir, "lib", "csvfile")
+require_relative File.join(root_dir, "lib", "resourcemap")
 
-resource_map_file_headers = [ "File Name", "Resource Name" ]
 blank_row_file_name = "***row left intentionally blank***"
 
 imgprocessor = nil
@@ -81,7 +81,7 @@ monograph_dir_list.each do |monograph_dir|
 
   # Determine if the resource map file exists. If not,
   # then one needs to be generated.
-  resource_map_file = File.join(processing_dir, "resource_map.csv")
+  resource_map_file = File.join(processing_dir, "resource_map.xml")
   resource_map_exists = File.exists?(resource_map_file) && use_map
 
   if resource_map_exists
@@ -107,9 +107,9 @@ monograph_dir_list.each do |monograph_dir|
 
     # If a resource map exists, use it. Otherwise,
     # it should be generated and saved.
-    resource_map = nil
+    resource_map = ResourceMap.new
     if resource_map_exists
-      resource_map = CSVFile.read(:csv_path => resource_map_file)
+      resource_map.load(:xml_path => resource_map_file)
     else
       puts "INFO: generating resource map file #{File.basename(resource_map_file)}."
     end
@@ -117,91 +117,51 @@ monograph_dir_list.each do |monograph_dir|
     # Retrieve the list of resources
     resources = Dir.glob(File.join(resources_dir, "*"))
 
-    # Determine the headers to use for the resource info
-    # CSV.
-    headers = resource_map_file_headers
-    imgprocessor.img_list.first.map.each do |key,value|
-      headers << key
-    end
-
-    # Build the resource map CSV string.
-    resource_info_body = CSV.generate(
-              :headers => headers,
-              :write_headers => true
-          ) do |csv|
-      imgprocessor.img_list.each do |row|
-        crow = {}
-
-        ref = row.map['src']
-
-        # Using the EPUB file reference, determine the
-        # associated resource name. If a resource map
-        # exists, then use it for the mapping. Otherwise,
-        # attempt to match file basename minus extension
-        # with files in the monograph resources directory.
-        if resource_map.nil?
-          ref_base = File.basename(ref, ".*")
-          rname = resources.find { |file| ref_base == File.basename(file, ".*") }
-          resource_name = rname.nil? ? File.basename(ref) : File.basename(rname)
-        else
-          rname = resource_map.find {|row| row['File Name'] == ref }
-          resource_name = rname.nil? ? File.basename(ref) : rname['Resource Name']
-        end
-        puts "INFO:    #{row.name}: mapping reference \"#{ref}\" to resource \"#{resource_name}\"." \
-            unless rname.nil?
-        puts "Warning: #{row.name}: no resource found for reference \"#{ref}\". Using name \"#{resource_name}\"." \
-            if rname.nil?
-
-        # Add the "File Name" and "Resource Name" values.
-        crow[resource_map_file_headers[0]] = ref
-        crow[resource_map_file_headers[1]] = resource_name
-
-        # Add values for the other columns, which are
-        # the object properties (node attribute and
-        # added properties).
-        row.map.each do |attr,value|
-          crow[attr] = value
-        end
-        csv << crow
-      end
-    end
-
-    # Create a CSV object from the CSV string.
-    begin
-      resource_info_csv = CSV.parse(
-                resource_info_body,
-                :headers => true,
-                :return_headers => false)
-     #          :header_converters => lambda { |h| h.downcase.gsub(' ', '_') })
-     #          :headers => true, :converters => :all,
-    rescue Exception => e
-      puts e.message
-      return nil
-    end
-
     # Insure that the processing directory exists.
     FileUtils.mkdir_p processing_dir
 
-    # Save the resource map CSV file.
-    CSV.open(
-            resource_map_file,
-            "w",
-            :write_headers=> true,
-            :headers => [ 'File Name', 'Resource Name' ]
-            #:headers => resource_map.headers
-          ) do |csv|
-      resource_info_csv.each do |row|
-        csv << [ row['File Name'], row['Resource Name'] ]
-        next
+    # Process image information.
+    imgprocessor.img_list.each do |node|
+      reference = node.map['src']
 
-        # Debug code that dumps all information.
-        new_row = {}
-        row.each do |key,value|
-          new_row[key] = value
-        end
-        csv << new_row
+      # Using the EPUB file reference, determine the
+      # associated resource name. If a resource map
+      # exists, then use it for the mapping. Otherwise,
+      # attempt to match file basename minus extension
+      # with files in the monograph resources directory.
+      if resource_map_exists
+        resource_name = resource_map.reference_resource_name(reference)
+        notFound = resource_name.empty?
+      else
+        ref_base = File.basename(reference, ".*")
+        rname = resources.find { |file| ref_base == File.basename(file, ".*") }
+        resource_name = rname.nil? ? File.basename(reference) : File.basename(rname)
+        notFound = rname.nil?
       end
+      puts "INFO:    #{node.name}: mapping reference \"#{reference}\" to resource \"#{resource_name}\"." \
+          unless notFound
+      puts "Warning: #{node.name}: no resource found for reference \"#{reference}\". Using name \"#{resource_name}\"." \
+          if notFound
+
+      m = node.map
+      m["caption"] = m["caption"].text unless m["caption"].nil?
+      resource_map.add_action(
+            :reference => reference,
+            :resource_name => resource_name,
+            :type => "default",
+            :resource_properties => m
+          )
     end
+
+    # Determine the headers to use for the resource info CSV.
+    headers = []
+    imgprocessor.img_list.first.map.each do |key,value|
+      headers << key
+    end
+    resource_map.add_headers(headers)
+
+    # Save the resource map XML file.
+    resource_map.save(resource_map_file) unless resource_map_exists
 
     if update_fmsl
       # Update the FMSL.
@@ -224,18 +184,10 @@ monograph_dir_list.each do |monograph_dir|
         next
       end
 
-      # Look for the dreaded blank second line.
-      blank_row = fmsl_csv[0]
-      if blank_row['File Name'].downcase != blank_row_file_name
-        puts "Error: no blank row found. Skipping."
-        next
-      end
-      puts "INFO: found blank row"
-
       # Update the alt text and caption information in the FMSL.
       fmsl_csv.each do |fmsl_row|
         resource_name = fmsl_row['File Name']
-        resource_row = resource_info_csv.find {|row| row['Resource Name'] == resource_name }
+        resource_row = resource_map.resource_properties(resource_name)
         if resource_row.nil?
           puts "Warning: No alt text/caption found for resource \"#{resource_name}\"."
           next
@@ -264,6 +216,10 @@ monograph_dir_list.each do |monograph_dir|
         fmsl_row["Caption"] = epub_caption unless epub_caption.nil? or epub_caption.empty?
       end
 
+      # Look for the dreaded blank second line.
+      blank_row = fmsl_csv[0]
+      need_blank_row = blank_row['File Name'].downcase != blank_row_file_name
+
       # Save the updated FMSL in the resource processing directory.
       new_fmsl_file = File.join(processing_dir, File.basename(fmsl_file))
       CSV.open(
@@ -272,6 +228,12 @@ monograph_dir_list.each do |monograph_dir|
               :write_headers=> true,
               :headers => fmsl_csv.headers
             ) do |csv|
+        new_row = {}
+        if need_blank_row
+          puts "INFO: no blank row found. Inserting one."
+          new_row['File Name'] = blank_row_file_name
+          csv << new_row
+        end
         fmsl_csv.each do |fmsl_row|
           new_row = {}
           fmsl_row.each do |key,value|

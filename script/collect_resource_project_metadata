@@ -27,8 +27,8 @@ end
 script_dir = File.expand_path(File.dirname(__FILE__))
 root_dir = File.dirname(script_dir)
 
-require_relative File.join(root_dir, 'lib', 'csvfile')
-require_relative File.join(root_dir, 'lib', 'manifest')
+require_relative File.join(root_dir, 'lib', 'csvfile_old')
+require_relative File.join(root_dir, 'lib', 'manifest_old')
 require_relative File.join(root_dir, 'lib', 'metadata')
 
 # Rest of the parameters is a list of project directories.

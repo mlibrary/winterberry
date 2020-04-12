@@ -1,7 +1,7 @@
 module Resources
   require_relative 'resources/resourceprocessor'
   require_relative 'resources/resourcefactory'
-  require_relative 'resources/resource_new'
+  require_relative 'resources/resource_old'
   require_relative 'resources/markerresource'
   require_relative 'resources/elementresource'
   require_relative 'resources/action'
