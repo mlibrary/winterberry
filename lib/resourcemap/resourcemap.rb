@@ -6,7 +6,7 @@ require 'nokogiri'
 # Currently, this reads/writes an XML file and writes
 # a CSV, but hopefully the CSV can be deprecated.
 
-require_relative File.join("..", "..", "..", "..", "lib", "csvfile_new")
+require_relative File.join("..", "..", "lib", "csvfile_new")
 
 class ResourceMap
   @@DEFAULT_VERSION = "1.0"
