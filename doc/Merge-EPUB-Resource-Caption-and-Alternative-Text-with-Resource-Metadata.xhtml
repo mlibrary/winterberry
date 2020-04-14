@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>Merge EPUB Resource Caption and Alternative Text with Resource
+Metadata</title>
+</head>
+<body><h1>Merge EPUB Resource Caption and Alternative Text with Resource
+Metadata</h1><section><p>This monograph processing step can be completed
+by using the following project script:</p><blockquote><code>bundle
+exec ruby script/update_fmsl [-map] [-nofmsl] <i>monograph_dir</i
+> [<i>monograph_dir</i>...]</code><dl>
+<dt><i>monograph_dir</i></dt>
+<dd>Name of the monograph directory found on the publisher share drive.</dd>
+<dt><i>-map</i></dt>
+<dd>Forced generation of the monograph resource map. Otherwise, if
+a map exists, it will be used.</dd>
+<dt><i>-nofmsl</i></dt>
+<dd>Do not update the monograph FMSL file.</dd>
+</dl></blockquote><p>The script will perform the following:</p><ol>
+<li><p>Locate the monograph resource metadata file (<b>METADATA_CSV</b
+>=<i>&lt;monograph_dir>/resources/&lt;ebook_isbn>_&lt;author>.csv</i
+>).</p></li>
+<li><p>Locate the monograph EPUB file (<b>EPUB_FILE</b>=<i>&lt;monograph_dir>/&lt;ebook_isbn>_&lt;author>.epub</i
+>).</p></li>
+<li><p>Scan <b>EPUB_FILE</b> and determine a mapping from each resource
+reference to a resource file. This information is saved in the file <b
+>RESOURCE_MAP</b>=<i>&lt;monograph_dir>/resource_processing/resource_map.xml</i
+>.</p><p><b>NOTE:</b> Currently, a CSV version of <b>RESOURCE_MAP</b
+> is saved as well, but this file is deprecated.</p></li>
+<li><p> Scan <b>EPUB_FILE</b> and extract the resource caption and
+alternative text. Load the <b>METADATA_CSV</b> and for each resource,
+merge the caption and alternative text. Save the modified resource
+metadata in the file <b>NEW_METADATA_CSV</b>=<i>&lt;monograph_dir>/resource_processing/&lt;ebook_isbn>_&lt;author>.csv</i
+>.</p></li>
+</ol><p>After successful completion of the script, perform the following
+manual steps:</p><ol>
+<li><p>Copy <b>METADATA_CSV</b> to the <i>&lt;monograph_dir>/Archive</i
+> directory.</p></li>
+<li><p>Replace <b>METADATA_CSV</b> with <b>NEW_METADATA_CSV</b> within
+the <i>&lt;monograph_dir>/resources</i> directory.</p></li>
+</ol></section></body>
+</html>

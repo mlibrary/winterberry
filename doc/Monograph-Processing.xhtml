@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>Monograph Processing</title>
+</head>
+<body><h1>Monograph Processing</h1><section><p>Monograph processing
+steps include the following:</p><ol>
+<li><p><a
+href="https://github.com/mlibrary/winterberry/wiki/Merge-EPUB-Resource-Caption-and-Alternative-Text-with-Resource-Metadata"
+>Merge EPUB Resource Caption and Alternative Text with Resource Metadata</a
+>.</p></li>
+<li><p><a
+href="https://github.com/mlibrary/winterberry/wiki/Import-Resources-and-Associated-Metadata-to-Monograph"
+>Import Resources and Associated Metadata to Monograph</a>.</p></li>
+<li><p><a
+href="https://github.com/mlibrary/winterberry/wiki/Process-EPUB-Resource-References"
+>Process EPUB Resource References</a>.</p></li>
+</ol><p>The steps above invoke project scripts that require the directory
+path for the specific publisher monographs that exist on the <a
+href="https://www.fulcrum.org">University of Michigan Library</a> Fulcrum
+publishing platform. Currently, the publisher monograph directories
+reside on the shared drive:</p><blockquote><b>FULCRUM_DRIVE</b> = <i
+>//Sharedgroups/Information Management/Fulcrum</i></blockquote><p
+>Below is a list of relative directories that contain monograph files
+for specific publisher sites:</p><ul>
+<li><p><a href="https://www.fulcrum.org/michigan">University of Michigan
+Press</a> - <b>${FULCRUM_DRIVE}</b><i>/UMP</i></p></li>
+<li><p><a href="https://www.fulcrum.org/mps">University of Michigan
+Publishing Services</a> - <b>${FULCRUM_DRIVE}</b><i>/MPS</i></p></li>
+</ul><p>The publisher site directory can be specified to the project
+scripts by either:</p><ul>
+<li><p>using the <i>-p</i> command line option, or</p></li>
+<li><p>setting the current working directory to be the publisher site
+directory.</p></li>
+</ul></section></body>
+</html>

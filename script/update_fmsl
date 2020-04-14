@@ -5,9 +5,12 @@
 # shared drive.
 #
 # It generates a resource map file (if one doesn't exist) and
-# if the -fmsl option is specified and a monograph epub/FMSL
+# if the -nofmsl option is not specified and a monograph epub/FMSL
 # exist, then it will update the existing resource FMSL
 # properties with values found in the epub.
+# If the -map option is specified, then the resource map
+# is generated even if one exists. Otherwise, if one
+# exists, then it is used.
 
 require 'optparse'
 require 'ostruct'
@@ -35,6 +38,7 @@ if ARGV.count < 1
   return
 end
 
+# Process the command line parameters.
 monograph_dir_list = ARGV
 update_fmsl = options.update_fmsl
 use_map = options.use_map
@@ -51,9 +55,9 @@ require_relative File.join(root_dir, "lib", "csvfile")
 require_relative File.join(root_dir, "lib", "resourcemap")
 
 blank_row_file_name = "***row left intentionally blank***"
-
 imgprocessor = nil
 
+# Process all monograph directories specified.
 monograph_dir_list.each do |monograph_dir|
   monograph_dir = File.expand_path(monograph_dir)
   puts "*** Processing Monograph directory #{File.basename(monograph_dir)} ***"
@@ -120,7 +124,7 @@ monograph_dir_list.each do |monograph_dir|
     # Insure that the processing directory exists.
     FileUtils.mkdir_p processing_dir
 
-    # Process image information.
+    # Process image information and generate the resource map.
     imgprocessor.img_list.each do |node|
       reference = node.map['src']
 
@@ -154,13 +158,14 @@ monograph_dir_list.each do |monograph_dir|
     end
 
     # Determine the headers to use for the resource info CSV.
+    # May be deprecated.
     headers = []
     imgprocessor.img_list.first.map.each do |key,value|
       headers << key
     end
     resource_map.add_headers(headers)
 
-    # Save the resource map XML file.
+    # Save the resource map XML file (and CSV for now).
     resource_map.save(resource_map_file) unless resource_map_exists
 
     if update_fmsl
@@ -230,10 +235,14 @@ monograph_dir_list.each do |monograph_dir|
             ) do |csv|
         new_row = {}
         if need_blank_row
+          # Make sure the blank row exists, otherwise
+          # first resource will not be loaded by
+          # the importer.
           puts "INFO: no blank row found. Inserting one."
           new_row['File Name'] = blank_row_file_name
           csv << new_row
         end
+
         fmsl_csv.each do |fmsl_row|
           new_row = {}
           fmsl_row.each do |key,value|

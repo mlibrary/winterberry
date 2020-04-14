@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>Import Resources and Associated Metadata to Monograph</title>
+</head>
+<body><h1>Import Resources and Associated Metadata to Monograph</h1
+><section><p>The resources can be imported within the monograph by
+the following steps:</p><ol>
+<li><p>Log into host <i>bulleit-1</i>.</p></li>
+<li><p><code>cd /hydra/heliotrope-production/current</code></p></li>
+<li><p><code>sudo -u heliotrope-production RAILS_ENV=production bundle
+exec script/import -m <i>&lt;monograph_noid></i> -d /mnt/umptmm/<i
+>&lt;publisher></i>/<i>&lt;ebook_isbn>_</i><i>&lt;author_last_name></i
+>/resources/<i>&lt;ebook_isbn></i>_<i>&lt;author_last_name></i></code
+></p></li>
+</ol><dl>
+<dt><i>monograph_node</i></dt>
+<dd>Monograph NOID</dd>
+<dt><i>publisher</i></dt>
+<dd>Publisher name, e.g. UMP for<a
+href="https://www.fulcrum.org/michigan"> University of Michigan Press</a
+> or MPS for <a href="https://www.fulcrum.org/mps">University of Michigan
+Publishing Services</a>.</dd>
+<dt><i>ebook_isbn</i></dt>
+<dd>Ebook ISBN</dd>
+<dt><i>author_last_name</i></dt>
+<dd>Author last name</dd>
+</dl></section></body>
+</html>

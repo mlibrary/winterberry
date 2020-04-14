@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>Process EPUB Resource References</title>
+</head>
+<body><h1>Process EPUB Resource References</h1><section><p>This monograph
+processing step can be completed by using the following project script:</p
+><blockquote><code>bundle exec ruby script/process_monograph [-e]
+[-p <i>&lt;publisher_directory></i>] <i>&lt;action></i> <i>&lt;monograph_noid></i
+> [<i>&lt;monograph_noid></i>...]</code><dl>
+<dt><i>action</i></dt>
+<dd>Specified default resource action, either <i>embed_resources<i
+>|</i>link_resources</i>. The action for each resource is assigned
+in the monograph <i>resource_map.xml</i> file.</dd>
+<dt><i>-e</i></dt>
+<dd>Execute the specified resource actions. Otherwise, actions are
+identified and displayed, but not executed.</dd>
+<dt><i>publisher_directory</i></dt>
+<dd>Directory that contains a specific publisher monographs.</dd>
+<dt><i>monograph_noid</i></dt>
+<dd>Monograph NOID</dd>
+</dl></blockquote><p>The script will perform the following: </p><ol>
+<li><p>Download the manifest for the specified monograph NOID.</p
+></li>
+<li><p>Use the monograph manifest to locate the monograph directory
+(<b>MONOGRAPH_DIR</b>=<b>FULCRUM_DRIVE</b><i>/&lt;publisher>/&lt;ebook_isbn>_&lt;author_last_name></i
+>) found in the publisher directory which is specified either by the <code
+>-p <i>&lt;publisher_directory></i></code> option, or by the current
+working directory.</p></li>
+<li><p>Locate the monograph EPUB file (<b>EPUB_FILE</b>=<b>MONOGRAPH_DIR</b
+><i>/&lt;ebook_isbn>_&lt;author_last_name>.epub</i>.</p></li>
+<li><p>Assign an action for each resource, either <i>embed</i> a resource
+viewer or insert a <i>link</i> to the Fulcrum resource page. This
+is determined by the monograph <i><b>MONOGRAPH_DIR</b>/resource_processing/resource_map.xml</i
+> with the default action determined by the command line argument <code
+><i>action</i></code>, either <i>embed_resources</i> or <i>link_resources</i
+>.</p></li>
+<li><p>Scan <b>EPUB_FILE</b> and for each resource reference encountered,
+report the action assigned. If the <code>-e</code> option has been
+specified, then execute the action and save the file in the <b>MONOGRAPH_DIR</b
+><i>/resource_processing/epub</i> directory.</p></li>
+<li><p>Create a new EPUB file (<b>NEW_EPUB_FILE</b>=<b>MONOGRAPH_DIR</b
+><i>/resource_processing/&lt;ebook_isbn>_&lt;author_last_name>.epub</i
+>) that is a copy of the original except for replacing any modified
+files with the ones found in the <b>MONOGRAPH_DIR</b><i>/resource_processing/epub</i
+> directory.</p></li>
+</ol><p>After successful completion of the script execution, perform
+the following manual steps:</p><ol>
+<li><p>The original <b>EPUB_FILE</b> file can be copied to the <b
+>MONOGRAPH_DIR</b><i>/Archive</i> directory.</p></li>
+<li><p>The new <b>NEW_EPUB_FILE</b> file can be moved into the <b
+>MONOGRAPH_DIR</b>. Overnight, this file will be uploaded to Fulcrum,
+replacing the existing monograph EPUB representative.</p></li>
+</ol></section></body>
+</html>
