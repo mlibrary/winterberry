@@ -1,6 +1,7 @@
 class ResourceMapAction
 
-  attr_reader :reference_id, :resource_id, :reference, :resource, :type
+  attr_reader :reference_id, :resource_id, :reference, :resource
+  attr_accessor :type
 
   def initialize(args = {})
     @reference_id = args[:reference_id]

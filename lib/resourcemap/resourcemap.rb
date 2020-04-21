@@ -44,18 +44,26 @@ class ResourceMap
     res_id = args.has_key?(:resource_id) ? args[:resource_id] : \
           File.basename(resource_name).gsub('.', '_')
 
-    resource = ResourceMapResource.new(
-            :resource_name => resource_name,
-            :resource_properties => resource_properties
-        )
-    action = ResourceMapAction.new(
-            :reference_id => ref_id,
-            :reference => reference,
-            :resource_id => res_id,
-            :resource => resource,
-            :type => type
+    action = @actions.find {|a| a.reference_id == ref_id and a.resource_id == res_id }
+    if action.nil?
+      resource = ResourceMapResource.new(
+              :resource_name => resource_name,
+              :resource_properties => resource_properties
           )
-    @actions << action
+
+      action = ResourceMapAction.new(
+              :reference_id => ref_id,
+              :reference => reference,
+              :resource_id => res_id,
+              :resource => resource,
+              :type => type
+            )
+      @actions << action
+      return
+    end
+
+    action.type = type
+    action.resource.properties = resource_properties
   end
 
   # For a specified resource, return a property map.
@@ -104,9 +112,11 @@ class ResourceMap
 
   # Save a resource map file, both an XML and
   # CSV versions. Hopefully CSV can be deprecated.
-  def save(path)
+  def save(path, opts = {})
     save_xml(path)
-    save_csv(path)
+    if opts[:save_csv] == true
+      save_csv(path)
+    end
   end
 
   def save_xml(path)

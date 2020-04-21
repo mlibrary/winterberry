@@ -33,6 +33,7 @@ epub_path_list.each do |epub_path|
     puts "Error: #{File.basename(epub_path)} does not exist."
     next
   end
+  puts "Checking #{File.basename(epub_path)}"
 
   log_file = File.join(File.dirname(epub_path), File.basename(epub_path, ".*") + "_log.xml")
   EpubCheck.check_file(

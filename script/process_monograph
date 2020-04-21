@@ -197,7 +197,9 @@ monograph_noid_list.each do |monograph_noid|
     epub_src_dir = File.join(dest_epub_dir, "META-INF", "src")
     FileUtils.mkdir_p epub_src_dir
     epub_resource_map_file = File.join(epub_src_dir, File.basename(resource_map_file))
-    resource_map.save(epub_resource_map_file)
+    resource_map.save(epub_resource_map_file,
+           :save_csv => true
+         )
   end
 
   resource_processor = ResourceProcessor.new(

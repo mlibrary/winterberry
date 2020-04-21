@@ -55,6 +55,7 @@ require_relative File.join(root_dir, "lib", "csvfile")
 require_relative File.join(root_dir, "lib", "resourcemap")
 
 blank_row_file_name = "***row left intentionally blank***"
+blank_row_pattern = "^\*\*\*.* intentionally blank[ ]*\*\*\*$"
 imgprocessor = nil
 
 # Process all monograph directories specified.
@@ -192,6 +193,7 @@ monograph_dir_list.each do |monograph_dir|
       # Update the alt text and caption information in the FMSL.
       fmsl_csv.each do |fmsl_row|
         resource_name = fmsl_row['File Name']
+
         resource_row = resource_map.resource_properties(resource_name)
         if resource_row.nil?
           puts "Warning: No alt text/caption found for resource \"#{resource_name}\"."
@@ -223,7 +225,8 @@ monograph_dir_list.each do |monograph_dir|
 
       # Look for the dreaded blank second line.
       blank_row = fmsl_csv[0]
-      need_blank_row = blank_row['File Name'].downcase != blank_row_file_name
+      #need_blank_row = blank_row['File Name'].downcase != blank_row_file_name
+      need_blank_row = blank_row['File Name'].downcase.match?(blank_row_pattern)
 
       # Save the updated FMSL in the resource processing directory.
       new_fmsl_file = File.join(processing_dir, File.basename(fmsl_file))

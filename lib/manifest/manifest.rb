@@ -39,7 +39,7 @@ class Manifest
   def fileset(file_name)
     if file_name != nil
       file_name_base = File.basename(file_name, ".*")
-      fileset_row = @csv.find {|row| File.basename(row['file_name'], ".*") == file_name_base }
+      fileset_row = @csv.find {|row| !row['file_name'].nil? and File.basename(row['file_name'], ".*") == file_name_base }
       return fileset_row unless fileset_row.nil?
     end
 
