@@ -117,56 +117,39 @@ monograph_dir_list.each do |monograph_dir|
       resource_map.load(:xml_path => resource_map_file)
     else
       puts "INFO: generating resource map file #{File.basename(resource_map_file)}."
-    end
 
-    # Retrieve the list of resources
-    resources = Dir.glob(File.join(resources_dir, "*"))
+      # Add the resources
+      resources = Dir.glob(File.join(resources_dir, "*"))
+      resources.each do |resource_path|
+        resource_map.add_resource(:name => File.basename(resource_path))
+      end
+    end
 
     # Insure that the processing directory exists.
     FileUtils.mkdir_p processing_dir
 
     # Process image information and generate the resource map.
     imgprocessor.img_list.each do |node|
-      reference = node.map['src']
+      node_map = node.map
+      reference_name = node_map['src']
 
-      # Using the EPUB file reference, determine the
-      # associated resource name. If a resource map
-      # exists, then use it for the mapping. Otherwise,
-      # attempt to match file basename minus extension
-      # with files in the monograph resources directory.
-      if resource_map_exists
-        resource_name = resource_map.reference_resource_name(reference)
-        notFound = resource_name.empty?
+      resource = resource_map.reference_resource(reference_name)
+      if resource.nil?
+        puts "Warning: #{node.name}: no resource found for reference \"#{reference_name}\"."
       else
-        ref_base = File.basename(reference, ".*")
-        rname = resources.find { |file| ref_base == File.basename(file, ".*") }
-        resource_name = rname.nil? ? File.basename(reference) : File.basename(rname)
-        notFound = rname.nil?
+        puts "INFO:    #{node.name}: mapping reference \"#{reference_name}\" to resource \"#{resource.name}\"."
+        node_map["caption"] = node_map["caption"].text unless node_map["caption"].nil?
+        resource.properties = node_map
       end
-      puts "INFO:    #{node.name}: mapping reference \"#{reference}\" to resource \"#{resource_name}\"." \
-          unless notFound
-      puts "Warning: #{node.name}: no resource found for reference \"#{reference}\". Using name \"#{resource_name}\"." \
-          if notFound
 
-      m = node.map
-      m["caption"] = m["caption"].text unless m["caption"].nil?
-      resource_map.add_action(
-            :reference => reference,
-            :resource_name => resource_name,
-            :type => "default",
-            :resource_properties => m
+      resource_map.add(
+            :reference_name => reference_name,
+            :resource => resource,
+            :type => "default"
           )
     end
 
-    # Determine the headers to use for the resource info CSV.
-    # May be deprecated.
-    headers = []
-    imgprocessor.img_list.first.map.each do |key,value|
-      headers << key
-    end
-    resource_map.add_headers(headers)
-
-    # Save the resource map XML file (and CSV for now).
+    # Save the resource map XML file.
     resource_map.save(resource_map_file) unless resource_map_exists
 
     if update_fmsl

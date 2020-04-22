@@ -16,7 +16,7 @@ class ResourceMap
   @@parser = nil
   @@processor = ResourceMapSaxDocument.new
 
-  attr_reader :actions
+  attr_reader :actions, :resources
 
   def initialize(args = {})
     # Load the XML document is one is specified
@@ -32,53 +32,87 @@ class ResourceMap
     @csv_headers = []
   end
 
-  # Add a new map entry, reference => resource.
-  def add_action(args = {})
-    reference = args[:reference]
-    resource_name = args[:resource_name]
-    type = args[:type]
-    resource_properties = args[:resource_properties]
+  def add_reference(args = {})
+    name = args[:name]
+    id = args[:id]
+    id = ResourceMapBase.name_id(name) if id.nil?
 
-    ref_id = args.has_key?(:reference_id) ? args[:reference_id] : \
-          File.basename(reference).gsub('.', '_')
-    res_id = args.has_key?(:resource_id) ? args[:resource_id] : \
-          File.basename(resource_name).gsub('.', '_')
-
-    action = @actions.find {|a| a.reference_id == ref_id and a.resource_id == res_id }
-    if action.nil?
-      resource = ResourceMapResource.new(
-              :resource_name => resource_name,
-              :resource_properties => resource_properties
-          )
-
-      action = ResourceMapAction.new(
-              :reference_id => ref_id,
-              :reference => reference,
-              :resource_id => res_id,
-              :resource => resource,
-              :type => type
-            )
-      @actions << action
-      return
+    reference = @references[id]
+    if reference.nil?
+      reference = ResourceMapReference.new(
+                :id => id,
+                :name => name
+              )
+      @references[id] = reference
     end
+    return reference
+  end
 
-    action.type = type
-    action.resource.properties = resource_properties
+  def add_resource(args = {})
+    name = args[:name]
+    resource_properties = args[:resource_properties]
+    id = args.has_key?(:id) ? args[:id] : \
+          ResourceMapBase.name_id(name)
+
+    resource = @resources[id]
+    if resource.nil?
+      resource = ResourceMapResource.new(
+                :id => id,
+                :name => name
+              )
+      @resources[id] = resource
+    end
+    resource.properties = resource_properties
+    return resource
+  end
+
+  # Add a new map entry, reference => resource.
+  def add(args = {})
+    reference_id = args[:reference_id]
+    reference_name = args[:reference_name]
+    resource = args[:resource]
+    type = args[:type]
+
+    reference = add_reference(
+          :id => reference_id,
+          :name => reference_name
+        )
+
+    if !resource.nil?
+      action = @actions.find {|a| a.reference.id == reference.id and a.resource.id == resource.id }
+      if action.nil?
+        action = ResourceMapAction.new(
+                :reference => reference,
+                :resource => resource,
+                :type => type
+              )
+        @actions << action
+      else
+        action.type = type
+      end
+    end
   end
 
   # For a specified resource, return a property map.
   def resource_properties(resource_name)
-    action = @actions.find {|a| a.resource_name == resource_name }
-    return action.resource_properties unless action.nil?
+    action = @actions.find {|a| a.resource.name == resource_name }
+    return action.resource.properties unless action.nil?
   end
 
-  def reference_resource_name(reference)
-    action = @actions.find {|a| a.reference == reference }
-    return action.resource_name unless action.nil?
+  def reference_resource(reference)
+    action = @actions.find {|a| a.reference.name == reference }
+    if action.nil?
+      ref_base = File.basename(reference, ".*")
+      r = @resources.select {|id,resource| File.basename(resource.name, ".*") == ref_base }
+      return r.values.first unless r.nil?
+    end
+    return action.resource unless action.nil?
   end
 
   # Load an XML resource map file.
   def load(args = {})
+    @references = {}
+    @resources = {}
     @actions = []
 
     markup = args[:markup] if args.has_key?(:markup)
@@ -95,16 +129,34 @@ class ResourceMap
       @version = @@processor.version
       @default_action = @@processor.default_action
 
+      @@processor.references.each do |id, name|
+        @references[id] = add_reference(
+                    :id => id,
+                    :name => name
+                  )
+      end
+
+      @@processor.resources.each do |id, name|
+        @resources[id] = add_resource(
+                    :id => id,
+                    :name => name
+                  )
+      end
+
       @@processor.actions.each do |action_node|
         ref_id = action_node["reference_id"]
         res_id = action_node["resource_id"]
 
-        add_action(
+        resource = add_resource(
+                :id => res_id,
+                :name => @@processor.resources[res_id]
+              )
+        add(
             :reference_id => ref_id,
-            :reference => @@processor.references[ref_id],
+            :reference_name => @@processor.references[ref_id],
             :resource_id => res_id,
-            :resource_name =>  @@processor.resources[res_id],
-            :type => action_node["type"]
+            :resource =>  resource,
+            :type => action_node["type"].nil? ? "default" : action_node["type"]
           )
       end
     end
@@ -123,25 +175,33 @@ class ResourceMap
     File.open(path, "w") do |f|
       f.puts("<?xml version=\"1.0\" encoding=\"UTF-8\"?>")
       f.puts("<resourcemap version=\"1.0\">")
-      f.puts("<references>")
-      @actions.each do |action|
-        f.puts("<reference id=\"#{action.reference_id}\" src=\"#{action.reference}\"/>")
+
+      if @references.count > 0
+        f.puts("<references>")
+        @references.each do |id,reference|
+          f.puts("<reference id=\"#{id}\" src=\"#{reference.name}\"/>")
+        end
+        f.puts("</references>")
       end
-      f.puts("</references>")
-      f.puts("<resources>")
-      @actions.each do |action|
-        f.puts("<resource id=\"#{action.resource_id}\" name=\"#{action.resource.name}\"/>")
+
+      if @resources.count > 0
+        f.puts("<resources>")
+        @resources.each do |id,resource|
+          f.puts("<resource id=\"#{id}\" name=\"#{resource.name}\"/>")
+        end
+        f.puts("</resources>")
       end
-      f.puts("</resources>")
+
       f.puts("<actions default=\"#{@default_action}\">")
       @actions.each do |action|
-        m = "<action reference_id=\"#{action.reference_id}\""
-        m += " resource_id=\"#{action.resource_id}\""
+        m = "<action reference_id=\"#{action.reference.id}\""
+        m += " resource_id=\"#{action.resource.id}\""
         m += " type=\"#{action.type}\""
         m += "/>"
         f.puts(m)
       end
       f.puts("</actions>")
+
       f.puts("</resourcemap>")
     end
   end
@@ -168,14 +228,14 @@ class ResourceMap
         crow = {}
 
         # Add the "File Name" and "Resource Name" values.
-        crow[@@resource_map_file_headers[0]] = action.reference
-        crow[@@resource_map_file_headers[1]] = action.resource_name
+        crow[@@resource_map_file_headers[0]] = action.reference.name
+        crow[@@resource_map_file_headers[1]] = action.resource.name
         crow[@@resource_map_file_headers[2]] = action.type
 
         # Add values for the other columns, which are
         # the object properties (node attribute and
         # added properties).
-        properties = action.resource_properties
+        properties = action.resource.properties
         if !properties.nil?
           properties.each do |attr,value|
             crow[attr] = value

@@ -127,37 +127,34 @@ monograph_noid_list.each do |monograph_noid|
   # and the OPF files.
   dest_epub_dir = File.join(process_dir, "epub")
 
-  # Load the resource map file, if it exists.
-  resource_map = nil
-  resource_map_file = File.join(process_dir, "resource_map.xml")
-  if File.exists?(resource_map_file)
-    resource_map = ResourceMap.new(
-          :xml_path => resource_map_file,
-          :default_action => default_action_str
-        )
-    puts "Using resource map file #{File.basename(resource_map_file)}"
-  end
-
   # Verify that the resource_processing directory exists.
   if !File.exists?(process_dir) or !File.directory?(process_dir)
     puts "Error: directory #{File.basename(process_dir)} is not a valid directory."
     next
   end
 
-  # The resource map file is required. Abort if not loaded
-  if resource_map == nil
+  # Load the resource map file, if it exists.
+  resource_map_file = File.join(process_dir, "resource_map.xml")
+  if !File.exists?(resource_map_file)
     puts "Error: resource map file #{File.basename(resource_map_file)} must exist."
     next
   end
+
+  puts "Using resource map file #{File.basename(resource_map_file)}"
+  resource_map = ResourceMap.new(
+        :xml_path => resource_map_file,
+        :default_action => default_action_str
+      )
 
   # Generate the resource action list.
   actions_list = []
   map_actions = resource_map.actions
   map_actions.each do |map_action|
-    reference = map_action.reference
-    resource_name = map_action.resource_name
+    reference_name = map_action.reference.name
+    resource_name = map_action.resource.name
+
     if resource_name == nil or resource_name.strip.empty?
-      puts "Warning: no resource  mapping found for reference #{File.basename(reference)}"
+      puts "Warning: no resource  mapping found for reference #{File.basename(reference_name)}"
       next
     end
 
@@ -169,11 +166,11 @@ monograph_noid_list.each do |monograph_noid|
       puts "Error: no fileset row for resource #{resource_name}"
       link = fileset_row['link']
     else
-      puts "File #{File.basename(reference)} mapped to resource #{resource_name}"
+      puts "File #{File.basename(reference_name)} mapped to resource #{resource_name}"
       link = fileset_row['link'].match('^[^\(]+\(\"([^\"]+)\".*') {|m| m[1] }
     end
     action_row = {
-          "file_name" => reference,
+          "file_name" => reference_name,
           "resource_name" => resource_name,
           "resource_action" => map_action.type,
           "noid" => fileset_row['noid'],
@@ -183,13 +180,6 @@ monograph_noid_list.each do |monograph_noid|
     }
     actions_list << action_row
   end
-
-
-  # Save the resource actions file complete with
-  # noid, link, and embed_code within the resource_processing
-  # directory.
-  puts "Saving resource action files #{File.basename(resource_map_file)}"
-  resource_map.save(resource_map_file)
 
   if options.execute
     # Save the resource actions file within a new epub structure
