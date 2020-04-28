@@ -64,6 +64,9 @@ journal_name_list.each do |journal_name|
     next
   end
 
+  jats_file = File.join(article_dir, journal_name + "_jats.xml")
+  puts "#{journal_name}: #{File.basename(dlxs_file)} ==> #{File.basename(jats_file)}"
+
   article_dir = File.join(journal_dir, journal_name)
   FileUtils.mkdir_p article_dir
 
@@ -90,9 +93,6 @@ journal_name_list.each do |journal_name|
               "image_list" => resource_list_param
            }
 
-  jats_file = File.join(article_dir, journal_name + "_jats.xml")
-
-  puts "#{journal_name}: #{File.basename(dlxs_file)} ==> #{File.basename(jats_file)}"
   rc = XSLT.transform(
           :xslpath => dlxs2jats_xsl_file,
           :srcpath => dlxs_file,
