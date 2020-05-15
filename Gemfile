@@ -79,4 +79,4 @@ gem "image_size", "~> 2.0"
 gem "yaml_db"
 gem 'json', '~> 1.8', '>= 1.8.3'
 gem 'hexapdf'
-gem 'rmagick'
+#gem 'rmagick'
