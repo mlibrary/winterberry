@@ -7,10 +7,14 @@ require 'ostruct'
 # Process the script parameters.
 options = OpenStruct.new
 options.output_dir = Dir.pwd
+options.press = "ebc"
 option_parser = OptionParser.new do |opts|
   opts.banner = "Usage: #{File.basename(__FILE__)} [-d output_dir] monograph_noid [monograph_noid...]"
   opts.on('-d', '--output_dir [DIRECTORY]', 'Output directory') do |output_dir|
     options.output_dir = output_dir
+  end
+  opts.on('-p', '--press [bar|ebc]', 'Press') do |press|
+    options.press = press.downcase
   end
   opts.on_tail('-h', '--help', 'Print this help message') do
     puts opts
@@ -22,6 +26,8 @@ if ARGV.count < 1
   puts option_parser.help
   exit 0
 end
+
+fail "Error: invalid press #{options.press}" unless ["bar", "ebc"].include?(options.press)
 
 monograph_noid_list = ARGV
 
@@ -42,8 +48,33 @@ monograph_noid_list.each do |monograph_noid|
   raise "Error: creating manifest from noid #{noid}" if manifest.nil?
 
   unless manifest.monograph_row.nil?
+    sales_id = "**UKNOWN**"
+
+    case options.press
+    when "bar"
+      identifier = manifest.monograph_row['identifier(s)']
+      puts "Warning: no identifier value for BAR noid #{monograph_noid}" if identifier.nil?
+
+      unless identifier.nil?
+        identifier_list = identifier.split(';')
+
+        found = false
+        identifier_list.each do |id|
+          id.strip.downcase!
+          if id.start_with?('bar_number:')
+            sales_id = id.split(':')[1].strip
+            found = true
+            break
+          end
+        end
+        puts "Warning: no sails_id found for BAR noid #{monograph_noid}" unless found
+      end
+    when "ebc"
+      sales_id = manifest.monograph_row['doi']
+    end
+
     components_row = [
-                "#{manifest.monograph_row['noid']},#{manifest.monograph_row['doi']}"
+                "#{manifest.monograph_row['noid']},#{sales_id}"
               ]
     components_list << components_row
   end
