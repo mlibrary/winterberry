@@ -211,13 +211,17 @@ monograph_dir_list.each do |monograph_dir|
       #need_blank_row = blank_row['File Name'].downcase != blank_row_file_name
       need_blank_row = blank_row['File Name'].downcase.match?(blank_row_pattern)
 
+      new_fmsl_headers = fmsl_csv.headers
+      new_fmsl_headers << "Caption" unless new_fmsl_headers.include?("Caption")
+      new_fmsl_headers << "Alternative Text" unless new_fmsl_headers.include?("Alternative Text")
+
       # Save the updated FMSL in the resource processing directory.
       new_fmsl_file = File.join(processing_dir, File.basename(fmsl_file))
       CSV.open(
               new_fmsl_file,
               "w",
               :write_headers=> true,
-              :headers => fmsl_csv.headers
+              :headers => new_fmsl_headers
             ) do |csv|
         new_row = {}
         if need_blank_row

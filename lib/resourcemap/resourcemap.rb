@@ -114,6 +114,7 @@ class ResourceMap
     @references = {}
     @resources = {}
     @actions = []
+    @@processor.reset
 
     markup = args[:markup] if args.has_key?(:markup)
     markup = File.read(args[:xml_path]) if args.has_key?(:xml_path)
