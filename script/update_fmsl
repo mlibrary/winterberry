@@ -176,6 +176,12 @@ monograph_dir_list.each do |monograph_dir|
       # Update the alt text and caption information in the FMSL.
       fmsl_csv.each do |fmsl_row|
         resource_name = fmsl_row['File Name']
+        if resource_name.nil? or resource_name.empty?
+          ext_resource_url = fmsl_row['External Resource URL']
+          puts "Error: Empty resource name and external resource URL" \
+              if ext_resource_url.nil? or ext_resource_url.empty?
+          next
+        end
 
         resource_row = resource_map.resource_properties(resource_name)
         if resource_row.nil?
