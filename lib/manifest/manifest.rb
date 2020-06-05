@@ -71,7 +71,7 @@ class Manifest
                 csv_body,
                 :headers => true,
                 :return_headers => false,
-                :header_converters => lambda { |h| h.downcase.gsub(' ', '_') })
+                :header_converters => lambda { |h| h.strip.downcase.gsub(' ', '_') })
      #          :headers => true, :converters => :all,
     rescue Exception => e
       raise e.message

@@ -33,6 +33,6 @@ class ResourceProcessor
 		#doc.xpath("//*[@class='fig' or @class='rb']")
 		#doc.xpath("//*[@class='fig']") + doc.xpath("//*[@class='rb']")
 		#doc.xpath("//*[local-name()='figure' or @class='fig' or @class='rb']")
-		doc.xpath("//*[(local-name()='p' and @class='fig') or (local-name()='figure' and count(*[local-name()='p' and @class='fig'])=0) or @class='rb']")
+		doc.xpath("//*[(local-name()='p' and @class='fig') or (local-name()='figure' and count(*[local-name()='p' and @class='fig'])=0) or @class='rb' or @class='rbi']")
 	end
 end

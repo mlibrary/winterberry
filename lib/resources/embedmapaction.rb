@@ -4,10 +4,14 @@ class EmbedMapAction < Action
     resource_metadata = @action_args[:resource_metadata]
     resource_node = resource.resource_node
 
-    if resource_node.name != 'figure'
-      @status = @@FAILED
-      @message = "Error: no figure element wrapping interactive map for resource #{resource_metadata['file_name']}."
-      return
+    loop do
+      if resource_node.nil?
+        @status = @@FAILED
+        @message = "Error: no figure element wrapping interactive map for resource #{resource_metadata['file_name']}."
+        return
+      end
+      break if resource_node.name == 'figure'
+      resource_node = resource_node.parent
     end
 
     emb_fragment = embed_fragment()
@@ -40,7 +44,7 @@ class EmbedMapAction < Action
     resource_node['data-title'] = data_title
 
     caption = Action.find_caption(resource_node)
-    if !caption.nil? and !caption.empty?
+    unless caption.nil? or caption.empty?
       markup = '<p class="CAP" data-resource-trigger="modal">An interactive version can be found in the Fulcrum edition.</p>'
       fragment = Nokogiri::XML::DocumentFragment.parse(markup)
       caption.last.add_child(fragment)

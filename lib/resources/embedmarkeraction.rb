@@ -6,12 +6,15 @@ class EmbedMarkerAction < Action
     emb_fragment = embed_fragment
 
     emb_container = embed_container
-    emb_container.add_child(embed_fragment)
+    unless emb_fragment.nil? or emb_container.nil?
+      emb_container.add_child(emb_fragment)
 
-    resource_node.add_next_sibling(emb_container)
-    resource_node.remove
-
-    @status = @@COMPLETED
+      resource_node.add_next_sibling(emb_container)
+      resource_node.remove
+      @status = @@COMPLETED
+      return
+    end
+    @status = @@FAILED
   end
 
   def to_s

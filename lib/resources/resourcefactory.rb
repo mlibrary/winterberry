@@ -13,6 +13,11 @@ class ResourceFactory
 
 	def self.node_type(node)
 		attr = node.attribute("class")
-		(attr != nil and attr.text.downcase == "rb") ? "marker" : "element"
+		#(attr != nil and attr.text.downcase == "rb") ? "marker" : "element"
+		unless attr.nil?
+		  attr = attr.text.downcase
+		  return "marker" if attr == "rb" or attr == "rbi"
+		end
+		return "element"
 	end
 end

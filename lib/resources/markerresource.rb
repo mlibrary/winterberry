@@ -11,11 +11,6 @@ class MarkerResource < Resource
       action = resource_action(path)
       metadata = resource_metadata(path)
 
-      scan_report(
-        :resource_action => action,
-        :resource_metadata => metadata
-        )
-
       if metadata != nil
         action = MarkerActionFactory.create(
                     :resource => self,
@@ -31,10 +26,18 @@ class MarkerResource < Resource
     return action_list
   end
 
+  # Return the nodes that reference resources.
+  # For marker callouts, this should be within
+  # a XML comment, but not always the case.
+  # NOTE: either display warning if no comment,
+  # or just use the node content?
   def resource_node_list
-    @resource_node.xpath(".//comment()")
+    node_list = @resource_node.xpath(".//comment()")
+    return node_list unless node_list.nil? or node_list.empty?
+    return [ @resource_node ]
   end
 
+  # Parse the callout text for the path
   def resource_path(resource_node)
     resource_node.text.strip
     #resource_node.text.match("<img>([^\"]+)</img>")[1].strip
