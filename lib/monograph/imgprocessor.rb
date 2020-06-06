@@ -1,5 +1,5 @@
 class ImgProcessor < FragmentProcessor
-  @@containers = [ 'img', 'figure' ]
+  @@imgsaxdoc = ImgSaxDocument.new
 
   attr_reader :img_list
 
@@ -9,7 +9,8 @@ class ImgProcessor < FragmentProcessor
   end
 
   def process(args = {})
-    args[:containers] = @@containers
+    args[:selectproc] = @@imgsaxdoc
+
     fragments = super(args)
 
     fragments.each do |fragment|

@@ -15,12 +15,11 @@ class FragmentProcessor
       content = args[:content]
     end
 
-    containers = args[:containers]
     fragments = FragmentBuilder.parse(
               :content => content,
-              :containers => containers,
               :info => @info,
-              :name => args[:name]
+              :name => args[:name],
+              :selectproc => args[:selectproc]
             )
     return fragments
   end

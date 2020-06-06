@@ -1,6 +1,4 @@
 class FragmentBuilder
-  @@parser = nil
-  @@processor = FragmentSaxDocument.new
 
   def self.parse(args = {})
     if args.has_key?(:file_name)
@@ -11,19 +9,19 @@ class FragmentBuilder
     end
     raise "Error: no content specified." if content.nil? or content.empty?
 
-    containers = args[:containers]
-    raise "Error: no containers specified." if containers.nil? or containers.empty?
-
     info = args[:info]
     raise "Error: no info specified." if info.nil?
 
-    @@processor.reset
-    @@processor.containers = containers
-    @@processor.info = info
-    @@processor.name = args[:name]
+    selectproc = args[:selectproc]
+    raise "Error: no selection processor specified." if selectproc.nil?
 
-    @@parser = Nokogiri::XML::SAX::Parser.new(@@processor) if @@parser.nil?
-    @@parser.parse(content)
-    return @@processor.fragments
+    #selectproc = @@processor if selectproc.nil?
+    selectproc.reset
+    selectproc.info = info
+    selectproc.name = args[:name]
+
+    parser = Nokogiri::XML::SAX::Parser.new(selectproc)
+    parser.parse(content)
+    return selectproc.fragments
   end
 end
