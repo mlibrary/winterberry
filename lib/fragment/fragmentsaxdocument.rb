@@ -14,13 +14,8 @@ class FragmentSaxDocument < Nokogiri::XML::SAX::Document
   def start_element(name, attrs = [])
     #puts "<#{name}: #{attrs.map {|x| x.inspect}.join(', ')}>"
 
-    select_frag = @selector.select_fragment(name, attrs)
-    return unless @fragment_refcnt > 0 or select_frag
-
-    if select_frag
-      @fragment_refcnt += 1
-      @stack << StackEntry.new(name, attrs)
-    end
+    return unless @fragment_refcnt > 0 or @selector.select_fragment(name, attrs)
+    @fragment_refcnt += 1
 
     str = "<#{name}"
     attrs.to_h.each {|k,v| str += " #{k}=\"#{v}\""}
@@ -29,52 +24,39 @@ class FragmentSaxDocument < Nokogiri::XML::SAX::Document
   end
 
   def end_element(name)
-    @fragment_markup += "</#{name}>" if @fragment_refcnt > 0
+    return if @fragment_refcnt == 0
 
-    unless @stack.empty?
-      if name == @stack.last.name and @selector.select_fragment(name, @stack.last.attrs)
-        @stack.pop
-        @fragment_refcnt -= 1
-        if @fragment_refcnt == 0
-          fragment = Nokogiri::XML::DocumentFragment.parse(@fragment_markup)
-          container = fragment.xpath("./*[1]").first
-          @fragments << @info.new_info(
-                :node => container,
-                :name => @name
-              )
-          @fragment_markup = ""
-        end
-      end
+    @fragment_markup += "</#{name}>"
+
+    @fragment_refcnt -= 1
+    if @fragment_refcnt == 0
+      fragment = Nokogiri::XML::DocumentFragment.parse(@fragment_markup)
+      container = fragment.xpath("./*[1]").first
+      @fragments << @info.new_info(
+            :node => container,
+            :name => @name
+          )
+      @fragment_markup = ""
     end
   end
 
   def characters(string)
-    s = string.gsub(/[\n\r ]+/, ' ')
-    @fragment_markup += s if @fragment_refcnt > 0
+    if @fragment_refcnt > 0
+      s = string.gsub(/[\n\r ]+/, ' ')
+      @fragment_markup += s
+    end
   end
 
   def comment(string)
-    s = string.gsub(/[\n\r ]+/, ' ')
-    @fragment_markup += "<!--#{s}-->" if @fragment_refcnt > 0
-  end
-
-  def select_fragment(name, attrs = [])
-    return false
+    if @fragment_refcnt > 0
+      s = string.gsub(/[\n\r ]+/, ' ')
+      @fragment_markup += "<!--#{s}-->"
+    end
   end
 
   def reset
     @fragments = []
     @fragment_refcnt = 0
     @fragment_markup = ""
-
-    @stack = []
-  end
-end
-
-class StackEntry
-  attr_reader :name, :attrs
-  def initialize(n, a = [])
-    @name = n
-    @attrs = a
   end
 end
