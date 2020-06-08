@@ -6,7 +6,6 @@ class FragmentSaxDocument < Nokogiri::XML::SAX::Document
   attr_reader :fragments
 
   def initialize(args = {})
-    @info = args[:info] if args.has_key?(:info)
     @name = args[:name]
     reset
   end
@@ -32,7 +31,7 @@ class FragmentSaxDocument < Nokogiri::XML::SAX::Document
     if @fragment_refcnt == 0
       fragment = Nokogiri::XML::DocumentFragment.parse(@fragment_markup)
       container = fragment.xpath("./*[1]").first
-      @fragments << @info.new_info(
+      @fragments << FragmentInfo.new(
             :node => container,
             :name => @name
           )

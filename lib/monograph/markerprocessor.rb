@@ -23,7 +23,7 @@ class MarkerProcessor < FragmentProcessor
       resource_name = comment.empty? ? fragment.node.text : comment.first.text
 
       unless resource_name.nil? or resource_name.strip == ""
-        marker = new_info(
+        marker = MarkerInfo.new(
                 :node => fragment.node,
                 :name => args[:name],
                 :resource_name => resource_name
@@ -32,10 +32,6 @@ class MarkerProcessor < FragmentProcessor
       end
     end
     return fragments
-  end
-
-  def new_info(args = {})
-    imginfo = MarkerInfo.new(args)
   end
 
   def reset

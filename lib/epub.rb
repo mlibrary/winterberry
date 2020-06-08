@@ -62,6 +62,8 @@ class Epub
   def do_init
     return unless @file.nil?
 
+    @@elem_processor = FragmentProcessor.new if @@elem_processor.nil?
+
     Zip::File.open(@epub_file) do |file|
       @file = file
 
