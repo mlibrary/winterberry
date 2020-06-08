@@ -1,6 +1,6 @@
 require 'nokogiri'
 
-class MarkerSaxDocument < FragmentSaxDocument
+class MarkerSelector
 
   def select_fragment(name, attrs = [])
     return false unless name == 'p'

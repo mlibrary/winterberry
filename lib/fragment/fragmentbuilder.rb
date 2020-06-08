@@ -1,5 +1,7 @@
 class FragmentBuilder
 
+  @@processor = nil
+
   def self.parse(args = {})
     if args.has_key?(:file_name)
       file_name = args[:file_name]
@@ -12,16 +14,17 @@ class FragmentBuilder
     info = args[:info]
     raise "Error: no info specified." if info.nil?
 
-    selectproc = args[:selectproc]
-    raise "Error: no selection processor specified." if selectproc.nil?
+    selector = args[:selector]
+    raise "Error: no selection processor specified." if selector.nil?
 
-    #selectproc = @@processor if selectproc.nil?
-    selectproc.reset
-    selectproc.info = info
-    selectproc.name = args[:name]
+    @@processor = FragmentSaxDocument.new if @@processor.nil?
+    @@processor.reset
+    @@processor.info = info
+    @@processor.name = args[:name]
+    @@processor.selector = selector
 
-    parser = Nokogiri::XML::SAX::Parser.new(selectproc)
+    parser = Nokogiri::XML::SAX::Parser.new(@@processor)
     parser.parse(content)
-    return selectproc.fragments
+    return @@processor.fragments
   end
 end

@@ -1,5 +1,5 @@
 class MarkerProcessor < FragmentProcessor
-  @@markersaxdoc = nil
+  @@markerselector = nil
 
   attr_reader :img_list
 
@@ -9,8 +9,8 @@ class MarkerProcessor < FragmentProcessor
   end
 
   def process(args = {})
-    @@markersaxdoc = MarkerSaxDocument.new if @@markersaxdoc.nil?
-    args[:selectproc] = @@markersaxdoc
+    @@markerselector = MarkerSelector.new if @@markerselector.nil?
+    args[:selector] = @@markerselector
 
     fragments = super(args)
 

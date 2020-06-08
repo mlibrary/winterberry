@@ -19,7 +19,7 @@ class FragmentProcessor
               :content => content,
               :info => @info,
               :name => args[:name],
-              :selectproc => args[:selectproc]
+              :selector => args[:selector]
             )
     return fragments
   end

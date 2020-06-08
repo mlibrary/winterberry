@@ -1,10 +1,7 @@
 
 require 'zip'
 
-class ElemProcessor < FragmentProcessor
-end
-
-class ContainerSaxDocument < FragmentSaxDocument
+class ContainerSelector
 
   attr_accessor :containers
 
@@ -14,7 +11,7 @@ class ContainerSaxDocument < FragmentSaxDocument
 end
 
 class Epub
-  @@elem_processor = ElemProcessor.new
+  @@elem_processor = FragmentProcessor.new
 
   def initialize(args = {})
     @epub_file = args[:epub_file]
@@ -72,11 +69,11 @@ class Epub
       return nil if containers.empty?
       container_entry = containers.first
 
-      selectproc = ContainerSaxDocument.new
-      selectproc.containers = [ 'rootfile' ]
+      selector = ContainerSelector.new
+      selector.containers = [ 'rootfile' ]
       fragment_list = @@elem_processor.process(
             :content => container_entry.get_input_stream.read,
-            :selectproc => selectproc
+            :selector => selector
           )
       return nil if fragment_list.empty?
 
@@ -85,20 +82,20 @@ class Epub
       opf_dir = File.dirname(opf_file)
       @opf_item = file.glob(opf_file).first
 
-      selectproc.containers = [ 'metadata' ]
+      selector.containers = [ 'metadata' ]
       @metadata = @@elem_processor.process(
             :content => @opf_item.get_input_stream.read,
-            :selectproc => selectproc
+            :selector => selector
           ).first
-      selectproc.containers = [ 'manifest' ]
+      selector.containers = [ 'manifest' ]
       @manifest = @@elem_processor.process(
             :content => @opf_item.get_input_stream.read,
-            :selectproc => selectproc
+            :selector => selector
           ).first
-      selectproc.containers = [ 'spine' ]
+      selector.containers = [ 'spine' ]
       @spine = @@elem_processor.process(
             :content => @opf_item.get_input_stream.read,
-            :selectproc => selectproc
+            :selector => selector
           ).first
 
     end

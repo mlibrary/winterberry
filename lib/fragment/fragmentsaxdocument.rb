@@ -2,7 +2,7 @@ require "nokogiri"
 
 class FragmentSaxDocument < Nokogiri::XML::SAX::Document
 
-  attr_accessor :info, :name
+  attr_accessor :info, :name, :selector
   attr_reader :fragments
 
   def initialize(args = {})
@@ -14,7 +14,7 @@ class FragmentSaxDocument < Nokogiri::XML::SAX::Document
   def start_element(name, attrs = [])
     #puts "<#{name}: #{attrs.map {|x| x.inspect}.join(', ')}>"
 
-    select_frag = select_fragment(name, attrs)
+    select_frag = @selector.select_fragment(name, attrs)
     return unless @fragment_refcnt > 0 or select_frag
 
     if select_frag
@@ -32,7 +32,7 @@ class FragmentSaxDocument < Nokogiri::XML::SAX::Document
     @fragment_markup += "</#{name}>" if @fragment_refcnt > 0
 
     unless @stack.empty?
-      if name == @stack.last.name and select_fragment(name, @stack.last.attrs)
+      if name == @stack.last.name and @selector.select_fragment(name, @stack.last.attrs)
         @stack.pop
         @fragment_refcnt -= 1
         if @fragment_refcnt == 0

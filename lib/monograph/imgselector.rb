@@ -1,6 +1,6 @@
 require 'nokogiri'
 
-class ImgSaxDocument < FragmentSaxDocument
+class ImgSelector
 
   @@containers = [ 'img', 'figure' ]
 

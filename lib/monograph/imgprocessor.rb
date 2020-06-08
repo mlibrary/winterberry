@@ -1,5 +1,5 @@
 class ImgProcessor < FragmentProcessor
-  @@imgsaxdoc = ImgSaxDocument.new
+  @@imgselector = nil
 
   attr_reader :img_list
 
@@ -9,7 +9,8 @@ class ImgProcessor < FragmentProcessor
   end
 
   def process(args = {})
-    args[:selectproc] = @@imgsaxdoc
+    @@imgselector = ImgSelector.new if @@imgselector.nil?
+    args[:selector] = @@imgselector
 
     fragments = super(args)
 
