@@ -13,10 +13,15 @@ require 'ostruct'
 # Process the script parameters.
 options = OpenStruct.new
 options.output_dir = Dir.pwd
+options.execute = false
+
 option_parser = OptionParser.new do |opts|
-  opts.banner = "Usage: #{File.basename(__FILE__)} [-d output_dir] monograph_noid [monograph_noid...]"
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-e] [-d output_dir] monograph_noid [monograph_noid...]"
   opts.on('-d', '--output_dir [DIRECTORY]', 'Output directory') do |output_dir|
     options.output_dir = output_dir
+  end
+  opts.on('-e', '--execute', 'Execute making Fulcrum handles') do |execute|
+    options.execute = true
   end
   opts.on_tail('-h', '--help', 'Print this help message') do
     puts opts
@@ -69,7 +74,7 @@ monograph_noid_list.each do |monograph_noid|
     end
 
     # Write the temp file. system command may strip out the newlines
-    resource_file = File.join(output_dir, "resourcesNEW.csv")
+    resource_file = File.join(output_dir, "resources.csv")
     File.open(resource_file, "w") do |fp|
       row_list.each do |row|
         fp.puts row
@@ -80,11 +85,20 @@ monograph_noid_list.each do |monograph_noid|
     bname = "batch." + DateTime.now.strftime("%Y-%m-%d")
     hdl_file = File.join(output_dir,  bname + ".hdl")
     log_file = File.join(output_dir,  bname + ".log")
-    ok = system("cat \"#{resource_file}\" | /quod-dev/bin/f/fulcrum_helpers/makeFulcrumHandles.pl -h -d \"#{output_dir}\"")
-    #puts "cat \"#{resource_file}\" | /quod-dev/bin/f/fulcrum_helpers/makeFulcrumHandles.pl -h -d \"#{output_dir}\""
-    status = $?
-    FileUtils.rm_f resource_file
 
+    ok = true
+    if options.execute
+      # Actually make the handles
+      ok = system("cat \"#{resource_file}\" | /quod-dev/bin/f/fulcrum_helpers/makeFulcrumHandles.pl -h -d \"#{output_dir}\"")
+      status = $?
+      FileUtils.rm_f resource_file
+    else
+      # Don't make the handles, but display the
+      # the system call for review.
+      puts "cat \"#{resource_file}\" | /quod-dev/bin/f/fulcrum_helpers/makeFulcrumHandles.pl -h -d \"#{output_dir}\""
+    end
+
+    # Evaluate the status of the return code.
     case ok
     when true
     else
