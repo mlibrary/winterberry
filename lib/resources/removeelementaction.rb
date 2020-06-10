@@ -1,6 +1,5 @@
 class RemoveElementAction < Action
   def process()
-    metadata = @action_args[:resource_metadata]
     resource = @action_args[:resource]
     resource_node = resource.resource_node
     img_node = @action_args[:resource_img]

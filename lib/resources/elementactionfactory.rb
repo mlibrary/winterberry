@@ -1,8 +1,8 @@
 class ElementActionFactory
   def self.create(args)
-    action = args[:resource_action]
+    resource_action = args[:resource_action]
 
-    action_str = action['resource_action'].downcase
+    action_str = resource_action['resource_action'].downcase
     if action_str == 'default'
       resource = args[:resource]
       action_str = resource.default_action['resource_action']
@@ -10,9 +10,7 @@ class ElementActionFactory
 
     case action_str
     when "embed"
-      resource_metadata = args[:resource_metadata]
-      resource_type = resource_metadata['resource_type']
-
+      resource_type = resource_action['resource_type']
       return resource_type == 'interactive map' ? \
               EmbedMapAction.new(args) : \
               EmbedElementAction.new(args)

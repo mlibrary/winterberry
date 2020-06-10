@@ -6,16 +6,14 @@ class ElementResource < Resource
     node_list = resource_node_list
     node_list.each do |node|
       spath = src_path(node)
-      action = resource_action(spath)
-      path = action['resource_name']
-      metadata = resource_metadata(path)
+      resource_action = resource_action(spath)
+      path = resource_action['resource_name']
 
-      if metadata != nil
+      unless resource_action.nil?
         action = ElementActionFactory.create(
                     :resource => self,
-                    :resource_action => action,
-                    :resource_img => node,
-                    :resource_metadata => metadata
+                    :resource_action => resource_action,
+                    :resource_img => node
                     )
         action_list << action unless action == nil
       end

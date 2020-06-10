@@ -9,12 +9,15 @@ class Action
 
   def initialize(args)
     @action_args = args
+
+    @resource_action = args[:resource_action]
+
     @status = @@PENDING
     @message = ""
   end
 
   def resource_action
-    @action_args[:resource_action]
+    return @action_args[:resource_action]
   end
 
   def link_markup(metadata, descr = nil)
@@ -26,19 +29,17 @@ class Action
   end
 
   def embed_fragment
-    #resource_action = @action_args[:resource_action]
-    #emb_markup = resource_action['embed_code']
-    resource_metadata = @action_args[:resource_metadata]
-    emb_markup = resource_metadata['embed_code']
+    resource_action = @action_args[:resource_action]
+    emb_markup = resource_action['embed_code']
     if emb_markup == nil or emb_markup.strip.empty?
-      file_name = resource_metadata['file_name']
+      file_name = resource_action['file_name']
       @message = "Warning: no embed markup for resource node #{file_name}"
       return nil
     end
 
     emb_fragment = Nokogiri::XML.fragment(emb_markup)
     if emb_fragment.nil?
-      file_name = resource_metadata['file_name']
+      file_name = resource_action['file_name']
       @message = "Warning: error creating embed markup document for resource node #{file_name}"
     end
     emb_fragment

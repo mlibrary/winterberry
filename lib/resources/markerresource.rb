@@ -8,15 +8,13 @@ class MarkerResource < Resource
     node_list = resource_node_list
     node_list.each do |node|
       path = resource_path(node)
-      action = resource_action(path)
-      metadata = resource_metadata(path)
+      resource_action = resource_action(path)
 
-      if metadata != nil
+      unless resource_action.nil?
         action = MarkerActionFactory.create(
                     :resource => self,
-                    :resource_action => action,
-                    :resource_img => node,
-                    :resource_metadata => metadata
+                    :resource_action => resource_action,
+                    :resource_img => node
                     )
         action_list << action
       end
