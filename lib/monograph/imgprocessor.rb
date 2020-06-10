@@ -1,5 +1,5 @@
 class ImgProcessor < FragmentProcessor
-  @@containers = [ 'img', 'figure' ]
+  @@imgselector = nil
 
   attr_reader :img_list
 
@@ -9,13 +9,15 @@ class ImgProcessor < FragmentProcessor
   end
 
   def process(args = {})
-    args[:containers] = @@containers
+    @@imgselector = ImgSelector.new if @@imgselector.nil?
+    args[:selector] = @@imgselector
+
     fragments = super(args)
 
     fragments.each do |fragment|
       if fragment.node.name == 'img'
         # Image fragment. Just add object to list. No caption.
-        img = new_info(
+        img = ImgInfo.new(
                 :node => fragment.node,
                 :name => args[:name]
               )
@@ -41,7 +43,7 @@ class ImgProcessor < FragmentProcessor
       nodes.each do |node|
         if node.name == 'img'
           caption = caption_ndx == -1 ? nil : captions_list[caption_ndx]
-          @img_list << new_info(
+          @img_list << ImgInfo.new(
                   :node=> node,
                   :name => args[:name],
                   :caption=> caption
@@ -52,10 +54,6 @@ class ImgProcessor < FragmentProcessor
       end
     end
     return fragments
-  end
-
-  def new_info(args = {})
-    imginfo = ImgInfo.new(args)
   end
 
   def reset

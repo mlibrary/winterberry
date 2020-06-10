@@ -1,48 +1,55 @@
-class ElemProcessor < FragmentProcessor
-end
 
 require 'zip'
 
-class Epub
-  @@elem_processor = ElemProcessor.new
+class ContainerSelector
 
+  attr_accessor :containers
+
+  def select_fragment(name, attrs = [])
+    return @containers.include?(name)
+  end
+end
+
+class Epub
   def initialize(args = {})
     @epub_file = args[:epub_file]
     reset
   end
 
   def opf_item
-    do_init
+    load_epub if @opf_item.nil?
     return @opf_item
   end
 
-  def metadata
-    do_init
+  def metadata_node
+    load_epub if @metadata.nil?
     return @metadata
   end
 
   def spine_items
-    do_init
-    return unless @spine_items.nil?
+    if @spine_items.nil?
+      load_epub
 
-    opf_dir = File.dirname(@opf_item.name)
-    @spine_items = []
-    itemref_list = @spine.node.xpath(".//*[local-name()='itemref']")
-    itemref_list.each do |itemref|
-      idref = itemref['idref']
-      item = @manifest.node.xpath(".//*[local-name()='item' and @id=\"#{idref}\"]").first
-      raise "Error: finding manifest item #{idref}" if item.nil?
+      opf_dir = File.dirname(@opf_item.name)
+      @spine_items = []
+      itemref_list = @spine.node.xpath(".//*[local-name()='itemref']")
+      itemref_list.each do |itemref|
+        idref = itemref['idref']
+        item = @manifest.node.xpath(".//*[local-name()='item' and @id=\"#{idref}\"]").first
+        raise "Error: finding manifest item #{idref}" if item.nil?
 
-      item_entry = @file.glob(File.join(opf_dir, item['href'])).first
-      raise "Error: loading manifest item #{item['href']}" if item_entry.nil?
+        item_entry = @epub.glob(File.join(opf_dir, item['href'])).first
+        raise "Error: loading manifest item #{item['href']}" if item_entry.nil?
 
-      @spine_items << item_entry
+        @spine_items << item_entry
+      end
     end
+
     return @spine_items
   end
 
   def reset
-    @file = nil
+    @epub = nil
     @opf_item = nil
     @metadata = nil
     @manifest = nil
@@ -52,40 +59,46 @@ class Epub
 
   private
 
-  def do_init
-    return unless @file.nil?
+  def load_epub
+    if @epub.nil?
+      fragment_processor = FragmentProcessor.new
+      fragment_selector = ContainerSelector.new
 
-    Zip::File.open(@epub_file) do |file|
-      @file = file
+      Zip::File.open(@epub_file) do |epub|
+        @epub = epub
 
-      containers = file.glob(File.join("META-INF", "container.xml"))
-      return nil if containers.empty?
-      container_entry = containers.first
+        containers = epub.glob(File.join("META-INF", "container.xml"))
+        return nil if containers.empty?
+        container_entry = containers.first
 
-      fragment_list = @@elem_processor.process(
-            :content => container_entry.get_input_stream.read,
-            :containers => [ 'rootfile' ]
-          )
-      return nil if fragment_list.empty?
+        fragment_selector.containers = [ 'rootfile' ]
+        fragment_list = fragment_processor.process(
+              :content => container_entry.get_input_stream.read,
+              :selector => fragment_selector
+            )
+        return nil if fragment_list.empty?
 
-      root_elem = fragment_list.first.node
-      opf_file = root_elem['full-path']
-      opf_dir = File.dirname(opf_file)
-      @opf_item = file.glob(opf_file).first
+        root_elem = fragment_list.first.node
+        opf_file = root_elem['full-path']
+        opf_dir = File.dirname(opf_file)
+        @opf_item = epub.glob(opf_file).first
 
-      @metadata = @@elem_processor.process(
-            :content => @opf_item.get_input_stream.read,
-            :containers => [ 'metadata' ]
-          ).first
-      @manifest = @@elem_processor.process(
-            :content => @opf_item.get_input_stream.read,
-            :containers => [ 'manifest' ]
-          ).first
-      @spine = @@elem_processor.process(
-            :content => @opf_item.get_input_stream.read,
-            :containers => [ 'spine' ]
-          ).first
-
+        fragment_selector.containers = [ 'metadata' ]
+        @metadata = fragment_processor.process(
+              :content => @opf_item.get_input_stream.read,
+              :selector => fragment_selector
+            ).first
+        fragment_selector.containers = [ 'manifest' ]
+        @manifest = fragment_processor.process(
+              :content => @opf_item.get_input_stream.read,
+              :selector => fragment_selector
+            ).first
+        fragment_selector.containers = [ 'spine' ]
+        @spine = fragment_processor.process(
+              :content => @opf_item.get_input_stream.read,
+              :selector => fragment_selector
+            ).first
+      end
     end
   end
 end

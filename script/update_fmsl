@@ -57,6 +57,7 @@ require_relative File.join(root_dir, "lib", "resourcemap")
 blank_row_file_name = "***row left intentionally blank***"
 blank_row_pattern = "^\*\*\*.* intentionally blank[ ]*\*\*\*$"
 imgprocessor = nil
+markerprocessor = nil
 
 # Process all monograph directories specified.
 monograph_dir_list.each do |monograph_dir|
@@ -103,11 +104,19 @@ monograph_dir_list.each do |monograph_dir|
     else
       imgprocessor.reset
     end
+    if markerprocessor.nil?
+      markerprocessor = MarkerProcessor.new
+    else
+      markerprocessor.reset
+    end
 
     # Process the epub and generate the image information.
     EpubProcessor.process(
           :epub_file => epub_file,
-          :processors => [ imgprocessor ]
+          :processors => [
+                  imgprocessor,
+                  markerprocessor
+                ]
         )
 
     # If a resource map exists, use it. Otherwise,
@@ -144,6 +153,26 @@ monograph_dir_list.each do |monograph_dir|
 
       resource_map.add(
             :reference_name => reference_name,
+            :resource => resource,
+            :type => "default"
+          )
+    end
+
+    # Process marker information and generate the resource map.
+    markerprocessor.img_list.each do |node|
+      node_map = node.map
+      resource_name = node_map['resource_name']
+
+      resource = resource_map.reference_resource(resource_name)
+      if resource.nil?
+        puts "Warning: #{node.name}: no resource found for marker \"#{resource_name}\"."
+      else
+        puts "INFO:    #{node.name}: mapping reference \"#{resource_name}\" to resource \"#{resource.name}\"."
+        #resource.properties = node_map
+      end
+
+      resource_map.add(
+            :reference_name => resource_name,
             :resource => resource,
             :type => "default"
           )

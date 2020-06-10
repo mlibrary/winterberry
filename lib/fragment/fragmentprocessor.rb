@@ -1,31 +1,26 @@
 class FragmentProcessor
-  def initialize(args = {})
-    if args.has_key?(:info)
-      @info = args[:info]
-    else
-      @info = self
-    end
-  end
+
+  @@processor = nil
 
   def process(args = {})
+    selector = args[:selector]
+    raise "Error: no selection processor specified." if selector.nil?
+
     if args.has_key?(:file_name)
       file_name = args[:file_name]
       content = File.read(file_name)
     else
       content = args[:content]
     end
+    raise "Error: no content specified." if content.nil? or content.empty?
 
-    containers = args[:containers]
-    fragments = FragmentBuilder.parse(
-              :content => content,
-              :containers => containers,
-              :info => @info,
-              :name => args[:name]
-            )
-    return fragments
-  end
+    @@processor = FragmentSaxDocument.new if @@processor.nil?
+    @@processor.reset
+    @@processor.name = args[:name]
+    @@processor.selector = selector
 
-  def new_info(node)
-    return FragmentInfo.new(node)
+    parser = Nokogiri::XML::SAX::Parser.new(@@processor)
+    parser.parse(content)
+    return @@processor.fragments
   end
 end
