@@ -61,11 +61,6 @@ parser = nil
 
 # Create the default action object.
 default_action_str = task == "embed_resources" ? "embed" : "link"
-default_action = {
-                  "file_name" => "",
-                  "resource_name" => "",
-                  "resource_action" => default_action_str
-                 }
 
 resource_map_file_headers = [ "File Name", "Resource Name" ]
 resource_action_short_file_headers = ["File Name", "Resource Name", "Resource Action"]
@@ -146,41 +141,6 @@ monograph_noid_list.each do |monograph_noid|
         :default_action => default_action_str
       )
 
-  # Generate the resource action list.
-  actions_list = []
-  map_actions = resource_map.actions
-  map_actions.each do |map_action|
-    reference_name = map_action.reference.name
-    resource_name = map_action.resource.name
-
-    if resource_name == nil or resource_name.strip.empty?
-      puts "Warning: no resource  mapping found for reference #{File.basename(reference_name)}"
-      next
-    end
-
-    # Use file_name to find manifest row. Could use the NOID found in
-    # the resource map, but it is possible that these may be invalid if
-    # the monograph has been moved or fileset have been replaced.
-    fileset_row = manifest.fileset(resource_name)
-    if fileset_row['noid'].empty?
-      puts "Error: no fileset row for resource #{resource_name}"
-      link = fileset_row['link']
-    else
-      puts "Reference #{File.basename(reference_name)} mapped to resource #{resource_name}"
-      link = fileset_row['link'].match('^[^\(]+\(\"([^\"]+)\".*') {|m| m[1] }
-    end
-    action_row = {
-          "file_name" => reference_name,
-          "resource_name" => resource_name,
-          "resource_action" => map_action.type,
-          "noid" => fileset_row['noid'],
-          "resource_type" => fileset_row['resource_type'],
-          "link" => link,
-          "embed_code" => fileset_row['embed_code']
-    }
-    actions_list << action_row
-  end
-
   if options.execute
     # Save the resource actions file within a new epub structure
     # for archival purposes.
@@ -194,8 +154,8 @@ monograph_noid_list.each do |monograph_noid|
 
   resource_processor = ResourceProcessor.new(
               :resource_metadata => manifest,
-              :resource_actions => actions_list,
-              :default_action => default_action,
+              :resource_map => resource_map,
+              :default_action_str => default_action_str,
               :options => options
               )
 
@@ -255,7 +215,7 @@ monograph_noid_list.each do |monograph_noid|
           # If resources were embedded, then we need to set the
           # remote-resource property in the OPF file.
           has_remote_resources = action_list.index { |action|
-                      action.status == Action.COMPLETED and action.resource_action['resource_action'] == "embed"
+                      action.status == Action.COMPLETED and action.resource_action.action_str == "embed"
           }
           if has_remote_resources
             remote_resources_list << dest_file

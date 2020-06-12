@@ -7,7 +7,6 @@ class ElementResource < Resource
     node_list.each do |node|
       spath = src_path(node)
       resource_action = resource_action(spath)
-      path = resource_action['resource_name']
 
       unless resource_action.nil?
         action = ElementActionFactory.create(
@@ -37,6 +36,17 @@ class ElementResource < Resource
   end
 
   def resource_action(path)
-    c_resource_action('file_name', path)
+    resource_action = @resource_actions.find {|a| a.reference == path }
+    return resource_action unless resource_action.nil?
+
+    reference = ResourceMapReference.new(:name => path)
+    return ReferenceAction.new(
+           :resource_map_action => ResourceMapAction.new(
+                                       :reference => reference,
+                                       :resource => nil,
+                                       :type => @default_action_str
+                                   ),
+           :resource_metadata => nil
+         )
   end
 end

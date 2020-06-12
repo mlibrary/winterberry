@@ -1,4 +1,5 @@
 module Resources
+  require_relative 'resources/referenceaction'
   require_relative 'resources/resourceprocessor'
   require_relative 'resources/resourcefactory'
   require_relative 'resources/resource'

@@ -30,9 +30,9 @@ class Action
 
   def embed_fragment
     resource_action = @action_args[:resource_action]
-    emb_markup = resource_action['embed_code']
+    emb_markup = resource_action.embed_markup
     if emb_markup == nil or emb_markup.strip.empty?
-      file_name = resource_action['file_name']
+      file_name = resource_action.resource_map_action.reference
       @message = "Warning: no embed markup for resource node #{file_name}"
       return nil
     end
@@ -59,12 +59,12 @@ class Action
 
   def element_action_to_s
     action = @action_args[:resource_action]
-    return "#{@status}: #{self.class}, #{action['resource_action']}: #{action['file_name']} => #{action['resource_name']}"
+    return "#{@status}: #{self.class}, #{action.to_s}"
   end
 
   def marker_action_to_s
     action = @action_args[:resource_action]
-    return "#{@status}: #{self.class}, #{action['resource_action']}: #{action['resource_name']}"
+    return "#{@status}: #{self.class}, #{action.to_s}"
   end
 
   def self.find_caption(container)

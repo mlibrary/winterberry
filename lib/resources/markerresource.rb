@@ -42,6 +42,17 @@ class MarkerResource < Resource
   end
 
   def resource_action(path)
-    c_resource_action('resource_name', path)
+    resource_action = @resource_actions.find {|a| a.resource == path }
+    return resource_action unless resource_action.nil?
+
+    resource = ResourceMapResource.new(:name => path)
+    return ReferenceAction.new(
+           :resource_map_action => ResourceMapAction.new(
+                                       :reference => nil,
+                                       :resource => resource,
+                                       :type => @default_action_str
+                                   ),
+           :resource_metadata => nil
+         )
   end
 end
