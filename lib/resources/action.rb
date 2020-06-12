@@ -13,7 +13,7 @@ class Action
 
     @resource_action = args[:resource_action]
 
-    @status = @@PENDING
+    @status = Action.PENDING
     @message = ""
   end
 
@@ -33,14 +33,14 @@ class Action
     resource_action = @action_args[:resource_action]
     emb_markup = resource_action.embed_markup
     if emb_markup == nil or emb_markup.strip.empty?
-      file_name = resource_action.resource_map_action.reference
+      file_name = resource_action.reference
       @message = "Warning: no embed markup for resource node #{file_name}"
       return nil
     end
 
     emb_fragment = Nokogiri::XML.fragment(emb_markup)
     if emb_fragment.nil?
-      file_name = resource_action['file_name']
+      file_name = resource_action.reference
       @message = "Warning: error creating embed markup document for resource node #{file_name}"
     end
     emb_fragment

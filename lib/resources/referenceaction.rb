@@ -1,6 +1,4 @@
 class ReferenceAction
-  attr_reader :resource_map_action, :resource_metadata
-
   def initialize(args = {})
     @resource_map_action = args[:resource_map_action]
     @resource_metadata = args[:resource_metadata]
