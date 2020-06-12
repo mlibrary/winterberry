@@ -6,7 +6,7 @@ class EmbedMapAction < Action
 
     loop do
       if resource_node.nil?
-        @status = @@FAILED
+        @status = Action.FAILED
         @message = "Error: no figure element wrapping interactive map for resource #{resource_action['file_name']}."
         return
       end
@@ -16,20 +16,20 @@ class EmbedMapAction < Action
 
     emb_fragment = embed_fragment()
     if emb_fragment == nil
-      @status = @@FAILED
+      @status = Action.FAILED
       return
     end
 
     iframe_node = emb_fragment.xpath(".//*[local-name()='iframe']").first
     if iframe_node.nil?
-      @status = @@FAILED
+      @status = Action.FAILED
       @message = "Error: no iframe found within embed markup for resource #{resource_action['file_name']}."
       return
     end
 
     data_href = iframe_node['src']
     if data_href.nil? or data_href.empty?
-      @status = @@FAILED
+      @status = Action.FAILED
       @message = "Error: no iframe/@src value found for resource #{resource_action['file_name']}."
       return
     end
@@ -47,13 +47,14 @@ class EmbedMapAction < Action
     unless caption.nil? or caption.empty?
       markup = '<p class="CAP" data-resource-trigger="modal">An interactive version can be found in the Fulcrum edition.</p>'
       fragment = Nokogiri::XML::DocumentFragment.parse(markup)
-      caption.last.add_child(fragment)
+      cp = caption.last
+      if cp.name.downcase == 'p'
+        cp.add_next_sibling(fragment)
+      else
+        cp.add_child(fragment)
+      end
     end
 
-    @status = @@COMPLETED
-  end
-
-  def to_s
-    element_action_to_s
+    @status = Action.COMPLETED
   end
 end

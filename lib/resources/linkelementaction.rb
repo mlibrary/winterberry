@@ -10,7 +10,7 @@ class LinkElementAction < Action
     link_fragment = Nokogiri::XML.fragment(link_markup)
     if link_fragment == nil
       @message = "Warning: error creating embed markup document"
-      @status = @@FAILED
+      @status = Action.FAILED
     end
 
     container = resource_node.node_name == 'p' ? resource_node.parent : resource_node
@@ -25,10 +25,6 @@ class LinkElementAction < Action
       c.add_child(link_fragment)
     end
 
-    @status = @@COMPLETED
-  end
-
-  def to_s
-    element_action_to_s
+    @status = Action.COMPLETED
   end
 end

@@ -23,7 +23,7 @@ class ReferenceAction
   end
 
   def resource_type
-    return @resource_metadata.nil? ? "" : "@resource_metadata['resource_type']
+    return @resource_metadata.nil? ? "" : @resource_metadata['resource_type']
   end
 
   def to_s

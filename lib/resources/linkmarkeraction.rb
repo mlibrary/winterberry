@@ -10,14 +10,10 @@ class LinkMarkerAction < Action
     embed_fragment = Nokogiri::XML.fragment(embed_markup)
     if embed_fragment == nil
       @message = "Warning: error creating embed markup document"
-      @status = @@FAILED
+      @status = Action.FAILED
     end
 
     resource_node.replace(embed_fragment)
-    @status = @@COMPLETED
-  end
-
-  def to_s
-    marker_action_to_s
+    @status = Action.COMPLETED
   end
 end

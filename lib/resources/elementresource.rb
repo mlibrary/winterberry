@@ -34,19 +34,4 @@ class ElementResource < Resource
     #File.basename(src_attr.value.strip)
     src_attr.value.strip
   end
-
-  def resource_action(path)
-    resource_action = @resource_actions.find {|a| a.reference == path }
-    return resource_action unless resource_action.nil?
-
-    reference = ResourceMapReference.new(:name => path)
-    return ReferenceAction.new(
-           :resource_map_action => ResourceMapAction.new(
-                                       :reference => reference,
-                                       :resource => nil,
-                                       :type => @default_action_str
-                                   ),
-           :resource_metadata => nil
-         )
-  end
 end

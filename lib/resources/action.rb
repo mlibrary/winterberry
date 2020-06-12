@@ -4,6 +4,7 @@ class Action
   @@PENDING = "Pending"
   @@COMPLETED = "Completed"
   @@FAILED = "Failed"
+  @@NO_ACTION = "No action"
 
   attr_reader :status, :message
 
@@ -57,14 +58,9 @@ class Action
     container
   end
 
-  def element_action_to_s
-    action = @action_args[:resource_action]
-    return "#{@status}: #{self.class}, #{action.to_s}"
-  end
-
-  def marker_action_to_s
-    action = @action_args[:resource_action]
-    return "#{@status}: #{self.class}, #{action.to_s}"
+  def to_s
+    resource_action = @action_args[:resource_action]
+    return "#{@status}: #{self.class}, #{resource_action.to_s}"
   end
 
   def self.find_caption(container)
@@ -78,6 +74,10 @@ class Action
 
   def self.PENDING
     @@PENDING
+  end
+
+  def self.NO_ACTION
+    @@NO_ACTION
   end
 
   def self.FAILED

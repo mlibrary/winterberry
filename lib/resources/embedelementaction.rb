@@ -13,7 +13,7 @@ class EmbedElementAction < Action
 
     emb_fragment = embed_fragment()
     if emb_fragment == nil
-      @status = @@FAILED
+      @status = Action.FAILED
       return
     end
 
@@ -28,10 +28,6 @@ class EmbedElementAction < Action
 
     def_container.add_next_sibling(emb_container)
 
-    @status = @@COMPLETED
-  end
-
-  def to_s
-    element_action_to_s
+    @status = Action.COMPLETED
   end
 end

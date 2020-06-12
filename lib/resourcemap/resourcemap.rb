@@ -78,7 +78,7 @@ class ResourceMap
           :name => reference_name
         )
 
-    if !resource.nil?
+    unless resource.nil?
       action = @actions.find {|a| a.reference.id == reference.id and a.resource.id == resource.id }
       if action.nil?
         action = ResourceMapAction.new(

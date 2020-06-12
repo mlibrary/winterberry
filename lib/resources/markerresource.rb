@@ -40,19 +40,4 @@ class MarkerResource < Resource
     resource_node.text.strip
     #resource_node.text.match("<img>([^\"]+)</img>")[1].strip
   end
-
-  def resource_action(path)
-    resource_action = @resource_actions.find {|a| a.resource == path }
-    return resource_action unless resource_action.nil?
-
-    resource = ResourceMapResource.new(:name => path)
-    return ReferenceAction.new(
-           :resource_map_action => ResourceMapAction.new(
-                                       :reference => nil,
-                                       :resource => resource,
-                                       :type => @default_action_str
-                                   ),
-           :resource_metadata => nil
-         )
-  end
 end

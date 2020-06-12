@@ -9,6 +9,7 @@ module Resources
   require_relative 'resources/markeractionfactory'
   require_relative 'resources/embedmarkeraction'
   require_relative 'resources/linkmarkeraction'
+  require_relative 'resources/noneaction'
   require_relative 'resources/elementactionfactory'
   require_relative 'resources/embedelementaction'
   require_relative 'resources/embedmapaction'
