@@ -17,8 +17,20 @@ class Action
     @message = ""
   end
 
+  def process
+    raise "#{self.class}: method #{__method__} must be implemented."
+  end
+
   def resource_action
     return @action_args[:resource_action]
+  end
+
+  def resource
+    return @action_args[:resource]
+  end
+
+  def resource_img
+    return @action_args[:resource_img]
   end
 
   def link_markup(metadata, descr = nil)

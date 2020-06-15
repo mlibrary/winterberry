@@ -152,10 +152,12 @@ monograph_noid_list.each do |monograph_noid|
          )
   end
 
+  reference_processor = ReferenceProcessor.new
   resource_processor = ResourceProcessor.new(
               :resource_metadata => manifest,
               :resource_map => resource_map,
               :default_action_str => default_action_str,
+              :reference_processor => reference_processor,
               :options => options
               )
 
@@ -171,6 +173,7 @@ monograph_noid_list.each do |monograph_noid|
   #fulcrum_css_dir = "../Styles"
   fulcrum_dest_css_dir = "./"
   fulcrum_dest_css_file = File.join(fulcrum_dest_css_dir, fulcrum_css_name)
+
 
   # For each .xhtml file, process the resources.
   Zip::File.open(epub_file) do |file|

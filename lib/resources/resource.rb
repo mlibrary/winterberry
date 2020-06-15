@@ -1,5 +1,5 @@
 class Resource
-  attr_reader :resource_node, :default_action
+  attr_reader :resource_node
 
 	def initialize(args)
 	  @resource_args = args
@@ -8,7 +8,11 @@ class Resource
 		@default_action_str = args[:default_action_str]
 	end
 
-  def resource_action(path)
+  def reference_type
+    return @resource_args[:reference_type]
+  end
+
+  def reference_action(path)
     resource_action = @resource_actions.find {|a| a.reference == path }
     return resource_action unless resource_action.nil?
 

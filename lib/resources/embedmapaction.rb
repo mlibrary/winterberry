@@ -7,7 +7,7 @@ class EmbedMapAction < Action
     loop do
       if resource_node.nil?
         @status = Action.FAILED
-        @message = "Error: no figure element wrapping interactive map for resource #{resource_action['file_name']}."
+        @message = "Error: no figure element wrapping interactive map for resource #{resource_action.reference}."
         return
       end
       break if resource_node.name == 'figure'
@@ -23,20 +23,20 @@ class EmbedMapAction < Action
     iframe_node = emb_fragment.xpath(".//*[local-name()='iframe']").first
     if iframe_node.nil?
       @status = Action.FAILED
-      @message = "Error: no iframe found within embed markup for resource #{resource_action['file_name']}."
+      @message = "Error: no iframe found within embed markup for resource #{resource_action.reference}."
       return
     end
 
     data_href = iframe_node['src']
     if data_href.nil? or data_href.empty?
       @status = Action.FAILED
-      @message = "Error: no iframe/@src value found for resource #{resource_action['file_name']}."
+      @message = "Error: no iframe/@src value found for resource #{resource_action.reference}."
       return
     end
 
     data_title = iframe_node['title']
     if data_title.nil? or data_title.empty?
-      @message = "Error: no iframe/@src value found for resource #{resource_action['file_name']}."
+      @message = "Error: no iframe/@src value found for resource #{resource_action.reference}."
     end
 
     resource_node['data-resource-type'] = 'interactive-map'

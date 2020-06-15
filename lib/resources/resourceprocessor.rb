@@ -8,36 +8,24 @@ class ResourceProcessor
 	def process(doc)
 	  init_resource_actions
 
-		resource_node_list = resources(doc)
-
-		args = @processor_args.clone
+    reference_processor = @processor_args[:reference_processor]
 
     options = @processor_args[:options]
 
-    action_list = []
-		resource_node_list.each do |resource_node|
-			args[:resource_node] = resource_node
-			resource = ResourceFactory.create(args)
-			actions = resource.create_actions()
-      action_list += actions
+		args = @processor_args.clone
 
-      actions.each do |action|
-        if options.execute
-          action.process
-        end
-        puts action
-        puts action.message unless action.message.nil? or action.message.empty?
+    args[:xml_doc] = doc
+
+    resource_action_list = reference_processor.resource_actions(args)
+    resource_action_list.each do |resource_action|
+      if options.execute
+        resource_action.process
       end
-		end
+      puts resource_action
+      puts resource_action.message unless resource_action.message.nil? or resource_action.message.empty?
+    end
 
-    return action_list
-	end
-
-	def resources(doc)
-		#doc.xpath("//*[@class='fig' or @class='rb']")
-		#doc.xpath("//*[@class='fig']") + doc.xpath("//*[@class='rb']")
-		#doc.xpath("//*[local-name()='figure' or @class='fig' or @class='rb']")
-		doc.xpath("//*[(local-name()='p' and @class='fig') or (local-name()='figure' and count(*[local-name()='p' and @class='fig'])=0) or @class='rb' or @class='rbi']")
+    return resource_action_list
 	end
 
 	private
