@@ -1,5 +1,6 @@
 
 require 'zip'
+require_relative 'fragment'
 
 class ContainerSelector
 
@@ -46,6 +47,16 @@ class Epub
     end
 
     return @spine_items
+  end
+
+  def all_items
+    load_epub if @epub.nil?
+    return @epub.entries
+  end
+
+  def epub
+    load_epub if @epub.nil?
+    return @epub
   end
 
   def reset

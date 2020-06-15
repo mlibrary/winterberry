@@ -1,4 +1,6 @@
 module Resources
+  require_relative 'epub'
+  require_relative 'resourcemap'
   require_relative 'resources/referenceaction'
   require_relative 'resources/referenceprocessor'
   require_relative 'resources/resourceprocessor'
@@ -11,5 +13,6 @@ module Resources
   require_relative 'resources/embedmapaction'
   require_relative 'resources/linkelementaction'
   require_relative 'resources/removeelementaction'
+  require_relative 'resources/epubresourceprocessor'
   require_relative 'resources/xmlutil'
 end
