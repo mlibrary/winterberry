@@ -24,6 +24,15 @@ class ReferenceAction
     return @resource_metadata.nil? ? "" : @resource_metadata['resource_type']
   end
 
+  def link
+    unless @resource_metadata.nil?
+      link_data = @resource_metadata['link']
+      link = link_data.match('^[^\(]+\(\"([^\"]+)\".*') {|m| m[1] }
+      return link
+    end
+    return ""
+  end
+
   def to_s
     return "#{action_str}: #{reference} => #{resource}"
   end

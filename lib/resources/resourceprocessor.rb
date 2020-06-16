@@ -54,10 +54,8 @@ class ResourceProcessor
         fileset_row = manifest.fileset(resource_name)
         if fileset_row['noid'].empty?
           puts "Error: no fileset row for resource #{resource_name}"
-          link = fileset_row['link']
         else
           puts "Reference #{File.basename(reference_name)} mapped to resource #{resource_name}"
-          link = fileset_row['link'].match('^[^\(]+\(\"([^\"]+)\".*') {|m| m[1] }
         end
 
         map_action.type = default_action_str if map_action.type == "default"

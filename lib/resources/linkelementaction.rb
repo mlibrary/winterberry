@@ -4,7 +4,7 @@ class LinkElementAction < Action
     resource = @action_args[:resource]
     resource_node = resource.resource_node
 
-    link_markup = link_markup(resource_action, "View resource.")
+    link_markup = link_markup()
     link_markup = "<span class=\"enhanced-media-display\">#{link_markup}</span>"
 
     link_fragment = Nokogiri::XML.fragment(link_markup)
@@ -19,7 +19,7 @@ class LinkElementAction < Action
       container.add_child(link_fragment)
     else
       last_block = caption.xpath("./*[local-name()='p' and position()=last()]")
-      c = last_block.nil? ? caption.last : last_block.last
+      c = (last_block.nil? or last_block.count == 0) ? caption.last : last_block.last
       text_node = c.document.create_text_node(" ")
       c.add_child(text_node)
       c.add_child(link_fragment)

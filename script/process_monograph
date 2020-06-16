@@ -137,11 +137,13 @@ monograph_noid_list.each do |monograph_noid|
   end
 
   # Provide the directory path for adding the stylesheet link.
-  # Possible option?
   fulcrum_css_name = 'fulcrum_default.css'
   fulcrum_css_file = File.join(root_dir, 'lib', 'css', fulcrum_css_name)
 
-  EpubResourceProcessor.process(
+  # Create a new EPUB with the resource references detailed
+  # in the resource map processed. The path to the new EPUB
+  # is returned.
+  processed_epub_file = EpubResourceProcessor.process(
         :epub_file => epub_file,
         :default_action_str => default_action_str,
         :processing_dir => process_dir,

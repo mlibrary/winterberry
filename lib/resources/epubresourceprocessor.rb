@@ -2,6 +2,7 @@ require 'zip'
 
 class EpubResourceProcessor
   def self.process(args = {})
+
     epub_file = args[:epub_file]
     default_action_str = args[:default_action_str]
     process_dir = args[:processing_dir]
@@ -208,5 +209,6 @@ class EpubResourceProcessor
         end
       end
     end
+    return processed_epub_file
   end
 end

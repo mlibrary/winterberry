@@ -12,7 +12,7 @@ class Action
     @action_args = args
 
     @resource_action = args[:resource_action]
-
+    @reference_processor = args[:reference_processor]
     @status = Action.PENDING
     @message = ""
   end
@@ -33,10 +33,10 @@ class Action
     return @action_args[:resource_img]
   end
 
-  def link_markup(metadata, descr = nil)
+  def link_markup(descr = nil)
     descr = "View resource." if descr == nil
 
-    link = metadata['link']
+    link = @resource_action.link
     embed_markup = "<a href=\"#{link}\" target=\"_blank\">#{descr}</a>"
     embed_markup
   end
