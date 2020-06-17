@@ -1,10 +1,9 @@
 module Resources
   require_relative 'epub'
   require_relative 'resourcemap'
-  require_relative 'resources/referenceaction'
+  require_relative 'resources/referenceactiondef'
   require_relative 'resources/referenceprocessor'
   require_relative 'resources/resourceprocessor'
-  require_relative 'resources/resource'
   require_relative 'resources/action'
   require_relative 'resources/embedmarkeraction'
   require_relative 'resources/linkmarkeraction'

@@ -1,71 +1,84 @@
 class ResourceProcessor
-	def initialize(args)
-		@processor_args = args
-
-		@resource_actions = nil
+	def initialize(args = {})
+    @resource_map = args[:resource_map]
+    @resource_metadata = args[:resource_metadata]
+    @default_action_str = args[:default_action_str]
+    @reference_processor = args[:reference_processor]
+    @reference_action_defs = nil
+    @options = args[:options]
 	end
 
 	def process(doc)
-	  init_resource_actions
+	  init_reference_action_defs
 
-    reference_processor = @processor_args[:reference_processor]
-
-    options = @processor_args[:options]
-
-		args = @processor_args.clone
-
-    args[:xml_doc] = doc
-
-    resource_action_list = reference_processor.resource_actions(args)
-    resource_action_list.each do |resource_action|
-      if options.execute
-        resource_action.process
+    reference_action_list = @reference_processor.reference_actions(
+                                :xml_doc => doc,
+                                :reference_action_defs => @reference_action_defs
+                              )
+    reference_action_list.each do |reference_action|
+      if @options.execute
+        reference_action.process
       end
-      puts resource_action
-      puts resource_action.message unless resource_action.message.nil? or resource_action.message.empty?
+      puts reference_action
+      puts reference_action.message \
+          unless reference_action.message.nil? or reference_action.message.empty?
     end
 
-    return resource_action_list
+    return reference_action_list
 	end
 
 	private
 
-	def init_resource_actions
-	  if @processor_args[:resource_actions].nil?
-	    resource_map = @processor_args[:resource_map]
-      manifest = @processor_args[:resource_metadata]
-      default_action_str = @processor_args[:default_action_str]
+	def init_reference_action_defs
+	  if @reference_action_defs.nil?
 
-      # Generate the resource action list.
-      actions_list = []
-      map_actions = resource_map.actions
+      # Generate the resource action map,
+      # resource reference => resource metadata.
+      reference_action_def_map = {}
+      map_actions = @resource_map.actions
       map_actions.each do |map_action|
         reference_name = map_action.reference.name
         resource_name = map_action.resource.name
-
         if resource_name == nil or resource_name.strip.empty?
           puts "Warning: no resource  mapping found for reference #{File.basename(reference_name)}"
           next
         end
 
-        # Use file_name to find manifest row. Could use the NOID found in
-        # the resource map, but it is possible that these may be invalid if
-        # the monograph has been moved or fileset have been replaced.
-        fileset_row = manifest.fileset(resource_name)
+        # Determine if this reference/resource pair has already
+        # been defined. If so, use the first instance and skip
+        # this one.
+        def_list = reference_action_def_map[reference_name]
+        def_list = [] if def_list.nil?
+        unless def_list.empty?
+          dlist = def_list.find {|d|
+            d.reference_name == reference_name and d.resource_name == resource_name
+          }
+          unless dlist.nil?
+            puts "Warning: multiple action definitions #{reference_name}/#{resource_name}. Using first instance."
+            next
+          end
+        end
+
+        # Use resource name to find manifest row. If there is no
+        # NOID specified, then this is an invalid row.
+        fileset_row = @resource_metadata.fileset(resource_name)
         if fileset_row['noid'].empty?
           puts "Error: no fileset row for resource #{resource_name}"
         else
           puts "Reference #{File.basename(reference_name)} mapped to resource #{resource_name}"
         end
 
-        map_action.type = default_action_str if map_action.type == "default"
-        reference_action = ReferenceAction.new(
+        map_action.type = @default_action_str if map_action.type == "default"
+        reference_action_def = ReferenceActionDef.new(
                     :resource_map_action => map_action,
                     :resource_metadata => fileset_row
                   )
-        actions_list << reference_action
+
+        def_list << reference_action_def
+        reference_action_def_map[reference_name] = def_list
+        #reference_action_def_list << reference_action_def
       end
-      @processor_args[:resource_actions] = actions_list
+      @reference_action_defs = reference_action_def_map
     end
 	end
 end

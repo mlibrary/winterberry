@@ -6,73 +6,56 @@ class Action
   @@FAILED = "Failed"
   @@NO_ACTION = "No action"
 
-  attr_reader :status, :message
+  attr_reader :reference_action_def, :reference_container, :reference_node, \
+              :status, :message
 
   def initialize(args)
-    @action_args = args
+    @reference_action_def = args[:reference_action_def]
+    @reference_container = args[:reference_container]
+    @reference_node = args[:reference_node]
 
-    @resource_action = args[:resource_action]
-    @reference_processor = args[:reference_processor]
     @status = Action.PENDING
     @message = ""
   end
 
   def process
-    raise "#{self.class}: method #{__method__} must be implemented."
-  end
-
-  def resource_action
-    return @action_args[:resource_action]
-  end
-
-  def resource
-    return @action_args[:resource]
-  end
-
-  def resource_img
-    return @action_args[:resource_img]
+    raise "#{self.class}: method #{__method__} must be implemented for #{@reference_action_def.to_s}."
   end
 
   def link_markup(descr = nil)
     descr = "View resource." if descr == nil
 
-    link = @resource_action.link
+    link = @reference_action_def.link
     embed_markup = "<a href=\"#{link}\" target=\"_blank\">#{descr}</a>"
     embed_markup
   end
 
   def embed_fragment
-    resource_action = @action_args[:resource_action]
-    emb_markup = resource_action.embed_markup
+    emb_markup = reference_action_def.embed_markup
     if emb_markup == nil or emb_markup.strip.empty?
-      file_name = resource_action.reference
-      @message = "Warning: no embed markup for resource node #{file_name}"
+      @message = "Warning: no embed markup for resource node #{reference_action_def.reference_name}"
       return nil
     end
 
     emb_fragment = Nokogiri::XML.fragment(emb_markup)
     if emb_fragment.nil?
-      file_name = resource_action.reference
-      @message = "Warning: error creating embed markup document for resource node #{file_name}"
+      @message = "Warning: error creating embed markup document for resource node #{reference_action_def.reference_name}"
     end
     emb_fragment
   end
 
   def default_container(container = 'div')
-    img_node = @action_args[:resource_img]
-    container = img_node.document.create_element(container, :class => "default-media-display")
+    container = @reference_node.document.create_element(container, :class => "default-media-display")
     container
   end
 
   def embed_container(container = 'div')
-    img_node = @action_args[:resource_img]
-    container = img_node.document.create_element(container, :class => "enhanced-media-display")
+    container = @reference_node.document.create_element(container, :class => "enhanced-media-display")
     container
   end
 
   def to_s
-    resource_action = @action_args[:resource_action]
-    return "#{@status}: #{self.class}, #{resource_action.to_s}"
+    return "#{@status}: #{self.class}, #{@reference_action_def.to_s}"
   end
 
   def self.find_caption(container)

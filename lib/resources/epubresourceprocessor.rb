@@ -32,8 +32,8 @@ class EpubResourceProcessor
 
     reference_processor = ReferenceProcessor.new
     resource_processor = ResourceProcessor.new(
-                :resource_metadata => resource_metadata,
                 :resource_map => resource_map,
+                :resource_metadata => resource_metadata,
                 :default_action_str => default_action_str,
                 :reference_processor => reference_processor,
                 :options => options
@@ -52,7 +52,8 @@ class EpubResourceProcessor
     html_path_update_list = []
     remote_resources_list = []
     epub.spine_items.each do |item|
-      puts "Name: #{item.name}"
+      puts "Processing file #{item.name}"
+      STDOUT.flush
 
       # Assign the output file name.
       dest_file = File.join(dest_epub_dir, item.name)
@@ -80,7 +81,7 @@ class EpubResourceProcessor
         # If resources were embedded, then we need to set the
         # remote-resource property in the OPF file.
         has_remote_resources = action_list.index { |action|
-                    action.status == Action.COMPLETED and action.resource_action.action_str == "embed"
+                    action.status == Action.COMPLETED and action.reference_action_def.action_str == "embed"
         }
         if has_remote_resources
           remote_resources_list << dest_file
@@ -100,6 +101,7 @@ class EpubResourceProcessor
         FileUtils.mkdir_p File.dirname(dest_file)
         XMLUtil.save(doc, dest_file)
       end
+      puts "\n"
     end
 
     if html_path_update_list.count > 0

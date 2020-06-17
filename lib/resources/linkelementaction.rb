@@ -1,9 +1,5 @@
 class LinkElementAction < Action
   def process()
-    resource_action = @action_args[:resource_action]
-    resource = @action_args[:resource]
-    resource_node = resource.resource_node
-
     link_markup = link_markup()
     link_markup = "<span class=\"enhanced-media-display\">#{link_markup}</span>"
 
@@ -13,7 +9,7 @@ class LinkElementAction < Action
       @status = Action.FAILED
     end
 
-    container = resource_node.node_name == 'p' ? resource_node.parent : resource_node
+    container = reference_node.node_name == 'p' ? reference_node.parent : reference_node
     caption = Action.find_caption(container)
     if caption == nil or caption.count == 0
       container.add_child(link_fragment)

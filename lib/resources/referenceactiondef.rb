@@ -1,14 +1,14 @@
-class ReferenceAction
+class ReferenceActionDef
   def initialize(args = {})
     @resource_map_action = args[:resource_map_action]
     @resource_metadata = args[:resource_metadata]
   end
 
-  def reference
+  def reference_name
     return @resource_map_action.reference.name
   end
 
-  def resource
+  def resource_name
     return @resource_map_action.resource.name unless @resource_map_action.resource.nil?
   end
 
@@ -34,6 +34,6 @@ class ReferenceAction
   end
 
   def to_s
-    return "#{action_str}: #{reference} => #{resource}"
+    return "#{action_str}: #{reference_name} => #{resource_name}"
   end
 end

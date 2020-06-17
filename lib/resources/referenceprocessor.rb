@@ -11,43 +11,140 @@ or @class='rbi'
 ]
 SXPATH
 
-  def resource_actions(args = {})
+  def reference_actions(args = {})
 		xml_doc = args[:xml_doc]
 		raise "Error: XML document must be specified." if xml_doc.nil?
 
-    resource_action_list = []
-		refnode_list = xml_doc.xpath(@@SELECTION_XPATH)
-		refnode_list.each do |refnode|
-      resource_args = args.clone
+		reference_action_defs = args[:reference_action_defs]
+		raise "Error: reference action definitions must be specified." \
+		      if reference_action_defs.nil?
 
-      resource_args[:resource_node] = refnode
-
-      reference_type = ReferenceProcessor.node_type(refnode)
-      resource_args[:reference_type] = reference_type
-
-      resource = Resource.new(resource_args)
-      resource_args[:resource] = resource
-
-      case reference_type
+    reference_action_list = []
+		reference_container_list = xml_doc.xpath(@@SELECTION_XPATH)
+		reference_container_list.each do |refnode|
+      case ReferenceProcessor.reference_type(refnode)
       when :element
-        list = element_resource_actions(resource_args)
+        list = element_reference_actions(
+                    :reference_container => refnode,
+                    :reference_action_defs => reference_action_defs
+                  )
       when :marker
-        list = marker_resource_actions(resource_args)
+        list = marker_reference_actions(
+                    :reference_container => refnode,
+                    :reference_action_defs => reference_action_defs
+                  )
       else
         next
       end
-      resource_action_list += list
+      reference_action_list += list
 	  end
-    return resource_action_list
-  end
-
-  def process(resource_action)
-    resource_action.process
+    return reference_action_list
   end
 
   private
 
-	def self.node_type(node)
+	def element_reference_actions(args = {})
+    reference_container = args[:reference_container]
+    reference_action_defs = args[:reference_action_defs]
+
+    node_list = reference_container.xpath(".//*[local-name()='img']")
+
+    reference_action_list = []
+    node_list.each do |node|
+      src_attr = node.attribute("src")
+      next if src_attr.nil?
+
+      spath = src_attr.value.strip
+      reference_action_def_list = reference_action_defs[spath]
+      if reference_action_def_list.nil?
+        puts "Warning: reference #{spath} has no action definition."
+        next
+      end
+
+      args = {
+                :reference_container => reference_container,
+                :reference_node => node
+            }
+
+      reference_action_def_list.each do |reference_action_def|
+        args[:reference_action_def] = reference_action_def
+
+        case reference_action_def.action_str
+        when "embed"
+          case reference_action_def.resource_type
+          when 'interactive map'
+            reference_action = EmbedMapAction.new(args)
+          else
+            reference_action = EmbedElementAction.new(args)
+          end
+        when "link"
+          reference_action = LinkElementAction.new(args)
+        when "remove"
+          reference_action = RemoveElementAction.new(
+                              :reference_action_def => reference_action_def,
+                              :reference_container => reference_container,
+                              :reference_node => node
+                            )
+        when "none"
+          reference_action = NoneAction.new(args)
+        else
+          puts "Warning: invalid element action #{reference_action.to_s}"
+          next
+        end
+        reference_action_list << reference_action
+      end
+    end
+    return reference_action_list
+	end
+
+	def marker_reference_actions(args = {})
+    reference_container = args[:reference_container]
+    reference_action_defs = args[:reference_action_defs]
+
+    # Return the nodes that reference resources.
+    # For marker callouts, this should be within
+    # a XML comment, but not always the case.
+    # NOTE: either display warning if no comment,
+    # or just use the node content?
+    node_list = reference_container.xpath(".//comment()")
+    node_list = [ reference_container ] if node_list.nil? or node_list.empty?
+
+    reference_action_list = []
+    node_list.each do |node|
+      path = node.text.strip
+
+      reference_action_def_list = reference_action_defs[path]
+      if reference_action_def_list.nil?
+        puts "Warning: marker #{path} has no action definition."
+        next
+      end
+
+      args = {
+                :reference_container => reference_container,
+                :reference_node => node
+            }
+      reference_action_def_list.each do |reference_action_def|
+        args[:reference_action_def] = reference_action_def
+
+        case reference_action_def.action_str
+        when "embed"
+          reference_action = EmbedMarkerAction.new(args)
+        when "link"
+          reference_action = LinkMarkerAction.new(args)
+        when "none"
+          reference_action = NoneAction.new(args)
+        else
+          puts "Warning: invalid marker action #{reference_action_def.action_str}"
+          reference_action = nil
+        end
+
+        reference_action_list << reference_action unless reference_action.nil?
+      end
+    end
+    return reference_action_list
+	end
+
+	def self.reference_type(node)
 		attr = node.attribute("class")
 		unless attr.nil?
 		  attr = attr.text.downcase
@@ -55,85 +152,4 @@ SXPATH
 		end
 		return :element
 	end
-
-	def element_resource_actions(args)
-    resource = args[:resource]
-    refnode = resource.resource_node
-    node_list = refnode.xpath(".//*[local-name()='img']")
-
-    element_resource_action_list = []
-    node_list.each do |node|
-      src_attr = node.attribute("src")
-      next if src_attr.nil?
-
-      args[:resource_img] = node
-
-      spath = src_attr.value.strip
-      reference_action = resource.reference_action(spath)
-
-      unless reference_action.nil?
-        args[:resource_action] = reference_action
-
-        case reference_action.action_str
-        when "embed"
-          resource_type = reference_action.resource_type
-          resource_action = resource_type == 'interactive map' ? \
-                  EmbedMapAction.new(args) : \
-                  EmbedElementAction.new(args)
-        when "link"
-          resource_action = LinkElementAction.new(args)
-        when "remove"
-          resource_action = RemoveElementAction.new(args)
-        when "none"
-          resource_action = NoneAction.new(args)
-        else
-          puts "Warning: invalid element action #{reference_action.to_s}"
-          resource_action = nil
-        end
-
-        element_resource_action_list << resource_action unless resource_action.nil?
-      end
-    end
-    return element_resource_action_list
-	end
-
-	def marker_resource_actions(args)
-    resource = args[:resource]
-    refnode = resource.resource_node
-
-    # Return the nodes that reference resources.
-    # For marker callouts, this should be within
-    # a XML comment, but not always the case.
-    # NOTE: either display warning if no comment,
-    # or just use the node content?
-    node_list = refnode.xpath(".//comment()")
-    node_list = [ refnode ] if node_list.nil? or node_list.empty?
-
-    marker_resource_action_list = []
-    node_list.each do |node|
-      path = node.text.strip
-      reference_action = resource.reference_action(path)
-
-      args[:resource_img] = node
-
-      unless reference_action.nil?
-        args[:resource_action] = reference_action
-
-        case reference_action.action_str
-        when "embed"
-          resource_action = EmbedMarkerAction.new(args)
-        when "link"
-          resource_action = LinkMarkerAction.new(args)
-        when "none"
-          resource_action = NoneAction.new(args)
-        else
-          puts "Warning: invalid marker action #{reference_action.action_str}"
-          resource_action = nil
-        end
-
-        marker_resource_action_list << resource_action unless resource_action.nil?
-      end
-    end
-    return marker_resource_action_list
-  end
 end
