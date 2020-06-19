@@ -2,7 +2,30 @@ require 'nokogiri'
 
 class ReferenceProcessor
 
-  @@SELECTION_XPATH = <<-SXPATH
+  # XPath expression for retrieving resource references
+  # within an XML document.
+  #
+  # References of type :marker are refer to resources
+  # that are not contained within the EPUB and appear
+  # only in the Fulcrum version. These are usually
+  # wrapped within the markup
+  #
+  #    <p|div class="rb|rbi">
+  #
+  # References of type :element refer to resources
+  # that are contained within the EPUB and are
+  # replaced with a resource in the Fulcrum version,
+  # while maintaining the original reference for
+  # use by other readers. The markup for these are either
+  #
+  #    <p class="fig"><img src="reference"/></p>
+  # or
+  #    <figure><img src="reference"/></figure>
+  #
+  # One expression is used to capture all references
+  # so they can be processed in the order they appear
+  # in the document.
+@@SELECTION_XPATH = <<-SXPATH
 //*[
 (local-name()='p' and @class='fig')
 or (local-name()='figure' and count(*[local-name()='p' and @class='fig'])=0)
@@ -19,8 +42,13 @@ SXPATH
 		raise "Error: reference action definitions must be specified." \
 		      if reference_action_defs.nil?
 
-    reference_action_list = []
+    # Retrieve the resource references from this document.
 		reference_container_list = xml_doc.xpath(@@SELECTION_XPATH)
+
+		# For each reference found, create the appropriate action
+		# to process the reference. A reference may be type
+		# :element or :marker
+    reference_action_list = []
 		reference_container_list.each do |refnode|
       case ReferenceProcessor.reference_type(refnode)
       when :element

@@ -39,7 +39,8 @@ class Epub
         item = @manifest.node.xpath(".//*[local-name()='item' and @id=\"#{idref}\"]").first
         raise "Error: finding manifest item #{idref}" if item.nil?
 
-        item_entry = @epub.glob(File.join(opf_dir, item['href'])).first
+        #item_entry = @epub.glob(File.join(opf_dir, item['href'])).first
+        item_entry = @epub.glob(item['href']).first
         raise "Error: loading manifest item #{item['href']}" if item_entry.nil?
 
         @spine_items << item_entry

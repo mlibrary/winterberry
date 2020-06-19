@@ -223,6 +223,11 @@ monograph_dir_list.each do |monograph_dir|
         epub_alt = resource_row["alt"]
         epub_caption = resource_row["caption"]
 
+puts caption
+puts epub_caption
+
+        puts "INFO: FMSL alt text matches EPUB alt text for resource \"#{resource_name}\"" \
+            unless alt.nil? or alt != epub_alt
         puts "Warning: no alt text found within EPUB for resource \"#{resource_name}\"." \
             if epub_alt.nil? or epub_alt.empty?
         puts "Warning: overwriting FMSL alt text with EPUB alt text for resource \"#{resource_name}\"" \
@@ -232,6 +237,8 @@ monograph_dir_list.each do |monograph_dir|
             if (alt.nil? or alt.empty?) and !(epub_alt.nil? or epub_alt.empty?)
         fmsl_row["Alternative Text"] = epub_alt unless epub_alt.nil? or epub_alt.empty?
 
+        puts "INFO: FMSL caption matches EPUB caption for resource \"#{resource_name}\"" \
+            unless caption.nil? or caption != epub_caption
         puts "Warning: no caption found within EPUB for resource \"#{resource_name}\"." \
             if epub_caption.nil? or epub_caption.empty?
         puts "Warning: overwriting FMSL caption with EPUB caption for resource \"#{resource_name}\"" \
