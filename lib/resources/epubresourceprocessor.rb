@@ -9,7 +9,6 @@ class EpubResourceProcessor
     resource_metadata = args[:resource_metadata]
     resource_map_file = args[:resource_map_file]
     fulcrum_css_file = args[:fulcrum_css_file]
-    options = args[:options]
 
     # Determine the project directory for storing the modified .xhtml
     # and the OPF files.
@@ -35,8 +34,7 @@ class EpubResourceProcessor
                 :resource_map => resource_map,
                 :resource_metadata => resource_metadata,
                 :default_action_str => default_action_str,
-                :reference_processor => reference_processor,
-                :options => options
+                :reference_processor => reference_processor
                 )
 
     # Provide the directory path for adding the stylesheet link.
@@ -110,7 +108,7 @@ class EpubResourceProcessor
       opf_content = opf_item.get_input_stream.read unless opf_item.nil?
       if opf_content.nil?
         puts "Error: OPF file not found."
-      elsif options.execute
+      else
         # Create XML tree for the OPF file.
         begin
           doc = Nokogiri::XML(opf_content, nil, 'UTF-8')

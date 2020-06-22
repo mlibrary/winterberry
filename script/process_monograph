@@ -8,12 +8,9 @@ require 'ostruct'
 options = OpenStruct.new
 options.publisher_dir = Dir.pwd
 option_parser = OptionParser.new do |opts|
-  opts.banner = "Usage: #{File.basename(__FILE__)} [-e] [-p <publisher_dir>] [embed_resources|link_resources] <monograph_noid> [<monograph_noid>..]"
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-p <publisher_dir>] [embed_resources|link_resources] <monograph_noid> [<monograph_noid>..]"
   opts.on('-p', '--publisher_directory [DIRECTORY]', 'Publisher site directory') do |publisher_dir|
     options.publisher_dir = publisher_dir
-  end
-  opts.on('-e', '--execute', 'Execute embed|link actions') do |da|
-    options.execute = true
   end
   opts.on_tail('-h', '--help', 'Print this help message') do
     puts opts
@@ -44,10 +41,6 @@ if !File.exists?(publisher_dir)
   puts "Error: source directory #{publisher_dir} does not exist."
   exit
 end
-
-require 'csv'
-require 'fileutils'
-require 'zip'
 
 require_relative File.join(root_dir, 'lib', 'resourcemap')
 require_relative File.join(root_dir, 'lib', 'manifest')
@@ -149,7 +142,6 @@ monograph_noid_list.each do |monograph_noid|
         :processing_dir => process_dir,
         :resource_metadata => manifest,
         :resource_map_file => resource_map_file,
-        :fulcrum_css_file => fulcrum_css_file,
-        :options => options
+        :fulcrum_css_file => fulcrum_css_file
       )
 end

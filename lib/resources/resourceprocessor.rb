@@ -5,7 +5,6 @@ class ResourceProcessor
     @default_action_str = args[:default_action_str]
     @reference_processor = args[:reference_processor]
     @reference_action_defs = nil
-    @options = args[:options]
 	end
 
 	def process(doc)
@@ -16,9 +15,7 @@ class ResourceProcessor
                                 :reference_action_defs => @reference_action_defs
                               )
     reference_action_list.each do |reference_action|
-      if @options.execute
-        reference_action.process
-      end
+      reference_action.process
       puts reference_action
       puts reference_action.message \
           unless reference_action.message.nil? or reference_action.message.empty?
