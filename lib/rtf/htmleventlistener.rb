@@ -8,6 +8,7 @@ module UMPTG::RTF
     def initialize
       super()
       @para_number = 0
+      @footnote_number = 0
     end
 
     def start_document(args = {})
@@ -39,21 +40,6 @@ module UMPTG::RTF
       # Determine the paragraph for this block.
       style = parser_context[:paragraph_style]
 
-      # If a new division, then open a new section.
-      if parser_context[:division]
-        event_context[:stack].push("section")
-        append_markup("<section class=\"#{style}\">")
-        return
-      end
-
-=begin
-      if parser_context[:startlist]
-        event_context[:stack].push("ol")
-        append_markup("<ol class=\"#{style}\">")
-        return
-      end
-=end
-
       rtf_document = event_context[:rtf_document]
 
       # Determine the style name for this block.
@@ -62,6 +48,13 @@ module UMPTG::RTF
       style_name = rtf_document.style_table[style]
       raise "Error: unknown style #{style}" if style_name.nil?
       #puts "#{style}:|#{style_name}|"
+
+      # If a new division, then open a new section.
+      if parser_context[:division]
+        event_context[:stack].push("section")
+        append_markup("<section class=\"#{style_name}\">")
+        return
+      end
 
       # From the style name, select the block element.
       case style_name
@@ -81,7 +74,7 @@ module UMPTG::RTF
       # Push this element on the stack and add its
       # markup to the output string.
       event_context[:stack].push(elem_name)
-      append_markup("<#{elem_name} class=\"#{style}\">")
+      append_markup("<#{elem_name} class=\"#{style_name}\">")
     end
 
     # Close a block.
@@ -121,66 +114,80 @@ module UMPTG::RTF
       rtf_document = event_context[:rtf_document]
       style_name = rtf_document.style_table[style]
       raise "Error: unknown style #{style}" if style_name.nil?
-      puts "#{style}:|#{style_name}|"
+      #puts "#{style}:|#{style_name}|"
+
+      superscript = "content" if mods[:superscript]
+      #superscript = "after" if parser_context[:footnote]
+
+      puts "style_name:#{style_name},superscript:#{superscript}"
+      if parser_context[:footnote]
+        # Add superscript for footnote. Don't trust
+        # the style. Verify that the endnote exists
+        # and is not empty.
+        endnotes = rtf_document.endnotes
+        puts "footnote_number:#{@footnote_number},count=#{endnotes.count}"
+        if @footnote_number < endnotes.count
+          footnote = endnotes[@footnote_number]
+          unless footnote.nil? or footnote.empty?
+            @footnote_number += 1
+            append_markup("<sup>#{@footnote_number}</sup>")
+            superscript = "none"
+          end
+        end
+      end
+
 
       # Determine whether to wrap any inline style markup.
       inline_cnt = 0
-      if style_name == "Paragraph Number"
-        elem_name = "span"
-        event_context[:stack].push(elem_name)
+      case style_name
+      when "Paragraph Number"
         @para_number += 1
-        append_markup("<#{elem_name} id=\"para#{@para_number}\" style=\"#{style}\">")
-        inline_cnt += 1
-      end
-      if style_name == "Frequently Used Term + Term w/ Definition"
         elem_name = "span"
-        event_context[:stack].push(elem_name)
-        append_markup("<#{elem_name} style=\"#{style}\">")
+        append_inline_markup(event_context, elem_name, "<#{elem_name} id=\"para#{@para_number}\" style=\"#{style_name}\">")
         inline_cnt += 1
-      end
-      if style_name == "Historical Character"
+      when "Frequently Used Term + Term w/ Definition"
+        elem_name = "span"
+        append_inline_markup(event_context, elem_name, "<#{elem_name} style=\"#{style_name}\">")
+        inline_cnt += 1
+        superscript = "after"
+      when "Historical Character"
         elem_name = "a"
-        event_context[:stack].push(elem_name)
-        append_markup("<#{elem_name} style=\"#{style}\">")
+        append_inline_markup(event_context, elem_name, "<#{elem_name} style=\"#{style_name}\">")
         inline_cnt += 1
+      when "endnote reference"
+        #superscript = "after"
       end
       if mods[:strikethrough]
         elem_name = "s"
-        event_context[:stack].push(elem_name)
-        append_markup("<#{elem_name}>")
+        append_inline_markup(event_context, elem_name, "<#{elem_name}>")
         inline_cnt += 1
       end
       if mods[:subscript]
         elem_name = "sub"
-        event_context[:stack].push(elem_name)
-        append_markup("<#{elem_name}>")
+        append_inline_markup(event_context, elem_name, "<#{elem_name}>")
         inline_cnt += 1
       end
+      if superscript == "content"
+        # Don't know why this is being set for footnotes. Skipping for now.
 =begin
-Don't know why this is being set for footnotes.
-      if mods[:superscript]
         elem_name = "sup"
-        event_context[:stack].push(elem_name)
-        append_markup("<#{elem_name}>")
+        append_inline_markup(event_context, elem_name, "<#{elem_name}>")
         inline_cnt += 1
-      end
 =end
+      end
       if mods[:underline]
         elem_name = "u"
-        event_context[:stack].push(elem_name)
-        append_markup("<#{elem_name}>")
+        append_inline_markup(event_context, elem_name, "<#{elem_name}>")
         inline_cnt += 1
       end
       if mods[:bold]
         elem_name = "b"
-        event_context[:stack].push(elem_name)
-        append_markup("<#{elem_name}>")
+        append_inline_markup(event_context, elem_name, "<#{elem_name}>")
         inline_cnt += 1
       end
       if mods[:italic]
         elem_name = "i"
-        event_context[:stack].push(elem_name)
-        append_markup("<#{elem_name}>")
+        append_inline_markup(event_context, elem_name, "<#{elem_name}>")
         inline_cnt += 1
       end
 
@@ -189,12 +196,38 @@ Don't know why this is being set for footnotes.
       txt = @@encoder.encode(section[:text])
       append_text(txt)
 
+=begin
+      puts "style_name:#{style_name},superscript:#{superscript}"
+      if superscript == "after"
+        # Add superscript for footnote. Don't trust
+        # the style. Verify that the endnote exists
+        # and is not empty.
+        endnotes = rtf_document.endnotes
+        puts "footnote_number:#{@footnote_number},count=#{endnotes.count}"
+        if @footnote_number < endnotes.count
+          footnote = endnotes[@footnote_number]
+          unless footnote.nil? or footnote.empty?
+            @footnote_number += 1
+            append_markup("<sup>#{@footnote_number}</sup>")
+            superscript = "none"
+          end
+        end
+      end
+=end
+
       # Close off any inline markup.
       while inline_cnt > 0
         elem_name = event_context[:stack].pop
         append_markup("</#{elem_name}>")
         inline_cnt -=1
       end
+    end
+
+    private
+
+    def append_inline_markup(event_context, elem_name, markup)
+      event_context[:stack].push(elem_name)
+      append_markup(markup)
     end
   end
 end

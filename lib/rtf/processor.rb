@@ -95,10 +95,14 @@ module UMPTG::RTF
         return
       end
 
+      # Not sure about this extra footnote processing.
+      # footnote aren't always in their own section.
+      footnote = parser_context.key?(:footnote) ? parser_context[:footnote] : false
+
       txt = section[:text]
-      unless txt.nil? or txt.strip.empty?
-        # Found non-empty text. Open a new paragraph
-        # if one is not currently open.
+      unless !footnote and (txt.nil? or txt.strip.empty?)
+        # Found non-empty text or a footnote (maybe both).
+        # Open a new paragraph if one is not currently open.
         unless event_context[:open_paragraph]
           self.start_element(event_context, section)
           event_context[:open_paragraph] = true

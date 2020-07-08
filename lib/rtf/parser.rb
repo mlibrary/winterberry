@@ -148,9 +148,12 @@ module UMPTG::RTF
           group -= 1
           if group == 0
             puts "Done parsing footnote" if @@DEBUG_OUTPUT
-            txt = src[start_pos..current_pos]
-            @doc.add_endnote(:endnote => "{\\rtf1" + txt)
-            #@endnote_list << "{\\rtf1" + txt
+            if start_pos < current_pos
+              puts "Adding footnote" if @@DEBUG_OUTPUT
+              txt = src[start_pos..current_pos]
+              @doc.add_endnote(:endnote => "{\\rtf1" + txt)
+              #@endnote_list << "{\\rtf1" + txt
+            end
             break
           end
           current_pos += 1
@@ -224,6 +227,7 @@ module UMPTG::RTF
       when :footnote
         puts "Found #{name.inspect} with #{val} at #{current_pos}." if @@DEBUG_OUTPUT
         current_pos = parse_footnote(src, current_pos)
+        @parser_context[:footnote] = true
       when :hex
         #puts "Found hex #{name.inspect} with #{val} at #{current_pos}." if @@DEBUG_OUTPUT
       end
@@ -243,6 +247,7 @@ module UMPTG::RTF
       #new_parser_context[:listlevel] = 0
       #new_parser_context[:table] = false
       new_parser_context.delete(:outlinelevel)
+      new_parser_context.delete(:footnote)
 
       @parser_context = new_parser_context
 
