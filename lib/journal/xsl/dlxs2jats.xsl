@@ -333,6 +333,7 @@
             <xsl:attribute name="rid" select="@TARGET"/>
             <xsl:attribute name="ref-type" select="'fn'"/>
             <xsl:apply-templates select="@*[name()!='TARGET' and name()!='N']|node()"/>
+            <xsl:value-of select="@N"/>
         </xsl:element>
     </xsl:template>
 
