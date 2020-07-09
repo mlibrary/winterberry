@@ -64,31 +64,49 @@ journal_name_list.each do |journal_name|
     next
   end
 
-  jats_file = File.join(article_dir, journal_name + "_jats.xml")
-  puts "#{journal_name}: #{File.basename(dlxs_file)} ==> #{File.basename(jats_file)}"
-
   article_dir = File.join(journal_dir, journal_name)
   FileUtils.mkdir_p article_dir
+
+  jats_file = File.join(article_dir, journal_name + "_jats.xml")
+  puts "#{journal_name}: #{File.basename(dlxs_file)} ==> #{File.basename(jats_file)}"
 
   # Pass the resource file names as a parameter to the XSLT.
   resource_file_list = Dir.glob(File.join(resources_dir, "#{journal_name}*"))
 
+  resource_file_table = {}
   resource_file_list.each do |resource_file|
-    puts "Copying resource #{File.basename(resource_file)}"
-    FileUtils.cp(resource_file, article_dir)
-  end
+    fname = File.basename(resource_file)
+    key = File.basename(fname, '.*')
+    next if key.end_with?("-lg")
 
-  resource_list_param = ""
-  resource_file_list.each do |resource_file|
-    key = File.basename(resource_file, '.*')
+=begin
+    # If hi-res, then use this image.
     if key.end_with?("-lg")
       key = key[0..-4]
+      resource_file_table[key] = resource_file
+      next
     end
-    #resource_list_param += ";#{key}:#{File.join("resources", File.basename(resource_file))}"
-    resource_list_param += ";#{key}:#{File.basename(resource_file)}"
+=end
+
+    # Not hi-res, use this one if one has
+    # not been found to this point.
+    unless resource_file_table.key?(key)
+      resource_file_table[key] = resource_file
+    end
   end
 
-  resource_list_param = resource_list_param[1..-1]
+  # Copy the resource files to be used
+  # and construct the XSLT parameter.
+  resource_list_param = ""
+  resource_file_table.each do |key,resource_file|
+    puts "Copying resource #{File.basename(resource_file)}"
+    FileUtils.cp(resource_file, article_dir)
+
+    #resource_list_param += "#{key}:#{File.join("resources", File.basename(resource_file))};"
+    resource_list_param += "#{key}:#{File.basename(resource_file)};"
+  end
+  resource_list_param = resource_list_param[0..-2]
+
   params = {
               "image_list" => resource_list_param
            }
