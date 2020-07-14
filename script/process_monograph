@@ -7,8 +7,13 @@ require 'ostruct'
 # Process the script parameters.
 options = OpenStruct.new
 options.publisher_dir = Dir.pwd
+options.fulcrum_host = nil
+#options.fulcrum_host = "production"
 option_parser = OptionParser.new do |opts|
-  opts.banner = "Usage: #{File.basename(__FILE__)} [-p <publisher_dir>] [embed_resources|link_resources] <monograph_noid> [<monograph_noid>..]"
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-f production|preview|staging] [-p <publisher_dir>] [embed_resources|link_resources] <monograph_noid> [<monograph_noid>..]"
+  opts.on('-f', '--fulcrum_host [production|preview|staging]', 'Fulcrum environment') do |fulcrum_host|
+    options.fulcrum_host = fulcrum_host
+  end
   opts.on('-p', '--publisher_directory [DIRECTORY]', 'Publisher site directory') do |publisher_dir|
     options.publisher_dir = publisher_dir
   end
@@ -65,12 +70,18 @@ monograph_noid_list.each do |monograph_noid|
   # Use the noid to retrieve the monograph manifest from Fulcrum.
   puts "*" * 10 + " #{monograph_noid} " + "*" * 10
 
-  manifest = Manifest.new(:noid => monograph_noid)
+  manifest = Manifest.new(
+                :noid => monograph_noid,
+                :fulcrum_host => options.fulcrum_host
+              )
 
   # From the manifest, determine the ebook ISBN without dashes.
   ebook_isbn = manifest.isbn(:format => "open access")
   ebook_isbn = manifest.isbn(:format => "ebook") if ebook_isbn.nil?
-  next if ebook_isbn == nil
+  if ebook_isbn.nil?
+    puts "Error: no ebook ISBN found for NOID #{monograph_noid}."
+    next
+  end
 
   # Find the ebook source folder
   ebook_isbn = ebook_isbn.strip.gsub('-', '')

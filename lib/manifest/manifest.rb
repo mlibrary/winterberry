@@ -4,6 +4,8 @@ class Manifest
   def initialize(args = {})
     @noid = args[:noid]
     @csv_path = args[:csv_path]
+    @fulcrum_host = args[:fulcrum_host] if args.key?(:fulcrum_host)
+
     fail "Both a NOID an path supplied." if @noid.nil? and @csv_path.nil?
     fail "Either a NOID or a path must be supplied." unless @noid.nil? or @csv_path.nil?
 
@@ -62,7 +64,10 @@ class Manifest
   def load
     return unless @csv.nil?
 
-    csv_body = HeliotropeService.new.monograph_noid_export(@noid) unless @noid.nil?
+    service = HeliotropeService.new(
+                    :fulcrum_host => @fulcrum_host
+                  )
+    csv_body = service.monograph_noid_export(@noid) unless @noid.nil?
     csv_body = File.read(@csv_path) unless @csv_path.nil?
     fail "Unable to load manifest." if csv_body.nil?
 
