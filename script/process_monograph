@@ -8,7 +8,6 @@ require 'ostruct'
 options = OpenStruct.new
 options.publisher_dir = Dir.pwd
 options.fulcrum_host = nil
-#options.fulcrum_host = "production"
 option_parser = OptionParser.new do |opts|
   opts.banner = "Usage: #{File.basename(__FILE__)} [-f production|preview|staging] [-p <publisher_dir>] [embed_resources|link_resources] <monograph_noid> [<monograph_noid>..]"
   opts.on('-f', '--fulcrum_host [production|preview|staging]', 'Fulcrum environment') do |fulcrum_host|
@@ -60,11 +59,6 @@ parser = nil
 
 # Create the default action object.
 default_action_str = task == "embed_resources" ? "embed" : "link"
-
-resource_map_file_headers = [ "File Name", "Resource Name" ]
-resource_action_short_file_headers = ["File Name", "Resource Name", "Resource Action"]
-resource_action_full_file_headers = ["File Name", "Resource Name", "Resource Action", "NOID", "Resource Type", "Link", "Embed Code"]
-caption_file_headers = [ "File Name", "Resource Name", "Alternative Text", "Caption" ]
 
 monograph_noid_list.each do |monograph_noid|
   # Use the noid to retrieve the monograph manifest from Fulcrum.
@@ -133,7 +127,7 @@ monograph_noid_list.each do |monograph_noid|
     next
   end
 
-  # Load the resource map file, if it exists.
+  # Determine if the resource map file exists.
   resource_map_file = File.join(process_dir, "resource_map.xml")
   if !File.exists?(resource_map_file)
     puts "Error: resource map file #{File.basename(resource_map_file)} must exist."
