@@ -223,9 +223,6 @@ monograph_dir_list.each do |monograph_dir|
         epub_alt = resource_row["alt"]
         epub_caption = resource_row["caption"]
 
-puts caption
-puts epub_caption
-
         puts "INFO: FMSL alt text matches EPUB alt text for resource \"#{resource_name}\"" \
             unless alt.nil? or alt != epub_alt
         puts "Warning: no alt text found within EPUB for resource \"#{resource_name}\"." \
