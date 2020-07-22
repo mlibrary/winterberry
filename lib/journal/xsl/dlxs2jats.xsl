@@ -63,7 +63,7 @@
                 <xsl:variable name="authorList"
                               select="/DLPSTEXTCLASS/TEXT//DIV1/P[@TYPE='author']"/>
                 <xsl:variable name="authorIndList"
-                              select="FILEDESC/SOURCEDESC/BIBL/AUTHORIND[normalize-space(string)!='']"/>
+                              select="FILEDESC/SOURCEDESC/BIBL/AUTHORIND[normalize-space(string())!='']"/>
                 <xsl:if test="count($authorIndList) > 0">
                     <xsl:element name="contrib-group">
                         <xsl:for-each select="$authorIndList">
@@ -349,6 +349,12 @@
                             <xsl:value-of select="concat('https://youtu.be/',@ENTITY)"/>
                         </xsl:element>
                     </xsl:element>
+                </xsl:element>
+            </xsl:when>
+            <xsl:when test="starts-with(lower-case(@URL), 'mailto:')">
+                <xsl:element name="email">
+                    <xsl:attribute name="xlink:href" select="@URL"/>
+                    <xsl:value-of select="."/>
                 </xsl:element>
             </xsl:when>
             <xsl:otherwise>
