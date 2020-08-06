@@ -7,14 +7,14 @@ require 'ostruct'
 # Process the script parameters.
 options = OpenStruct.new
 options.journal_dir = Dir.pwd
-options.generate_html = false
+options.generate_xhtml = false
 option_parser = OptionParser.new do |opts|
-  opts.banner = "Usage: #{File.basename(__FILE__)} [-d journal_dir] [-w] [journal_name...]"
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-d journal_dir] [-x] [journal_name...]"
   opts.on('-d', '--directory [DIRECTORY]', 'Journal directory') do |da|
     options.journal_dir = da
   end
-  opts.on('-w', '--html', 'Generate HTML') do |da|
-    options.generate_html = true
+  opts.on('-x', '--xhtml', 'Generate XHTML') do |da|
+    options.generate_xhtml = true
   end
   opts.on_tail('-h', '--help', 'Print this help message') do
     puts opts
@@ -117,7 +117,7 @@ journal_name_list.each do |journal_name|
           :destpath => jats_file,
           :parameters => params
           )
-  if rc and options.generate_html
+  if rc and options.generate_xhtml
     html_file = File.join(File.dirname(jats_file), File.basename(jats_file, ".*") + ".html")
     XSLT.transform(
             :xslpath => jats2html_xsl_file,
