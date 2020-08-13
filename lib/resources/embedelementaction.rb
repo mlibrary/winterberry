@@ -15,9 +15,13 @@ class EmbedElementAction < Action
 
     # May have an issue if the img_node has @{id,style,class}
     # Wrap a div around both containers and add these attrs?
-    def_container = default_container
-    reference_node.add_next_sibling(def_container)
-    def_container.add_child(reference_node)
+    if reference_node.parent.name == 'div'
+      def_container = reference_node.parent
+    else
+      def_container = default_container
+      reference_node.add_next_sibling(def_container)
+      def_container.add_child(reference_node)
+    end
 
     emb_container = embed_container()
     emb_container.add_child(emb_fragment)

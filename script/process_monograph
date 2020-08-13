@@ -77,13 +77,21 @@ monograph_noid_list.each do |monograph_noid|
     next
   end
 
-  # Find the ebook source folder
-  ebook_isbn = ebook_isbn.strip.gsub('-', '')
-  monograph_dir_list = Dir.glob(File.join(publisher_dir, "#{ebook_isbn}_*"))
+  # Find the ebook source folder. First look for a directory
+  # using the monograph noid. If not found, then look for one
+  # using the ISBN.
+  monograph_dir_list = Dir.glob(File.join(publisher_dir, monograph_noid))
   if monograph_dir_list.count == 0
-    puts "Error: ebook source directory not found for noid #{monograph_noid}."
-    next
+    puts "Warning: ebook source directory using noid #{monograph_noid} not found. Using ISBN #{ebook_isbn}."
+
+    ebook_isbn = ebook_isbn.strip.gsub('-', '')
+    monograph_dir_list = Dir.glob(File.join(publisher_dir, "#{ebook_isbn}_*"))
+    if monograph_dir_list.count == 0
+      puts "Error: ebook source directory not found for noid #{monograph_noid}."
+      next
+    end
   end
+
   monograph_dir = monograph_dir_list[0]
   puts "Multiple ebook source directories found for noid #{monograph_noid}. Using #{monograph_dir}" \
         if monograph_dir_list.count > 1

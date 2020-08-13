@@ -147,11 +147,13 @@ class ResourceMap
       @@processor.actions.each do |action_node|
         ref_id = action_node["reference_id"]
         res_id = action_node["resource_id"]
-
         resource = add_resource(
                 :id => res_id,
                 :name => @@processor.resources[res_id]
               )
+
+        raise "Error: no reference for id #{ref_id}" \
+              unless @@processor.references.key?(ref_id)
         add(
             :reference_id => ref_id,
             :reference_name => @@processor.references[ref_id],

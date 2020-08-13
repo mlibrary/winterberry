@@ -27,6 +27,7 @@ class ImgProcessor < FragmentProcessor
 
       # Must be a figure fragment. Process the images and captions.
       nodes = fragment.node.xpath(".//*[local-name()='img' or local-name()='figcaption' or @class='figcap' or @class='figh']")
+      #nodes = fragment.node.xpath(".//*[local-name()='img' or local-name()='p']")
       if nodes.count == 0
         # Empty figure element. Not expected, skip.
         next

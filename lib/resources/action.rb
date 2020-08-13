@@ -45,8 +45,8 @@ class Action
   end
 
   def default_container(container = 'div')
-    container = @reference_node.document.create_element(container, :class => "default-media-display")
-    container
+    return @reference_node.document.create_element(container, :class => "default-media-display")
+    #return @reference_node.document.create_element(container, :class => "no-default-media-display")
   end
 
   def embed_container(container = 'div')
