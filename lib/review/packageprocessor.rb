@@ -1,16 +1,17 @@
 class PackageProcessor < ReviewProcessor
-  @@containers = [ 'package' ]
+  #@@containers = [ 'package' ]
   @@children = [ 'metadata' ]
 
-  @@metadata_processor = nil
-
   def process(args = {})
-    args[:containers] = @@containers
     args[:children] = @@children
+    fragment_selector = ContainerSelector.new
+    fragment_selector.containers = [ 'package' ]
+    args[:selector] = fragment_selector
 
     fragments = super(args)
 
-    @@metadata_processor = PackageMetadataProcessor.new if @@metadata_processor.nil?
+    metadata_processor = PackageMetadataProcessor.new
+    fragment_selector.containers = [ 'metadata' ]
 
     fragments.each do |fragment|
       fragment.has_elements.each do |elem_name, exists|
@@ -18,9 +19,10 @@ class PackageProcessor < ReviewProcessor
           fragment.review_msg_list << "Package INFO:  contains no <#{elem_name}>." unless exists
       end
 
-      meta_fragments = @@metadata_processor.process(
+      meta_fragments = metadata_processor.process(
                 :name => args[:name],
-                :content => fragment.node.to_xml
+                :content => fragment.node.to_xml,
+                :selector => fragment_selector
             )
       meta_fragments.each do |meta_frag|
         meta_frag.review_msg_list.each do |msg|
@@ -31,3 +33,4 @@ class PackageProcessor < ReviewProcessor
     return fragments
   end
 end
+

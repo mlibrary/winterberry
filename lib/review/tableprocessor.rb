@@ -1,10 +1,12 @@
 class TableProcessor < ReviewProcessor
-  @@containers = [ 'table' ]
   @@children = [ 'caption', 'colgroup', 'thead', 'tbody', 'tfoot' ]
 
   def process(args = {})
-    args[:containers] = @@containers
     args[:children] = @@children
+
+    selector = ContainerSelector.new
+    selector.containers = [ 'table' ]
+    args[:selector] = selector
 
     fragments = super(args)
 

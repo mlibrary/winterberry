@@ -1,12 +1,15 @@
 class ListProcessor < ReviewProcessor
-  @@containers = [ 'li' , 'dt', 'dd' ]
   @@children = [ 'p' ]
 
   def process(args = {})
-    args[:containers] = @@containers
     args[:children] = @@children
 
+    selector = ContainerSelector.new
+    selector.containers = [ 'li' , 'dt', 'dd' ]
+    args[:selector] = selector
+
     fragments = super(args)
+
     fragments.each do |fragment|
       fragment.has_elements.each do |elem_name, exists|
           fragment.review_msg_list << "Lists Warning:  list item containing a <#{elem_name}>." \

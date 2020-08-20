@@ -2,18 +2,27 @@ class ReviewProcessor < FragmentProcessor
   def process(args = {})
     fragments = super(args)
 
+    review_fragments = []
+    fragments.each do |frag|
+      review_fragments << ReviewInfo.new(
+                            :node => frag.node,
+                            :name => frag.name
+                          )
+    end
+
     children = args[:children]
     classes = args[:classes]
 
-    if !children.nil? or !classes.nil?
-      fragments.each do |fragment|
+    unless children.nil? and classes.nil?
+      review_fragments.each do |fragment|
         fragment.has_elements = {}
-        if !children.nil?
+
+        unless children.nil?
           children.each do |e|
             fragment.has_elements[e] = false
           end
         end
-        if !classes.nil?
+        unless classes.nil?
           classes.each do |e|
             fragment.has_elements["@#{e}"] = false
           end
@@ -23,6 +32,7 @@ class ReviewProcessor < FragmentProcessor
         x = ".//*[#{element_xpath(children)}]" if !children.nil? and classes.nil?
         x = ".//*[#{class_xpath(classes)}]" if children.nil? and !classes.nil?
         nodes = fragment.node.xpath(x)
+        #puts "#{__method__}:nodes=#{nodes.count},x=#{x}"
         nodes.each do |node|
           node_name = node.name
           if !node.namespace.nil? and !node.namespace.prefix.nil?
@@ -33,7 +43,7 @@ class ReviewProcessor < FragmentProcessor
         end
       end
     end
-    return fragments
+    return review_fragments
   end
 
   def new_info(node)

@@ -1,9 +1,15 @@
 class ImgProcessor < ReviewProcessor
-  @@containers = [ 'img' ]
+  #@@containers = [ 'img' ]
 
   def process(args = {})
-    args[:containers] = @@containers
+    #args[:containers] = @@containers
+
+    selector = ContainerSelector.new
+    selector.containers = [ 'img' ]
+    args[:selector] = selector
+
     fragments = super(args)
+
     fragments.each do |fragment|
       ImgProcessor.review(fragment)
     end

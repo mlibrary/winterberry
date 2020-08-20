@@ -1,12 +1,16 @@
 class FigureProcessor < ReviewProcessor
-  @@containers = [ 'figure', 'img' ]
+  #@@containers = [ 'figure', 'img' ]
   @@children = [ 'figcaption' ]
   @@classes = [ 'figcap', 'figh' ]
 
   def process(args = {})
-    args[:containers] = @@containers
+    #args[:containers] = @@containers
     args[:children] = @@children
     args[:classes] = @@classes
+
+    selector = ContainerSelector.new
+    selector.containers = [ 'figure', 'img' ]
+    args[:selector] = selector
 
     fragments = super(args)
 

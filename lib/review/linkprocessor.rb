@@ -1,8 +1,10 @@
 class LinkProcessor < ReviewProcessor
-  @@containers = [ 'a' ]
 
   def process(args = {})
-    args[:containers] = @@containers
+    selector = ContainerSelector.new
+    selector.containers = [ 'a' ]
+    args[:selector] = selector
+
     fragments = super(args)
 
     ctr = 0

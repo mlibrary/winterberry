@@ -1,12 +1,14 @@
 class PackageMetadataProcessor < ReviewProcessor
-  @@containers = [ 'metadata' ]
   @@children = [ 'dc:title', 'dc:creator', 'dc:language', 'dc:rights', 'dc:publisher', 'dc:identifier' ]
 
   def process(args = {})
-    args[:containers] = @@containers
     args[:children] = @@children
+    fragment_selector = ContainerSelector.new
+    fragment_selector.containers = [ 'metadata' ]
+    args[:selector] = fragment_selector
 
     fragments = super(args)
+
     fragments.each do |fragment|
       fragment.has_elements.each do |elem_name, exists|
           fragment.review_msg_list << "Metadata INFO:  contains <#{elem_name}>." if exists
