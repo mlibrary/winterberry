@@ -161,7 +161,7 @@ monograph_dir_list.each do |monograph_dir|
     # Process marker information and generate the resource map.
     markerprocessor.img_list.each do |node|
       node_map = node.map
-      resource_name = node_map['resource_name']
+      resource_name = node_map['resource_name'].strip
 
       resource = resource_map.reference_resource(resource_name)
       if resource.nil?
