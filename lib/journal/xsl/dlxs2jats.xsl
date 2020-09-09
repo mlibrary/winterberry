@@ -10,7 +10,11 @@
         exclude-result-prefixes="xs xi dlxs mlibxsl"
         version="2.0">
 
-    <xsl:output method="xml" doctype-public="-//NLM//DTD JATS (Z39.96) Journal Publishing DTD with MathML3 v1.3d1 20190831//EN" doctype-system="http://jats.nlm.nih.gov/publishing/1.3d1/JATS-journalpublishing1-mathml3.dtd" xpath-default-namespace="" indent="yes"/>
+    <xsl:output method="xml"
+                doctype-public="-//NLM//DTD JATS (Z39.96) Journal Publishing DTD with MathML3 v1.3d1 20190831//EN"
+                doctype-system="http://jats.nlm.nih.gov/publishing/1.3d1/JATS-journalpublishing1-mathml3.dtd"
+                xpath-default-namespace=""
+                indent="yes"/>
 
     <xsl:param name="image_list" required="no"/>
 

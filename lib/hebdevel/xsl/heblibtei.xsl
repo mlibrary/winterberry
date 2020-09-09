@@ -101,7 +101,17 @@
     </xsl:param>
 
     <xsl:variable name="dc-identifier-list" select="$teiFileDescNode/tei:publicationStmt/tei:idno[@type='heb']"/>
-    <xsl:variable name="dc-identifier" select="$teiFileDescNode/tei:publicationStmt/tei:idno[@type='heb'][1]"/>
+    <!--<xsl:variable name="dc-identifier" select="$teiFileDescNode/tei:publicationStmt/tei:idno[@type='heb'][1]"/>-->
+    <xsl:variable name="dc-identifier">
+        <xsl:choose>
+            <xsl:when test="exists($teiFileDescNode/tei:publicationStmt/tei:idno[@type='heb'][1])">
+                <xsl:value-of select="$teiFileDescNode/tei:publicationStmt/tei:idno[@type='heb'][1]"/>
+            </xsl:when>
+            <xsl:otherwise>
+                <xsl:value-of select="$teiFileDescNode/tei:publicationStmt/tei:idno[@type='dlps'][1]"/>
+            </xsl:otherwise>
+        </xsl:choose>
+    </xsl:variable>
 
     <xsl:variable name="dc-description">
         <xsl:choose>
@@ -117,7 +127,7 @@
     <xsl:param name="dcterms-modified"
                select="format-dateTime(current-dateTime(), '[Y0001]-[M01]-[D01]T[H01]:[m01]:[s01]Z')"/>
     <xsl:variable name="dc-title-list"
-                  select="$teiFileDescNode/tei:titleStmt/tei:title[@type='245']"/>
+                  select="$teiFileDescNode/tei:titleStmt/tei:title[@type='245' or empty(@type)]"/>
     <xsl:variable name="dc-creator-list"
                   select="$teiFileDescNode/tei:titleStmt/tei:author[not(exists(@dlxs:type))]"/>
     <xsl:variable name="dc-contributor-list"

@@ -12,7 +12,8 @@ ROOTDIR=ENV['HEBROOTDIR'] || ""
 # the last component of the HEB directory
 # is the ID.
 HEBID=File.basename(HEBDIR)
-HEBPRFX=HEBID[0..7]
+#HEBPRFX=HEBID[0..7]
+HEBPRFX=HEBID
 OS=ENV['OS']
 
 # Determine process paths relative to this file.
@@ -62,6 +63,7 @@ CHECKJAR=File.join(TARGETLIB, "jars", "epubcheck-jar-with-dependencies.jar")
 # TEI => CSV
 # TEI => {fixepub,flowepub}
 TEIXSLPATH=File.join(TARGETHEB, "xsl", "hebdlxs2tei.xsl")
+#TEIXSLPATH=File.join(TARGETLIB, "xsl", "dlxs2tei.xsl")
 METAXSLPATH=File.join(TARGETHEB, "xsl", "hebtei2meta.xsl")
 LAYOUTXSLPATH=File.join(TARGETHEB, "xsl", "hebtei2#{LAYOUT}.xsl")
 

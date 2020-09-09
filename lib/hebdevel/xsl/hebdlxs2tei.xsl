@@ -13,7 +13,17 @@
     <xsl:strip-space elements="*" />
     <xsl:output method="xml" indent="no"/>
 
-    <xsl:param name="identifier" select="/DLPSTEXTCLASS/HEADER/FILEDESC/PUBLICATIONSTMT/IDNO[@TYPE='heb']"/>
+    <!--<xsl:param name="identifier" select="/DLPSTEXTCLASS/HEADER/FILEDESC/PUBLICATIONSTMT/IDNO[@TYPE='heb']"/>-->
+    <xsl:param name="identifier">
+        <xsl:choose>
+            <xsl:when test="exists(/DLPSTEXTCLASS/HEADER/FILEDESC/PUBLICATIONSTMT/IDNO[@TYPE='heb'])">
+                <xsl:value-of select="/DLPSTEXTCLASS/HEADER/FILEDESC/PUBLICATIONSTMT/IDNO[@TYPE='heb']"/>
+            </xsl:when>
+            <xsl:otherwise>
+                <xsl:value-of select="/DLPSTEXTCLASS/HEADER/FILEDESC/PUBLICATIONSTMT/IDNO[@TYPE='dlps']"/>
+            </xsl:otherwise>
+        </xsl:choose>
+    </xsl:param>
 
     <xsl:template match="/">
         <xsl:variable name="teiPath" select="concat($working-dir,$identifier,'_tei.xml')"/>
@@ -68,10 +78,14 @@
             <xsl:attribute name="dlxs:level" select="$elemLevel"/>
 
             <xsl:apply-templates select="@*"/>
+            <xsl:if test="exists(@NODE) and not(exists(@ID))">
+                <xsl:attribute name="xml:id"
+                               select="concat('div',replace(normalize-space(@NODE),'[.:]','_'))"/>
+            </xsl:if>
             <xsl:if test="lower-case($elemName) = 'hi'">
                 <xsl:variable name="rendVal" select="lower-case(@REND)"/>
                 <xsl:choose>
-                    <xsl:when test="$rendVal = 'i'">
+                    <xsl:when test="$rendVal = 'i' or $rendVal='italics'">
                         <xsl:attribute name="rend" select="'italic'"/>
                     </xsl:when>
                     <xsl:when test="$rendVal = 'b'">
@@ -311,6 +325,39 @@
         </xsl:element>
     </xsl:template>
 
+    <xsl:template match="TABLE/CAPTION">
+        <xsl:element name="trailer" namespace="{$TEI_URL}">
+            <xsl:apply-templates/>
+        </xsl:element>
+    </xsl:template>
+
+    <xsl:template match="TABLE/HEAD/P">
+        <xsl:element name="caption" namespace="{$TEI_URL}">
+            <xsl:apply-templates/>
+        </xsl:element>
+    </xsl:template>
+
+    <xsl:template match="*[local-name()='NOTE1' or local-name()='NOTE2' or local-name()='NOTE3']/HEAD">
+        <xsl:element name="title" namespace="{$TEI_URL}">
+            <xsl:apply-templates/>
+        </xsl:element>
+    </xsl:template>
+
+    <!--
+    <xsl:template match="*[local-name()='DIV1' or local-name()='DIV2' or local-name()='DIV3' or local-name()='DIV4']/*[local-name()='HEAD' and position() > 3]">
+        <xsl:choose>
+            <xsl:when test="exists(./P)">
+                <xsl:apply-templates select="./node()"/>
+            </xsl:when>
+            <xsl:otherwise>
+                <xsl:element name="p" namespace="{$TEI_URL}">
+                    <xsl:apply-templates select="./node()"/>
+                </xsl:element>
+            </xsl:otherwise>
+        </xsl:choose>
+    </xsl:template>
+    -->
+
     <xsl:template match="element()">
         <xsl:variable name="nname">
             <xsl:choose>
@@ -456,12 +503,16 @@
         </xsl:choose>
     </xsl:template>
 
-    <xsl:template match="PTR/@TARGET">
+    <xsl:template match="IDNO/@TYPE|PTR/@TARGET|TITLE/@TYPE">
         <xsl:attribute name="{lower-case(local-name())}" select="."/>
     </xsl:template>
 
     <xsl:template match="@ID">
         <xsl:attribute name="{concat('xml:',lower-case(local-name()))}" select="."/>
+    </xsl:template>
+
+    <xsl:template match="@TYPE">
+        <xsl:attribute name="style" select="."/>
     </xsl:template>
 
     <xsl:template match="@*">

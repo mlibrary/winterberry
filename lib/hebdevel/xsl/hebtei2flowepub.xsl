@@ -432,6 +432,7 @@
 
                 <xsl:call-template name="generateHtmlHead">
                     <xsl:with-param name="divType" select="'cover'"/>
+                    <xsl:with-param name="title" select="$dc-title-list[1]"/>
                 </xsl:call-template>
                 <xsl:element name="body" namespace="{$HTML_URL}">
                     <xsl:attribute name="class" select="'svg_cover'"/>
@@ -439,13 +440,13 @@
                     <xsl:element name="section" namespace="{$HTML_URL}">
                         <xsl:attribute name="id" select="'cover'"/>
                         <xsl:attribute name="class" select="'text-center'"/>
-                        <xsl:attribute name="role" select="'doc-cover'"/>
                         <xsl:attribute name="epub:type" select="'cover'"/>
 
                         <xsl:element name="img" namespace="{$HTML_URL}">
                             <xsl:attribute name="src" select="concat('..',$FILE_SEPARATOR,'images',$FILE_SEPARATOR,$coverImageRow/html:td[@class='asset'])"/>
                             <xsl:attribute name="class" select="'cover-image'"/>
                             <xsl:attribute name="alt" select="concat('Cover image for book ', $dc-title-list[1])"/>
+                            <xsl:attribute name="role" select="'doc-cover'"/>
                         </xsl:element>
                     </xsl:element>
                 </xsl:element>
@@ -580,7 +581,7 @@
         </xsl:element>
     </xsl:template>
 
-    <xsl:template match="tei:div/tei:head">
+    <xsl:template match="tei:div/tei:head[not(exists(@rend)) or @rend!='toc']">
         <xsl:choose>
             <!-- Condition needed to remove "[Epigraph]" heading from
                 within heb99016.0001.001 epub. Heading is left in TOC.
@@ -595,20 +596,43 @@
                     <xsl:apply-templates/>
                 </xsl:element>
             </xsl:when>
+            <xsl:when test="count(./tei:bibl[@type!='para']) = 0">
+                <xsl:element name="header" namespace="{$HTML_URL}">
+                    <xsl:attribute name="class" select="'text-center'"/>
+                    <xsl:if test="exists(@xml:id)">
+                        <xsl:attribute name="id" select="@xml:id"/>
+                    </xsl:if>
+                    <xsl:apply-templates/>
+                </xsl:element>
+            </xsl:when>
             <xsl:otherwise>
                 <xsl:apply-templates/>
             </xsl:otherwise>
         </xsl:choose>
     </xsl:template>
 
+    <xsl:template match="tei:div/tei:head[@rend='toc']">
+            <xsl:message>Skipping tei:div/tei:head[@rend='toc']<xsl:value-of select="."/></xsl:message>
+    </xsl:template>
+
     <xsl:template match="tei:head" mode="toc">
         <xsl:value-of select="./*[local-name() !='bibl' or @type != 'para']"/>
+    </xsl:template>
+
+    <xsl:template match="tei:head[@rend='toc']" mode="toc">
+        <xsl:value-of select="."/>
     </xsl:template>
 
     <xsl:template match="tei:list/tei:head">
 
         <xsl:element name="h1" namespace="{$HTML_URL}">
             <xsl:attribute name="class" select="'listhead'"/>
+            <xsl:apply-templates/>
+        </xsl:element>
+    </xsl:template>
+
+    <xsl:template match="tei:byline">
+        <xsl:element name="p" namespace="{$HTML_URL}">
             <xsl:apply-templates/>
         </xsl:element>
     </xsl:template>
@@ -632,6 +656,9 @@
     </xsl:template>
 
     <xsl:template match="tei:list">
+        <xsl:if test="exists(./tei:pb)">
+            <xsl:apply-templates select="./tei:pb"/>
+        </xsl:if>
         <xsl:choose>
             <xsl:when test="exists(./tei:head)">
                 <xsl:element name="section" namespace="{$HTML_URL}">
@@ -652,6 +679,9 @@
     <xsl:template match="tei:item">
 
         <xsl:element name="li" namespace="{$HTML_URL}">
+            <xsl:if test="exists(@xml:id)">
+                <xsl:attribute name="id" select="@xml:id"/>
+            </xsl:if>
             <xsl:apply-templates/>
         </xsl:element>
     </xsl:template>
@@ -666,7 +696,19 @@
                 <xsl:attribute name="border" select="@border"/>
             </xsl:if>
 
-            <xsl:apply-templates/>
+            <xsl:apply-templates select="./tei:head"/>
+            <xsl:element name="tbody" namespace="{$HTML_URL}">
+                <xsl:apply-templates select="./*[local-name() !='head' and local-name()!='trailer']"/>
+            </xsl:element>
+            <xsl:if test="exists(./tei:trailer)">
+                <xsl:element name="tfoot" namespace="{$HTML_URL}">
+                    <xsl:element name="tr" namespace="{$HTML_URL}">
+                        <xsl:element name="td" namespace="{$HTML_URL}">
+                            <xsl:apply-templates select="./tei:trailer/node()"/>
+                        </xsl:element>
+                    </xsl:element>
+                </xsl:element>
+            </xsl:if>
         </xsl:element>
     </xsl:template>
 
@@ -1219,7 +1261,7 @@
         </xsl:element>
     </xsl:template>
 
-    <xsl:template match="tei:hi[@rend='und']">
+    <xsl:template match="tei:hi[@rend='und' or @rend='underline']">
 
         <xsl:element name="u" namespace="{$HTML_URL}">
             <xsl:apply-templates/>
@@ -1253,12 +1295,17 @@
         </xsl:element>
     </xsl:template>
 
-    <xsl:template match="tei:hi[@rend='greek' or @rend='greek-und' or @rend='arabic']">
+    <xsl:template match="tei:hi[@rend='greek' or @rend='greek-und' or @rend='arabic' or @rend='smcap' or @rend='small-caps']">
 
         <xsl:element name="span" namespace="{$HTML_URL}">
             <xsl:attribute name="class" select="@rend"/>
             <xsl:apply-templates/>
         </xsl:element>
+    </xsl:template>
+
+    <xsl:template match="tei:hi">
+        <xsl:message>Element <xsl:value-of select="concat(name(ancestor::*[1]),'/',name(),'[@rend=',@rend,']')"/> not processed. Content=<xsl:value-of select="."/></xsl:message>
+        <xsl:apply-templates/>
     </xsl:template>
 
     <xsl:template match="tei:performance|tei:sp|tei:argument|tei:group|tei:refsdecl
@@ -1702,6 +1749,9 @@
                             <xsl:when test="$figure/@type='ic2'">
                                 <xsl:attribute name="src" select="$figure/@url"/>
                             </xsl:when>
+                            <xsl:when test="exists($asset)">
+                                <xsl:attribute name="src" select="concat('..',$FILE_SEPARATOR,'images',$FILE_SEPARATOR,normalize-space($asset/html:td[@class='asset']))"/>
+                            </xsl:when>
                             <xsl:otherwise>
                                 <!--
                                 <xsl:attribute name="src" select="concat('..',$FILE_SEPARATOR,@url)"/>
@@ -1785,7 +1835,7 @@
         <xsl:apply-templates/>
     </xsl:template>
 
-    <xsl:template match="tei:teiHeader/tei:fileDesc/tei:titleStmt/tei:title[@type='245']">
+    <xsl:template match="tei:teiHeader/tei:fileDesc/tei:titleStmt/tei:title[@type='245' or empty(@type)]">
         <xsl:call-template name="generateDCMetadata">
             <xsl:with-param name="metadataName" select="'dc:title'"/>
             <xsl:with-param name="metadataValue" select="."/>
@@ -1849,12 +1899,24 @@
         <xsl:param name="divElem" required="yes"/>
         <xsl:param name="path" required="yes"/>
 
+        <xsl:variable name="title">
+            <xsl:choose>
+                <xsl:when test="exists($divElem/tei:head[@rend='toc' or empty(@rend)][1])">
+                    <xsl:value-of select="$divElem/tei:head[@rend='toc' or empty(@rend)][1]"/>
+                </xsl:when>
+                <xsl:otherwise>
+                    <xsl:value-of select="$dc-title-list"/>
+                </xsl:otherwise>
+            </xsl:choose>
+        </xsl:variable>
+
         <xsl:result-document href="{$path}" method="xml">
             <xsl:element name="html" namespace="{$HTML_URL}">
                 <xsl:namespace name="dlxs" select="$DLXS_URL"/>
 
                 <xsl:call-template name="generateHtmlHead">
                     <xsl:with-param name="divType" select="$divElem/@type"/>
+                    <xsl:with-param name="title" select="$title"/>
                 </xsl:call-template>
 
                 <xsl:element name="body" namespace="{$HTML_URL}">
@@ -1867,8 +1929,14 @@
 
     <xsl:template name="generateHtmlHead">
         <xsl:param name="divType" required="yes"/>
+        <xsl:param name="title" required="no"/>
 
         <xsl:element name="head" namespace="{$HTML_URL}">
+            <xsl:if test="string-length(normalize-space($title)) > 0">
+                <xsl:element name="title" namespace="{$HTML_URL}">
+                    <xsl:value-of select="$title"/>
+                </xsl:element>
+            </xsl:if>
             <xsl:call-template name="insertStyles"/>
             <xsl:element name="meta" namespace="{$HTML_URL}">
                 <xsl:attribute name="name" select="'viewport'"/>
@@ -1878,7 +1946,9 @@
                 <xsl:element name="meta" namespace="{$HTML_URL}">
                     <xsl:attribute name="name" select="$divType"/>
                     <xsl:attribute name="content" select="$divType"/>
+                    <!--
                     <xsl:attribute name="role" select="'section'"/>
+                    -->
                 </xsl:element>
             </xsl:if>
         </xsl:element>
@@ -1891,8 +1961,9 @@
 
         <!-- If we decide to allow dlxs:status=nodisplay to be included, but suppressed.
         <xsl:variable name="entryList" select="$itemList[exists(./tei:head/tei:bibl[@type!='para'])]"/>
-        -->
         <xsl:variable name="entryList" select="$itemList[(not(exists(@dlxs:status)) or @dlxs:status != 'toc-nodisplay') and exists(./tei:head/tei:bibl[@type!='para'])]"/>
+        -->
+        <xsl:variable name="entryList" select="$itemList[(not(exists(@dlxs:status)) or @dlxs:status != 'toc-nodisplay') and exists(./tei:head[@rend='toc'])]"/>
 
         <xsl:if test="$init='yes' or count($entryList) > 0">
             <xsl:element name="ol" namespace="{$HTML_URL}">
@@ -2100,7 +2171,7 @@
                     </xsl:otherwise>
                 </xsl:choose>
             </xsl:attribute>
-            <xsl:apply-templates select="$listNode/*[local-name() != 'head']"/>
+            <xsl:apply-templates select="$listNode/*[local-name() != 'head' and local-name()!='pb']"/>
         </xsl:element>
     </xsl:template>
 
@@ -2204,6 +2275,10 @@
 
         <xsl:variable name="parentId" select="$divNode/ancestor::*[local-name()='div'][last()]/@xml:id"/>
         <xsl:variable name="divId" select="$divNode/@xml:id"/>
+        <!--
+        <xsl:variable name="parentId" select="mlibxsl:genDivName($divNode/ancestor::*[local-name()='div'][last()])"/>
+        <xsl:variable name="divId" select="mlibxsl:genDivName($divNode)"/>
+        -->
 
         <xsl:choose>
             <xsl:when test="empty($parentId)">
@@ -2302,6 +2377,11 @@
                 <xsl:when test="string-length(normalize-space($div/@xml:id)) > 0">
                     <xsl:value-of select="normalize-space($div/@xml:id)"/>
                 </xsl:when>
+                <!--
+                <xsl:when test="string-length(normalize-space($div/@dlxs:node)) > 0">
+                    <xsl:value-of select="replace(normalize-space($div/@dlxs:node),'[.:]','_')"/>
+                </xsl:when>
+                -->
                 <xsl:otherwise>
                     <xsl:value-of select="$div/@type"/>
                 </xsl:otherwise>

@@ -280,7 +280,7 @@ namespace :winterberry do
     file TEIPATH => [ DLXSPATH ] do
 
         # Use XSLT to generate the TEI file.
-        xslt(TEIXSLPATH, DLXSPATH)
+        xslt(TEIXSLPATH, DLXSPATH, TEIPATH)
     end
 
     # Locate and copy the DLXS source file.
@@ -298,7 +298,7 @@ namespace :winterberry do
     end
 
     # Method for invoking an XSLT process.
-    def xslt(xsl_file, xml_file)
+    def xslt(xsl_file, xml_file, dest_file = "")
       uri_path = URI(File.dirname(xml_file))
       uri_path.scheme = "file"
       params = {
@@ -307,7 +307,7 @@ namespace :winterberry do
       XSLT.transform(
             :xslpath => xsl_file,
             :srcpath => xml_file,
-            :destpath => "",
+            :destpath => dest_file,
             :parameters => params
             )
     end
