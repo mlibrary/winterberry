@@ -1,0 +1,99 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require 'optparse'
+require 'ostruct'
+
+# Process the script parameters.
+options = OpenStruct.new
+options.output_file = nil
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-o <xml_file>] csv|noid monograph [monograph...]"
+  opts.on('-o', '--output_file [FILE]', 'Output file') do |output_file|
+    options.output_file = output_file
+  end
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    puts opts
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 2
+  puts option_parser.help
+  return
+end
+
+require 'set'
+
+monograph_type = ARGV[0].downcase
+if !Set["csv", "noid"].include?(monograph_type)
+  puts "Error: invalid type #{ARGV[0]}"
+  exit 1
+end
+
+monograph_obj_list = ARGV[1..-1]
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.join(File.dirname(__FILE__), ".."))
+root_dir = File.dirname(script_dir)
+
+
+require 'nokogiri'
+require 'csv'
+
+require_relative File.join(root_dir, "lib", "ninebark", "validation")
+require_relative File.join(root_dir, "lib", "ninebark", "vtree")
+require_relative File.join(root_dir, "lib", "services")
+
+collection = Collection.new
+monograph_obj_list.each do |monograph_obj|
+  # Use the noid to retrieve the monograph manifest from Fulcrum.
+  puts "*" * 10 + " #{monograph_obj} " + "*" * 10
+
+  case monograph_type
+  when "csv"
+    csv_file = File.expand_path(monograph_obj)
+    if !File.file?(csv_file)
+      puts "Error: invalid CSV file #{csv_file}"
+      next
+    end
+    csv_body = File.read(csv_file)
+    monograph_name = File.basename(csv_file, ".*")
+  when "noid"
+    puts "Downloading manifest file for noid #{monograph}"
+    csv_body = HeliotropeService.new.monograph_noid_export(monograph_obj)
+    monograph_name = monograph_obj
+  else
+    next
+  end
+
+  next if csv_body == nil
+
+  monograph = Monograph.new(
+        :name => monograph_name
+      )
+  monograph.load(:manifest_csv_body => csv_body)
+  collection.add_monograph(monograph)
+end
+
+if options.output_file != nil
+  output_file = File.expand_path(options.output_file)
+  if File.directory?(File.dirname(output_file))
+    File.write(output_file, collection.xml_markup)
+  else
+    puts "Error: invalid output file \"#{options.output_file}"
+  end
+end
+
+error_list = CollectionSchema.validate(:xml_markup => collection.xml_markup)
+
+puts "Count: #{error_list.count}"
+if error_list.count > 0
+  vtree = VTreeBuilder.build(collection.xml_markup)
+  error_list.each do |error|
+    level = error.error? ? "error" : error.warning? ? "warning" : error.fatal? ? "fatal" : "none"
+    property = vtree.property(error.line) unless vtree.nil?
+    puts "#{error}"
+    puts "\t#{property.to_s}" unless property.nil?
+  end
+end

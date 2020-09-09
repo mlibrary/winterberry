@@ -1,0 +1,197 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require 'optparse'
+require 'ostruct'
+
+# Process the script parameters.
+options = OpenStruct.new
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} xsd_file [xsd_file...]"
+=begin
+  opts.on('-o', '--output_file [FILE]', 'Output file') do |output_file|
+    options.output_file = output_file
+  end
+=end
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    puts opts
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  puts option_parser.help
+  return
+end
+
+xsd_file_list = ARGV
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.join("..", File.dirname(__FILE__)))
+root_dir = File.dirname(script_dir)
+
+require 'nokogiri'
+require 'yaml'
+
+require_relative(File.join(root_dir, 'lib', 'validation'))
+
+xsd_file_list.each do |xsd_file|
+  xsd_file = File.expand_path(xsd_file)
+
+  #puts "*** Exporting XSD file #{File.basename(xsd_file)} ***"
+
+  if !File.exists?(xsd_file)
+    puts "Error: XSD file \"#{File.basename(xsd_file)}\" does not exist."
+    next
+  end
+
+  # Create the XML tree.
+  content = File.read(xsd_file)
+  begin
+    xsd_doc = Nokogiri::XML(content, nil, 'UTF-8')
+  rescue Exception => e
+    puts e.message
+    next
+  end
+
+  # Map element_name => element_node
+  # Map element_type => list of element_node
+  elem_list = xsd_doc.xpath("//*[local-name()='element' and @name!='']")
+  elem_map = {}
+  type2elem = {}
+  elem_list.each do |node|
+    elem_map[node['name']] = node
+    if node.has_attribute?('type')
+      type = node['type']
+      if type2elem.has_key?(type)
+        type2elem[type] << node
+      else
+        type2elem[type] = [ node ]
+      end
+    end
+  end
+
+  # Find all types with @enumeration=true
+  enum_list = xsd_doc.xpath("//*[local-name()='complexType' and descendant::*[local-name()='attribute' and @name='enumeration' and @fixed='true']]")
+
+  enum_map = {}
+  enum_list.each do |node|
+
+    type_name = node['name']
+
+    # If enum_type/@metadata_name exists, use it. Otherwise,
+    # use the element/@name below.
+    list = node.xpath(".//*[local-name()='attribute' and @name='metadata_name']")
+    metadata_name = list.empty? ? nil : list.first['fixed']
+
+    # Get element node list for this type
+    elem_list = type2elem[type_name]
+
+    # Find the choices for this type
+    chc_list = node.xpath(".//*[local-name()='choice']/*[local-name()='element']")
+
+    elem_list.each do |elem_node|
+
+      # If no enum_type/@metadata_name, use element/@name.
+      elem_name = metadata_name.nil? ? elem_node['name'] : metadata_name
+
+      #puts elem_name + ":"
+
+      # Generate a list where each item is a hash
+      # with the following properties
+      # id = @id/@fixed
+      # term = @term/@fixed
+      # active = @active/@fixed
+      result_list = []
+      chc_list.each do |chc|
+        entry = {}
+
+        enum_elem_ref = chc['ref']
+        enum_elem = elem_map[enum_elem_ref]
+        unless enum_elem.nil?
+          enum_elem_name = enum_elem['name']
+          list = enum_elem.xpath(".//*[local-name()='attribute' and @name='id']")
+          id = list.empty? ? enum_elem_name : list.first['fixed']
+          list = enum_elem.xpath(".//*[local-name()='attribute' and @name='term']")
+          term = list.empty? ? enum_elem_name : list.first['fixed']
+          list = enum_elem.xpath(".//*[local-name()='attribute' and @name='active']")
+          active = list.empty? ? :true : list.first['fixed'].downcase == 'true'
+
+          entry['id'] = id
+          entry['term'] = term
+          entry['active'] = active
+        end
+        result_list << entry
+      end
+      enum_map[elem_name] = result_list
+    end
+  end
+
+  # Output list of hashes as yaml.
+  #puts enum_map.to_yaml
+
+  # Find all types with @enumeration=true
+  object_list = xsd_doc.xpath("//*[local-name()='complexType' and descendant::*[local-name()='attribute' and @name='object']]")
+
+  result_map = {}
+  mlist = []
+  object_list.each do |node|
+
+    type_name = node['name']
+
+    # If enum_type/@metadata_name exists, use it. Otherwise,
+    # use the element/@name below.
+    list = node.xpath(".//*[local-name()='attribute' and @name='metadata_name']")
+    metadata_name = list.empty? ? nil : list.first['fixed']
+
+    # Get object type
+    list = node.xpath(".//*[local-name()='attribute' and @name='object']")
+    object_type = list.empty? ? "unknown" : list.first['fixed']
+    list = node.xpath(".//*[local-name()='attribute' and @name='field_name']")
+    field_name = list.empty? ? "unknown" : list.first['fixed']
+    list = node.xpath(".//*[local-name()='attribute' and @name='multivalued']")
+    multivalued = list.empty? ? "unknown" : list.first['fixed']
+
+    # Get element node list for this type
+    elem_list = type2elem[type_name]
+
+    if elem_list.empty?
+        # If no enum_type/@metadata_name, use element/@name.
+        elem_name = CollectionSchema.normalize(field_name)
+
+        entry = {}
+        entry[:object] = object_type.to_sym
+        entry[:metadata_name] = elem_name
+        entry[:field_name] = field_name
+        entry[:multivalued] = multivalued.to_sym
+        if enum_map.has_key?(elem_name)
+          entry[:acceptable_values] = enum_map[elem_name]
+        end
+
+        mlist << entry
+    else
+      elem_list.each do |elem_node|
+
+        # If no enum_type/@metadata_name, use element/@name.
+        elem_name = metadata_name.nil? ? elem_node['name'] : metadata_name
+
+        entry = {}
+        entry[:object] = object_type.to_sym
+        entry[:metadata_name] = elem_name
+        entry[:field_name] = field_name
+        entry[:multivalued] = multivalued.to_sym
+        if enum_map.has_key?(elem_name)
+          entry[:acceptable_values] = enum_map[elem_name]
+        end
+
+        #result_map[elem_name] = entry
+        #result_map[field_name.downcase] = entry
+        mlist << entry
+      end
+    end
+  end
+
+  # Output list of hashes as yaml.
+  yaml_file = File.join(File.dirname(xsd_file), File.basename(xsd_file, ".*") + ".yml")
+  File.write(yaml_file, mlist.to_yaml)
+end

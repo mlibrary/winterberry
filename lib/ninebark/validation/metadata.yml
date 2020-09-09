@@ -1,0 +1,346 @@
+---
+- :object: :universal
+  :field_name: NOID
+  :metadata_name: id
+  :required: true
+  :multivalued: :no
+  :description: csv.descriptions.id
+- :object: :file_set
+  :field_name: File Name
+  :metadata_name: label
+  :required: true
+  :multivalued: :no
+  :description: csv.descriptions.label
+- :object: :universal
+  :field_name: Link
+  :metadata_name: url
+  :required: true
+  :multivalued: :no
+  :description: csv.descriptions.url
+- :object: :file_set
+  :field_name: Embed Code
+  :multivalued: :no
+  :description: csv.descriptions.embed_code
+- :object: :universal
+  :field_name: Title
+  :metadata_name: title
+  :required: true
+  :multivalued: :yes
+  :description: csv.descriptions.title
+- :object: :file_set
+  :field_name: Resource Type
+  :metadata_name: resource_type
+  :required: true
+  :multivalued: :yes
+  :acceptable_values:
+  - 3D model
+  - audio
+  - chart
+  - dataset
+  - image
+  - interactive map
+  - map
+  - musical example
+  - text
+  - video
+  :description: csv.descriptions.resource_type
+- :object: :file_set
+  :field_name: External Resource URL
+  :metadata_name: external_resource_url
+  :required: false
+  :multivalued: :no
+  :description: csv.descriptions.external_resource_url
+- :object: :file_set
+  :field_name: Caption
+  :metadata_name: caption
+  :required: true
+  :multivalued: :yes
+  :description: csv.descriptions.caption
+- :object: :file_set
+  :field_name: Alternative Text
+  :metadata_name: alt_text
+  :required: true
+  :multivalued: :yes
+  :description: csv.descriptions.alt_text
+- :object: :universal
+  :field_name: Copyright Holder
+  :metadata_name: copyright_holder
+  :required: true
+  :multivalued: :no
+  :description: csv.descriptions.copyright_holder
+- :object: :file_set
+  :field_name: Copyright Status
+  :metadata_name: copyright_status
+  :required: true
+  :multivalued: :no
+  :acceptable_values:
+  - in-copyright
+  - public domain
+  - status unknown
+  :description: csv.descriptions.copyright_status
+- :object: :monograph
+  :field_name: Open Access?
+  :metadata_name: open_access
+  :required: false
+  :multivalued: :no
+  :acceptable_values:
+  - 'yes'
+  - 'no'
+  :description: csv.descriptions.open_access
+- :object: :monograph
+  :field_name: Funder
+  :metadata_name: funder
+  :required: false
+  :multivalued: :no
+  :description: csv.descriptions.funder
+- :object: :monograph
+  :field_name: Funder Display
+  :metadata_name: funder_display
+  :required: false
+  :multivalued: :no
+  :description: csv.descriptions.funder_display
+- :object: :file_set
+  :field_name: Allow High-Res Display?
+  :metadata_name: allow_hi_res
+  :required: true
+  :multivalued: :no
+  :acceptable_values:
+  - 'yes'
+  - 'no'
+  - not hosted on the platform
+  :description: csv.descriptions.allow_hi_res
+- :object: :file_set
+  :field_name: Allow Download?
+  :metadata_name: allow_download
+  :required: true
+  :multivalued: :no
+  :acceptable_values:
+  - 'yes'
+  - 'no'
+  - not hosted on the platform
+  :description: csv.descriptions.allow_download
+- :object: :file_set
+  :field_name: Rights Granted
+  :metadata_name: rights_granted
+  :required: false
+  :multivalued: :no
+  :description: csv.descriptions.rights_granted
+- :object: :universal
+  :field_name: CC License
+  :metadata_name: license
+  :required: false
+  :multivalued: :yes
+  :acceptable_values:
+  - lic1
+  - lic2
+  :description: csv.descriptions.license
+- :object: :file_set
+  :field_name: Permissions Expiration Date
+  :metadata_name: permissions_expiration_date
+  :required: false
+  :multivalued: :no
+  :date_format: true
+  :description: csv.descriptions.permissions_expiration_date
+- :object: :file_set
+  :field_name: 'After Expiration: Allow Display?'
+  :metadata_name: allow_display_after_expiration
+  :required: false
+  :multivalued: :no
+  :acceptable_values:
+  - none
+  - high-res
+  - low-res
+  - not hosted on the platform
+  :description: csv.descriptions.allow_display_after_expiration
+- :object: :file_set
+  :field_name: 'After Expiration: Allow Download?'
+  :metadata_name: allow_download_after_expiration
+  :required: false
+  :multivalued: :no
+  :acceptable_values:
+  - 'yes'
+  - 'no'
+  - not hosted on the platform
+  :description: csv.descriptions.allow_download_after_expiration
+- :object: :file_set
+  :field_name: Credit Line
+  :metadata_name: credit_line
+  :required: false
+  :multivalued: :no
+  :description: csv.descriptions.credit_line
+- :object: :universal
+  :field_name: Holding Contact
+  :metadata_name: holding_contact
+  :required: false
+  :multivalued: :no
+  :description: csv.descriptions.holding_contact
+- :object: :file_set
+  :field_name: Exclusive to Fulcrum
+  :metadata_name: exclusive_to_platform
+  :required: false
+  :multivalued: :no
+  :acceptable_values:
+  - 'yes'
+  - 'no'
+  :description: csv.descriptions.exclusive_to_platform
+- :object: :universal
+  :field_name: Identifier(s)
+  :metadata_name: identifier
+  :required: false
+  :multivalued: :yes_split
+  :description: csv.descriptions.identifier
+- :object: :file_set
+  :field_name: Content Type
+  :metadata_name: content_type
+  :required: false
+  :multivalued: :yes_split
+  :description: csv.descriptions.content_type
+- :object: :universal
+  :field_name: Creator(s)
+  :metadata_name: creator
+  :required: false
+  :multivalued: :yes_multiline
+  :description: csv.descriptions.creator
+- :object: :universal
+  :field_name: Additional Creator(s)
+  :metadata_name: contributor
+  :required: false
+  :multivalued: :yes_multiline
+  :description: csv.descriptions.contributor
+- :object: :monograph
+  :field_name: Creator Display
+  :metadata_name: creator_display
+  :required: false
+  :multivalued: :no
+  :description: csv.descriptions.creator_display
+- :object: :file_set
+  :field_name: Sort Date
+  :metadata_name: sort_date
+  :required: false
+  :multivalued: :no
+  :date_format: true
+  :description: csv.descriptions.sort_date
+- :object: :file_set
+  :field_name: Display Date
+  :metadata_name: display_date
+  :required: false
+  :multivalued: :yes_split
+  :description: csv.descriptions.display_date
+- :object: :universal
+  :field_name: Description
+  :metadata_name: description
+  :required: false
+  :multivalued: :yes
+  :description: csv.descriptions.description
+- :object: :monograph
+  :field_name: Publisher
+  :metadata_name: publisher
+  :multivalued: :yes
+  :description: csv.descriptions.publisher
+- :object: :monograph
+  :field_name: Subject
+  :metadata_name: subject
+  :multivalued: :yes_split
+  :description: csv.descriptions.subject
+- :object: :monograph
+  :field_name: ISBN(s)
+  :metadata_name: isbn
+  :multivalued: :yes_split
+  :description: csv.descriptions.isbn
+- :object: :monograph
+  :field_name: Buy Book URL
+  :metadata_name: buy_url
+  :multivalued: :yes
+  :description: csv.descriptions.buy_url
+- :object: :monograph
+  :field_name: Pub Year
+  :metadata_name: date_created
+  :multivalued: :yes
+  :description: csv.descriptions.date_created
+- :object: :monograph
+  :field_name: Pub Location
+  :metadata_name: location
+  :multivalued: :no
+  :description: csv.descriptions.location
+- :object: :monograph
+  :field_name: Series
+  :metadata_name: series
+  :multivalued: :yes_split
+  :description: csv.descriptions.series
+- :object: :file_set
+  :field_name: Keywords
+  :metadata_name: keywords
+  :required: false
+  :multivalued: :yes_split
+  :description: csv.descriptions.keywords
+- :object: :file_set
+  :field_name: Section
+  :metadata_name: section_title
+  :required: false
+  :multivalued: :yes_split
+  :description: csv.descriptions.section_title
+- :object: :universal
+  :field_name: Language
+  :metadata_name: language
+  :required: false
+  :multivalued: :yes_split
+  :description: csv.descriptions.language
+- :object: :file_set
+  :field_name: Transcript
+  :metadata_name: transcript
+  :required: false
+  :multivalued: :no
+  :description: csv.descriptions.transcript
+- :object: :file_set
+  :field_name: Translation
+  :metadata_name: translation
+  :required: false
+  :multivalued: :yes
+  :description: csv.descriptions.translation
+- :object: :universal
+  :field_name: DOI
+  :metadata_name: doi
+  :required: false
+  :multivalued: :no
+  :description: csv.descriptions.doi
+- :object: :universal
+  :field_name: Handle
+  :metadata_name: hdl
+  :required: false
+  :multivalued: :no
+  :description: csv.descriptions.hdl
+- :object: :file_set
+  :field_name: Redirect to
+  :metadata_name: redirect_to
+  :required: false
+  :multivalued: :no
+  :description: csv.descriptions.redirect_to
+- :object: :file_set
+  :field_name: Closed Captions
+  :metadata_name: closed_captions
+  :required: false
+  :multivalued: :yes
+  :description: csv.descriptions.closed_captions
+- :object: :file_set
+  :field_name: Visual Descriptions
+  :metadata_name: visual_descriptions
+  :required: false
+  :multivalued: :yes
+  :description: csv.descriptions.visual_descriptions
+- :object: :file_set
+  :field_name: Representative Kind
+  :metadata_name: representative_kind
+  :required: false
+  :multivalued: :no
+  :acceptable_values:
+  - epub
+  - webgl
+  - database
+  - aboutware
+  - pdf_ebook
+  - mobi
+  - reviews
+  - related
+  - peer_review
+  - cover
+  :description: csv.descriptions.representative_kind

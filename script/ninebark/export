@@ -1,0 +1,124 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require 'optparse'
+require 'ostruct'
+
+# Process the script parameters.
+options = OpenStruct.new
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} xsd_file [xsd_file...]"
+=begin
+  opts.on('-o', '--output_file [FILE]', 'Output file') do |output_file|
+    options.output_file = output_file
+  end
+=end
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    puts opts
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  puts option_parser.help
+  return
+end
+
+xsd_file_list = ARGV
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.join("..", File.dirname(__FILE__)))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "export")
+
+def find_obj(objects, types, type_list)
+  return nil if type_list.nil?
+
+  type_list.each do |type|
+    if objects.has_key?(type)
+      return objects[type]
+    end
+    obj = find_obj(objects, types, types[type])
+    return obj unless obj.nil?
+  end
+  return nil
+end
+
+@item_list = []
+def find_items(type_items, types, type_list)
+  return if type_list.nil?
+
+  type_list.each do |type|
+    puts "#{type}"
+    if type_items.has_key?(type)
+    puts "Found items for type #{type} count=#{type_items[type].count}"
+      @item_list += type_items[type]
+    end
+    find_items(type_items, types, types[type])
+  end
+end
+
+xsd_file_list.each do |xsd_file|
+  xsd_file = File.expand_path(xsd_file)
+
+  puts "*** Exporting XSD file #{File.basename(xsd_file)} ***"
+
+  if !File.exists?(xsd_file)
+    puts "Error: XSD file \"#{File.basename(xsd_file)}\" does not exist."
+    next
+  end
+
+  processor = ExportModule.parse(:xml_path => xsd_file)
+
+  objects = processor.objects
+=begin
+  objects.each do |type,obj|
+    puts "#{type}: #{obj}"
+  end
+=end
+
+  type_items = processor.type_items
+  elements = processor.elements
+  types = processor.types
+
+  element_object = {}
+  element_items = {}
+  elements.each do |elem,type|
+    if type.nil?
+      #puts "Warning: type for element #{elem} in nil"
+      next
+    end
+
+    #element_object[elem] = nil
+
+    obj = find_obj(objects, types, [type])
+    unless obj.nil?
+      element_object[elem] = obj
+    end
+
+    @item_list = []
+    find_items(type_items, types, [type])
+    element_items[elem] = @item_list unless @item_list.empty?
+
+=begin
+    tlist = [ type ]
+    loop do
+      tlist.each do |t|
+        if type_items.has_key?(t)
+          element_items[elem] = type_items[tobj.first] unless element_items.has_key?(elem)
+          element_items[elem] += type_items[tobj.first] if element_items.has_key?(elem)
+        end
+      end
+
+      tlist = types[t]
+      break if tlist.empty?
+    end
+=end
+  end
+
+  element_object.each do |elem, obj|
+    puts "#{elem}: #{obj}" unless element_items.has_key?(elem)
+    puts "#{elem}: #{obj} #{element_items[elem]}" if element_items.has_key?(elem)
+  end
+end

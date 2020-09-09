@@ -1,0 +1,206 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.join(File.dirname(__FILE__), ".."))
+root_dir = File.dirname(script_dir)
+
+require 'yaml'
+
+require_relative File.join(root_dir, "lib", "ninebark", "validation")
+
+MARKUP_PI = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+MARKUP_COLLECTION_OLD = <<-MCOLLECTION_OLD
+<xs:element name="collection">
+<xs:complexType>
+<xs:sequence>
+<xs:element name="monographs" maxOccurs="1" minOccurs="0">
+<xs:complexType>
+<xs:sequence>
+<xs:element name="monograph" maxOccurs="unbounded" minOccurs="0">
+<xs:complexType>
+<xs:sequence>
+<xs:element name="metadata" minOccurs="0" maxOccurs="1">
+%s</xs:element>
+<xs:element name="representatives" minOccurs="0" maxOccurs="1">
+%s</xs:element>
+<xs:element name="resources" minOccurs="0" maxOccurs="1">
+%s</xs:element>
+</xs:sequence>
+<xs:attribute name="id" type="xs:string" use="optional"/>
+</xs:complexType>
+</xs:element>
+</xs:sequence>
+</xs:complexType>
+</xs:element>
+</xs:sequence>
+</xs:complexType>
+</xs:element>
+MCOLLECTION_OLD
+
+MARKUP_COLLECTION = <<-MCOLLECTION
+<xs:element name="collection">
+<xs:complexType>
+<xs:sequence>
+<xs:element name="monographs" type="type_monographs" maxOccurs="1" minOccurs="0"></xs:element>
+</xs:sequence>
+</xs:complexType>
+</xs:element>
+MCOLLECTION
+
+MARKUP_MONOGRAPHS = <<-MMONOGRAPHS
+<xs:complexType name="type_monographs">
+<xs:sequence>
+<xs:element name="monograph" type="type_monograph" maxOccurs="unbounded" minOccurs="0"></xs:element>
+</xs:sequence>
+</xs:complexType>
+MMONOGRAPHS
+
+MARKUP_MONOGRAPH = <<-MMONOGRAPH
+<xs:complexType name="type_monograph">
+<xs:sequence>
+<xs:element name="metadata" type="type_monograph_metadata" minOccurs="0" maxOccurs="1"></xs:element>
+<xs:element name="representatives" type="type_representatives" minOccurs="0" maxOccurs="1"></xs:element>
+<xs:element name="resources" type="type_resources" minOccurs="0" maxOccurs="1"></xs:element>
+</xs:sequence>
+<xs:attribute name="id" type="xs:string" use="optional"/>
+</xs:complexType>
+MMONOGRAPH
+
+MARKUP_REPRESENTATIVES = <<-MREPRESENTATIVES
+<xs:complexType name="type_representatives">
+<xs:choice minOccurs="0" maxOccurs="unbounded">
+%s</xs:choice>
+</xs:complexType>
+MREPRESENTATIVES
+
+MARKUP_RESOURCES = <<-MRESOURCES
+<xs:complexType name="type_resources">
+<xs:choice minOccurs="0" maxOccurs="unbounded">
+%s</xs:choice>
+</xs:complexType>
+MRESOURCES
+
+MARKUP_FILESET = <<-MFILESET
+<xs:complexType name="%s">
+<xs:all>
+%s</xs:all>
+<xs:attribute name="label" type="xs:string" use="required"/>
+<xs:attribute name="id" type="xs:string" use="optional"/>
+</xs:complexType>
+MFILESET
+
+
+MARKUP_LIST = <<-MLIST
+<xs:complexType name="%s">
+<xs:sequence>
+<xs:element name="%s" type="%s" minOccurs="1" maxOccurs="unbounded"></xs:element>
+</xs:sequence>
+</xs:complexType>
+<xs:complexType name="%s">
+<xs:simpleContent>
+<xs:restriction base="type_string">
+</xs:restriction>
+</xs:simpleContent>
+</xs:complexType>
+MLIST
+
+MARKUP_ELEMENT = <<-MELEMENT
+<xs:element name="%s" type="%s"></xs:element>
+<xs:complexType name="%s">
+<xs:simpleContent>
+<xs:restriction base="type_string">
+</xs:restriction>
+</xs:simpleContent>
+</xs:complexType>
+MELEMENT
+
+MARKUP_STRING = <<-MSTRING
+<xs:complexType name="type_string" mixed="true">
+<xs:simpleContent>
+<xs:extension base="type_string_nonnull"/>
+</xs:simpleContent>
+</xs:complexType>
+<xs:simpleType name="type_string_nonnull">
+<xs:restriction base="xs:string">
+<xs:minLength value="1"></xs:minLength>
+</xs:restriction>
+</xs:simpleType>
+MSTRING
+
+#fields = ADMIN_METADATA_FIELDS + METADATA_FIELDS + FILE_SET_FLAG_FIELDS
+#puts "Count: #{fields.count}"
+#puts fields.to_yaml
+
+metadata_file = File.join(root_dir, 'lib', 'ninebark', 'validation', 'metadata.yml')
+metadata_fields = YAML.load_file(metadata_file)
+
+xsd_file = File.join(root_dir, 'lib', 'ninebark', 'validation', 'collection_new.xsd')
+File.open(xsd_file, "w") do |fp|
+  fp.puts MARKUP_PI
+  fp.puts "<xs:schema attributeFormDefault=\"qualified\" elementFormDefault=\"qualified\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">"
+
+  fp.puts MARKUP_COLLECTION
+  fp.puts MARKUP_MONOGRAPHS
+  fp.puts MARKUP_MONOGRAPH
+
+  universal_markup = ""
+  monograph_markup = ""
+  fileset_markup = ""
+  reps_markup = ""
+  res_markup = ""
+  metadata_fields.each do |field|
+    next unless field.has_key?(:metadata_name)
+    next if field[:metadata_name] == "id" or field[:metadata_name] == "label"
+
+    metadata_name = field[:metadata_name]
+    multivalued = field[:multivalued]
+    metadata_name += "_list" if multivalued == :yes_split or multivalued == :yes_multiline
+
+    type = "type_" + metadata_name
+
+    case
+    when field[:metadata_name] == "representative_kind"
+      field[:acceptable_values].each do |value|
+        reps_markup += "<xs:element name=\"#{value.gsub(/[ ]+/, "_")}\" type=\"type_representative\"></xs:element>\n"
+      end
+    when field[:metadata_name] == "resource_type"
+      field[:acceptable_values].each do |value|
+        value = "model3D" if value == "3D model"
+        res_markup += "<xs:element name=\"#{value.gsub(/[ ]+/, "_")}\" type=\"type_resource\"></xs:element>\n"
+      end
+    when field[:object] == :file_set
+      fileset_markup += "<xs:element name=\"#{metadata_name}\" type=\"#{type}\"></xs:element>\n"
+    when field[:object] == :universal
+      universal_markup += "<xs:element name=\"#{metadata_name}\" type=\"#{type}\"></xs:element>\n"
+    when field[:object] == :monograph
+      monograph_markup += "<xs:element name=\"#{metadata_name}\" type=\"#{type}\"></xs:element>\n"
+    end
+  end
+
+  fp.puts "<xs:complexType name=\"type_monograph_metadata\">\n<xs:all>\n#{universal_markup}#{monograph_markup}</xs:all>\n</xs:complexType>\n"
+  fp.puts sprintf(MARKUP_REPRESENTATIVES, reps_markup)
+  fp.puts sprintf(MARKUP_RESOURCES, res_markup)
+  fp.puts sprintf(MARKUP_FILESET, "type_representative", universal_markup+fileset_markup)
+  fp.puts sprintf(MARKUP_FILESET, "type_resource", universal_markup+fileset_markup)
+
+  metadata_fields.each do |field|
+    next unless field.has_key?(:metadata_name)
+    next if field[:metadata_name] == "id" or field[:metadata_name] == "label"
+
+    metadata_name = field[:metadata_name]
+    multivalued = field[:multivalued]
+
+    case
+    when multivalued == :yes_split, multivalued == :yes_multiline
+      fp.puts sprintf(MARKUP_LIST, "type_#{metadata_name}_list", metadata_name, "type_#{metadata_name}", "type_#{metadata_name}")
+    else
+      fp.puts sprintf(MARKUP_ELEMENT, metadata_name, "type_#{metadata_name}", "type_#{metadata_name}")
+    end
+  end
+
+  fp.puts MARKUP_STRING
+
+  fp.puts "</xs:schema>"
+end
+

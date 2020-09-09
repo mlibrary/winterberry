@@ -1,0 +1,1103 @@
+<?xml version="1.1" encoding="UTF-8"?>
+<xs:schema attributeFormDefault="qualified" elementFormDefault="qualified" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+    <xs:element name="collection">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="monographs" minOccurs="0" type="type_monographs"/>
+            </xs:sequence>
+            <xs:attribute name="version" type="xs:string" fixed="1.0"/>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="allow_display_after_expiration" type="type_allow_display_after_expiration"/>
+    <xs:element name="allow_download" type="type_allow_download"/>
+    <xs:element name="allow_download_after_expiration" type="type_allow_download_after_expiration"/>
+    <xs:element name="allow_hi_res" type="type_allow_hi_res"/>
+    <xs:element name="alt_text" type="type_alt_text"/>
+    <xs:element name="buy_url" type="type_buy_url"/>
+    <xs:element name="caption" type="type_caption"/>
+    <xs:element name="content_type" type="type_content_type"/>
+    <xs:element name="content_type_list" type="type_content_type_list"/>
+    <xs:element name="contributor" type="type_contributor"/>
+    <xs:element name="contributor_list" type="type_contributor_list"/>
+    <xs:element name="copyright_holder" type="type_copyright_holder"/>
+    <xs:element name="copyright_status" type="type_copyright_status"/>
+    <xs:element name="creator_display" type="type_creator_display"/>
+    <xs:element name="creator" type="type_creator"/>
+    <xs:element name="creator_list" type="type_contributor_list"/>
+    <xs:element name="credit_line" type="type_credit_line"/>
+    <xs:element name="date_created" type="type_date_created"/>
+    <xs:element name="description" type="type_description"/>
+    <xs:element name="display_date" type="type_display_date"/>
+    <xs:element name="display_date_list" type="type_display_date_list"/>
+    <xs:element name="doi" type="type_doi"/>
+    <xs:element name="exclusive_to_platform" type="type_exclusive_to_platform"/>
+    <xs:element name="external_resource_url" type="type_external_resource_url"/>
+    <xs:element name="funder" type="type_funder"/>
+    <xs:element name="hdl" type="type_hdl"/>
+    <xs:element name="holding_contact" type="type_holding_contact"/>
+    <xs:element name="identifier" type="type_identifier"/>
+    <xs:element name="identifier_list" type="type_identifier_list"/>
+    <xs:element name="isbn" type="type_isbn"/>
+    <xs:element name="isbn_list" type="type_isbn_list"/>
+    <xs:element name="keywords" type="type_keywords"/>
+    <xs:element name="keywords_list" type="type_keywords_list"/>
+    <xs:element name="label" type="type_label"/>
+    <xs:element name="language" type="type_language"/>
+    <xs:element name="language_list" type="type_language_list"/>
+    <xs:element name="license" type="type_license"/>
+    <xs:element name="location" type="type_location"/>
+    <xs:element name="noid" type="type_noid"/>
+    <xs:element name="open_access" type="type_open_access"/>
+    <xs:element name="permissions_expiration_date" type="type_permissions_expiration_date"/>
+    <xs:element name="publisher" type="type_publisher"/>
+    <xs:element name="redirect_to" type="type_redirect_to"/>
+    <xs:element name="rights_granted" type="type_rights_granted"/>
+    <xs:element name="section_title" type="type_section_title"/>
+    <xs:element name="section_title_list" type="type_section_title_list"/>
+    <xs:element name="series" type="type_series"/>
+    <xs:element name="series_list" type="type_series_list"/>
+    <xs:element name="sort_date" type="type_sort_date"/>
+    <xs:element name="subject" type="type_subject"/>
+    <xs:element name="subject_list" type="type_subject_list"/>
+    <xs:element name="title" type="type_title"/>
+    <xs:element name="transcript" type="type_transcript"/>
+    <xs:element name="translation" type="type_translation"/>
+    <xs:element name="url" type="type_url"/>
+
+    <xs:element name="license_creative_commons_attribution_4.0_international_license">
+        <xs:complexType>
+            <xs:attribute name="id" type="type_string_url" fixed="https://creativecommons.org/licenses/by/4.0/"/>
+            <xs:attribute name="term" type="xs:string" fixed="Creative Commons Attribution 4.0 International license"/>
+            <xs:attribute name="active" type="xs:boolean" fixed="true"/>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="license_creative_commons_attribution_noncommercial_4.0_international_license">
+        <xs:complexType>
+            <xs:attribute name="id" type="type_string_url" fixed="https://creativecommons.org/licenses/by-nc/4.0/"/>
+            <xs:attribute name="term" type="xs:string" fixed="Creative Commons Attribution-NonCommercial 4.0 International license"/>
+            <xs:attribute name="active" type="xs:boolean" fixed="true"/>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="license_creative_commons_attribution_noncommercial_noderivatives_4.0_international_license">
+        <xs:complexType>
+            <xs:attribute name="id" type="type_string_url" fixed="https://creativecommons.org/licenses/by-nc-nd/4.0/"/>
+            <xs:attribute name="term" type="xs:string" fixed="Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International license"/>
+            <xs:attribute name="active" type="xs:boolean" fixed="true"/>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="license_creative_commons_attribution_noncommercial_sharealike_4.0_international_license">
+        <xs:complexType>
+            <xs:attribute name="id" type="type_string_url" fixed="https://creativecommons.org/licenses/by-nc-sa/4.0/"/>
+            <xs:attribute name="term" type="xs:string" fixed="Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International license"/>
+            <xs:attribute name="active" type="xs:boolean" fixed="true"/>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="license_creative_commons_attribution_noderivatives_4.0_international_license">
+        <xs:complexType>
+            <xs:attribute name="id" type="type_string_url" fixed="https://creativecommons.org/licenses/by-nd/4.0/"/>
+            <xs:attribute name="term" type="xs:string" fixed="Creative Commons Attribution-NoDerivatives 4.0 International license"/>
+            <xs:attribute name="active" type="xs:boolean" fixed="true"/>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="license_creative_commons_attribution_sharealike_4.0_international_license">
+        <xs:complexType>
+            <xs:attribute name="id" type="type_string_url" fixed="https://creativecommons.org/licenses/by-sa/4.0/"/>
+            <xs:attribute name="term" type="xs:string" fixed="Creative Commons Attribution-ShareAlike 4.0 International license"/>
+            <xs:attribute name="active" type="xs:boolean" fixed="true"/>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="license_creative_commons_all_rights_reserved_international_license">
+        <xs:complexType>
+            <xs:attribute name="id" type="type_string_url" fixed="https://www.press.umich.edu/about/licenses#all-rights-reserved"/>
+            <xs:attribute name="term" type="xs:string" fixed="All Rights Reserved"/>
+            <xs:attribute name="active" type="xs:boolean" fixed="true"/>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="license_creative_commons_public_domain_mark_1.0_international_license">
+        <xs:complexType>
+            <xs:attribute name="id" type="type_string_url" fixed="https://creativecommons.org/publicdomain/mark/1.0/"/>
+            <xs:attribute name="term" type="xs:string" fixed="Creative Commons Public Domain Mark 1.0"/>
+            <xs:attribute name="active" type="xs:boolean" fixed="true"/>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="license_creative_commons_public_domain_zero_1.0_international_license">
+        <xs:complexType>
+            <xs:attribute name="id" type="type_string_url" fixed="https://creativecommons.org/publicdomain/zero/1.0/"/>
+            <xs:attribute name="term" type="xs:string" fixed="Creative Commons Zero license (implies pd)"/>
+            <xs:attribute name="active" type="xs:boolean" fixed="true"/>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="license_attribution_3.0_united_states">
+        <xs:complexType>
+            <xs:attribute name="id" type="type_string_url" fixed="https://creativecommons.org/licenses/by/3.0/us/"/>
+            <xs:attribute name="term" type="xs:string" fixed="Attribution 3.0 United States"/>
+            <xs:attribute name="active" type="xs:boolean" fixed="false"/>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="license_attribution_sharealike_3.0_united_states">
+        <xs:complexType>
+            <xs:attribute name="id" type="type_string_url" fixed="https://creativecommons.org/licenses/by-sa/3.0/us/"/>
+            <xs:attribute name="term" type="xs:string" fixed="Attribution-ShareAlike 3.0 United States"/>
+            <xs:attribute name="active" type="xs:boolean" fixed="false"/>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="license_attribution_noncommercial_3.0_united_states">
+        <xs:complexType>
+            <xs:attribute name="id" type="type_string_url" fixed="https://creativecommons.org/licenses/by-nc/3.0/us/"/>
+            <xs:attribute name="term" type="xs:string" fixed="Attribution-NonCommercial 3.0 United States"/>
+            <xs:attribute name="active" type="xs:boolean" fixed="false"/>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="license_attribution_noderivs_3.0_united_states">
+        <xs:complexType>
+            <xs:attribute name="id" type="type_string_url" fixed="https://creativecommons.org/licenses/by-nd/3.0/us/"/>
+            <xs:attribute name="term" type="xs:string" fixed="Attribution-NoDerivs 3.0 United States"/>
+            <xs:attribute name="active" type="xs:boolean" fixed="false"/>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="license_attribution_noncommercial_noderivs_3.0_united_states">
+        <xs:complexType>
+            <xs:attribute name="id" type="type_string_url" fixed="https://creativecommons.org/licenses/by-nc-nd/3.0/us/"/>
+            <xs:attribute name="term" type="xs:string" fixed="Attribution-NonCommercial-NoDerivs 3.0 United States"/>
+            <xs:attribute name="active" type="xs:boolean" fixed="false"/>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="license_attribution_noncommercial_sharealike_3.0_united_states">
+        <xs:complexType>
+            <xs:attribute name="id" type="type_string_url" fixed="https://creativecommons.org/licenses/by-nc-sa/3.0/us/"/>
+            <xs:attribute name="term" type="xs:string" fixed="Attribution-NonCommercial-ShareAlike 3.0 United States"/>
+            <xs:attribute name="active" type="xs:boolean" fixed="false"/>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="license_all_rights_reserved">
+        <xs:complexType>
+            <xs:attribute name="id" type="type_string_url" fixed="https://www.europeana.eu/portal/rights/rr-r.html"/>
+            <xs:attribute name="term" type="xs:string" fixed="All rights reserved"/>
+            <xs:attribute name="active" type="xs:boolean" fixed="false"/>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="license_creative_commons_attribution_2.0_generic_license">
+        <xs:complexType>
+            <xs:attribute name="id" type="type_string_url" fixed="https://creativecommons.org/licenses/by/2.0/"/>
+            <xs:attribute name="term" type="xs:string" fixed="Creative Commons Attribution 2.0 Generic license"/>
+            <xs:attribute name="active" type="xs:boolean" fixed="false"/>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="license_creative_commons_attribution_sharealike_2.1_japan">
+        <xs:complexType>
+            <xs:attribute name="id" type="type_string_url" fixed="https://creativecommons.org/licenses/by-sa/2.1/jp/"/>
+            <xs:attribute name="term" type="xs:string" fixed="Creative Commons Attribution-ShareAlike 2.1 Japan"/>
+            <xs:attribute name="active" type="xs:boolean" fixed="false"/>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="license_creative_commons_attribution_license_3.0_unported">
+        <xs:complexType>
+            <xs:attribute name="id" type="type_string_url" fixed="https://creativecommons.org/licenses/by/3.0/"/>
+            <xs:attribute name="term" type="xs:string" fixed="Creative Commons Attribution license, 3.0 Unported"/>
+            <xs:attribute name="active" type="xs:boolean" fixed="false"/>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="license_creative_commons_attribution_noderivatives_license_3.0">
+        <xs:complexType>
+            <xs:attribute name="id" type="type_string_url" fixed="https://creativecommons.org/licenses/by-nd/3.0/"/>
+            <xs:attribute name="term" type="xs:string" fixed="Creative Commons Attribution-NoDerivatives license, 3.0"/>
+            <xs:attribute name="active" type="xs:boolean" fixed="false"/>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="license_creative_commons_attribution_noncommercial_noderivatives_license_3.0_unported">
+        <xs:complexType>
+            <xs:attribute name="id" type="type_string_url" fixed="https://creativecommons.org/licenses/by-nc-nd/3.0/"/>
+            <xs:attribute name="term" type="xs:string" fixed="Creative Commons Attribution-NonCommercial-NoDerivatives license, 3.0 Unported"/>
+            <xs:attribute name="active" type="xs:boolean" fixed="false"/>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="license_creative_commons_attribution_noncommercial_license_3.0_unported">
+        <xs:complexType>
+            <xs:attribute name="id" type="type_string_url" fixed="https://creativecommons.org/licenses/by-nc/3.0/"/>
+            <xs:attribute name="term" type="xs:string" fixed="Creative Commons Attribution-NonCommercial license, 3.0 Unported"/>
+            <xs:attribute name="active" type="xs:boolean" fixed="false"/>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="license_creative_commons_attribution_noncommercial_sharealike">
+        <xs:complexType>
+            <xs:attribute name="id" type="type_string_url" fixed="https://creativecommons.org/licenses/by-nc-sa/3.0/"/>
+            <xs:attribute name="term" type="xs:string" fixed="Creative Commons Attribution-NonCommercial-ShareAlike"/>
+            <xs:attribute name="active" type="xs:boolean" fixed="false"/>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="license_creative_commons_attribution_sharealike_license_3.0">
+        <xs:complexType>
+            <xs:attribute name="id" type="type_string_url" fixed="https://creativecommons.org/licenses/by-sa/3.0/"/>
+            <xs:attribute name="term" type="xs:string" fixed="Creative Commons Attribution-ShareAlike license, 3.0"/>
+            <xs:attribute name="active" type="xs:boolean" fixed="false"/>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="high_res">
+        <xs:complexType>
+            <xs:attribute name="id" type="xs:string" fixed="high_res"/>
+            <xs:attribute name="term" type="xs:string" fixed="High-res"/>
+            <xs:attribute name="active" type="xs:boolean" fixed="true"/>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="low_res">
+        <xs:complexType>
+            <xs:attribute name="id" type="xs:string" fixed="low_res"/>
+            <xs:attribute name="term" type="xs:string" fixed="Low-res"/>
+            <xs:attribute name="active" type="xs:boolean" fixed="true"/>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="no">
+        <xs:complexType>
+            <xs:attribute name="id" type="xs:string" fixed="no"/>
+            <xs:attribute name="term" type="xs:string" fixed="No"/>
+            <xs:attribute name="active" type="xs:boolean" fixed="true"/>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="none">
+        <xs:complexType>
+            <xs:attribute name="id" type="xs:string" fixed="none"/>
+            <xs:attribute name="term" type="xs:string" fixed="None"/>
+            <xs:attribute name="active" type="xs:boolean" fixed="true"/>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="not_hosted_on_the_platform">
+        <xs:complexType>
+            <xs:attribute name="id" type="xs:string" fixed="not_hosted_on_the_platform"/>
+            <xs:attribute name="term" type="xs:string" fixed="Not hosted on the platform"/>
+            <xs:attribute name="active" type="xs:boolean" fixed="true"/>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="permission_does_not_expire">
+        <xs:complexType>
+            <xs:attribute name="id" type="xs:string" fixed="permission_does_not_expire"/>
+            <xs:attribute name="term" type="xs:string" fixed="Permission Does Not Expire"/>
+            <xs:attribute name="active" type="xs:boolean" fixed="true"/>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="yes">
+        <xs:complexType>
+            <xs:attribute name="id" type="xs:string" fixed="yes"/>
+            <xs:attribute name="term" type="xs:string" fixed="Yes"/>
+            <xs:attribute name="active" type="xs:boolean" fixed="true"/>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="fair_use">
+        <xs:complexType>
+            <xs:attribute name="id" type="xs:string" fixed="fair_use"/>
+            <xs:attribute name="term" type="xs:string" fixed="fair use"/>
+            <xs:attribute name="active" type="xs:boolean" fixed="true"/>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="in_copyright">
+        <xs:complexType>
+            <xs:attribute name="id" type="xs:string" fixed="in_copyright"/>
+            <xs:attribute name="term" type="xs:string" fixed="in-copyright"/>
+            <xs:attribute name="active" type="xs:boolean" fixed="false"/>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="public_domain">
+        <xs:complexType>
+            <xs:attribute name="id" type="xs:string" fixed="public_domain"/>
+            <xs:attribute name="term" type="xs:string" fixed="public domain"/>
+            <xs:attribute name="active" type="xs:boolean" fixed="true"/>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="author_created_owned">
+        <xs:complexType>
+            <xs:attribute name="id" type="xs:string" fixed="author_created_owned"/>
+            <xs:attribute name="term" type="xs:string" fixed="author created/owned"/>
+            <xs:attribute name="active" type="xs:boolean" fixed="true"/>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="monograph" type="type_monograph"/>
+    <xs:element name="metadata" type="type_monograph_metadata"/>
+    <xs:element name="representative_kind" type="type_representative_kind"/>
+    <xs:element name="resource_type" type="type_resource_type"/>
+
+    <xs:element name="aboutware" type="type_fileset"/>
+    <xs:element name="cover" type="type_fileset"/>
+    <xs:element name="database" type="type_fileset"/>
+    <xs:element name="epub" type="type_fileset_resource"/>
+    <xs:element name="mobi" type="type_fileset_resource"/>
+    <xs:element name="pdf_ebook" type="type_fileset_resource"/>
+    <xs:element name="peer_reviews" type="type_fileset"/>
+    <xs:element name="related" type="type_fileset"/>
+    <xs:element name="reviews" type="type_fileset"/>
+    <xs:element name="webgl" type="type_fileset"/>
+
+    <xs:element name="audio" type="type_fileset_resource"/>
+    <xs:element name="chart" type="type_fileset_resource"/>
+    <xs:element name="dataset" type="type_fileset_resource"/>
+    <xs:element name="image" type="type_fileset_resource"/>
+    <xs:element name="interactive_map" type="type_fileset_resource"/>
+    <xs:element name="map" type="type_fileset_resource"/>
+    <xs:element name="model3d" type="type_fileset_resource"/>
+    <xs:element name="musical_example" type="type_fileset_resource"/>
+    <xs:element name="table" type="type_fileset_resource"/>
+    <xs:element name="text" type="type_fileset_resource"/>
+    <xs:element name="video" type="type_fileset_resource"/>
+
+    <xs:complexType name="type_monographs">
+        <xs:sequence>
+            <xs:element ref="monograph" maxOccurs="unbounded" minOccurs="0"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="type_monograph">
+        <xs:sequence>
+            <xs:element ref="metadata" minOccurs="0"/>
+            <xs:element ref="representative_kind" minOccurs="0"/>
+            <xs:element ref="resource_type" minOccurs="0"/>
+        </xs:sequence>
+        <xs:attribute name="id" type="type_string_nonnull"/>
+    </xs:complexType>
+    <xs:complexType name="type_fileset_base">
+        <xs:attribute name="label" type="type_string_nonnull"/>
+        <xs:attribute name="id" type="type_string_nonnull"/>
+    </xs:complexType>
+    <xs:complexType name="type_fileset">
+        <xs:complexContent>
+            <xs:extension base="type_fileset_base">
+                <xs:group ref="type_base_properties"/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="type_fileset_resource">
+        <xs:complexContent>
+            <xs:extension base="type_fileset_base">
+                <xs:all>
+                    <!--
+                    <xs:element ref="label"/>
+                    -->
+                    <xs:element ref="title"/>
+                    <xs:element ref="copyright_status"/>
+                    <xs:element ref="copyright_holder"/>
+                    <xs:element ref="allow_hi_res"/>
+                    <xs:element ref="allow_download"/>
+                    <xs:element ref="alt_text" minOccurs="0"/>
+                    <xs:element ref="caption" minOccurs="0"/>
+                    <xs:element ref="url" minOccurs="0"/>
+                    <xs:element ref="holding_contact" minOccurs="0"/>
+                    <xs:element ref="license" minOccurs="0"/>
+                    <xs:element ref="identifier_list" minOccurs="0"/>
+                    <xs:element ref="creator_list" minOccurs="0"/>
+                    <xs:element ref="contributor_list" minOccurs="0"/>
+                    <xs:element ref="description" minOccurs="0"/>
+                    <xs:element ref="doi" minOccurs="0"/>
+                    <!--
+                    <xs:element ref="noid" minOccurs="0"/>
+                    -->
+                    <xs:element ref="hdl" minOccurs="0"/>
+                    <xs:element ref="external_resource_url" minOccurs="0"/>
+                    <xs:element ref="rights_granted" minOccurs="0"/>
+                    <xs:element ref="permissions_expiration_date" minOccurs="0"/>
+                    <xs:element ref="allow_display_after_expiration" minOccurs="0"/>
+                    <xs:element ref="allow_download_after_expiration" minOccurs="0"/>
+                    <xs:element ref="credit_line" minOccurs="0"/>
+                    <xs:element ref="exclusive_to_platform" minOccurs="0"/>
+                    <xs:element ref="content_type_list" minOccurs="0"/>
+                    <xs:element ref="sort_date" minOccurs="0"/>
+                    <xs:element ref="display_date_list" minOccurs="0"/>
+                    <xs:element ref="keywords_list" minOccurs="0"/>
+                    <xs:element ref="section_title_list" minOccurs="0"/>
+                    <xs:element ref="language_list" minOccurs="0"/>
+                    <xs:element ref="transcript" minOccurs="0"/>
+                    <xs:element ref="translation" minOccurs="0"/>
+                    <xs:element ref="redirect_to" minOccurs="0"/>
+                </xs:all>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="type_monograph_metadata">
+        <xs:all>
+            <xs:element ref="title"/>
+            <xs:element ref="copyright_holder"/>
+            <xs:element ref="isbn_list"/>
+            <xs:element ref="url" minOccurs="0"/>
+            <xs:element ref="holding_contact" minOccurs="0"/>
+            <xs:element ref="license" minOccurs="0"/>
+            <xs:element ref="identifier_list" minOccurs="0"/>
+            <xs:element ref="creator_list" minOccurs="0"/>
+            <xs:element ref="contributor_list" minOccurs="0"/>
+            <xs:element ref="description" minOccurs="0"/>
+            <xs:element ref="doi" minOccurs="0"/>
+            <!--
+            <xs:element ref="noid" minOccurs="0"/>
+            -->
+            <xs:element ref="hdl" minOccurs="0"/>
+            <xs:element ref="open_access" minOccurs="0"/>
+            <xs:element ref="funder" minOccurs="0"/>
+            <xs:element ref="creator_display" minOccurs="0"/>
+            <xs:element ref="publisher" minOccurs="0"/>
+            <xs:element ref="subject_list" minOccurs="0"/>
+            <xs:element ref="buy_url" minOccurs="0"/>
+            <xs:element ref="location" minOccurs="0"/>
+            <xs:element ref="date_created" minOccurs="0"/>
+            <xs:element ref="series_list" minOccurs="0"/>
+        </xs:all>
+    </xs:complexType>
+
+    <xs:complexType name="type_allow_display_after_expiration">
+        <xs:choice>
+            <xs:element ref="none"/>
+            <xs:element ref="high_res"/>
+            <xs:element ref="low_res"/>
+            <xs:element ref="not_hosted_on_the_platform"/>
+            <xs:element ref="permission_does_not_expire"/>
+        </xs:choice>
+        <xs:attribute name="enumeration" type="xs:boolean" fixed="true"/>
+        <xs:attribute name="object" type="xs:string" fixed="file_set"/>
+        <xs:attribute name="field_name" type="xs:string" fixed="After Expiration: Allow Display?"/>
+        <xs:attribute name="multivalued" type="xs:string" fixed="no"/>
+    </xs:complexType>
+    <xs:complexType name="type_allow_download">
+        <xs:choice>
+            <xs:element ref="yes"/>
+            <xs:element ref="no"/>
+            <xs:element ref="not_hosted_on_the_platform"/>
+        </xs:choice>
+        <xs:attribute name="enumeration" type="xs:boolean" fixed="true"/>
+        <xs:attribute name="object" type="xs:string" fixed="file_set"/>
+        <xs:attribute name="field_name" type="xs:string" fixed="Allow Download?"/>
+        <xs:attribute name="multivalued" type="xs:string" fixed="no"/>
+    </xs:complexType>
+    <xs:complexType name="type_allow_download_after_expiration">
+        <xs:choice>
+            <xs:element ref="none"/>
+            <xs:element ref="high_res"/>
+            <xs:element ref="low_res"/>
+            <xs:element ref="not_hosted_on_the_platform"/>
+            <xs:element ref="permission_does_not_expire"/>
+        </xs:choice>
+        <xs:attribute name="enumeration" type="xs:boolean" fixed="true"/>
+        <xs:attribute name="object" type="xs:string" fixed="file_set"/>
+        <xs:attribute name="field_name" type="xs:string" fixed="After Expiration: Allow Download?"/>
+        <xs:attribute name="multivalued" type="xs:string" fixed="no"/>
+    </xs:complexType>
+    <xs:complexType name="type_allow_hi_res">
+        <xs:choice>
+            <xs:element ref="yes"/>
+            <xs:element ref="no"/>
+            <xs:element ref="not_hosted_on_the_platform"/>
+        </xs:choice>
+        <xs:attribute name="enumeration" type="xs:boolean" fixed="true"/>
+        <xs:attribute name="object" type="xs:string" fixed="file_set"/>
+        <xs:attribute name="field_name" type="xs:string" fixed="Allow Fullscreen Display?"/>
+        <xs:attribute name="multivalued" type="xs:string" fixed="no"/>
+    </xs:complexType>
+    <xs:complexType name="type_alt_text">
+        <xs:simpleContent>
+            <xs:extension base="type_string">
+                <xs:attribute name="object" type="xs:string" fixed="file_set"/>
+                <xs:attribute name="field_name" type="xs:string" fixed="Alternative Text"/>
+                <xs:attribute name="multivalued" type="xs:string" fixed="yes"/>
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+    <xs:complexType name="type_buy_url">
+        <xs:simpleContent>
+            <xs:extension base="type_string_url">
+                <xs:attribute name="object" type="xs:string" fixed="monograph"/>
+                <xs:attribute name="field_name" type="xs:string" fixed="Buy Book URL"/>
+                <xs:attribute name="multivalued" type="xs:string" fixed="yes"/>
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+    <xs:complexType name="type_caption">
+        <xs:simpleContent>
+            <xs:extension base="type_string">
+                <xs:attribute name="object" type="xs:string" fixed="file_set"/>
+                <xs:attribute name="field_name" type="xs:string" fixed="Caption"/>
+                <xs:attribute name="multivalued" type="xs:string" fixed="yes"/>
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+    <xs:complexType name="type_content_type">
+        <xs:simpleContent>
+            <xs:extension base="type_string">
+                <xs:attribute name="object" type="xs:string" fixed="file_set"/>
+                <xs:attribute name="field_name" type="xs:string" fixed="Content Type"/>
+                <xs:attribute name="multivalued" type="xs:string" fixed="yes_split"/>
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+    <xs:complexType name="type_contributor">
+        <xs:complexContent>
+            <xs:extension base="type_string_contributor">
+                <xs:attribute name="object" type="xs:string" fixed="universal"/>
+                <xs:attribute name="field_name" type="xs:string" fixed="Additional Creator(s)"/>
+                <xs:attribute name="multivalued" type="xs:string" fixed="yes_multiline"/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="type_copyright_holder">
+        <xs:simpleContent>
+            <xs:extension base="type_string">
+                <xs:attribute name="object" type="xs:string" fixed="universal"/>
+                <xs:attribute name="field_name" type="xs:string" fixed="Copyright Holder"/>
+                <xs:attribute name="multivalued" type="xs:string" fixed="no"/>
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+    <xs:complexType name="type_copyright_status">
+        <xs:choice>
+            <xs:element ref="fair_use"/>
+            <xs:element ref="in_copyright"/>
+            <xs:element ref="public_domain"/>
+            <xs:element ref="author_created_owned"/>
+        </xs:choice>
+        <xs:attribute name="enumeration" type="xs:boolean" fixed="true"/>
+        <xs:attribute name="object" type="xs:string" fixed="file_set"/>
+        <xs:attribute name="field_name" type="xs:string" fixed="Copyright Status"/>
+        <xs:attribute name="multivalued" type="xs:string" fixed="no"/>
+    </xs:complexType>
+    <xs:complexType name="type_creator">
+        <xs:complexContent>
+            <xs:extension base="type_string_contributor">
+                <xs:attribute name="object" type="xs:string" fixed="universal"/>
+                <xs:attribute name="field_name" type="xs:string" fixed="Creator(s)"/>
+                <xs:attribute name="multivalued" type="xs:string" fixed="yes_multiline"/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="type_creator_display">
+        <xs:simpleContent>
+            <xs:extension base="type_string">
+                <xs:attribute name="object" type="xs:string" fixed="monograph"/>
+                <xs:attribute name="field_name" type="xs:string" fixed="Creator Display"/>
+                <xs:attribute name="multivalued" type="xs:string" fixed="no"/>
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+    <xs:complexType name="type_credit_line">
+        <xs:simpleContent>
+            <xs:extension base="type_string">
+                <xs:attribute name="object" type="xs:string" fixed="file_set"/>
+                <xs:attribute name="field_name" type="xs:string" fixed="Credit Line"/>
+                <xs:attribute name="multivalued" type="xs:string" fixed="no"/>
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+    <xs:complexType name="type_date_created">
+        <xs:complexContent>
+            <xs:extension base="type_string_date">
+                <xs:attribute name="object" type="xs:string" fixed="monograph"/>
+                <xs:attribute name="field_name" type="xs:string" fixed="Pub Year"/>
+                <xs:attribute name="multivalued" type="xs:string" fixed="yes"/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="type_description">
+        <xs:simpleContent>
+            <xs:extension base="type_string">
+                <xs:attribute name="object" type="xs:string" fixed="universal"/>
+                <xs:attribute name="field_name" type="xs:string" fixed="Description"/>
+                <xs:attribute name="multivalued" type="xs:string" fixed="yes"/>
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+    <xs:complexType name="type_display_date">
+        <xs:simpleContent>
+            <xs:extension base="type_string">
+                <xs:attribute name="object" type="xs:string" fixed="file_set"/>
+                <xs:attribute name="field_name" type="xs:string" fixed="Display Date"/>
+                <xs:attribute name="multivalued" type="xs:string" fixed="yes_split"/>
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+    <xs:complexType name="type_doi">
+        <xs:simpleContent>
+            <xs:extension base="type_string_doi">
+                <xs:attribute name="object" type="xs:string" fixed="universal"/>
+                <xs:attribute name="field_name" type="xs:string" fixed="DOI"/>
+                <xs:attribute name="multivalued" type="xs:string" fixed="no"/>
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+    <xs:complexType name="type_exclusive_to_platform">
+        <xs:choice>
+            <xs:element ref="yes"/>
+            <xs:element ref="no"/>
+        </xs:choice>
+        <xs:attribute name="enumeration" type="xs:boolean" fixed="true"/>
+        <xs:attribute name="object" type="xs:string" fixed="file_set"/>
+        <xs:attribute name="field_name" type="xs:string" fixed="Exclusive to Fulcrum"/>
+        <xs:attribute name="multivalued" type="xs:string" fixed="no"/>
+    </xs:complexType>
+    <xs:complexType name="type_external_resource_url">
+        <xs:simpleContent>
+            <xs:extension base="type_string_url">
+                <xs:attribute name="object" type="xs:string" fixed="file_set"/>
+                <xs:attribute name="field_name" type="xs:string" fixed="External Resource URL"/>
+                <xs:attribute name="multivalued" type="xs:string" fixed="no"/>
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+    <xs:complexType name="type_funder">
+        <xs:simpleContent>
+            <xs:extension base="type_string">
+                <xs:attribute name="object" type="xs:string" fixed="monograph"/>
+                <xs:attribute name="field_name" type="xs:string" fixed="Funder"/>
+                <xs:attribute name="multivalued" type="xs:string" fixed="no"/>
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+    <xs:complexType name="type_hdl">
+        <xs:simpleContent>
+            <xs:extension base="type_string_hdl">
+                <xs:attribute name="object" type="xs:string" fixed="universal"/>
+                <xs:attribute name="field_name" type="xs:string" fixed="Handle"/>
+                <xs:attribute name="multivalued" type="xs:string" fixed="no"/>
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+    <xs:complexType name="type_holding_contact">
+        <xs:simpleContent>
+            <xs:extension base="type_string">
+                <xs:attribute name="object" type="xs:string" fixed="universal"/>
+                <xs:attribute name="field_name" type="xs:string" fixed="Holding Contact"/>
+                <xs:attribute name="multivalued" type="xs:string" fixed="no"/>
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+    <xs:complexType name="type_identifier">
+        <xs:simpleContent>
+            <xs:extension base="type_string">
+                <xs:attribute name="object" type="xs:string" fixed="universal"/>
+                <xs:attribute name="field_name" type="xs:string" fixed="Identifier(s)"/>
+                <xs:attribute name="multivalued" type="xs:string" fixed="yes_split"/>
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+    <xs:complexType name="type_isbn">
+        <xs:simpleContent>
+            <xs:extension base="type_string_isbn">
+                <xs:attribute name="format" type="type_values_isbn_format" use="required"/>
+                <xs:attribute name="object" type="xs:string" fixed="monograph"/>
+                <xs:attribute name="field_name" type="xs:string" fixed="ISBN(s)"/>
+                <xs:attribute name="multivalued" type="xs:string" fixed="yes_split"/>
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+    <xs:complexType name="type_keywords">
+        <xs:simpleContent>
+            <xs:extension base="type_string">
+                <xs:attribute name="object" type="xs:string" fixed="file_set"/>
+                <xs:attribute name="field_name" type="xs:string" fixed="Keywords"/>
+                <xs:attribute name="multivalued" type="xs:string" fixed="yes_split"/>
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+    <xs:complexType name="type_label">
+        <xs:simpleContent>
+            <xs:extension base="type_string">
+                <xs:attribute name="object" type="xs:string" fixed="file_set"/>
+                <xs:attribute name="field_name" type="xs:string" fixed="File Name"/>
+                <xs:attribute name="multivalued" type="xs:string" fixed="no"/>
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+    <xs:complexType name="type_language">
+        <xs:simpleContent>
+            <xs:extension base="type_string">
+                <xs:attribute name="object" type="xs:string" fixed="universal"/>
+                <xs:attribute name="field_name" type="xs:string" fixed="Language"/>
+                <xs:attribute name="multivalued" type="xs:string" fixed="yes_split"/>
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+    <xs:complexType name="type_license">
+        <xs:choice>
+            <xs:element ref="license_creative_commons_attribution_4.0_international_license"/>
+            <xs:element ref="license_creative_commons_attribution_noncommercial_4.0_international_license"/>
+            <xs:element ref="license_creative_commons_attribution_noncommercial_noderivatives_4.0_international_license"/>
+            <xs:element ref="license_creative_commons_attribution_noncommercial_sharealike_4.0_international_license"/>
+            <xs:element ref="license_creative_commons_attribution_noderivatives_4.0_international_license"/>
+            <xs:element ref="license_creative_commons_attribution_sharealike_4.0_international_license"/>
+            <xs:element ref="license_creative_commons_all_rights_reserved_international_license"/>
+            <xs:element ref="license_creative_commons_public_domain_mark_1.0_international_license"/>
+            <xs:element ref="license_creative_commons_public_domain_zero_1.0_international_license"/>
+            <xs:element ref="license_attribution_3.0_united_states"/>
+            <xs:element ref="license_attribution_sharealike_3.0_united_states"/>
+            <xs:element ref="license_attribution_noncommercial_3.0_united_states"/>
+            <xs:element ref="license_attribution_noderivs_3.0_united_states"/>
+            <xs:element ref="license_attribution_noncommercial_noderivs_3.0_united_states"/>
+            <xs:element ref="license_attribution_noncommercial_sharealike_3.0_united_states"/>
+            <xs:element ref="license_all_rights_reserved"/>
+            <xs:element ref="license_creative_commons_attribution_2.0_generic_license"/>
+            <xs:element ref="license_creative_commons_attribution_sharealike_2.1_japan"/>
+            <xs:element ref="license_creative_commons_attribution_license_3.0_unported"/>
+            <xs:element ref="license_creative_commons_attribution_noderivatives_license_3.0"/>
+            <xs:element ref="license_creative_commons_attribution_noncommercial_noderivatives_license_3.0_unported"/>
+            <xs:element ref="license_creative_commons_attribution_noncommercial_license_3.0_unported"/>
+            <xs:element ref="license_creative_commons_attribution_noncommercial_sharealike"/>
+            <xs:element ref="license_creative_commons_attribution_sharealike_license_3.0"/>
+        </xs:choice>
+        <xs:attribute name="enumeration" type="xs:boolean" fixed="true"/>
+        <xs:attribute name="object" type="xs:string" fixed="universal"/>
+        <xs:attribute name="field_name" type="xs:string" fixed="CC License"/>
+        <xs:attribute name="multivalued" type="xs:string" fixed="yes"/>
+    </xs:complexType>
+    <xs:complexType name="type_location">
+        <xs:simpleContent>
+            <xs:extension base="type_string">
+                <xs:attribute name="object" type="xs:string" fixed="monograph"/>
+                <xs:attribute name="field_name" type="xs:string" fixed="Pub Location"/>
+                <xs:attribute name="multivalued" type="xs:string" fixed="no"/>
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+    <xs:complexType name="type_noid">
+        <xs:simpleContent>
+            <xs:extension base="type_string">
+                <xs:attribute name="object" type="xs:string" fixed="universal"/>
+                <xs:attribute name="field_name" type="xs:string" fixed="NOID"/>
+                <xs:attribute name="multivalued" type="xs:string" fixed="no"/>
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+    <xs:complexType name="type_open_access">
+        <xs:choice>
+            <xs:element ref="yes"/>
+            <xs:element ref="no"/>
+        </xs:choice>
+        <xs:attribute name="enumeration" type="xs:boolean" fixed="true"/>
+        <xs:attribute name="object" type="xs:string" fixed="monograph"/>
+        <xs:attribute name="field_name" type="xs:string" fixed="Open Access?"/>
+        <xs:attribute name="multivalued" type="xs:string" fixed="no"/>
+    </xs:complexType>
+    <xs:complexType name="type_permissions_expiration_date">
+        <xs:complexContent>
+            <xs:extension base="type_string_date">
+                <xs:attribute name="object" type="xs:string" fixed="file_set"/>
+                <xs:attribute name="field_name" type="xs:string" fixed="Permissions Expiration Date"/>
+                <xs:attribute name="multivalued" type="xs:string" fixed="no"/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="type_publisher">
+        <xs:simpleContent>
+            <xs:extension base="type_string">
+                <xs:attribute name="object" type="xs:string" fixed="monograph"/>
+                <xs:attribute name="field_name" type="xs:string" fixed="Publisher"/>
+                <xs:attribute name="multivalued" type="xs:string" fixed="yes"/>
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+    <xs:complexType name="type_redirect_to">
+        <xs:simpleContent>
+            <xs:extension base="type_string">
+                <xs:attribute name="object" type="xs:string" fixed="file_set"/>
+                <xs:attribute name="field_name" type="xs:string" fixed="Redirect to"/>
+                <xs:attribute name="multivalued" type="xs:string" fixed="no"/>
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+    <xs:complexType name="type_representative_kind">
+        <xs:choice minOccurs="0" maxOccurs="unbounded">
+            <xs:element ref="aboutware"/>
+            <xs:element ref="cover"/>
+            <xs:element ref="database"/>
+            <xs:element ref="epub"/>
+            <xs:element ref="mobi"/>
+            <xs:element ref="pdf_ebook"/>
+            <xs:element ref="peer_reviews"/>
+            <xs:element ref="related"/>
+            <xs:element ref="reviews"/>
+            <xs:element ref="webgl"/>
+        </xs:choice>
+        <xs:attribute name="enumeration" type="xs:boolean" fixed="true"/>
+        <xs:attribute name="object" type="xs:string" fixed="file_set"/>
+        <xs:attribute name="field_name" type="xs:string" fixed="Representative Kind"/>
+        <xs:attribute name="multivalued" type="xs:string" fixed="no"/>
+    </xs:complexType>
+    <xs:complexType name="type_resource_type">
+        <xs:choice minOccurs="0" maxOccurs="unbounded">
+            <xs:element ref="audio"/>
+            <xs:element ref="chart"/>
+            <xs:element ref="dataset"/>
+            <xs:element ref="image"/>
+            <xs:element ref="interactive_map"/>
+            <xs:element ref="map"/>
+            <xs:element ref="model3d"/>
+            <xs:element ref="musical_example"/>
+            <xs:element ref="table"/>
+            <xs:element ref="text"/>
+            <xs:element ref="video"/>
+        </xs:choice>
+        <xs:attribute name="enumeration" type="xs:boolean" fixed="true"/>
+        <xs:attribute name="object" type="xs:string" fixed="file_set"/>
+        <xs:attribute name="field_name" type="xs:string" fixed="Resource Type"/>
+        <xs:attribute name="multivalued" type="xs:string" fixed="yes"/>
+    </xs:complexType>
+    <xs:complexType name="type_rights_granted">
+        <xs:simpleContent>
+            <xs:extension base="type_string">
+                <xs:attribute name="object" type="xs:string" fixed="file_set"/>
+                <xs:attribute name="field_name" type="xs:string" fixed="Rights Granted"/>
+                <xs:attribute name="multivalued" type="xs:string" fixed="no"/>
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+    <xs:complexType name="type_section_title">
+        <xs:simpleContent>
+            <xs:extension base="type_string">
+                <xs:attribute name="object" type="xs:string" fixed="file_set"/>
+                <xs:attribute name="field_name" type="xs:string" fixed="Section"/>
+                <xs:attribute name="multivalued" type="xs:string" fixed="yes_split"/>
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+    <xs:complexType name="type_series">
+        <xs:simpleContent>
+            <xs:extension base="type_string">
+                <xs:attribute name="object" type="xs:string" fixed="monograph"/>
+                <xs:attribute name="field_name" type="xs:string" fixed="Series"/>
+                <xs:attribute name="multivalued" type="xs:string" fixed="yes_split"/>
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+    <xs:complexType name="type_sort_date">
+        <xs:complexContent>
+            <xs:extension base="type_string_date">
+                <xs:attribute name="object" type="xs:string" fixed="file_set"/>
+                <xs:attribute name="field_name" type="xs:string" fixed="Sort Date"/>
+                <xs:attribute name="multivalued" type="xs:string" fixed="no"/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="type_subject">
+        <xs:simpleContent>
+            <xs:extension base="type_string">
+                <xs:attribute name="object" type="xs:string" fixed="monograph"/>
+                <xs:attribute name="field_name" type="xs:string" fixed="Subject"/>
+                <xs:attribute name="multivalued" type="xs:string" fixed="yes_split"/>
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+    <xs:complexType name="type_title">
+        <xs:simpleContent>
+            <xs:extension base="type_string_title">
+                <xs:attribute name="object" type="xs:string" fixed="universal"/>
+                <xs:attribute name="field_name" type="xs:string" fixed="Title"/>
+                <xs:attribute name="multivalued" type="xs:string" fixed="yes"/>
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+    <xs:complexType name="type_transcript">
+        <xs:simpleContent>
+            <xs:extension base="type_string">
+                <xs:attribute name="object" type="xs:string" fixed="file_set"/>
+                <xs:attribute name="field_name" type="xs:string" fixed="Transcript"/>
+                <xs:attribute name="multivalued" type="xs:string" fixed="no"/>
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+    <xs:complexType name="type_translation">
+        <xs:simpleContent>
+            <xs:extension base="type_string">
+                <xs:attribute name="object" type="xs:string" fixed="file_set"/>
+                <xs:attribute name="field_name" type="xs:string" fixed="Translation"/>
+                <xs:attribute name="multivalued" type="xs:string" fixed="yes"/>
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+    <xs:complexType name="type_url">
+        <xs:simpleContent>
+            <xs:extension base="type_string_url">
+                <xs:attribute name="object" type="xs:string" fixed="universal"/>
+                <xs:attribute name="field_name" type="xs:string" fixed="Link"/>
+                <xs:attribute name="multivalued" type="xs:string" fixed="no"/>
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+
+    <xs:complexType name="type_subject_list">
+        <xs:sequence maxOccurs="unbounded">
+            <xs:element ref="subject"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="type_series_list">
+        <xs:sequence maxOccurs="unbounded">
+            <xs:element ref="series"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="type_content_type_list">
+        <xs:sequence maxOccurs="unbounded">
+            <xs:element ref="content_type"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="type_contributor_list">
+        <xs:choice>
+            <xs:element ref="contributor" maxOccurs="unbounded"/>
+            <xs:element ref="creator" maxOccurs="unbounded"/>
+        </xs:choice>
+    </xs:complexType>
+    <xs:complexType name="type_display_date_list">
+        <xs:sequence maxOccurs="unbounded">
+            <xs:element ref="display_date"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="type_keywords_list">
+        <xs:sequence maxOccurs="unbounded">
+            <xs:element ref="keywords"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="type_language_list">
+        <xs:sequence maxOccurs="unbounded">
+            <xs:element ref="language"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="type_isbn_list">
+        <xs:sequence>
+            <xs:element ref="isbn" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="type_section_title_list">
+        <xs:sequence maxOccurs="unbounded">
+            <xs:element ref="section_title"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="type_identifier_list">
+        <xs:sequence maxOccurs="unbounded">
+            <xs:element ref="identifier"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="type_yesno_nothosted">
+        <xs:choice>
+            <xs:element ref="yes"/>
+            <xs:element ref="no"/>
+            <xs:element ref="not_hosted_on_the_platform"/>
+        </xs:choice>
+    </xs:complexType>
+    <xs:complexType name="type_yesno_nothosted_notexpire">
+        <xs:choice>
+            <xs:element ref="yes"/>
+            <xs:element ref="no"/>
+            <xs:element ref="not_hosted_on_the_platform"/>
+            <xs:element ref="permission_does_not_expire"/>
+        </xs:choice>
+    </xs:complexType>
+    <xs:complexType name="type_allow_after_expiration">
+        <xs:choice>
+            <xs:element ref="none"/>
+            <xs:element ref="high_res"/>
+            <xs:element ref="low_res"/>
+            <xs:element ref="not_hosted_on_the_platform"/>
+            <xs:element ref="permission_does_not_expire"/>
+        </xs:choice>
+    </xs:complexType>
+    <xs:simpleType name="type_values_contributor_role">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="author"/>
+            <xs:enumeration value="chair"/>
+            <xs:enumeration value="editor"/>
+            <xs:enumeration value="reader"/>
+            <xs:enumeration value="review-assistant"/>
+            <xs:enumeration value="reviewer"/>
+            <xs:enumeration value="reviewer-external"/>
+            <xs:enumeration value="stats-reviewer"/>
+            <xs:enumeration value="translator"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="type_values_isbn_format">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="ebook"/>
+            <xs:enumeration value="hardcover"/>
+            <xs:enumeration value="open access"/>
+            <xs:enumeration value="paper"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:complexType name="type_string" mixed="true">
+        <xs:simpleContent>
+            <xs:extension base="type_string_nonnull"/>
+        </xs:simpleContent>
+    </xs:complexType>
+    <xs:complexType name="type_string_title">
+        <xs:simpleContent>
+            <xs:restriction base="type_string">
+                <xs:maxLength value="200"/>
+            </xs:restriction>
+        </xs:simpleContent>
+    </xs:complexType>
+    <xs:simpleType name="type_string_nonnull">
+        <xs:restriction base="xs:string">
+            <xs:minLength value="1"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:complexType name="type_string_doi">
+        <xs:simpleContent>
+            <xs:restriction base="type_string">
+                <xs:pattern value="[0-9.]+/mpub\..*"/>
+            </xs:restriction>
+        </xs:simpleContent>
+    </xs:complexType>
+    <xs:complexType name="type_string_contributor">
+        <xs:complexContent>
+            <xs:extension base="type_string">
+                <xs:attribute name="role" type="type_values_contributor_role"/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="type_string_date">
+        <xs:simpleContent>
+            <xs:restriction base="type_string">
+                <xs:pattern value="(18|19|20)\d\d"/>
+                <xs:pattern value="(18|19|20)\d\d[-/.](0[1-9]|1[012])"/>
+                <xs:pattern value="(18|19|20)\d\d[-/.](0[1-9]|1[012])[-/.](0[1-9]|[12][0-9]|3[01])"/>
+            </xs:restriction>
+        </xs:simpleContent>
+    </xs:complexType>
+    <xs:complexType name="type_string_hdl">
+        <xs:simpleContent>
+            <xs:restriction base="type_string">
+                <xs:pattern value="[0-9]+/.*"/>
+            </xs:restriction>
+        </xs:simpleContent>
+    </xs:complexType>
+    <xs:complexType name="type_string_isbn">
+        <xs:simpleContent>
+            <xs:restriction base="type_string">
+                <xs:pattern value="(978|979)-[0-9]{1,5}-[0-9]{1,7}-[0-9]{1,7}-[0-9]"/>
+                <xs:pattern value="(978|979) [0-9]{1,5} [0-9]{1,7} [0-9]{1,7} [0-9]"/>
+                <xs:pattern value="[0-9]{1,5}-[0-9]{1,7}-[0-9]{1,7}-[0-9X]"/>
+                <xs:pattern value="[0-9]{1,5} [0-9]{1,7} [0-9]{1,7} [0-9X]"/>
+            </xs:restriction>
+        </xs:simpleContent>
+    </xs:complexType>
+    <xs:simpleType name="type_string_url">
+        <xs:restriction base="xs:anyURI">
+            <xs:pattern value='https?://.+'/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:group name="type_base_properties">
+        <xs:all>
+            <xs:element ref="title"/>
+            <xs:element ref="url"/>
+        </xs:all>
+    </xs:group>
+
+    <xs:complexType name="type_publisherOLD">
+        <xs:all>
+            <xs:element name="publisher_name" type="type_string"/>
+            <xs:element name="publisher_place" type="type_string"/>
+        </xs:all>
+    </xs:complexType>
+    <xs:complexType name="type_personOLD">
+        <xs:complexContent>
+            <xs:extension base="type_string">
+                <xs:attribute name="role" type="type_values_contributor_role"/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="type_organizationOLD">
+        <xs:complexContent>
+            <xs:extension base="type_string"/>
+        </xs:complexContent>
+    </xs:complexType>
+
+</xs:schema>
