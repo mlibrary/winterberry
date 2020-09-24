@@ -13,9 +13,7 @@ class EpubProcessor
     else
       raise "Error: no :epub_file or :epub parameter specified."
     end
-    if epub.nil?
-      epub = Epub.new(:epub_file => epub_file)
-    end
+    epub = UMPTG::EPUB::Archive.new(:epub_file => epub_file) if epub.nil?
 
     raise "Error: missing :processors parameter." unless args.has_key?(:processors)
     processors = args[:processors]
@@ -23,7 +21,8 @@ class EpubProcessor
 
     item_fragments = {}
 
-    epub_items = [ epub.opf_item ] + epub.spine_items
+    rendition = epub.renditions.first
+    epub_items = [ rendition.opf_item ] + rendition.spine_items
 
     epub_items.each do |item|
       fragments_list = []

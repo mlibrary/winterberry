@@ -45,11 +45,14 @@ class EpubResourceProcessor
     fulcrum_dest_css_file = File.join(fulcrum_dest_css_dir, fulcrum_css_name)
 
     # Create the EPUB from the specified file.
-    epub = Epub.new(:epub_file => epub_file)
+    epub = UMPTG::EPUB::Archive.new(:epub_file => epub_file)
+
+    rendition = epub.renditions.first
+    spine_items = rendition.spine_items
 
     html_path_update_list = []
     remote_resources_list = []
-    epub.spine_items.each do |item|
+    spine_items.each do |item|
       puts "Processing file #{item.name}"
       STDOUT.flush
 

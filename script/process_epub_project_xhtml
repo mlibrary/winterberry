@@ -27,7 +27,7 @@ end
 script_dir = File.expand_path(File.dirname(__FILE__))
 root_dir = File.dirname(script_dir)
 
-require_relative File.join(root_dir, 'lib', 'epub')
+require_relative File.join(root_dir, 'lib', 'epub_old')
 
 project_dir = ARGV[0]
 html_file_list = ARGV[1..-1]
