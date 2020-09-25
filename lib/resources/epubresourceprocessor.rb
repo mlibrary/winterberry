@@ -107,7 +107,7 @@ class EpubResourceProcessor
 
     if html_path_update_list.count > 0
       # xhtml files were modified. Need to update the OPF file.
-      opf_item = epub.opf_item
+      opf_item = rendition.opf_item
       opf_content = opf_item.get_input_stream.read unless opf_item.nil?
       if opf_content.nil?
         puts "Error: OPF file not found."

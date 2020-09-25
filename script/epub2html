@@ -1,7 +1,8 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
-# HELIO-3510
+# HELIO-3510, generate basic HTML instance from an EPUB,
+# either reflowable or fixed layout.
 
 require 'optparse'
 require 'ostruct'
@@ -45,6 +46,7 @@ epub_file_list.each do |epub_file|
     next
   end
 
+  # If EPUB has a text rendition, use it. Otherwise, use first rendition.
   text_renditions = epub.renditions.select {|r| r.text_rendition? }
   rendition = text_renditions.first unless text_renditions.empty?
   rendition = epub.renditions.first if text_renditions.empty?
