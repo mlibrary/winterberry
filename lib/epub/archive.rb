@@ -43,8 +43,8 @@ module UMPTG::EPUB
         rendition = renditions.first
       end
 
-      fragment_processor = FragmentProcessor.new if fragment_processor.nil?
-      fragment_selector = ContainerSelector.new if fragment_selector.nil?
+      fragment_processor = UMPTG::Fragment::Processor.new
+      fragment_selector = UMPTG::Fragment::ContainerSelector.new
 
       lines = [
             "<?xml version=\"1.0\" encoding=\"UTF-8\"?>",
@@ -88,8 +88,8 @@ module UMPTG::EPUB
     def load(epub_file)
       if @epub.nil?
 
-        fragment_processor = FragmentProcessor.new
-        fragment_selector = ContainerSelector.new
+      fragment_processor = UMPTG::Fragment::Processor.new
+      fragment_selector = UMPTG::Fragment::ContainerSelector.new
 
         Zip::File.open(epub_file) do |epub|
           @epub = epub

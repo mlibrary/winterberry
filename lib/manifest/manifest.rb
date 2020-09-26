@@ -64,7 +64,7 @@ class Manifest
   def load
     return unless @csv.nil?
 
-    service = HeliotropeService.new(
+    service = UMPTG::Services::Heliotrope.new(
                     :fulcrum_host => @fulcrum_host
                   )
     csv_body = service.monograph_noid_export(@noid) unless @noid.nil?

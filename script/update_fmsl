@@ -100,18 +100,18 @@ monograph_dir_list.each do |monograph_dir|
 
     # Initialize/reset the image processor.
     if imgprocessor.nil?
-      imgprocessor = ImgProcessor.new
+      imgprocessor = UMPTG::Monograph::ImgProcessor.new
     else
       imgprocessor.reset
     end
     if markerprocessor.nil?
-      markerprocessor = MarkerProcessor.new
+      markerprocessor = UMPTG::Monograph::MarkerProcessor.new
     else
       markerprocessor.reset
     end
 
     # Process the epub and generate the image information.
-    EpubProcessor.process(
+    UMPTG::EpubProcessor.process(
           :epub_file => epub_file,
           :processors => [
                   imgprocessor,
@@ -121,7 +121,7 @@ monograph_dir_list.each do |monograph_dir|
 
     # If a resource map exists, use it. Otherwise,
     # it should be generated and saved.
-    resource_map = ResourceMap.new
+    resource_map = UMPTG::ResourceMap::Map.new
     if resource_map_exists
       resource_map.load(:xml_path => resource_map_file)
     else

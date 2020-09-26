@@ -22,8 +22,8 @@ module UMPTG::EPUB
 
       @is_text_rendition = @label.nil? ? false : @label.downcase == 'text'
 
-      fragment_processor = FragmentProcessor.new
-      fragment_selector = ContainerSelector.new
+      fragment_processor = UMPTG::Fragment::Processor.new
+      fragment_selector = UMPTG::Fragment::ContainerSelector.new
 
       fragment_selector.containers = [ 'manifest', 'metadata', 'spine' ]
       fragments = fragment_processor.process(

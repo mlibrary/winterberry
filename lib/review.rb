@@ -1,13 +1,13 @@
-module Review
+module UMPTG
   require_relative 'fragment'
 
-  require_relative 'review/reviewinfo'
-  require_relative 'review/reviewprocessor'
-  require_relative 'review/figureprocessor'
-  require_relative 'review/imgprocessor'
-  require_relative 'review/linkprocessor'
-  require_relative 'review/listprocessor'
-  require_relative 'review/packagemetadataprocessor'
-  require_relative 'review/packageprocessor'
-  require_relative 'review/tableprocessor'
+  require_relative File.join('review', 'reviewinfo')
+  require_relative File.join('review', 'reviewprocessor')
+  require_relative File.join('review', 'figureprocessor')
+  require_relative File.join('review', 'imgprocessor')
+  require_relative File.join('review', 'linkprocessor')
+  require_relative File.join('review', 'listprocessor')
+  require_relative File.join('review', 'packagemetadataprocessor')
+  require_relative File.join('review', 'packageprocessor')
+  require_relative File.join('review', 'tableprocessor')
 end

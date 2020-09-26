@@ -1,8 +1,8 @@
-module Fragment
+module UMPTG
   require 'nokogiri'
 
-  require_relative 'fragment/containerselector'
-  require_relative 'fragment/fragmentsaxdocument'
-  require_relative 'fragment/fragmentinfo'
-  require_relative 'fragment/fragmentprocessor'
+  require_relative File.join('fragment', 'containerselector')
+  require_relative File.join('fragment', 'object')
+  require_relative File.join('fragment', 'processor')
+  require_relative File.join('fragment', 'xmlsaxdocument')
 end
