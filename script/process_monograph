@@ -48,7 +48,6 @@ end
 
 require_relative File.join(root_dir, 'lib', 'resourcemap')
 require_relative File.join(root_dir, 'lib', 'manifest')
-require_relative File.join(root_dir, 'lib', 'metadata')
 require_relative File.join(root_dir, 'lib', 'resources')
 
 # Initialize the processor that scans the monograph epub .xhtml
