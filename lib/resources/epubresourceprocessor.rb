@@ -93,16 +93,16 @@ module UMPTG::Resources
           # Add the CSS stylesheet link that manages the Fulcrum resource display.
           level = File.dirname(item.name).split(File::SEPARATOR).count
           if level == 1
-            XMLUtil.add_css(doc, fulcrum_dest_css_file)
+            UMPTG::XMLUtil.add_css(doc, fulcrum_dest_css_file)
           else
             fpath = (('..' + File::SEPARATOR) * (level-1)) + fulcrum_css_name
-            XMLUtil.add_css(doc, fpath)
+            UMPTG::XMLUtil.add_css(doc, fpath)
           end
           puts "Added CSS stylesheet \"#{fulcrum_css_name}\"."
 
           # Save the modified xhtml file.
           FileUtils.mkdir_p File.dirname(dest_file)
-          XMLUtil.save(doc, dest_file)
+          UMPTG::XMLUtil.save(doc, dest_file)
         end
         puts "\n"
       end
@@ -164,7 +164,7 @@ module UMPTG::Resources
           end
 
           # Save the OPF file.
-          XMLUtil.save(doc, File.join(dest_epub_dir, opf_item.name))
+          UMPTG::XMLUtil.save(doc, File.join(dest_epub_dir, opf_item.name))
         end
       end
 

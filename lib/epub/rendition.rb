@@ -64,8 +64,15 @@ module UMPTG::EPUB
           @spine_items << item_entry
         end
       end
-
       return @spine_items
+    end
+
+    def nav_items
+      return @manifest.node.xpath(".//*[local-name()='item' and contains(concat(' ',translate(@properties, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), ' '),' nav ')]")
+    end
+
+    def ncx_items
+      return @manifest.node.xpath(".//item[@media-type = 'application/x-dtbncx+xml']")
     end
   end
 end

@@ -1,6 +1,8 @@
-module UMPTG::Resources
+module UMPTG
 
   class XMLUtil
+    @@XML_PI = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+
     def self.add_css(doc, href)
         head_element_list = doc.xpath("/*[local-name()='html']/*[local-name()='head']")
         if head_element_list != nil
@@ -27,13 +29,20 @@ module UMPTG::Resources
         end
     end
 
+    def self.XML_PI
+      return @@XML_PI
+    end
+
+    def self.doc_to_xml(doc)
+      return @@XML_PI + "\n" + doc.xpath("/*").to_s
+    end
+
     def self.save_html(doc, dest_path)
       puts "Writing #{dest_path}"
 
-      xml_header = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
       begin
         # doc.to_xml would include <!DOCTYPE html> header.
-        File.write(dest_path, xml_header + doc.xpath("//*[local-name()='html']").to_s)
+        File.write(dest_path, @@XML_PI + "\n" + doc.xpath("//*[local-name()='html']").to_s)
       rescue Exception => e
         puts e.message
       end
@@ -42,10 +51,9 @@ module UMPTG::Resources
     def self.save(doc, dest_path)
       puts "Writing #{dest_path}"
 
-      xml_header = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
       begin
         # doc.to_xml would include <!DOCTYPE html> header.
-        File.write(dest_path, xml_header + doc.xpath("/*").to_s)
+        File.write(dest_path, XMLUtil.doc_to_xml(doc))
       rescue Exception => e
         puts e.message
       end

@@ -43,7 +43,7 @@
     <xsl:template match="*[local-name()='navMap']">
         <xsl:element name="nav" namespace="{$HTML_URL}">
             <xsl:namespace name="epub" select="$OPS_URL"/>
-            <xsl:attribute name="id" select="'toc'"/>
+            <xsl:attribute name="id" select="'toc_nav'"/>
             <xsl:attribute name="epub:type" namespace="{$OPS_URL}" select="'toc'"/>
             <xsl:element name="h1" namespace="{$HTML_URL}">
                 <xsl:value-of select="'Table of Contents'"/>

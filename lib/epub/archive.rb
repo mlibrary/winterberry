@@ -5,9 +5,6 @@ module UMPTG::EPUB
   class Archive
     attr_reader :epub, :renditions
 
-    @@fragment_processor = nil
-    @@fragment_selector = nil
-
     def initialize(args = {})
       @epub_file = args[:epub_file]
       reset
@@ -28,6 +25,27 @@ module UMPTG::EPUB
     def reset
       @epub = nil
       @renditions = []
+    end
+
+    def save(args = {})
+      file_path = args[:epub_file] if args.key?(:epub_file)
+      file_path = @epub_file unless args.key?(:epub_file)
+
+      Zip::OutputStream.open(output_epub_file) do |zos|
+        # Make the mimetype the first item
+        input_entry_list = epub.epub.glob("mimetype")
+        mimetype_entry = input_entry_list.first
+        zos.put_next_entry(mimetype_entry.name, nil, nil, Zip::Entry::STORED)
+        zos.write(mimetype_entry.get_input_stream.read)
+
+        # Replace existing entries.
+        epub.all_items.each do |input_entry|
+          unless input_entry.name_is_directory? or input_entry.name == 'mimetype'
+            zos.put_next_entry(input_entry.name)
+            zos.write input_entry.get_input_stream.read
+          end
+        end
+      end
     end
 
     def to_xhtml(args = {})
@@ -88,8 +106,8 @@ module UMPTG::EPUB
     def load(epub_file)
       if @epub.nil?
 
-      fragment_processor = UMPTG::Fragment::Processor.new
-      fragment_selector = UMPTG::Fragment::ContainerSelector.new
+        fragment_processor = UMPTG::Fragment::Processor.new
+        fragment_selector = UMPTG::Fragment::ContainerSelector.new
 
         Zip::File.open(epub_file) do |epub|
           @epub = epub
