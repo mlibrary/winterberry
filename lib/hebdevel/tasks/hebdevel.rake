@@ -304,7 +304,7 @@ namespace :winterberry do
       params = {
                   "working-dir" => uri_path.to_s + "/"
                }
-      XSLT.transform(
+      UMPTG::XSLT.transform(
             :xslpath => xsl_file,
             :srcpath => xml_file,
             :destpath => dest_file,
