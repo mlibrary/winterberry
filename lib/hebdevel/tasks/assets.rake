@@ -178,9 +178,12 @@ namespace :assets do
             end
 
             if f_type == "image"
-                if f_basename.start_with?(HEBID)
+                #if f_basename.start_with?(HEBID)
+                #puts "#{__method__}: basename: #{f_noext} HEBID: #{HEBID}"
+                if f_noext == HEBID or f_noext == HEBID + "-lg"
                     # Asset file name contains the
                     # HEBID, so assume it is a cover.
+                    puts "Found cover: #{f_basename}"
                     cover = "yes"
                 end
 
