@@ -29,17 +29,15 @@ root_dir = File.expand_path(File.join(script_dir, ".."))
 
 epub_file_list = ARGV
 
-require_relative File.join(root_dir, "lib", "epub")
+require_relative File.join(root_dir, "lib", "epub_new")
 
 epub_file_list.each do |epub_file|
   epub_file = File.expand_path(epub_file)
   unless File.exists?(epub_file)
     puts "Error: invalid EPUB file path #{epub_file}."
-    #next
+    next
   end
   puts "Processing #{File.basename(epub_file)}"
 
-  UMPTG::EPUB::Migrator.migrate(epub_file: epub_file)
-
-  #epub = UMPTG::EPUB::Archive.new(epub_file: epub_file)
+  UMPTG::EPUB_NEW::Migrator.migrate(epub_file: epub_file)
 end

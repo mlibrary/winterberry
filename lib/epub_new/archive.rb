@@ -3,7 +3,7 @@ module UMPTG::EPUB_NEW
   require 'zip'
 
   class Archive
-    attr_reader :epub_file, :renditions
+    attr_reader :epub_file
 
     def initialize(args = {})
       @renditions = {}
@@ -16,7 +16,7 @@ module UMPTG::EPUB_NEW
         load(args)
       else
         label = "OEBPS/content.opf"
-        rend = UMPTG::EPUB_NEW::Rendition.new
+        rend = UMPTG::EPUB_NEW::Rendition.new(name: label)
         @renditions[label] = rend
       end
     end
@@ -25,10 +25,15 @@ module UMPTG::EPUB_NEW
       return @name2entry.values
     end
 
+    def renditions
+      return @renditions.values
+    end
+
     def add(args = {})
       case
-      when args.key?(:entry)
-        entry = args[:entry]
+      when args.key?(:zip_entry)
+        zip_entry = args[:zip_entry]
+        entry = Entry.new(zip_entry: zip_entry)
       when args.key?(:entry_name)
         entry_name = args[:entry_name]
         raise "Error: empty entry name" if entry_name.strip.empty?
@@ -37,16 +42,22 @@ module UMPTG::EPUB_NEW
 
         if @name2entry.key?(entry_name)
           entry = @name2entry[entry_name]
+          entry.content = entry_content
         else
-          entry = Zip::Entry.new
-          entry.name = entry_name
-          entry.comment = entry_content
+          zip_entry = Zip::Entry.new
+          zip_entry.name = entry_name
+          entry = Entry.new(zip_entry: zip_entry, content: entry_content)
         end
       end
 
       @name2entry[entry.name] = entry
-      #rendition = args[:rendition]
-      #rendition.add(entry)
+    end
+
+    def remove(args = {})
+      entry_name = args[:entry_name]
+      raise "Error: empty entry name" if entry_name.strip.empty?
+
+      @name2entry.delete(entry_name)
     end
 
     def save(args = {})
@@ -59,17 +70,11 @@ module UMPTG::EPUB_NEW
         mimetype_entry = @name2entry["mimetype"]
         raise "Error: mimetype file missing" if mimetype_entry.nil?
 
-        zos.put_next_entry(mimetype_entry.name, nil, nil, Zip::Entry::STORED)
-        zos.write(mimetype_entry.get_input_stream.read)
+        mimetype_entry.write(zos, compression_method: Zip::Entry::STORED)
 
         @name2entry.values.each do |entry|
           unless entry.name_is_directory? or entry.name == 'mimetype'
-            zos.put_next_entry(entry.name)
-            if entry.extra.nil?
-              zos.write(entry.get_input_stream.read)
-            else
-              zos.write(entry.comment)
-            end
+            entry.write(zos)
           end
         end
       end
@@ -77,12 +82,18 @@ module UMPTG::EPUB_NEW
 
     def version(args = {})
       label, rend = rendition(args)
+      rend.version(args[:version])
       return rend.version
     end
 
     def opf(args = {})
       label, rend = rendition(args)
       return @name2entry[label]
+    end
+
+    def opf_name(args = {})
+      label, rend = rendition(args)
+      return label
     end
 
     def manifest(args = {})
@@ -95,6 +106,16 @@ module UMPTG::EPUB_NEW
       return item_list(rend.spine, File.dirname(label))
     end
 
+    def navigation(args = {})
+      label, rend = rendition(args)
+      return item_list(rend.nav_items, File.dirname(label))
+    end
+
+    def ncx(args = {})
+      label, rend = rendition(args)
+      return item_list(rend.ncx_items, File.dirname(label))
+    end
+
     def load(args = {})
       @epub_file = args[:epub_file]
 
@@ -105,8 +126,8 @@ module UMPTG::EPUB_NEW
       fragment_selector = UMPTG::Fragment::ContainerSelector.new
 
       Zip::File.open(@epub_file) do |zip|
-        zip.entries.each do |entry|
-          @name2entry[entry.name] = entry
+        zip.entries.each do |zip_entry|
+          @name2entry[zip_entry.name] = Entry.new(zip_entry: zip_entry)
         end
 
         container = @name2entry[File.join("META-INF", "container.xml")]
@@ -127,6 +148,7 @@ module UMPTG::EPUB_NEW
           raise "Error: invalid OPF path" if opf_entry.nil?
 
           rendition = Rendition.new(
+                      name: opf_entry.name,
                       content: opf_entry.get_input_stream.read
                     )
           @renditions[opf_entry.name] = rendition
