@@ -577,8 +577,10 @@
                         <xsl:variable name="div" select="."/>
 
                         <xsl:element name="li" namespace="{$HTML_URL}">
+                            <!--
                             <xsl:attribute name="class" select="@type"/>
-
+                             -->
+                            <xsl:attribute name="class" select="@style"/>
                             <xsl:element name="span" namespace="{$HTML_URL}">
                                 <xsl:call-template name="genEntry">
                                     <xsl:with-param name="div" select="$div"/>

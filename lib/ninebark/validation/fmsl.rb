@@ -8,7 +8,6 @@ class FMSL
     # or "File Name" == 0
     fmsl_body = File.open(fmsl_file).readlines.delete_if { |line|
       line.strip.empty? \
-        or line.strip.start_with?(',') \
         or line.strip.start_with?('0,') \
         or line.strip.downcase.start_with?('"in any columns') \
         or line.strip.downcase.start_with?('in any columns') \

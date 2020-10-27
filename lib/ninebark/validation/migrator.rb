@@ -10,7 +10,6 @@ class Migrator
 
   def self.fmsl_to_manifest(args = {})
     fmsl_body = args[:fmsl_body]
-
     fmsl_csv = CSV.parse(
               fmsl_body.join,
               :headers => true,
@@ -27,9 +26,14 @@ class Migrator
 
       fmsl_csv.each do |row|
         file_name = row['File Name']
-        next if file_name.nil? or file_name.strip.downcase.start_with?('"this should be') \
-              or file_name.strip.downcase.start_with?('this should be')
-        next if file_name.start_with?(Validation.BLANK_ROW_FILE_NAME)
+
+        #next if file_name.nil? or file_name.strip.downcase.start_with?('"this should be') \
+        #      or file_name.strip.downcase.start_with?('this should be')
+        unless file_name.nil?
+          next if file_name.strip.downcase.start_with?('"this should be') \
+               or file_name.strip.downcase.start_with?('this should be')
+          next if file_name.start_with?(Validation.BLANK_ROW_FILE_NAME)
+        end
 
         unless row['Fulcrum'].nil? or row['Fulcrum'].downcase == 'yes'
           puts "Skipping #{row['File Name']}" unless row['File Name'].nil?
