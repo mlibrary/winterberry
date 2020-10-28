@@ -84,7 +84,7 @@ MFIELD
   end
 
   def self.headers()
-    CollectionSchema.FIELD_HEADERS
+    CollectionSchema.HEADERS
   end
 
   def self.SCHEMA
@@ -155,11 +155,17 @@ MFIELD
 
   def self.HEADERS
     if @@FIELD_HEADERS.nil?
-      @@FIELD_HEADERS = {}
+      @@FIELD_HEADERS = [
+            CollectionSchema.FIELD_MAP['file_name'][:field_name],
+            CollectionSchema.FIELD_MAP['title'][:field_name],
+            CollectionSchema.FIELD_MAP['representative_kind'][:field_name],
+            CollectionSchema.FIELD_MAP['resource_type'][:field_name]
+          ]
       CollectionSchema.FIELD_MAP.each do |entry|
-        @@FIELD_HEADERS << entry[:field_name]
+        next if ['file_name', 'title', 'resource_type', 'representative_kind'].include?(entry[0])
+        @@FIELD_HEADERS << entry[1][:field_name]
       end
     end
-    return @@REPRESENTATIVES
+    return @@FIELD_HEADERS
   end
 end
