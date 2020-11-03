@@ -1,81 +1,84 @@
-require 'nokogiri'
+module UMPTG::Resources
 
-class Action
-  @@PENDING = "Pending"
-  @@COMPLETED = "Completed"
-  @@FAILED = "Failed"
-  @@NO_ACTION = "No action"
+  require 'nokogiri'
 
-  attr_reader :reference_action_def, :reference_container, :reference_node, \
-              :status, :message
+  class Action
+    @@PENDING = "Pending"
+    @@COMPLETED = "Completed"
+    @@FAILED = "Failed"
+    @@NO_ACTION = "No action"
 
-  def initialize(args)
-    @reference_action_def = args[:reference_action_def]
-    @reference_container = args[:reference_container]
-    @reference_node = args[:reference_node]
+    attr_reader :reference_action_def, :reference_container, :reference_node, \
+                :status, :message
 
-    @status = Action.PENDING
-    @message = ""
-  end
+    def initialize(args)
+      @reference_action_def = args[:reference_action_def]
+      @reference_container = args[:reference_container]
+      @reference_node = args[:reference_node]
 
-  def process
-    raise "#{self.class}: method #{__method__} must be implemented for #{@reference_action_def.to_s}."
-  end
-
-  def link_markup(descr = nil)
-    descr = "View resource." if descr == nil
-
-    link = @reference_action_def.link
-    embed_markup = "<a href=\"#{link}\" target=\"_blank\">#{descr}</a>"
-    embed_markup
-  end
-
-  def embed_fragment
-    emb_markup = reference_action_def.embed_markup
-    if emb_markup == nil or emb_markup.strip.empty?
-      @message = "Warning: no embed markup for resource node #{reference_action_def.reference_name}"
-      return nil
+      @status = Action.PENDING
+      @message = ""
     end
 
-    emb_fragment = Nokogiri::XML.fragment(emb_markup)
-    if emb_fragment.nil?
-      @message = "Warning: error creating embed markup document for resource node #{reference_action_def.reference_name}"
+    def process
+      raise "#{self.class}: method #{__method__} must be implemented for #{@reference_action_def.to_s}."
     end
-    emb_fragment
-  end
 
-  def default_container(container = 'div')
-    return @reference_node.document.create_element(container, :class => "default-media-display")
-    #return @reference_node.document.create_element(container, :class => "no-default-media-display")
-  end
+    def link_markup(descr = nil)
+      descr = "View resource." if descr == nil
 
-  def embed_container(container = 'div')
-    container = @reference_node.document.create_element(container, :class => "enhanced-media-display")
-    container
-  end
+      link = @reference_action_def.link
+      embed_markup = "<a href=\"#{link}\" target=\"_blank\">#{descr}</a>"
+      embed_markup
+    end
 
-  def to_s
-    return "#{@status}: #{self.class}, #{@reference_action_def.to_s}"
-  end
+    def embed_fragment
+      emb_markup = reference_action_def.embed_markup
+      if emb_markup == nil or emb_markup.strip.empty?
+        @message = "Warning: no embed markup for resource node #{reference_action_def.reference_name}"
+        return nil
+      end
 
-  def self.find_caption(container)
-    caption = container.xpath(".//*[local-name()='figcaption' or @class='figcap' or @class='figh']")
-    return caption
-  end
+      emb_fragment = Nokogiri::XML.fragment(emb_markup)
+      if emb_fragment.nil?
+        @message = "Warning: error creating embed markup document for resource node #{reference_action_def.reference_name}"
+      end
+      emb_fragment
+    end
 
-  def self.COMPLETED
-    @@COMPLETED
-  end
+    def default_container(container = 'div')
+      return @reference_node.document.create_element(container, :class => "default-media-display")
+      #return @reference_node.document.create_element(container, :class => "no-default-media-display")
+    end
 
-  def self.PENDING
-    @@PENDING
-  end
+    def embed_container(container = 'div')
+      container = @reference_node.document.create_element(container, :class => "enhanced-media-display")
+      container
+    end
 
-  def self.NO_ACTION
-    @@NO_ACTION
-  end
+    def to_s
+      return "#{@status}: #{self.class}, #{@reference_action_def.to_s}"
+    end
 
-  def self.FAILED
-    @@FAILED
+    def self.find_caption(container)
+      caption = container.xpath(".//*[local-name()='figcaption' or @class='figcap' or @class='figh']")
+      return caption
+    end
+
+    def self.COMPLETED
+      @@COMPLETED
+    end
+
+    def self.PENDING
+      @@PENDING
+    end
+
+    def self.NO_ACTION
+      @@NO_ACTION
+    end
+
+    def self.FAILED
+      @@FAILED
+    end
   end
 end

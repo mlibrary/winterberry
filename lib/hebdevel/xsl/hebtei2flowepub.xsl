@@ -1978,7 +1978,7 @@
                         </xsl:element>
                     </xsl:element>
                 </xsl:if>
-                <xsl:for-each-group select="$entryList" group-by="./tei:head">
+                <xsl:for-each-group select="$entryList" group-by="./tei:head[@rend='toc']">
 
                     <xsl:variable name="ref" select="mlibxsl:genReference(.)"/>
                     <xsl:variable name="href" select="concat('xhtml',$FILE_SEPARATOR,$ref)"/>
@@ -1991,12 +1991,11 @@
                         -->
                         <xsl:element name="a" namespace="{$HTML_URL}">
                             <xsl:attribute name="href" select="$href"/>
-                            <xsl:for-each select="./tei:head">
+                            <xsl:for-each select="./tei:head[@rend='toc']">
                                 <xsl:if test="string-length(normalize-space(string())) > 0">
                                     <xsl:if test="position() > 1">
                                         <xsl:text> </xsl:text>
                                     </xsl:if>
-
                                     <xsl:apply-templates select="." mode="toc"/>
                                 </xsl:if>
                             </xsl:for-each>

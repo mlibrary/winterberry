@@ -1,0 +1,63 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# HELIO-3510, generate basic HTML instance from an EPUB,
+# either reflowable or fixed layout.
+
+require 'optparse'
+require 'ostruct'
+
+# Process the script parameters.
+options = OpenStruct.new
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} dirpath [dirpath...]"
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    puts opts
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  puts option_parser.help
+  return
+end
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+#root_dir = File.dirname(script_dir)
+root_dir = File.expand_path(File.join(script_dir, ".."))
+
+dirpath_list = ARGV
+
+require_relative File.join(root_dir, "lib", "epub")
+
+dirpath_list.each do |dirpath|
+  dirpath = File.expand_path(dirpath)
+  unless File.directory?(dirpath)
+    puts "Error: invalid directory path #{dirpath}."
+    next
+  end
+
+  epub_file = File.join(File.dirname(dirpath), File.basename(dirpath) + "_created.epub")
+  puts "Creating EPUB #{File.basename(epub_file)}"
+  Zip::OutputStream.open(epub_file) do |zos|
+    # Make the mimetype the first item
+    mimetype_list = Dir.glob(File.join(dirpath, "mimetype"))
+    raise "Error: mimetype file missing" if mimetype_list.empty?
+
+    mimetype_file = mimetype_list.first
+    entry_name = mimetype_file.delete_prefix(dirpath + File::SEPARATOR)
+    puts "Adding entry #{entry_name}"
+    zos.put_next_entry(mimetype_file.delete_prefix(dirpath + File::SEPARATOR), nil, nil, Zip::Entry::STORED)
+    zos.write(File.read(mimetype_file, mode: "rb"))
+
+    Dir.glob(File.join(dirpath, "**", "*")).each do |fpath|
+      unless File.directory?(fpath) or File.basename(fpath) == 'mimetype'
+        entry_name = fpath.delete_prefix(dirpath + File::SEPARATOR)
+        puts "Adding entry #{entry_name}"
+        zos.put_next_entry(entry_name)
+        zos.write(File.read(fpath, mode: "rb"))
+      end
+    end
+  end
+end

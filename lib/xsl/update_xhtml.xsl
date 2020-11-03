@@ -14,6 +14,13 @@
         <xsl:apply-templates/>
     </xsl:template>
 
+    <xsl:template match="*[local-name()='html']/@*[name()='version']
+        |*[local-name()='head']/@*[name()='profile']
+        |@*[name()='xml:space' and .='preserve']
+        |*[local-name()='a']/@*[name()='shape']">
+        <xsl:message>Skipping attribute <xsl:value-of select="name()"/></xsl:message>
+    </xsl:template>
+
     <xsl:template match="@*[name()='href']">
         <xsl:variable name="href" select="mlibxsl:updateHref(.)"/>
         <xsl:message>href:<xsl:value-of select="."/>=><xsl:value-of select="$href"/></xsl:message>
@@ -67,7 +74,17 @@
                     </xsl:element>
                 </xsl:when>
             </xsl:choose>
-            <xsl:apply-templates select="*[local-name()!='col']|processing-instruction()|comment()"/>
+            <xsl:choose>
+                <xsl:when test="exists(*[local-name()='tbody'])">
+                    <xsl:apply-templates select="*[local-name()!='col']|processing-instruction()|comment()"/>
+                </xsl:when>
+                <xsl:otherwise>
+                    <xsl:apply-templates select="*[local-name()!='col' and local-name()!='tr']|processing-instruction()|comment()"/>
+                    <xsl:element name="tbody" namespace="{$HTML_URL}">
+                        <xsl:apply-templates select="*[local-name()='tr']"/>
+                    </xsl:element>
+                </xsl:otherwise>
+            </xsl:choose>
         </xsl:element>
     </xsl:template>
 

@@ -22,8 +22,8 @@ module UMPTG::EPUB
 
       @is_text_rendition = @label.nil? ? false : @label.downcase == 'text'
 
-      fragment_processor = FragmentProcessor.new
-      fragment_selector = ContainerSelector.new
+      fragment_processor = UMPTG::Fragment::Processor.new
+      fragment_selector = UMPTG::Fragment::ContainerSelector.new
 
       fragment_selector.containers = [ 'manifest', 'metadata', 'spine' ]
       fragments = fragment_processor.process(
@@ -64,8 +64,15 @@ module UMPTG::EPUB
           @spine_items << item_entry
         end
       end
-
       return @spine_items
+    end
+
+    def nav_items
+      return @manifest.node.xpath(".//*[local-name()='item' and contains(concat(' ',translate(@properties, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), ' '),' nav ')]")
+    end
+
+    def ncx_items
+      return @manifest.node.xpath(".//item[@media-type = 'application/x-dtbncx+xml']")
     end
   end
 end

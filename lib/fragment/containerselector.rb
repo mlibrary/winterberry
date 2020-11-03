@@ -1,8 +1,10 @@
-class ContainerSelector
+module UMPTG::Fragment
+  class ContainerSelector
 
-  attr_accessor :containers
+    attr_accessor :containers
 
-  def select_fragment(name, attrs = [])
-    return @containers.include?(name)
+    def select_fragment(name, attrs = [])
+      return @containers.include?(name)
+    end
   end
 end

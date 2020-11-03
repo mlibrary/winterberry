@@ -48,7 +48,6 @@ end
 
 require_relative File.join(root_dir, 'lib', 'resourcemap')
 require_relative File.join(root_dir, 'lib', 'manifest')
-require_relative File.join(root_dir, 'lib', 'metadata')
 require_relative File.join(root_dir, 'lib', 'resources')
 
 # Initialize the processor that scans the monograph epub .xhtml
@@ -63,7 +62,7 @@ monograph_noid_list.each do |monograph_noid|
   # Use the noid to retrieve the monograph manifest from Fulcrum.
   puts "*" * 10 + " #{monograph_noid} " + "*" * 10
 
-  manifest = Manifest.new(
+  manifest = UMPTG::Manifest.new(
                 :noid => monograph_noid,
                 :fulcrum_host => options.fulcrum_host
               )
@@ -148,7 +147,7 @@ monograph_noid_list.each do |monograph_noid|
   # Create a new EPUB with the resource references detailed
   # in the resource map processed. The path to the new EPUB
   # is returned.
-  processed_epub_file = EpubResourceProcessor.process(
+  processed_epub_file = UMPTG::Resources::EpubResourceProcessor.process(
         :epub_file => epub_file,
         :default_action_str => default_action_str,
         :processing_dir => process_dir,

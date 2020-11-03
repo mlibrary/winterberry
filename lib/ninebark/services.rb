@@ -1,3 +1,3 @@
 module Services
-  require_relative 'services/heliotropeservice'
+  require_relative File.join('services', 'heliotropeservice')
 end

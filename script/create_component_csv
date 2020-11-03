@@ -44,7 +44,7 @@ components_list = []
 monograph_noid_list.each do |monograph_noid|
   puts "*" * 10 + " #{monograph_noid} " + "*" * 10
 
-  manifest = Manifest.new(:noid => monograph_noid)
+  manifest = UMPTG::Manifest.new(:noid => monograph_noid)
   raise "Error: creating manifest from noid #{noid}" if manifest.nil?
 
   unless manifest.monograph_row.nil?

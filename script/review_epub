@@ -47,12 +47,12 @@ require_relative File.join(root_dir, "lib", "review")
 require_relative File.join(root_dir, "lib", "epubprocessor")
 
 review_processors = {
-        :figure => FigureProcessor.new,
-        :image => ImgProcessor.new,
-        :link => LinkProcessor.new,
-        :list => ListProcessor.new,
-        :package => PackageProcessor.new,
-        :table => TableProcessor.new
+        :figure => UMPTG::Review::FigureProcessor.new,
+        :image => UMPTG::Review::ImgProcessor.new,
+        :link => UMPTG::Review::LinkProcessor.new,
+        :list => UMPTG::Review::ListProcessor.new,
+        :package => UMPTG::Review::PackageProcessor.new,
+        :table => UMPTG::Review::TableProcessor.new
     }
 processors = []
 options.reviews.each do |name,flag|
@@ -62,7 +62,7 @@ end
 epub_file_list.each do |epub_file|
 
   # Process the epub and generate the image information.
-  item_fragments = EpubProcessor.process(
+  item_fragments = UMPTG::EpubProcessor.process(
         :epub_file => epub_file,
         :processors => processors
       )

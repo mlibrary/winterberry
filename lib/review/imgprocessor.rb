@@ -1,26 +1,24 @@
-class ImgProcessor < ReviewProcessor
-  #@@containers = [ 'img' ]
+module UMPTG::Review
+  class ImgProcessor < ReviewProcessor
+    def process(args = {})
+      selector = UMPTG::Fragment::ContainerSelector.new
+      selector.containers = [ 'img' ]
+      args[:selector] = selector
 
-  def process(args = {})
-    #args[:containers] = @@containers
+      fragments = super(args)
 
-    selector = ContainerSelector.new
-    selector.containers = [ 'img' ]
-    args[:selector] = selector
-
-    fragments = super(args)
-
-    fragments.each do |fragment|
-      ImgProcessor.review(fragment)
+      fragments.each do |fragment|
+        ImgProcessor.review(fragment)
+      end
+      return fragments
     end
-    return fragments
-  end
 
-  def self.review(fragment)
-    src = fragment.map['src']
-    alt = fragment.map['alt']
+    def self.review(fragment)
+      src = fragment.map['src']
+      alt = fragment.map['alt']
 
-    fragment.review_msg_list << "Image INFO:    #{src} has alt text" unless alt.nil? or alt.empty?
-    fragment.review_msg_list << "Image Warning: #{src} no alt text" if alt.nil? or alt.empty?
+      fragment.review_msg_list << "Image INFO:    #{src} has alt text" unless alt.nil? or alt.empty?
+      fragment.review_msg_list << "Image Warning: #{src} no alt text" if alt.nil? or alt.empty?
+    end
   end
 end

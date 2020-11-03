@@ -88,7 +88,7 @@
             <xsl:when test="not(exists($nav_item)) and local-name()='item' and @media-type='application/x-dtbncx+xml'">
                 <xsl:element name="{local-name()}" namespace="{$IDPF_URL}">
                     <xsl:attribute name="id" select="'toc_xhtml'"/>
-                    <xsl:attribute name="href" select="'toc.xhtml'"/>
+                    <xsl:attribute name="href" select="'toc_nav.xhtml'"/>
                     <xsl:attribute name="media-type" select="'application/xhtml+xml'"/>
                     <xsl:attribute name="properties" select="'nav'"/>
                 </xsl:element>

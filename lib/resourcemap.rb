@@ -1,9 +1,8 @@
-module ResourceMapModule
-  require_relative 'csvfile'
-  require_relative 'resourcemap/resourcemapaction'
-  require_relative 'resourcemap/resourcemapbase'
-  require_relative 'resourcemap/resourcemapreference'
-  require_relative 'resourcemap/resourcemapresource'
-  require_relative 'resourcemap/resourcemapsaxdocument'
-  require_relative 'resourcemap/resourcemap'
+module UMPTG
+  require_relative File.join('resourcemap', 'action')
+  require_relative File.join('resourcemap', 'resourcemapobject')
+  require_relative File.join('resourcemap', 'reference')
+  require_relative File.join('resourcemap', 'resource')
+  require_relative File.join('resourcemap', 'xmlsaxdocument')
+  require_relative File.join('resourcemap', 'map')
 end
