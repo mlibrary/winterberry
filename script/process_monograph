@@ -147,7 +147,8 @@ monograph_noid_list.each do |monograph_noid|
   # Create a new EPUB with the resource references detailed
   # in the resource map processed. The path to the new EPUB
   # is returned.
-  processed_epub_file = UMPTG::Resources::EpubResourceProcessor.process(
+  processed_epub_file = UMPTG::Resources::EpubResourceProcessor_NEW.process(
+  #processed_epub_file = UMPTG::Resources::EpubResourceProcessor.process(
         :epub_file => epub_file,
         :default_action_str => default_action_str,
         :processing_dir => process_dir,

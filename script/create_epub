@@ -37,6 +37,7 @@ dirpath_list.each do |dirpath|
     puts "Error: invalid directory path #{dirpath}."
     next
   end
+  puts "Directory: #{dirpath + File::SEPARATOR}"
 
   epub_file = File.join(File.dirname(dirpath), File.basename(dirpath) + "_created.epub")
   puts "Creating EPUB #{File.basename(epub_file)}"
