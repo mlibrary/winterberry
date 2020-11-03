@@ -1,6 +1,5 @@
 module UMPTG
   require_relative 'epub'
-  require_relative 'epub_new'
   require_relative 'resourcemap'
   require_relative 'xmlutil'
   require_relative File.join('resources', 'referenceactiondef')

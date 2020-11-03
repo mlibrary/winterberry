@@ -22,9 +22,7 @@ module UMPTG
 
       item_fragments = {}
 
-      rendition = epub.renditions.first
-      epub_items = [ rendition.opf_item ] + rendition.spine_items
-
+      epub_items = [ epub.opf ] + epub.spine
       epub_items.each do |item|
         fragments_list = []
         processors.each do |proc|

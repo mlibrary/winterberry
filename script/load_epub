@@ -29,7 +29,6 @@ root_dir = File.expand_path(File.join(script_dir, ".."))
 epub_file_list = ARGV
 
 require_relative File.join(root_dir, "lib", "epub")
-require_relative File.join(root_dir, "lib", "epub_new")
 
 epub_file_list.each do |epub_file|
   epub_file = File.expand_path(epub_file)
@@ -39,41 +38,8 @@ epub_file_list.each do |epub_file|
   end
   puts "Processing #{File.basename(epub_file)}"
 
-  epub_new = UMPTG::EPUB_NEW::Archive.new(epub_file: epub_file)
+  epub_new = UMPTG::EPUB::Archive.new(epub_file: epub_file)
   epub_new_file = File.join(File.dirname(epub_file), File.basename(epub_file, ".*") + "_new.epub")
   puts "Saving EPUB #{File.basename(epub_new_file)}"
   epub_new.save(epub_file: epub_new_file)
-
-=begin
-  epub = UMPTG::EPUB::Archive.new(epub_file: epub_file)
-  epub_new = UMPTG::EPUB_NEW::Archive.new
-  epub.all_items.each do |item|
-    #puts item.name
-    epub_new.add(entry: item)
-  end
-  epub_new.entries.each do |entry|
-    #puts entry.name
-  end
-
-  epub_new_file = File.join(File.dirname(epub_file), File.basename(epub_file, ".*") + "_new.epub")
-  puts "Saving EPUB #{File.basename(epub_new_file)}"
-  epub_new.save(epub_file: epub_new_file)
-=end
-
-=begin
-  epub = UMPTG::EPUB_NEW::Archive.new(epub_file: epub_file)
-  #epub = UMPTG::EPUB_NEW::Archive.new
-
-  puts "Version: #{epub.version}"
-
-  puts "*** Manifest ***"
-  epub.manifest.each do |item|
-    puts item.name
-  end
-
-  puts "*** Spine ***"
-  epub.spine.each do |item|
-    puts item.name
-  end
-=end
 end

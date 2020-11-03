@@ -3,144 +3,189 @@ module UMPTG::EPUB
   require 'zip'
 
   class Archive
-    attr_reader :epub, :renditions
+    attr_reader :epub_file
 
     def initialize(args = {})
-      @epub_file = args[:epub_file]
-      reset
-      load(@epub_file)
+      @renditions = {}
+      @epub_file = ""
+
+      @name2entry = {}
+
+      case
+      when args.key?(:epub_file)
+        load(args)
+      else
+        label = "OEBPS/content.opf"
+        rend = UMPTG::EPUB::Rendition.new(name: label)
+        @renditions[label] = rend
+      end
     end
 
-    def get_entry(entry)
-      item_list = @epub.glob(entry)
-      return nil if item_list.nil? or item_list.empty?
-      return item_list.first
+    def entries
+      return @name2entry.values
     end
 
-    def all_items
-      load_epub if @epub.nil?
-      return @epub.entries
+    def renditions
+      return @renditions.values
     end
 
-    def reset
-      @epub = nil
-      @renditions = []
+    def add(args = {})
+      case
+      when args.key?(:zip_entry)
+        zip_entry = args[:zip_entry]
+        entry = Entry.new(zip_entry: zip_entry)
+      when args.key?(:entry_name)
+        entry_name = args[:entry_name]
+        raise "Error: empty entry name" if entry_name.strip.empty?
+        entry_content = args[:entry_content]
+        raise "Error: missing entry content" if entry_content.nil?
+
+        if @name2entry.key?(entry_name)
+          entry = @name2entry[entry_name]
+          entry.content = entry_content
+        else
+          zip_entry = Zip::Entry.new
+          zip_entry.name = entry_name
+          entry = Entry.new(zip_entry: zip_entry, content: entry_content)
+        end
+      end
+
+      @name2entry[entry.name] = entry
+    end
+
+    def remove(args = {})
+      entry_name = args[:entry_name]
+      raise "Error: empty entry name" if entry_name.strip.empty?
+
+      @name2entry.delete(entry_name)
     end
 
     def save(args = {})
-      file_path = args[:epub_file] if args.key?(:epub_file)
-      file_path = @epub_file unless args.key?(:epub_file)
+      epub_file = args[:epub_file]
+      epub_file = @epub_file if epub_file.nil? or epub_file.empty?
+      raise "Error: missing EPUB file path" if epub_file.nil? or epub_file.empty?
 
-      Zip::OutputStream.open(output_epub_file) do |zos|
+      Zip::OutputStream.open(epub_file) do |zos|
         # Make the mimetype the first item
-        input_entry_list = epub.epub.glob("mimetype")
-        mimetype_entry = input_entry_list.first
-        zos.put_next_entry(mimetype_entry.name, nil, nil, Zip::Entry::STORED)
-        zos.write(mimetype_entry.get_input_stream.read)
+        mimetype_entry = @name2entry["mimetype"]
+        raise "Error: mimetype file missing" if mimetype_entry.nil?
 
-        # Replace existing entries.
-        epub.all_items.each do |input_entry|
-          unless input_entry.name_is_directory? or input_entry.name == 'mimetype'
-            zos.put_next_entry(input_entry.name)
-            zos.write input_entry.get_input_stream.read
+        mimetype_entry.write(zos, compression_method: Zip::Entry::STORED)
+
+        @name2entry.values.each do |entry|
+          unless entry.name_is_directory? or entry.name == 'mimetype'
+            entry.write(zos)
           end
         end
       end
     end
 
-    def to_xhtml(args = {})
-      case
-      when args.key?(:rendition_label)
-        rendition_label = args[:rendition_label]
-        r_list = @renditions.select { |r| r.label == rendition_label }
-        raise "Error: invalid rendition label #{rendition_label}" if r_list.empty?
-        rendition = r_list.first
-      when args.key?(:rendition)
-        rendition = args[:rendition]
-      else
-        rendition = renditions.first
-      end
+    def version(args = {})
+      label, rend = rendition(args)
+      rend.version(args[:version])
+      return rend.version
+    end
+
+    def opf(args = {})
+      label, rend = rendition(args)
+      return @name2entry[label]
+    end
+
+    def opf_name(args = {})
+      label, rend = rendition(args)
+      return label
+    end
+
+    def opf_doc(args = {})
+      label, rend = rendition(args)
+      return rend.opf_doc
+    end
+
+    def manifest(args = {})
+      label, rend = rendition(args)
+      return item_list(rend.manifest, File.dirname(label))
+    end
+
+    def spine(args = {})
+      label, rend = rendition(args)
+      return item_list(rend.spine, File.dirname(label))
+    end
+
+    def navigation(args = {})
+      label, rend = rendition(args)
+      return item_list(rend.nav_items, File.dirname(label))
+    end
+
+    def ncx(args = {})
+      label, rend = rendition(args)
+      return item_list(rend.ncx_items, File.dirname(label))
+    end
+
+    def load(args = {})
+      @epub_file = args[:epub_file]
+
+      raise "Error: missing file path" if @epub_file.strip.empty?
+      raise "Error: invalid file path" unless File.exist?(@epub_file)
 
       fragment_processor = UMPTG::Fragment::Processor.new
       fragment_selector = UMPTG::Fragment::ContainerSelector.new
 
-      lines = [
-            "<?xml version=\"1.0\" encoding=\"UTF-8\"?>",
-            "<html xmlns=\"http://www.w3.org/1999/xhtml\" xmlns:epub=\"http://www.idpf.org/2007/ops\">",
-            "<head></head>",
-            "<body>"
-          ]
-      rendition.spine_items.each do |item|
-        path = File.join(File.dirname(item.name), File.basename(item.name, ".*")).gsub(/\//, '_')
+      Zip::File.open(@epub_file) do |zip|
+        zip.entries.each do |zip_entry|
+          @name2entry[zip_entry.name] = Entry.new(zip_entry: zip_entry)
+        end
 
-        fragment_selector.containers = [ 'body' ]
+        container = @name2entry[File.join("META-INF", "container.xml")]
+        raise "Error: missing container.xml" if container.nil?
+
+        fragment_selector.containers = [ 'rootfile' ]
         fragment_list = fragment_processor.process(
-              :content => item.get_input_stream.read,
+              :content => container.get_input_stream.read,
               :selector => fragment_selector
             )
-        if fragment_list.empty?
-          puts "Warning: empty body for #{item.name}"
-          next
-        end
+        raise "Error: missing rootfile" if fragment_list.empty?
 
-        lines << "<div id=\"#{path}\">" if rendition.text_rendition?
         fragment_list.each do |fragment|
-          body_elem = fragment.node
+          root_elem = fragment.node
+          opf_file = root_elem['full-path']
 
-          div_elem_list = body_elem.xpath("./*")
-          div_elem_list.each do |div_elem|
-            div_elem.remove_attribute('id') if rendition.text_rendition?
-            lines << div_elem.to_xhtml
-          end
+          opf_entry = @name2entry[opf_file]
+          raise "Error: invalid OPF path" if opf_entry.nil?
+
+          rendition = Rendition.new(
+                      name: opf_entry.name,
+                      content: opf_entry.get_input_stream.read
+                    )
+          @renditions[opf_entry.name] = rendition
         end
-        lines << "</div>" if rendition.text_rendition?
       end
-      lines << "</body>"
-      lines << "</html>"
-
-      return lines.join
     end
 
     private
 
-    def load(epub_file)
-      if @epub.nil?
-
-        fragment_processor = UMPTG::Fragment::Processor.new
-        fragment_selector = UMPTG::Fragment::ContainerSelector.new
-
-        Zip::File.open(epub_file) do |epub|
-          @epub = epub
-
-          containers = epub.glob(File.join("META-INF", "container.xml"))
-          next if containers.empty?
-
-          containers.each do |container_entry|
-            fragment_selector.containers = [ 'rootfile' ]
-            fragment_list = fragment_processor.process(
-                  :content => container_entry.get_input_stream.read,
-                  :selector => fragment_selector
-                )
-            if fragment_list.empty?
-              puts "Warning: no container found"
-              next
-            end
-
-            fragment_list.each do |fragment|
-              root_elem = fragment.node
-              opf_file = root_elem['full-path']
-              #opf_item = epub.glob(opf_file).first
-
-              rendition = Rendition.new(
-                              archive: epub,
-                              rendition_label: root_elem['rendition:label'],
-                              opf_file: opf_file
-                            )
-              renditions << rendition
-            end
-          end
-        end
+    def rendition(args = {})
+      case
+      when args.key?(:rendition)
+        label = args[:rendition]
+        rend = @renditions[label]
+        raise "Error: invalid rendition #{label}" if rend.nil?
+      else
+        label = @renditions.keys[0]
+        rend = @renditions.values[0]
       end
+      return label, rend
+    end
+
+    def item_list(list, dpath)
+      items = []
+      list.each do |item|
+        href = File.expand_path(item['href'], dpath)
+        href.delete_prefix!(Dir.pwd + File::SEPARATOR)
+        item = @name2entry[href]
+        puts "href: #{href}" if item.nil?
+        items << item
+      end
+      return items
     end
   end
 end
