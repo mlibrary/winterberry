@@ -104,8 +104,8 @@ monograph_dir_list.each do |monograph_dir|
   if fm_row_list.empty?
     title_isbn = title_id[0..12]
     fm_row_list = fm_csv.select do |row|
-      (!row['ISBN1_13'].nil? and row['ISBN1_13'].strip.gsub(/\-/,'') == title_isbn)
-      or (!row['ISBN2_13'].nil? and row['ISBN2_13'].strip.gsub(/\-/,'') == title_isbn)
+      (!row['ISBN1_13'].nil? and row['ISBN1_13'].strip.gsub(/\-/,'') == title_isbn) \
+      or (!row['ISBN2_13'].nil? and row['ISBN2_13'].strip.gsub(/\-/,'') == title_isbn) \
       or (!row['ISBN3_13'].nil? and row['ISBN3_13'].strip.gsub(/\-/,'') == title_isbn)
     end
   end
