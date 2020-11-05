@@ -1,0 +1,404 @@
+---
+- :object: :file_set
+  :metadata_name: allow_display_after_expiration
+  :field_name: 'After Expiration: Allow Display?'
+  :multivalued: :no
+  :acceptable_values:
+  - id: none
+    term: None
+    active: true
+  - id: high_res
+    term: High-res
+    active: true
+  - id: low_res
+    term: Low-res
+    active: true
+  - id: not_hosted_on_the_platform
+    term: Not hosted on the platform
+    active: true
+  - id: permission_does_not_expire
+    term: Permission Does Not Expire
+    active: true
+- :object: :file_set
+  :metadata_name: allow_download
+  :field_name: Allow Download?
+  :multivalued: :no
+  :acceptable_values:
+  - id: 'yes'
+    term: 'Yes'
+    active: true
+  - id: 'no'
+    term: 'No'
+    active: true
+  - id: not_hosted_on_the_platform
+    term: Not hosted on the platform
+    active: true
+- :object: :file_set
+  :metadata_name: allow_download_after_expiration
+  :field_name: 'After Expiration: Allow Download?'
+  :multivalued: :no
+  :acceptable_values:
+  - id: none
+    term: None
+    active: true
+  - id: high_res
+    term: High-res
+    active: true
+  - id: low_res
+    term: Low-res
+    active: true
+  - id: not_hosted_on_the_platform
+    term: Not hosted on the platform
+    active: true
+  - id: permission_does_not_expire
+    term: Permission Does Not Expire
+    active: true
+- :object: :file_set
+  :metadata_name: allow_hi_res
+  :field_name: Allow Fullscreen Display?
+  :multivalued: :no
+  :acceptable_values:
+  - id: 'yes'
+    term: 'Yes'
+    active: true
+  - id: 'no'
+    term: 'No'
+    active: true
+  - id: not_hosted_on_the_platform
+    term: Not hosted on the platform
+    active: true
+- :object: :file_set
+  :metadata_name: alt_text
+  :field_name: Alternative Text
+  :multivalued: :yes
+- :object: :monograph
+  :metadata_name: buy_url
+  :field_name: Buy Book URL
+  :multivalued: :yes
+- :object: :file_set
+  :metadata_name: caption
+  :field_name: Caption
+  :multivalued: :yes
+- :object: :file_set
+  :metadata_name: content_type
+  :field_name: Content Type
+  :multivalued: :yes_split
+- :object: :universal
+  :metadata_name: contributor
+  :field_name: Additional Creator(s)
+  :multivalued: :yes_multiline
+- :object: :universal
+  :metadata_name: copyright_holder
+  :field_name: Copyright Holder
+  :multivalued: :no
+- :object: :file_set
+  :metadata_name: copyright_status
+  :field_name: Copyright Status
+  :multivalued: :no
+  :acceptable_values:
+  - id: fair_use
+    term: fair use
+    active: true
+  - id: in_copyright
+    term: in-copyright
+    active: false
+  - id: public_domain
+    term: public domain
+    active: true
+  - id: author_created_owned
+    term: author created/owned
+    active: true
+- :object: :universal
+  :metadata_name: creator
+  :field_name: Creator(s)
+  :multivalued: :yes_multiline
+- :object: :monograph
+  :metadata_name: creator_display
+  :field_name: Creator Display
+  :multivalued: :no
+- :object: :file_set
+  :metadata_name: credit_line
+  :field_name: Credit Line
+  :multivalued: :no
+- :object: :monograph
+  :metadata_name: date_created
+  :field_name: Pub Year
+  :multivalued: :yes
+- :object: :universal
+  :metadata_name: description
+  :field_name: Description
+  :multivalued: :yes
+- :object: :file_set
+  :metadata_name: display_date
+  :field_name: Display Date
+  :multivalued: :yes_split
+- :object: :universal
+  :metadata_name: doi
+  :field_name: DOI
+  :multivalued: :no
+- :object: :file_set
+  :metadata_name: exclusive_to_platform
+  :field_name: Exclusive to Fulcrum
+  :multivalued: :no
+  :acceptable_values:
+  - id: 'yes'
+    term: 'Yes'
+    active: true
+  - id: 'no'
+    term: 'No'
+    active: true
+- :object: :file_set
+  :metadata_name: external_resource_url
+  :field_name: External Resource URL
+  :multivalued: :no
+- :object: :monograph
+  :metadata_name: funder
+  :field_name: Funder
+  :multivalued: :no
+- :object: :universal
+  :metadata_name: hdl
+  :field_name: Handle
+  :multivalued: :no
+- :object: :universal
+  :metadata_name: holding_contact
+  :field_name: Holding Contact
+  :multivalued: :no
+- :object: :universal
+  :metadata_name: identifier
+  :field_name: Identifier(s)
+  :multivalued: :yes_split
+- :object: :monograph
+  :metadata_name: isbn
+  :field_name: ISBN(s)
+  :multivalued: :yes_split
+- :object: :file_set
+  :metadata_name: keywords
+  :field_name: Keywords
+  :multivalued: :yes_split
+- :object: :file_set
+  :metadata_name: label
+  :field_name: File Name
+  :multivalued: :no
+- :object: :universal
+  :metadata_name: language
+  :field_name: Language
+  :multivalued: :yes_split
+- :object: :universal
+  :metadata_name: license
+  :field_name: CC License
+  :multivalued: :yes
+  :acceptable_values:
+  - id: https://creativecommons.org/licenses/by/4.0/
+    term: Creative Commons Attribution 4.0 International license
+    active: true
+  - id: https://creativecommons.org/licenses/by-nc/4.0/
+    term: Creative Commons Attribution-NonCommercial 4.0 International license
+    active: true
+  - id: https://creativecommons.org/licenses/by-nc-nd/4.0/
+    term: Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International
+      license
+    active: true
+  - id: https://creativecommons.org/licenses/by-nc-sa/4.0/
+    term: Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International
+      license
+    active: true
+  - id: https://creativecommons.org/licenses/by-nd/4.0/
+    term: Creative Commons Attribution-NoDerivatives 4.0 International license
+    active: true
+  - id: https://creativecommons.org/licenses/by-sa/4.0/
+    term: Creative Commons Attribution-ShareAlike 4.0 International license
+    active: true
+  - id: https://www.press.umich.edu/about/licenses#all-rights-reserved
+    term: All Rights Reserved
+    active: true
+  - id: https://creativecommons.org/publicdomain/mark/1.0/
+    term: Creative Commons Public Domain Mark 1.0
+    active: true
+  - id: https://creativecommons.org/publicdomain/zero/1.0/
+    term: Creative Commons Zero license (implies pd)
+    active: true
+  - id: https://creativecommons.org/licenses/by/3.0/us/
+    term: Attribution 3.0 United States
+    active: false
+  - id: https://creativecommons.org/licenses/by-sa/3.0/us/
+    term: Attribution-ShareAlike 3.0 United States
+    active: false
+  - id: https://creativecommons.org/licenses/by-nc/3.0/us/
+    term: Attribution-NonCommercial 3.0 United States
+    active: false
+  - id: https://creativecommons.org/licenses/by-nd/3.0/us/
+    term: Attribution-NoDerivs 3.0 United States
+    active: false
+  - id: https://creativecommons.org/licenses/by-nc-nd/3.0/us/
+    term: Attribution-NonCommercial-NoDerivs 3.0 United States
+    active: false
+  - id: https://creativecommons.org/licenses/by-nc-sa/3.0/us/
+    term: Attribution-NonCommercial-ShareAlike 3.0 United States
+    active: false
+  - id: https://www.europeana.eu/portal/rights/rr-r.html
+    term: All rights reserved
+    active: false
+  - id: https://creativecommons.org/licenses/by/2.0/
+    term: Creative Commons Attribution 2.0 Generic license
+    active: false
+  - id: https://creativecommons.org/licenses/by-sa/2.1/jp/
+    term: Creative Commons Attribution-ShareAlike 2.1 Japan
+    active: false
+  - id: https://creativecommons.org/licenses/by/3.0/
+    term: Creative Commons Attribution license, 3.0 Unported
+    active: false
+  - id: https://creativecommons.org/licenses/by-nd/3.0/
+    term: Creative Commons Attribution-NoDerivatives license, 3.0
+    active: false
+  - id: https://creativecommons.org/licenses/by-nc-nd/3.0/
+    term: Creative Commons Attribution-NonCommercial-NoDerivatives license, 3.0 Unported
+    active: false
+  - id: https://creativecommons.org/licenses/by-nc/3.0/
+    term: Creative Commons Attribution-NonCommercial license, 3.0 Unported
+    active: false
+  - id: https://creativecommons.org/licenses/by-nc-sa/3.0/
+    term: Creative Commons Attribution-NonCommercial-ShareAlike
+    active: false
+  - id: https://creativecommons.org/licenses/by-sa/3.0/
+    term: Creative Commons Attribution-ShareAlike license, 3.0
+    active: false
+- :object: :monograph
+  :metadata_name: location
+  :field_name: Pub Location
+  :multivalued: :no
+- :object: :universal
+  :metadata_name: noid
+  :field_name: NOID
+  :multivalued: :no
+- :object: :monograph
+  :metadata_name: open_access
+  :field_name: Open Access?
+  :multivalued: :no
+  :acceptable_values:
+  - id: 'yes'
+    term: 'Yes'
+    active: true
+  - id: 'no'
+    term: 'No'
+    active: true
+- :object: :file_set
+  :metadata_name: permissions_expiration_date
+  :field_name: Permissions Expiration Date
+  :multivalued: :no
+- :object: :monograph
+  :metadata_name: publisher
+  :field_name: Publisher
+  :multivalued: :yes
+- :object: :file_set
+  :metadata_name: redirect_to
+  :field_name: Redirect to
+  :multivalued: :no
+- :object: :file_set
+  :metadata_name: representative_kind
+  :field_name: Representative Kind
+  :multivalued: :no
+  :acceptable_values:
+  - id: aboutware
+    term: aboutware
+    active: :true
+  - id: cover
+    term: cover
+    active: :true
+  - id: database
+    term: database
+    active: :true
+  - id: epub
+    term: epub
+    active: :true
+  - id: mobi
+    term: mobi
+    active: :true
+  - id: pdf_ebook
+    term: pdf_ebook
+    active: :true
+  - id: peer_reviews
+    term: peer_reviews
+    active: :true
+  - id: related
+    term: related
+    active: :true
+  - id: reviews
+    term: reviews
+    active: :true
+  - id: webgl
+    term: webgl
+    active: :true
+- :object: :file_set
+  :metadata_name: resource_type
+  :field_name: Resource Type
+  :multivalued: :yes
+  :acceptable_values:
+  - id: audio
+    term: audio
+    active: :true
+  - id: chart
+    term: chart
+    active: :true
+  - id: dataset
+    term: dataset
+    active: :true
+  - id: image
+    term: image
+    active: :true
+  - id: interactive_map
+    term: interactive_map
+    active: :true
+  - id: map
+    term: map
+    active: :true
+  - id: model3d
+    term: model3d
+    active: :true
+  - id: musical_example
+    term: musical_example
+    active: :true
+  - id: table
+    term: table
+    active: :true
+  - id: text
+    term: text
+    active: :true
+  - id: video
+    term: video
+    active: :true
+- :object: :file_set
+  :metadata_name: rights_granted
+  :field_name: Rights Granted
+  :multivalued: :no
+- :object: :file_set
+  :metadata_name: section_title
+  :field_name: Section
+  :multivalued: :yes_split
+- :object: :monograph
+  :metadata_name: series
+  :field_name: Series
+  :multivalued: :yes_split
+- :object: :file_set
+  :metadata_name: sort_date
+  :field_name: Sort Date
+  :multivalued: :no
+- :object: :monograph
+  :metadata_name: subject
+  :field_name: Subject
+  :multivalued: :yes_split
+- :object: :universal
+  :metadata_name: title
+  :field_name: Title
+  :multivalued: :yes
+- :object: :file_set
+  :metadata_name: transcript
+  :field_name: Transcript
+  :multivalued: :no
+- :object: :file_set
+  :metadata_name: translation
+  :field_name: Translation
+  :multivalued: :yes
+- :object: :universal
+  :metadata_name: url
+  :field_name: Link
+  :multivalued: :no

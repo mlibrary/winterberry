@@ -20,7 +20,7 @@ class VSaxDocument < Nokogiri::XML::SAX::Document
       n.parent = nil
     when name == 'resource_type'
       @in_resources = true
-    when CollectionSchema.resource?(name)
+    when UMPTG::Manifest::Validation::CollectionSchema.resource?(name)
       n  = VRNode.new(args)
       @current_resource = n
       n.parent = @current_monograph

@@ -49,8 +49,7 @@ root_dir = File.dirname(script_dir)
 
 require 'fileutils'
 
-require_relative File.join(root_dir, "lib", "monograph")
-require_relative File.join(root_dir, "lib", "epubprocessor")
+require_relative File.join(root_dir, "lib", "epub")
 require_relative File.join(root_dir, "lib", "csvfile")
 require_relative File.join(root_dir, "lib", "resourcemap")
 
@@ -100,18 +99,18 @@ monograph_dir_list.each do |monograph_dir|
 
     # Initialize/reset the image processor.
     if imgprocessor.nil?
-      imgprocessor = UMPTG::Monograph::ImgProcessor.new
+      imgprocessor = UMPTG::EPUB::Processors::ImageProcessor.new
     else
       imgprocessor.reset
     end
     if markerprocessor.nil?
-      markerprocessor = UMPTG::Monograph::MarkerProcessor.new
+      markerprocessor = UMPTG::EPUB::Processors::MarkerProcessor.new
     else
       markerprocessor.reset
     end
 
     # Process the epub and generate the image information.
-    UMPTG::EpubProcessor.process(
+    UMPTG::EPUB::Processor.process(
           :epub_file => epub_file,
           :processors => [
                   imgprocessor,

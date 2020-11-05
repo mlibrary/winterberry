@@ -1,0 +1,127 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require 'optparse'
+require 'ostruct'
+
+# Process the script parameters.
+options = OpenStruct.new
+options.output_xml = false
+options.include_notes = false
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-n] [-x] fmsl_file [fmsl_file...]"
+  opts.on('-n', '--notes', 'Include Validation Notes column in CSV') do |include_notes|
+    options.include_notes = true
+  end
+  opts.on('-x', '--xml', 'XML instance file') do |output_xml|
+    options.output_xml = true
+  end
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    puts opts
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  puts option_parser.help
+  return
+end
+
+fmsl_file_list = ARGV
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require 'csv'
+
+require_relative File.join(root_dir, "lib", "fmsl")
+require_relative File.join(root_dir, "lib", "manifest")
+require_relative File.join(root_dir, "lib", "ninebark", "vtree")
+
+NOTES_COLUMN = "Validation Notes"
+
+fmsl_file_list.each do |fmsl_file|
+  fmsl_file = File.expand_path(fmsl_file)
+  if !File.file?(fmsl_file)
+    puts "Error: invalid FMSL file #{fmsl_file}"
+    next
+  end
+
+  fmsl_body = UMPTG::FMSL.load(:fmsl_file => fmsl_file)
+  manifest_csv = UMPTG::FMSL.to_manifest(:fmsl_body => fmsl_body)
+
+  collection = UMPTG::Manifest::Validation::Collection.new
+  manifest_name = File.join(File.basename(fmsl_file, ".*") + "_fulcrum")
+  manifest = UMPTG::Manifest::Document.new(
+        :name => manifest_name,
+        :csv_body => manifest_csv.to_s
+      )
+  collection.add_manifest(manifest)
+  #monograph.load(:manifest_csv_body => manifest_csv.to_s)
+  #collection.add_monograph(monograph)
+
+  if options.output_xml
+    output_file = File.join(File.dirname(fmsl_file), File.basename(fmsl_file, ".*") + ".xml")
+    File.write(output_file, collection.xml_markup)
+  end
+
+  error_list = UMPTG::Manifest::Validation::CollectionSchema.validate(:xml_markup => collection.xml_markup)
+  puts "Error count: #{error_list.count}"
+  resource_errors = {}
+  if error_list.count > 0
+    vtree = UMPTG::Manifest::ValidationResult::VTreeBuilder.build(collection.xml_markup)
+    puts "vtree is nil" if vtree.nil?
+
+    error_list.each do |error|
+      level = error.error? ? "error" : error.warning? ? "warning" : error.fatal? ? "fatal" : "none"
+      puts "error line: #{error.line}"
+      property = vtree.property(error.line) unless vtree.nil?
+      puts "\t#{property}" unless property.nil?
+      puts "\t#{property.resource_name}" unless property.nil?
+
+      resource_name = property.resource_name unless property.nil?
+      unless resource_name.nil?
+        if resource_errors[resource_name].nil?
+          resource_errors[resource_name] = [ error ]
+        else
+          resource_errors[resource_name] << error
+        end
+      end
+    end
+  end
+
+  # Save the Fulcrum manifest file.
+  fulcrum_headers = options.include_notes ? \
+            [ NOTES_COLUMN ] + manifest_csv.headers : \
+            manifest_csv.headers
+  fulcrum_file = File.join(File.dirname(fmsl_file), manifest_name + ".csv")
+  CSV.open(
+          fulcrum_file,
+          "w",
+          :write_headers=> true,
+          :force_quotes => true,
+          :headers => fulcrum_headers
+        ) do |csv|
+    manifest_csv.each do |row|
+      resource_name = row['File Name']
+      error_list = resource_errors[resource_name]
+      error_value = "None"
+      unless error_list.nil?
+        error_value = ""
+        error_list.each do |error|
+          error_value += "#{error}\n"
+        end
+        error_value = error_value[0..-2]
+      end
+
+      r = options.include_notes ? \
+              { NOTES_COLUMN => error_value } : \
+              {}
+      row.each do |key,val|
+        r[key] = val
+      end
+      csv << r
+    end
+  end
+end

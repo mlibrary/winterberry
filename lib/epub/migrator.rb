@@ -1,5 +1,4 @@
 module UMPTG::EPUB
-
   require 'fileutils'
   require 'zip'
   require 'tempfile'

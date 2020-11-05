@@ -58,13 +58,19 @@ parser = nil
 # Create the default action object.
 default_action_str = task == "embed_resources" ? "embed" : "link"
 
+# Create the serivce for retrieving the NOID manifest.
+service = UMPTG::Services::Heliotrope.new(
+                :fulcrum_host => options.fulcrum_host
+              )
+
 monograph_noid_list.each do |monograph_noid|
   # Use the noid to retrieve the monograph manifest from Fulcrum.
   puts "*" * 10 + " #{monograph_noid} " + "*" * 10
 
-  manifest = UMPTG::Manifest.new(
-                :noid => monograph_noid,
-                :fulcrum_host => options.fulcrum_host
+  csv_body = service.monograph_noid_export(monograph_noid)
+
+  manifest = UMPTG::Manifest::Document.new(
+                :csv_body => csv_body
               )
 
   # From the manifest, determine the ebook ISBN without dashes.
@@ -145,8 +151,7 @@ monograph_noid_list.each do |monograph_noid|
   fulcrum_css_file = File.join(root_dir, 'lib', 'css', fulcrum_css_name)
 
   # Create a new EPUB with the resource references detailed
-  # in the resource map processed. The path to the new EPUB
-  # is returned.
+  # in the resource map processed.
   processed_epub = UMPTG::Resources::EpubResourceProcessor.process(
         :epub_file => epub_file,
         :default_action_str => default_action_str,
@@ -155,10 +160,10 @@ monograph_noid_list.each do |monograph_noid|
         :fulcrum_css_file => fulcrum_css_file
       )
 
-  # Create the new epub. Remove the old one if it exists.
+  # Remove the old one if it exists.
   processed_epub_file = File.join(process_dir, File.basename(epub_file))
   FileUtils.remove_file(processed_epub_file, true)
 
-  # Save the processed EPUB to a new location.
+  # Save the processed EPUB in the processing directory.
   processed_epub.save(epub_file: processed_epub_file)
 end
