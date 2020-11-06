@@ -49,6 +49,7 @@ end
 require_relative File.join(root_dir, 'lib', 'resourcemap')
 require_relative File.join(root_dir, 'lib', 'manifest')
 require_relative File.join(root_dir, 'lib', 'resources')
+require_relative File.join(root_dir, 'lib', 'services')
 
 # Initialize the processor that scans the monograph epub .xhtml
 # files and collects information concerning the contained resources.
@@ -68,14 +69,18 @@ monograph_noid_list.each do |monograph_noid|
   puts "*" * 10 + " #{monograph_noid} " + "*" * 10
 
   csv_body = service.monograph_noid_export(monograph_noid)
+  if csv_body.nil? or csv_body.empty?
+    puts "Error: no manifest found for noid #{monograph_noid}"
+    next
+  end
 
   manifest = UMPTG::Manifest::Document.new(
                 :csv_body => csv_body
               )
 
   # From the manifest, determine the ebook ISBN without dashes.
-  ebook_isbn = manifest.isbn(:format => "open access")
-  ebook_isbn = manifest.isbn(:format => "ebook") if ebook_isbn.nil?
+  ebook_isbn = manifest.isbn["open access"]
+  ebook_isbn = manifest.isbn["ebook"] if ebook_isbn.nil?
   if ebook_isbn.nil?
     puts "Error: no ebook ISBN found for NOID #{monograph_noid}."
     next
