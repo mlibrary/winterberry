@@ -111,7 +111,7 @@ journal_name_list.each do |journal_name|
               "image_list" => resource_list_param
            }
 
-  rc = XSLT.transform(
+  rc = UMPTG::XSLT.transform(
           :xslpath => dlxs2jats_xsl_file,
           :srcpath => dlxs_file,
           :destpath => jats_file,
@@ -119,7 +119,7 @@ journal_name_list.each do |journal_name|
           )
   if rc and options.generate_xhtml
     html_file = File.join(File.dirname(jats_file), File.basename(jats_file, ".*") + ".html")
-    XSLT.transform(
+    UMPTG::XSLT.transform(
             :xslpath => jats2html_xsl_file,
             :srcpath => jats_file,
             :destpath => html_file

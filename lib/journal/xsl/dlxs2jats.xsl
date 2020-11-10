@@ -18,8 +18,8 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
     -->
 
     <xsl:output method="xml"
-                doctype-public="-//NLM//DTD JATS (Z39.96) Journal Publishing DTD with MathML3 v1.3d1 20190831//EN"
-                doctype-system="http://jats.nlm.nih.gov/publishing/1.3d1/JATS-journalpublishing1-mathml3.dtd"
+                doctype-public="-//NLM//DTD JATS (Z39.96) Journal Publishing DTD v1.2 20190208//EN"
+                doctype-system="http://jats.nlm.nih.gov/publishing/1.2/JATS-journalpublishing1-mathml3.dtd"
                 xpath-default-namespace=""
                 indent="yes"/>
 
@@ -45,7 +45,7 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
             <xsl:namespace name="mml" select="'http://www.w3.org/1998/Math/MathML'"/>
             <xsl:namespace name="xsi" select="'http://www.w3.org/2001/XMLSchema-instance'"/>
 
-            <xsl:attribute name="article-type" select="'article'"/>
+            <xsl:attribute name="article-type" select="'research-article'"/>
 
             <xsl:apply-templates select="@*|node()"/>
         </xsl:element>
