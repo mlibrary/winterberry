@@ -6,7 +6,9 @@ require 'ostruct'
 
 # Process the script parameters.
 options = OpenStruct.new
-options.publisher_dir = Dir.pwd
+#options.publisher_dir = Dir.pwd
+#options.publisher_dir = "s:/Information\ Management/Fulcrum/UMP"
+options.publisher_dir = "c:/Users/tbelc/Documents/winterberry_production/Information\ Management/Fulcrum/UMP/"
 options.fulcrum_host = nil
 option_parser = OptionParser.new do |opts|
   opts.banner = "Usage: #{File.basename(__FILE__)} [-f production|preview|staging] [-p <publisher_dir>] [embed_resources|link_resources] <monograph_noid> [<monograph_noid>..]"

@@ -10,6 +10,13 @@
         exclude-result-prefixes="xs xi dlxs mlibxsl"
         version="2.0">
 
+    <!--
+    <!DOCTYPE article PUBLIC "-//NLM//DTD JATS (Z39.96) Journal Publishing DTD v1.2 20190208//EN" "JATS-journalpublishing1.dtd">
+<article article-type="research-article" dtd-version="1.2" xml:lang="en"
+xmlns:mml="http://www.w3.org/1998/Math/MathML" xmlns:xlink="http://www.w3.org/1999/xlink"
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
+    -->
+
     <xsl:output method="xml"
                 doctype-public="-//NLM//DTD JATS (Z39.96) Journal Publishing DTD with MathML3 v1.3d1 20190831//EN"
                 doctype-system="http://jats.nlm.nih.gov/publishing/1.3d1/JATS-journalpublishing1-mathml3.dtd"
