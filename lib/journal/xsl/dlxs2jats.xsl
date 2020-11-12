@@ -36,6 +36,64 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
         </xsl:element>
     </xsl:variable>
 
+    <xsl:variable name="license_doc">
+        <xsl:element name="licenses">
+            <xsl:element name="license">
+                <xsl:attribute name="type" select="'cc-by/4.0'"/>
+                <xsl:attribute name="term" select="'Creative Commons Attribution 4.0 International license'"/>
+                <xsl:attribute name="url" select="'https://creativecommons.org/licenses/by/4.0/'"/>
+            </xsl:element>
+            <xsl:element name="license">
+                <xsl:attribute name="type" select="'cc-by-sa/4.0'"/>
+                <xsl:attribute name="active" select="true()"/>
+                <xsl:attribute name="term" select="'Creative Commons Attribution-ShareAlike 4.0 International license'"/>
+                <xsl:attribute name="url" select="'https://creativecommons.org/licenses/by-sa/4.0/'"/>
+            </xsl:element>
+            <xsl:element name="license">
+                <xsl:attribute name="type" select="'cc-by-nd/4.0'"/>
+                <xsl:attribute name="active" select="true()"/>
+                <xsl:attribute name="term" select="'Creative Commons Attribution-NoDerivatives 4.0 International license'"/>
+                <xsl:attribute name="url" select="'https://creativecommons.org/licenses/by-nd/4.0/'"/>
+            </xsl:element>
+            <xsl:element name="license">
+                <xsl:attribute name="type" select="'cc-by-nc/4.0'"/>
+                <xsl:attribute name="active" select="true()"/>
+                <xsl:attribute name="term" select="'Creative Commons Attribution-NonCommercial 4.0 International license'"/>
+                <xsl:attribute name="url" select="'https://creativecommons.org/licenses/by-nc/4.0/'"/>
+            </xsl:element>
+            <xsl:element name="license">
+                <xsl:attribute name="type" select="'cc-by-nc-nd/4.0'"/>
+                <xsl:attribute name="active" select="true()"/>
+                <xsl:attribute name="term" select="'Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International license'"/>
+                <xsl:attribute name="url" select="'https://creativecommons.org/licenses/by-nc-nd/4.0/'"/>
+            </xsl:element>
+            <xsl:element name="license">
+                <xsl:attribute name="type" select="'cc-by-nc-sa/4.0'"/>
+                <xsl:attribute name="active" select="true()"/>
+                <xsl:attribute name="term" select="'Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International license'"/>
+                <xsl:attribute name="url" select="'https://creativecommons.org/licenses/by-nc-sa/4.0/'"/>
+            </xsl:element>
+            <xsl:element name="license">
+                <xsl:attribute name="type" select="'cc-zero/1.0'"/>
+                <xsl:attribute name="active" select="true()"/>
+                <xsl:attribute name="term" select="'Creative Commons Zero license (implies pd)'"/>
+                <xsl:attribute name="url" select="'https://creativecommons.org/publicdomain/zero/1.0/'"/>
+            </xsl:element>
+            <xsl:element name="license">
+                <xsl:attribute name="type" select="'cc-mark/1.0'"/>
+                <xsl:attribute name="active" select="true()"/>
+                <xsl:attribute name="term" select="'Creative Commons Public Domain Mark 1.0'"/>
+                <xsl:attribute name="url" select="'https://creativecommons.org/publicdomain/mark/1.0/'"/>
+            </xsl:element>
+            <xsl:element name="license">
+                <xsl:attribute name="type" select="'all-rights-reserved'"/>
+                <xsl:attribute name="active" select="true()"/>
+                <xsl:attribute name="term" select="'All Rights Reserved'"/>
+                <xsl:attribute name="url" select="'https://www.press.umich.edu/about/licenses#all-rights-reserved'"/>
+            </xsl:element>
+        </xsl:element>
+    </xsl:variable>
+
     <xsl:variable name="abstractDiv"
                   select="/DLPSTEXTCLASS/TEXT//*[local-name()='DIV1' and ./*[local-name()='HEAD' and lower-case(string())='abstract']]"/>
 
@@ -108,11 +166,26 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
                         </xsl:for-each>
                     </xsl:element>
                 </xsl:if>
+
                 <xsl:apply-templates select="FILEDESC/PUBLICATIONSTMT/DATE[@TYPE='sort']"/>
                 <xsl:apply-templates select="FILEDESC/SOURCEDESC/BIBL/BIBLSCOPE[@TYPE='volno']"/>
-                <xsl:if test="exists(FILEDESC/PUBLICATIONSTMT/AVAILABILITY/P)">
+                <xsl:apply-templates select="FILEDESC/SOURCEDESC/BIBL/BIBLSCOPE[@TYPE='issno']"/>
+
+                <xsl:if test="exists(FILEDESC/SOURCEDESC/BIBL/BIBLSCOPE[@TYPE='issuetitle'])">
+                    <xsl:apply-templates select="FILEDESC/SOURCEDESC/BIBL/BIBLSCOPE[@TYPE='issuetitle']"/>
+                </xsl:if>
+
+                <xsl:if test="exists(FILEDESC/PUBLICATIONSTMT/AVAILABILITY)">
                     <xsl:element name="permissions">
-                        <xsl:apply-templates select="FILEDESC/PUBLICATIONSTMT/AVAILABILITY/P"/>
+                        <xsl:if test="exists(FILEDESC/PUBLICATIONSTMT/DATE[@TYPE='sort'])">
+                            <xsl:variable name="frags" select="tokenize(FILEDESC/PUBLICATIONSTMT/DATE[@TYPE='sort'], '-')" />
+                            <xsl:if test="count($frags) gt 0">
+                                <xsl:element name="copyright-year">
+                                    <xsl:value-of select="$frags[1]"/>
+                                </xsl:element>
+                            </xsl:if>
+                        </xsl:if>
+                        <xsl:apply-templates select="FILEDESC/PUBLICATIONSTMT/AVAILABILITY"/>
                     </xsl:element>
                 </xsl:if>
 
@@ -280,10 +353,35 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
         </xsl:element>
     </xsl:template>
 
-    <xsl:template match="FILEDESC/PUBLICATIONSTMT/AVAILABILITY/P">
-        <xsl:element name="copyright-statement">
-            <xsl:value-of select="."/>
+    <xsl:template match="FILEDESC/SOURCEDESC/BIBL/BIBLSCOPE[@TYPE='issno']">
+        <xsl:element name="issue">
+            <xsl:value-of select="normalize-space(.)"/>
         </xsl:element>
+    </xsl:template>
+
+    <xsl:template match="FILEDESC/SOURCEDESC/BIBL/BIBLSCOPE[@TYPE='issuetitle']">
+        <xsl:element name="issue-title">
+            <xsl:value-of select="normalize-space(.)"/>
+        </xsl:element>
+    </xsl:template>
+
+    <xsl:template match="FILEDESC/PUBLICATIONSTMT/AVAILABILITY">
+        <xsl:if test="exists(P) or exists(@TYPE)">
+            <xsl:element name="license">
+                <xsl:if test="exists(@TYPE)">
+                    <xsl:variable name="license_type" select="lower-case(@TYPE)"/>
+                    <xsl:variable name="license" select="$license_doc/licenses/license[@type=$license_type]"/>
+                    <xsl:if test="exists($license)">
+                        <xsl:attribute name="href" namespace="http://www.w3.org/1999/xlink" select="$license/@url"/>
+                    </xsl:if>
+                </xsl:if>
+                <xsl:if test="exists(P)">
+                    <xsl:element name="license-p">
+                        <xsl:value-of select="P"/>
+                    </xsl:element>
+                </xsl:if>
+            </xsl:element>
+        </xsl:if>
     </xsl:template>
 
     <xsl:template match="TEXT">
