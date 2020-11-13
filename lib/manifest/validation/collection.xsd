@@ -329,6 +329,7 @@
     <xs:element name="reviews" type="type_fileset"/>
     <xs:element name="webgl" type="type_fileset"/>
 
+    <xs:element name="animated_gif" type="type_fileset_resource"/>
     <xs:element name="audio" type="type_fileset_resource"/>
     <xs:element name="chart" type="type_fileset_resource"/>
     <xs:element name="dataset" type="type_fileset_resource"/>
@@ -816,6 +817,7 @@
     </xs:complexType>
     <xs:complexType name="type_resource_type">
         <xs:choice minOccurs="0" maxOccurs="unbounded">
+            <xs:element ref="animated_gif"/>
             <xs:element ref="audio"/>
             <xs:element ref="chart"/>
             <xs:element ref="dataset"/>

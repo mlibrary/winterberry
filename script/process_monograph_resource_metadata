@@ -206,7 +206,7 @@ monograph_dir_list.each do |mdir|
         next
       end
       fmsl_file = fmsl_file_list.first
-      log_fp.puts "Warning: multiple FMSLs for ISBN #{isbn}. Using #{File.basename(fmsl_file)}." \
+      log_fp.puts "Warning: multiple FMSLs for monograph #{monograph_dir}. Using #{File.basename(fmsl_file)}." \
             if fmsl_file_list.count > 1
       log_fp.puts "Using FMSL #{File.basename(fmsl_file)}." if fmsl_file_list.count == 1
 
