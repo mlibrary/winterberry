@@ -6,14 +6,18 @@ require 'ostruct'
 
 # Process the script parameters.
 options = OpenStruct.new
+options.output_csv = false
 options.output_xml = false
 options.include_notes = false
 option_parser = OptionParser.new do |opts|
   opts.banner = "Usage: #{File.basename(__FILE__)} [-n] [-x] fmsl_file [fmsl_file...]"
+  opts.on('-c', '--csv', 'Save CSV file') do |output_csv|
+    options.output_csv = true
+  end
   opts.on('-n', '--notes', 'Include Validation Notes column in CSV') do |include_notes|
     options.include_notes = true
   end
-  opts.on('-x', '--xml', 'XML instance file') do |output_xml|
+  opts.on('-x', '--xml', 'Save XML instance file') do |output_xml|
     options.output_xml = true
   end
   opts.on_tail('-h', '--help', 'Print this help message') do
@@ -92,36 +96,39 @@ fmsl_file_list.each do |fmsl_file|
   end
 
   # Save the Fulcrum manifest file.
-  fulcrum_headers = options.include_notes ? \
-            [ NOTES_COLUMN ] + manifest_csv.headers : \
-            manifest_csv.headers
-  fulcrum_file = File.join(File.dirname(fmsl_file), manifest_name + ".csv")
-  CSV.open(
-          fulcrum_file,
-          "w",
-          :write_headers=> true,
-          :force_quotes => true,
-          :headers => fulcrum_headers
-        ) do |csv|
-    manifest_csv.each do |row|
-      resource_name = row['File Name']
-      error_list = resource_errors[resource_name]
-      error_value = "None"
-      unless error_list.nil?
-        error_value = ""
-        error_list.each do |error|
-          error_value += "#{error}\n"
+  if options.output_csv
+    fulcrum_headers = options.include_notes ? \
+              [ NOTES_COLUMN ] + manifest_csv.headers : \
+              manifest_csv.headers
+    fulcrum_file = File.join(File.dirname(fmsl_file), manifest_name + ".csv")
+    CSV.open(
+            fulcrum_file,
+            "w",
+            :write_headers=> true,
+            :force_quotes => true,
+            :headers => fulcrum_headers
+          ) do |csv|
+      manifest_csv.each do |row|
+        resource_name = row['File Name']
+        error_list = resource_errors[resource_name]
+        error_value = "None"
+        unless error_list.nil?
+          error_value = ""
+          error_list.each do |error|
+            error_value += "#{error}\n"
+          end
+          error_value = error_value[0..-2]
         end
-        error_value = error_value[0..-2]
-      end
 
-      r = options.include_notes ? \
-              { NOTES_COLUMN => error_value } : \
-              {}
-      row.each do |key,val|
-        r[key] = val
+        r = options.include_notes ? \
+                { NOTES_COLUMN => error_value } : \
+                {}
+        row.each do |key,val|
+          r[key] = val
+        end
+        csv << r
       end
-      csv << r
     end
   end
+  puts "Saved CSV file #{fulcrum_file}."
 end
