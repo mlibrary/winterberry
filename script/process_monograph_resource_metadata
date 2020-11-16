@@ -22,8 +22,9 @@ options.publisher_dir = "s:/Information\ Management/Fulcrum/UMP"
 #options.publisher_dir = "c:/Users/tbelc/Documents/winterberry_production/Information\ Management/Fulcrum/UMP/"
 options.update_fmsl = true
 options.use_map = true
+options.vendor = ""
 option_parser = OptionParser.new do |opts|
-  opts.banner = "Usage: #{File.basename(__FILE__)} [-map] [-nofmsl] [-p <publisher_dir>] <monograph_dir> [<monograph_dir>...]"
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-map] [-nofmsl] [-p <publisher_dir>] [-v vendor] <monograph_dir> [<monograph_dir>...]"
   opts.on('-map', '--map', 'Overwrite existing resource map file.') do |da|
     options.use_map = false
   end
@@ -32,6 +33,9 @@ option_parser = OptionParser.new do |opts|
   end
   opts.on('-p', '--publisher_directory [DIRECTORY]', 'Publisher site directory') do |publisher_dir|
     options.publisher_dir = publisher_dir
+  end
+  opts.on('-v', '--vendor [vendor]', 'Vendor specific markup lockridge|default') do |vendor|
+    options.vendor = vendor
   end
   opts.on_tail('-h', '--help', 'Print this help message') do
     puts opts
@@ -48,6 +52,14 @@ end
 monograph_dir_list = ARGV
 update_fmsl = options.update_fmsl
 use_map = options.use_map
+
+VENDORS = [ 'lockridge', 'default' ]
+options.vendor = 'default' if options.vendor.nil? or options.vendor.empty?
+vendor = options.vendor.downcase
+unless VENDORS.include?(vendor)
+  puts "Error: invalid vendor #{options.vendor}"
+  exit 1
+end
 
 # Determine the root directory of the code base.
 script_dir = File.expand_path(File.dirname(__FILE__))
@@ -118,7 +130,12 @@ monograph_dir_list.each do |mdir|
 
     # Initialize/reset the image processor.
     if imgprocessor.nil?
-      imgprocessor = UMPTG::EPUB::Processors::ImageProcessor.new
+      case vendor
+      when 'lockridge'
+        imgprocessor = UMPTG::EPUB::Processors::LockImageProcessor.new
+      else
+        imgprocessor = UMPTG::EPUB::Processors::SpecImageProcessor.new
+      end
     else
       imgprocessor.reset
     end
