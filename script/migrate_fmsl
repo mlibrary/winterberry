@@ -8,14 +8,18 @@ require 'ostruct'
 options = OpenStruct.new
 options.output_csv = false
 options.output_xml = false
+options.skip_resources_check = false
 options.include_notes = false
 option_parser = OptionParser.new do |opts|
-  opts.banner = "Usage: #{File.basename(__FILE__)} [-n] [-x] fmsl_file [fmsl_file...]"
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-c] [-n] [-r] [-x] fmsl_file [fmsl_file...]"
   opts.on('-c', '--csv', 'Save CSV file') do |output_csv|
     options.output_csv = true
   end
   opts.on('-n', '--notes', 'Include Validation Notes column in CSV') do |include_notes|
     options.include_notes = true
+  end
+  opts.on('-r', '--resources', '') do |skip_resources_check|
+    options.skip_resources_check = true
   end
   opts.on('-x', '--xml', 'Save XML instance file') do |output_xml|
     options.output_xml = true
@@ -41,7 +45,6 @@ require 'csv'
 
 require_relative File.join(root_dir, "lib", "fmsl")
 require_relative File.join(root_dir, "lib", "manifest")
-require_relative File.join(root_dir, "lib", "ninebark", "vtree")
 
 NOTES_COLUMN = "Validation Notes"
 
@@ -62,17 +65,38 @@ fmsl_file_list.each do |fmsl_file|
         :csv_body => manifest_csv.to_s
       )
   collection.add_manifest(manifest)
-  #monograph.load(:manifest_csv_body => manifest_csv.to_s)
-  #collection.add_monograph(monograph)
 
   if options.output_xml
     output_file = File.join(File.dirname(fmsl_file), File.basename(fmsl_file, ".*") + ".xml")
     File.write(output_file, collection.xml_markup)
   end
 
-  error_list = UMPTG::Manifest::Validation::CollectionSchema.validate(:xml_markup => collection.xml_markup)
-  puts "Error count: #{error_list.count}"
+  error_count = 0
   resource_errors = {}
+
+  unless options.skip_resources_check
+    manifest_csv.each do |row|
+      resource_name = row['File Name']
+      next if resource_name == UMPTG::Manifest.BLANK_ROW_FILE_NAME
+  
+      resource_file = File.join(File.dirname(fmsl_file), resource_name)
+      unless File.file?(resource_file)
+        error_count += 1
+        #puts "Error: resource file #{resource_name} does not exist."
+        resource_errors[resource_name] = [ "Error: resource file does not exist." ]
+      end
+    end
+  end
+
+  error_list = UMPTG::Manifest::Validation::CollectionSchema.validate(:xml_markup => collection.xml_markup)
+  puts "Error count: #{error_count + error_list.count}"
+
+  if error_count > 0
+    resource_errors.each do |key,val|
+      puts "#{key}: #{val.first}"
+    end
+  end
+
   if error_list.count > 0
     vtree = UMPTG::Manifest::ValidationResult::VTreeBuilder.build(collection.xml_markup)
     puts "vtree is nil" if vtree.nil?
@@ -111,6 +135,12 @@ fmsl_file_list.each do |fmsl_file|
       manifest_csv.each do |row|
         resource_name = row['File Name']
         error_list = resource_errors[resource_name]
+        if error_list.nil?
+          error_value = "None"
+        else
+          error_value = error_list.join("\n")
+        end
+=begin
         error_value = "None"
         unless error_list.nil?
           error_value = ""
@@ -119,6 +149,7 @@ fmsl_file_list.each do |fmsl_file|
           end
           error_value = error_value[0..-2]
         end
+=end
 
         r = options.include_notes ? \
                 { NOTES_COLUMN => error_value } : \
@@ -129,6 +160,6 @@ fmsl_file_list.each do |fmsl_file|
         csv << r
       end
     end
+    puts "Saved CSV file #{fulcrum_file}."
   end
-  puts "Saved CSV file #{fulcrum_file}."
 end
