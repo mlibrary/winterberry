@@ -1,5 +1,5 @@
 module UMPTG::Fragment
-  class ContainerSelector
+  class ContainerSelector < Selector
 
     attr_accessor :containers, :attribute_name, :attribute_values
 

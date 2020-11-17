@@ -1,4 +1,6 @@
 module UMPTG::Manifest
+  @@BLANK_ROW_FILE_NAME = "***row left intentionally blank***"
+
   class Document
     attr_reader :name, :noid, :csv, :monograph_row, :isbn
 
@@ -67,5 +69,9 @@ module UMPTG::Manifest
       end
       return isbn_format
     end
+  end
+
+  def self.BLANK_ROW_FILE_NAME
+    return @@BLANK_ROW_FILE_NAME
   end
 end

@@ -34,7 +34,7 @@ option_parser = OptionParser.new do |opts|
   opts.on('-p', '--publisher_directory [DIRECTORY]', 'Publisher site directory') do |publisher_dir|
     options.publisher_dir = publisher_dir
   end
-  opts.on('-v', '--vendor [vendor]', 'Vendor specific markup lockridge|default') do |vendor|
+  opts.on('-v', '--vendor [vendor]', 'Vendor specific markup newgen|default') do |vendor|
     options.vendor = vendor
   end
   opts.on_tail('-h', '--help', 'Print this help message') do
@@ -53,14 +53,6 @@ monograph_dir_list = ARGV
 update_fmsl = options.update_fmsl
 use_map = options.use_map
 
-VENDORS = [ 'lockridge', 'default' ]
-options.vendor = 'default' if options.vendor.nil? or options.vendor.empty?
-vendor = options.vendor.downcase
-unless VENDORS.include?(vendor)
-  puts "Error: invalid vendor #{options.vendor}"
-  exit 1
-end
-
 # Determine the root directory of the code base.
 script_dir = File.expand_path(File.dirname(__FILE__))
 root_dir = File.dirname(script_dir)
@@ -69,12 +61,21 @@ require 'fileutils'
 
 require_relative File.join(root_dir, "lib", "epub")
 require_relative File.join(root_dir, "lib", "csvfile")
+require_relative File.join(root_dir, "lib", "manifest")
 require_relative File.join(root_dir, "lib", "resourcemap")
 
-blank_row_file_name = "***row left intentionally blank***"
+#blank_row_file_name = "***row left intentionally blank***"
+blank_row_file_name = UMPTG::Manifest.BLANK_ROW_FILE_NAME
 blank_row_pattern = "^\*\*\*.* intentionally blank[ ]*\*\*\*$"
-imgprocessor = nil
-markerprocessor = nil
+
+# Initialize EPUB markup processors, figure/image and marker.
+options.vendor = 'default' if options.vendor.nil? or options.vendor.empty?
+imgprocessor = UMPTG::EPUB.vendor_processor(options.vendor.downcase)
+if imgprocessor.nil?
+  puts "Error: invalid vendor #{options.vendor}"
+  exit 1
+end
+markerprocessor = UMPTG::EPUB::Processors::MarkerProcessor.new
 
 # Process all monograph directories specified.
 monograph_dir_list.each do |mdir|
@@ -128,22 +129,9 @@ monograph_dir_list.each do |mdir|
     # Either updating the FMSL or the resource map file
     # needs to be generated.
 
-    # Initialize/reset the image processor.
-    if imgprocessor.nil?
-      case vendor
-      when 'lockridge'
-        imgprocessor = UMPTG::EPUB::Processors::LockImageProcessor.new
-      else
-        imgprocessor = UMPTG::EPUB::Processors::SpecImageProcessor.new
-      end
-    else
-      imgprocessor.reset
-    end
-    if markerprocessor.nil?
-      markerprocessor = UMPTG::EPUB::Processors::MarkerProcessor.new
-    else
-      markerprocessor.reset
-    end
+    # Reset the markup processors.
+    imgprocessor.reset
+    markerprocessor.reset
 
     # Process the epub and generate the image information.
     UMPTG::EPUB::Processor.process(
