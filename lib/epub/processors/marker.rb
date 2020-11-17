@@ -1,4 +1,8 @@
 module UMPTG::EPUB::Processors
+
+  # Class represents a resource encountered
+  # while processing an EPUB and defined by
+  # marker markup.
   class Marker < Object
 
     def initialize(args = {})

@@ -1,7 +1,10 @@
 module UMPTG::EPUB::Processors
-  class MarkerSelector
 
+  # Class selects markers found within an EPUB.
+  class MarkerSelector < UMPTG::Fragment::Selector
     def select_fragment(name, attrs = [])
+
+      # Select <p class="rb|rbi">
       return false unless name == 'p'
 
       pclass = attrs.to_h['class']

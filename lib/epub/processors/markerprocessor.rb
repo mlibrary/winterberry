@@ -23,7 +23,7 @@ module UMPTG::EPUB::Processors
         comment = fragment.node.xpath(".//comment()")
         resource_name = comment.empty? ? fragment.node.text : comment.first.text
 
-        unless resource_name.nil? or resource_name.strip == ""
+        unless resource_name.nil? or resource_name.strip.empty?
           marker = Marker.new(
                   :node => fragment.node,
                   :name => args[:name],
