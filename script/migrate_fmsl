@@ -1,6 +1,18 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
+# Script inputs a FMSL and may (depending on options)
+# perform one or all of the following:
+#
+# - Migrate FMSL to a Fulcrum metadata.
+# - Validate Fulcrum metadata, optionally checking for
+#   the existence of resource files.
+# - Generate a Fulcrum metadata CSV file which optionally
+#   may include a column detailing any issues encountered
+#   during validation.
+# - Generate an XML representation of the Fulcrum metadta
+#   and save it in a file.
+
 require 'optparse'
 require 'ostruct'
 
@@ -48,32 +60,39 @@ require_relative File.join(root_dir, "lib", "manifest")
 
 NOTES_COLUMN = "Validation Notes"
 
+# Process each FMSL file specified.
 fmsl_file_list.each do |fmsl_file|
+  # Determine file existence.
   fmsl_file = File.expand_path(fmsl_file)
   if !File.file?(fmsl_file)
     puts "Error: invalid FMSL file #{fmsl_file}"
     next
   end
 
+  # Load the FMSL and migrate it to a Fulcrum metadata CSV.
   fmsl_body = UMPTG::FMSL.load(:fmsl_file => fmsl_file)
   manifest_csv = UMPTG::FMSL.to_manifest(:fmsl_body => fmsl_body)
 
-  collection = UMPTG::Manifest::Validation::Collection.new
+  # Convert the Fulcrum metadata CSV to an XML representation.
   manifest_name = File.join(File.basename(fmsl_file, ".*") + "_fulcrum")
   manifest = UMPTG::Manifest::Document.new(
         :name => manifest_name,
         :csv_body => manifest_csv.to_s
       )
+  collection = UMPTG::Manifest::Validation::Collection.new
   collection.add_manifest(manifest)
 
+  # If requested, write out the XML representation to a file.
   if options.output_xml
     output_file = File.join(File.dirname(fmsl_file), File.basename(fmsl_file, ".*") + ".xml")
     File.write(output_file, collection.xml_markup)
   end
 
+  # Validate the Fulcrum metadata.
   error_count = 0
   resource_errors = {}
 
+  # Check to see if resource files specified exists.
   unless options.skip_resources_check
     manifest_csv.each do |row|
       resource_name = row['File Name']
@@ -82,25 +101,29 @@ fmsl_file_list.each do |fmsl_file|
       resource_file = File.join(File.dirname(fmsl_file), resource_name)
       unless File.file?(resource_file)
         error_count += 1
-        #puts "Error: resource file #{resource_name} does not exist."
         resource_errors[resource_name] = [ "Error: resource file does not exist." ]
       end
     end
   end
 
+  # Validate the XML representation to determine any metadata field issues.
+  # the the Fulcrum metadata.
   error_list = UMPTG::Manifest::Validation::CollectionSchema.validate(:xml_markup => collection.xml_markup)
   puts "Error count: #{error_count + error_list.count}"
 
+  # Display any resource existence issues.
   if error_count > 0
     resource_errors.each do |key,val|
       puts "#{key}: #{val.first}"
     end
   end
 
+  # Display Fulcrum metadata field issues.
   if error_list.count > 0
     vtree = UMPTG::Manifest::ValidationResult::VTreeBuilder.build(collection.xml_markup)
     puts "vtree is nil" if vtree.nil?
 
+    # Organize any issues within a list associated with the resource.
     error_list.each do |error|
       level = error.error? ? "error" : error.warning? ? "warning" : error.fatal? ? "fatal" : "none"
       puts "error line: #{error.line}"
@@ -119,7 +142,7 @@ fmsl_file_list.each do |fmsl_file|
     end
   end
 
-  # Save the Fulcrum manifest file.
+  # If requested, save the Fulcrum manifest file.
   if options.output_csv
     fulcrum_headers = options.include_notes ? \
               [ NOTES_COLUMN ] + manifest_csv.headers : \
@@ -135,11 +158,7 @@ fmsl_file_list.each do |fmsl_file|
       manifest_csv.each do |row|
         resource_name = row['File Name']
         error_list = resource_errors[resource_name]
-        if error_list.nil?
-          error_value = "None"
-        else
-          error_value = error_list.join("\n")
-        end
+        error_value = error_list.nil? ? "None" : error_list.join("\n")
 
         r = options.include_notes ? \
                 { NOTES_COLUMN => error_value } : \
