@@ -8,8 +8,11 @@
 
     def process(args = {})
       selector = args[:selector]
-      raise "Error: no selection processor specified." if selector.nil?
+      select = Selector.new if select.nil?
+      #raise "Error: no selection processor specified." if selector.nil?
 
+      # Content may be provided via a name to a file
+      # or text.
       if args.has_key?(:file_name)
         file_name = args[:file_name]
         content = File.read(file_name)
@@ -18,6 +21,7 @@
       end
       raise "Error: no content specified." if content.nil? or content.empty?
 
+      # Parse the content, creating a list of fragments to be returned.
       @@processor = UMPTG::Fragment::XMLSaxDocument.new if @@processor.nil?
       @@processor.reset
       @@processor.name = args[:name]

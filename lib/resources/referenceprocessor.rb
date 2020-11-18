@@ -30,6 +30,7 @@ module UMPTG::Resources
   @@SELECTION_XPATH = <<-SXPATH
   //*[
   (local-name()='p' and @class='fig')
+  or (local-name()='div' and @class='figurewrap')
   or (local-name()='figure' and count(*[local-name()='p' and @class='fig'])=0)
   or @class='rb'
   or @class='rbi'

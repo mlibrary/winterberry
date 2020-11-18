@@ -22,8 +22,9 @@ options.publisher_dir = "s:/Information\ Management/Fulcrum/UMP"
 #options.publisher_dir = "c:/Users/tbelc/Documents/winterberry_production/Information\ Management/Fulcrum/UMP/"
 options.update_fmsl = true
 options.use_map = true
+options.vendor = ""
 option_parser = OptionParser.new do |opts|
-  opts.banner = "Usage: #{File.basename(__FILE__)} [-map] [-nofmsl] [-p <publisher_dir>] <monograph_dir> [<monograph_dir>...]"
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-map] [-nofmsl] [-p <publisher_dir>] [-v vendor] <monograph_dir> [<monograph_dir>...]"
   opts.on('-map', '--map', 'Overwrite existing resource map file.') do |da|
     options.use_map = false
   end
@@ -32,6 +33,9 @@ option_parser = OptionParser.new do |opts|
   end
   opts.on('-p', '--publisher_directory [DIRECTORY]', 'Publisher site directory') do |publisher_dir|
     options.publisher_dir = publisher_dir
+  end
+  opts.on('-v', '--vendor [vendor]', 'Vendor specific markup newgen|default') do |vendor|
+    options.vendor = vendor
   end
   opts.on_tail('-h', '--help', 'Print this help message') do
     puts opts
@@ -57,12 +61,21 @@ require 'fileutils'
 
 require_relative File.join(root_dir, "lib", "epub")
 require_relative File.join(root_dir, "lib", "csvfile")
+require_relative File.join(root_dir, "lib", "manifest")
 require_relative File.join(root_dir, "lib", "resourcemap")
 
-blank_row_file_name = "***row left intentionally blank***"
+#blank_row_file_name = "***row left intentionally blank***"
+blank_row_file_name = UMPTG::Manifest.BLANK_ROW_FILE_NAME
 blank_row_pattern = "^\*\*\*.* intentionally blank[ ]*\*\*\*$"
-imgprocessor = nil
-markerprocessor = nil
+
+# Initialize EPUB markup processors, figure/image and marker.
+options.vendor = 'default' if options.vendor.nil? or options.vendor.empty?
+imgprocessor = UMPTG::EPUB.vendor_processor(options.vendor.downcase)
+if imgprocessor.nil?
+  puts "Error: invalid vendor #{options.vendor}"
+  exit 1
+end
+markerprocessor = UMPTG::EPUB::Processors::MarkerProcessor.new
 
 # Process all monograph directories specified.
 monograph_dir_list.each do |mdir|
@@ -116,17 +129,9 @@ monograph_dir_list.each do |mdir|
     # Either updating the FMSL or the resource map file
     # needs to be generated.
 
-    # Initialize/reset the image processor.
-    if imgprocessor.nil?
-      imgprocessor = UMPTG::EPUB::Processors::ImageProcessor.new
-    else
-      imgprocessor.reset
-    end
-    if markerprocessor.nil?
-      markerprocessor = UMPTG::EPUB::Processors::MarkerProcessor.new
-    else
-      markerprocessor.reset
-    end
+    # Reset the markup processors.
+    imgprocessor.reset
+    markerprocessor.reset
 
     # Process the epub and generate the image information.
     UMPTG::EPUB::Processor.process(
