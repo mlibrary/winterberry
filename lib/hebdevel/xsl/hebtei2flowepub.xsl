@@ -1774,6 +1774,7 @@
 
                     <xsl:apply-templates/>
 
+                    <!--
                     <xsl:if test="$href != ''">
                         <xsl:element name="span" namespace="{$HTML_URL}">
                             <xsl:attribute name="class" select="'figcaption'"/>
@@ -1784,6 +1785,7 @@
                             </xsl:element>
                         </xsl:element>
                     </xsl:if>
+                    -->
                 </xsl:element>
             </xsl:otherwise>
         </xsl:choose>
