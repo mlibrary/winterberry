@@ -10,6 +10,7 @@ module UMPTG::Resources
       resource_metadata = args[:resource_metadata]
       resource_map_file = args[:resource_map_file]
       fulcrum_css_file = args[:fulcrum_css_file]
+      vendor = args[:vendor]
 
       puts "Using resource map file #{File.basename(resource_map_file)}"
       resource_map = UMPTG::ResourceMap::Map.new(
@@ -27,12 +28,21 @@ module UMPTG::Resources
             entry_content: File.read(resource_map_file)
           )
 
-      reference_processor = UMPTG::Resources::ReferenceProcessor.new
+      case vendor
+      when 'newgen'
+        reference_selector = UMPTG::Resources::NewgenReferenceSelector.new
+      else
+        reference_selector = UMPTG::Resources::SpecReferenceSelector.new
+      end
+
+      reference_processor = UMPTG::Resources::ReferenceProcessor.new(
+                  selector: reference_selector
+                  )
       resource_processor = UMPTG::Resources::ResourceProcessor.new(
-                  :resource_map => resource_map,
-                  :resource_metadata => resource_metadata,
-                  :default_action_str => default_action_str,
-                  :reference_processor => reference_processor
+                  resource_map: resource_map,
+                  resource_metadata: resource_metadata,
+                  default_action_str: default_action_str,
+                  reference_processor: reference_processor
                   )
 
       # Provide the directory path for adding the stylesheet link.

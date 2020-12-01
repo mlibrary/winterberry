@@ -22,7 +22,7 @@ options.publisher_dir = "s:/Information\ Management/Fulcrum/UMP"
 #options.publisher_dir = "c:/Users/tbelc/Documents/winterberry_production/Information\ Management/Fulcrum/UMP/"
 options.update_fmsl = true
 options.use_map = true
-options.vendor = ""
+options.vendor = "default"
 option_parser = OptionParser.new do |opts|
   opts.banner = "Usage: #{File.basename(__FILE__)} [-map] [-nofmsl] [-p <publisher_dir>] [-v vendor] <monograph_dir> [<monograph_dir>...]"
   opts.on('-map', '--map', 'Overwrite existing resource map file.') do |da|
@@ -70,12 +70,7 @@ blank_row_pattern = "^\*\*\*.* intentionally blank[ ]*\*\*\*$"
 
 # Initialize EPUB markup processors, figure/image and marker.
 options.vendor = 'default' if options.vendor.nil? or options.vendor.empty?
-imgprocessor = UMPTG::EPUB.vendor_processor(options.vendor.downcase)
-if imgprocessor.nil?
-  puts "Error: invalid vendor #{options.vendor}"
-  exit 1
-end
-markerprocessor = UMPTG::EPUB::Processors::MarkerProcessor.new
+processors = UMPTG::EPUB.vendor_processor(options.vendor.downcase)
 
 # Process all monograph directories specified.
 monograph_dir_list.each do |mdir|
@@ -130,16 +125,12 @@ monograph_dir_list.each do |mdir|
     # needs to be generated.
 
     # Reset the markup processors.
-    imgprocessor.reset
-    markerprocessor.reset
+    processors.each_value {|p| p.reset }
 
     # Process the epub and generate the image information.
     UMPTG::EPUB::Processor.process(
-          :epub_file => epub_file,
-          :processors => [
-                  imgprocessor,
-                  markerprocessor
-                ]
+          epub_file: epub_file,
+          processors: processors
         )
 
     # If a resource map exists, use it. Otherwise,
@@ -158,7 +149,7 @@ monograph_dir_list.each do |mdir|
     end
 
     # Process image information and generate the resource map.
-    imgprocessor.img_list.each do |node|
+    processors[:image].img_list.each do |node|
       node_map = node.map
       reference_name = node_map['src']
 
@@ -179,7 +170,7 @@ monograph_dir_list.each do |mdir|
     end
 
     # Process marker information and generate the resource map.
-    markerprocessor.img_list.each do |node|
+    processors[:marker].img_list.each do |node|
       node_map = node.map
       resource_name = node_map['resource_name'].strip
 

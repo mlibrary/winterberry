@@ -1,5 +1,5 @@
 module UMPTG::EPUB::Processors
-  class MarkerProcessor < UMPTG::Fragment::Processor
+  class SpecMarkerProcessor < UMPTG::Fragment::Processor
     @@markerselector = nil
 
     attr_reader :img_list
@@ -10,7 +10,7 @@ module UMPTG::EPUB::Processors
     end
 
     def process(args = {})
-      @@markerselector = MarkerSelector.new if @@markerselector.nil?
+      @@markerselector = SpecMarkerSelector.new if @@markerselector.nil?
       args[:selector] = @@markerselector
 
       fragments = super(args)

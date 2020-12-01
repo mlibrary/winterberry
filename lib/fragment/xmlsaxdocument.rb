@@ -15,7 +15,7 @@ module UMPTG::Fragment
     def start_element(name, attrs = [])
       #puts "<#{name}: #{attrs.map {|x| x.inspect}.join(', ')}>"
 
-      return unless @fragment_refcnt > 0 or @selector.select_fragment(name, attrs)
+      return unless @fragment_refcnt > 0 or @selector.select_element(name, attrs)
       @fragment_refcnt += 1
 
       str = "<#{name}"
@@ -49,9 +49,19 @@ module UMPTG::Fragment
     end
 
     def comment(string)
-      if @fragment_refcnt > 0
-        s = string.gsub(/[\n\r ]+/, ' ')
-        @fragment_markup += "<!--#{s}-->"
+      s = string.gsub(/[\n\r ]+/, ' ')
+      markup = "<!--#{s}-->"
+
+      case
+      when @fragment_refcnt > 0
+        @fragment_markup += markup
+      when @selector.select_comment(string)
+        m = Nokogiri::XML::DocumentFragment.parse("<p>#{markup}</p>")
+        f = UMPTG::Fragment::Object.new(
+              :node => m,
+              :name => name
+            )
+        @fragments << f
       end
     end
 

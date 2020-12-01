@@ -11,7 +11,7 @@ module UMPTG::Fragment
       @attribute_values = []
     end
 
-    def select_fragment(name, attrs = [])
+    def select_element(name, attrs = [])
       raise "Error: ContainerSelector - no containers specified." if @containers.empty?
 
       if @containers.include?(name)

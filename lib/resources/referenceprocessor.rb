@@ -37,6 +37,11 @@ module UMPTG::Resources
   ]
   SXPATH
 
+    def initialize(args = {})
+      @selector = args[:selector]
+      raise "Error: reference selector must be specified." if @selector.nil?
+    end
+
     def reference_actions(args = {})
       xml_doc = args[:xml_doc]
       raise "Error: XML document must be specified." if xml_doc.nil?
@@ -46,14 +51,17 @@ module UMPTG::Resources
             if reference_action_defs.nil?
 
       # Retrieve the resource references from this document.
-      reference_container_list = xml_doc.xpath(@@SELECTION_XPATH)
+      #reference_container_list = xml_doc.xpath(@@SELECTION_XPATH)
+      #reference_container_list = xml_doc.xpath(@@SELECTION_XPATH) + xml_doc.xpath("//comment()")
+      reference_container_list = @selector.references(xml_doc)
 
       # For each reference found, create the appropriate action
       # to process the reference. A reference may be type
       # :element or :marker
       reference_action_list = []
       reference_container_list.each do |refnode|
-        case ReferenceProcessor.reference_type(refnode)
+        #case ReferenceProcessor.reference_type(refnode)
+        case @selector.reference?(refnode)
         when :element
           list = element_reference_actions(
                       :reference_container => refnode,
@@ -143,6 +151,7 @@ module UMPTG::Resources
       reference_action_list = []
       node_list.each do |node|
         path = node.text.strip
+        path = path.match(/insert[ ]+([^\>]+)/)[1]
 
         reference_action_def_list = reference_action_defs[path]
         if reference_action_def_list.nil?
@@ -176,6 +185,8 @@ module UMPTG::Resources
     end
 
     def self.reference_type(node)
+      return :marker if node.comment?
+
       attr = node.attribute("class")
       unless attr.nil?
         attr = attr.text.downcase

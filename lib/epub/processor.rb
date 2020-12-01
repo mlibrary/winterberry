@@ -23,7 +23,7 @@ module UMPTG::EPUB
       epub_items = [ epub.opf ] + epub.spine
       epub_items.each do |item|
         fragments_list = []
-        processors.each do |proc|
+        processors.each_value do |proc|
           fragments = proc.process(
                   :name => item.name,
                   :content => item.get_input_stream.read
