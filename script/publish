@@ -5,13 +5,13 @@
 
 require 'optparse'
 require 'ostruct'
-#require 'os'
+require 'os'
 
 # Process the script parameters.
 options = OpenStruct.new
 #options.fulcrum_dir = Dir.pwd
-#options.fulcrum_dir = OS.windows? ? "s:/Information\ Management/Fulcrum" : "/mnt/umptmm"
-options.fulcrum_dir = "c:/Users/Tim/Documents/UM/winterberry_test"
+options.fulcrum_dir = OS.windows? ? "s:/Information\ Management/Fulcrum" : "/mnt/umptmm"
+#options.fulcrum_dir = OS.windows? ? "c:/Users/Tim/Documents/UM/winterberry_test" : "/mnt/umptmm"
 option_parser = OptionParser.new do |opts|
   opts.banner = "Usage: #{File.basename(__FILE__)} [-p <fulcrum_dir>] <publish_label> [<publish_label>..]"
   opts.on('-p', '--publisher_directory [DIRECTORY]', 'Publisher site directory') do |fulcrum_dir|
