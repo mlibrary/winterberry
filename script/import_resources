@@ -1,0 +1,177 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Import monograph resources. This must be run on
+# on fulcrum production|preview|staging
+
+require 'optparse'
+require 'ostruct'
+require 'os'
+
+# Process the script parameters.
+options = OpenStruct.new
+options.import = false
+#options.fulcrum_dir = Dir.pwd
+#options.fulcrum_dir = OS.windows? ? "s:/Information\ Management/Fulcrum" : "/mnt/umptmm"
+options.fulcrum_dir = OS.windows? ? "c:/Users/Tim/Documents/UM/winterberry_test" : "/mnt/umptmm"
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-i] [-p <fulcrum_dir>] <monograph_isbn> [<monograph_isbn>..]"
+  opts.on('-i', '--import', 'Performing import') do |do_import|
+    options.import = true
+  end
+  opts.on('-p', '--publisher_directory [DIRECTORY]', 'Publisher site directory') do |fulcrum_dir|
+    options.fulcrum_dir = fulcrum_dir
+  end
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    puts opts
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  puts option_parser.help
+  return
+end
+
+monograph_isbn_list = ARGV
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+class MINFO
+  attr_reader :isbn, :monograph_dir, :processing_dir, :log
+  attr_accessor :monograph_info
+
+  def initialize(args = {})
+    @isbn = args[:monograph_isbn]
+    @monograph_dir = args[:monograph_dir]
+    @processing_dir = args[:processing_dir]
+    @log = args[:log]
+    @monograph_info = args[:monograph_info]
+  end
+end
+
+require 'fileutils'
+require 'csv'
+require 'tempfile'
+
+# Verify existence of the source/project root directories.
+fulcrum_dir = File.expand_path(options.fulcrum_dir)
+unless File.directory?(fulcrum_dir)
+  puts "Error: source directory #{fulcrum_dir} does not exist."
+  exit
+end
+
+# Determine the base monograph directory
+fulcrum_monograph_dir = File.join(fulcrum_dir, "UMP")
+
+# Traverse the list of ISBNs, collecting information so
+# processing can be logged for each monograph.
+isbn_info = {}
+need_noid_list = []
+monograph_isbn_list.each do |monograph_isbn|
+  # Determine the monograph directory
+  monograph_dir_list = Dir.glob(File.join(fulcrum_monograph_dir, "#{monograph_isbn}_*"))
+  if monograph_dir_list.empty?
+    puts "Error: monograph directory for ISBN #{monograph_isbn} not found."
+    next
+  end
+  monograph_dir = monograph_dir_list.first
+
+  # Determine the resource processing directory
+  processing_dir = File.join(monograph_dir, "resource_processing")
+  FileUtils.mkdir_p processing_dir
+
+  # Determine if a monograph NOID has been found.
+  monograph_info_file = File.join(processing_dir, "monograph_manifest.csv")
+  monograph_info = nil
+  if File.file?(monograph_info_file)
+    monograph_info = CSV.parse(
+          File.read(monograph_info_file),
+          :headers => true,
+          :return_headers => false
+      )
+  end
+
+  log_file = File.join(processing_dir, File.basename(__FILE__) + ".log")
+  log = File.open(log_file, "w")
+
+  minfo = MINFO.new(
+          monograph_isbn: monograph_isbn,
+          monograph_dir: monograph_dir,
+          processing_dir: processing_dir,
+          monograph_info: monograph_info,
+          log: log
+      )
+  isbn_info[monograph_isbn] = minfo
+  need_noid_list << monograph_isbn if monograph_info.nil?
+end
+
+# Retrieve ISBN,NOID,DOI,ID for monographs.
+unless need_noid_list.empty?
+  info_script = File.join(File.dirname(__FILE__), "isbn_noid_doi_id.rb")
+  info_csv_file = Tempfile.new(["isbn_noid_doi_id", ".csv"]).path
+  cmd = "sudo -u heliotrope-production RAILS_ENV=production bundle exec rails runner #{info_script} 9780472128105 >& #{info_csv_file}"
+  puts cmd
+
+  sv_cddir = Dir.pwd
+  Dir.chdir "/hydra/heliotrope-production/current"
+  ok = system(cmd)
+  #ok = true
+  status = $?
+  Dir.chdir sv_cddir
+
+  unless ok
+    puts "#{File.basename(info_script)} failed (status = #{status})"
+    exit 1
+  end
+
+  info_csv = CSV.parse(
+            File.read(info_csv_file),
+            :headers => true,
+            :return_headers => false
+        )
+  info_csv.each do |row|
+    isbn = row['ISBN']
+    minfo = isbn_info[isbn]
+    unless minfo.nil?
+      minfo.monograph_info = info_csv
+      monograph_info_file = File.join(minfo.processing_dir, "monograph_manifest.csv")
+
+      CSV.open(
+              monograph_info_file,
+              "w",
+              :write_headers=> true,
+              :headers => info_csv.headers
+            ) do |csv|
+        csv << row
+      end
+      minfo.log.puts "Retrieved monograph info for ISBN #{isbn}"
+    end
+  end
+end
+
+# If specified, import the monograph resources
+if options.import
+  isbn_info.each do |isbn,minfo|
+    resources_dir_list = Dir.glob(File.join(minfo.monograph_dir, "[Rr]esources"))
+    if resources_dir_list.empty?
+      minfo.log.puts "Error: no resources directory for ISBN #{isbn}"
+      next
+    end
+    resources_dir = resources_dir_list.first
+
+    minfo.monograph_info.each do |row|
+      noid = row['NOID']
+      cmd = "sudo -u heliotrope-production RAILS_ENV=production bundle exec script/import -m #{noid} -d #{resources_dir}"
+      puts cmd
+      #system(cmd)
+    end
+  end
+end
+
+# Close the log files
+isbn_info.each do |isbn, minfo|
+  minfo.log.close
+end
