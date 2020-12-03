@@ -5,13 +5,13 @@
 
 require 'optparse'
 require 'ostruct'
-require 'os'
+#require 'os'
 
 # Process the script parameters.
 options = OpenStruct.new
 #options.fulcrum_dir = Dir.pwd
 #options.fulcrum_dir = OS.windows? ? "s:/Information\ Management/Fulcrum" : "/mnt/umptmm"
-options.fulcrum_dir = OS.windows? ? "c:/Users/Tim/Documents/UM/winterberry_test" : "/mnt/umptmm"
+options.fulcrum_dir = "c:/Users/Tim/Documents/UM/winterberry_test"
 option_parser = OptionParser.new do |opts|
   opts.banner = "Usage: #{File.basename(__FILE__)} [-p <fulcrum_dir>] <publish_label> [<publish_label>..]"
   opts.on('-p', '--publisher_directory [DIRECTORY]', 'Publisher site directory') do |fulcrum_dir|
@@ -36,7 +36,7 @@ root_dir = File.dirname(script_dir)
 
 # Verify existence of the source/project root directories.
 fulcrum_dir = File.expand_path(options.fulcrum_dir)
-if !File.exists?(fulcrum_dir)
+unless File.directory?(fulcrum_dir)
   puts "Error: source directory #{fulcrum_dir} does not exist."
   exit
 end
@@ -68,8 +68,8 @@ publish_label_list.each do |publish_label|
   monograph_info = File.readlines(monograph_info_file)
 
   # Generate the publishing steps script file
-  label_script_file = File.join(label_dir, "script.sh")
-  File.open(label_script_file, "w") do |fp|
+  import_file = File.join(label_dir, "import.sh")
+  File.open(import_file, "w") do |fp|
     fp.puts("# Import resources")
     monograph_info.each do |info_line|
       info = info_line.split(',')
@@ -85,15 +85,20 @@ publish_label_list.each do |publish_label|
       noid = info[1]
 
       fp.puts("sudo -u heliotrope-production RAILS_ENV=production bundle exec script/import -m #{info[1]} -d #{resources_dir}")
+      fp.puts
     end
+  end
+  puts "Wrote script file #{File.basename(import_file)}"
 
-    fp.puts
+  restrict_file = File.join(label_dir, "restrict_items.sh")
+  File.open(restrict_file, "w") do |fp|
     fp.puts("# Create components")
     components_csv = File.join(label_dir, "noid_doi.csv")
     log_2020_file = File.join(label_dir, "restrict_items_ebc_2020.log")
     log_backlist_file = File.join(label_dir, "restrict_items_ebc_backlist.log")
     fp.puts("bundle exec ruby bin/restrict_items.rb -f #{components_csv} -p ebc_2020 >& #{log_2020_file}")
+    fp.puts
     fp.puts("bundle exec ruby bin/restrict_items.rb -f #{components_csv} -p ebc_backlist >& #{log_backlist_file}")
   end
-  puts "Wrote script file #{File.basename(label_script_file)}"
+  puts "Wrote script file #{File.basename(restrict_file)}"
 end
