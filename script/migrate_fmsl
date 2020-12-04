@@ -127,6 +127,7 @@ fmsl_file_list.each do |fmsl_file|
     error_list.each do |error|
       level = error.error? ? "error" : error.warning? ? "warning" : error.fatal? ? "fatal" : "none"
       puts "error line: #{error.line}"
+      puts error
       property = vtree.property(error.line) unless vtree.nil?
       puts "\t#{property}" unless property.nil?
       puts "\t#{property.resource_name}" unless property.nil?

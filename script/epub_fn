@@ -1,0 +1,66 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# HELIO-3623 Traverse specified EPUBs and process footnotes
+
+require 'optparse'
+require 'ostruct'
+
+# Process the script parameters.
+options = OpenStruct.new
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} <epub_file> [<epub_file>..]"
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    puts opts
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  puts option_parser.help
+  return
+end
+
+epub_file_list = ARGV
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, 'lib', 'epub')
+
+processor = UMPTG::EPUB::DocumentProcessors::FnProcessor.new
+
+epub_file_list.each do |epub_file|
+  epub_file = File.expand_path(epub_file)
+  unless File.exists?(epub_file)
+    puts "Error: invalid EPUB file path #{epub_file}."
+    next
+  end
+  puts "Processing #{File.basename(epub_file)}"
+
+  processed_epub = UMPTG::EPUB::DocumentProcessor.process(
+          epub_file: epub_file,
+          processors: [ processor ]
+      )
+  processed_epub_file = File.join(File.dirname(epub_file), File.basename(epub_file, ".*") + "_fn.epub")
+  processed_epub.save(
+          epub_file: processed_epub_file
+      )
+
+=begin
+  puts "FN count: #{processor.fnref_count}"
+  processor.section_fnref.each do |section_node,fnref_node_list|
+    xref_node_list = section_node.xpath(".//*[local-name()='a' and @class='xref']")
+    section_title = xref_node_list.empty? ? "Unknown" : xref_node_list.first.text
+    puts "Section: #{section_title}"
+    fnref_node_list.each_with_index do |fnref_node,ndx|
+      href = fnref_node['href']
+      fn_node = processor.fn[href]
+      puts "#{ndx+1}: #{href} #{fn_node}"
+    end
+  end
+=end
+
+  processor.reset()
+end
