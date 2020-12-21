@@ -19,7 +19,7 @@ module UMPTG::RTF
 
       append_markup("<?xml version=\"1.0\" encoding=\"UTF-8\"?>")
       append_markup("<html xmlns=\"http://www.w3.org/1999/xhtml\">")
-      append_markup("<head></head>")
+      append_markup("<head><title>Title</title></head>")
       append_markup("<body>")
     end
 
@@ -52,7 +52,7 @@ module UMPTG::RTF
       # If a new division, then open a new section.
       if parser_context[:division]
         event_context[:stack].push("section")
-        append_markup("<section class=\"#{style_name}\">")
+        append_markup("<section title=\"#{style_name}\">")
         return
       end
 
@@ -74,7 +74,7 @@ module UMPTG::RTF
       # Push this element on the stack and add its
       # markup to the output string.
       event_context[:stack].push(elem_name)
-      append_markup("<#{elem_name} class=\"#{style_name}\">")
+      append_markup("<#{elem_name} title=\"#{style_name}\">")
     end
 
     # Close a block.
@@ -143,16 +143,17 @@ module UMPTG::RTF
       when "Paragraph Number"
         @para_number += 1
         elem_name = "span"
-        append_inline_markup(event_context, elem_name, "<#{elem_name} id=\"para#{@para_number}\" style=\"#{style_name}\">")
+        #append_inline_markup(event_context, elem_name, "<#{elem_name} id=\"para#{@para_number}\" title=\"#{style_name}\">")
+        append_inline_markup(event_context, elem_name, "<#{elem_name} title=\"#{style_name}\">")
         inline_cnt += 1
       when "Frequently Used Term + Term w/ Definition"
         elem_name = "span"
-        append_inline_markup(event_context, elem_name, "<#{elem_name} style=\"#{style_name}\">")
+        append_inline_markup(event_context, elem_name, "<#{elem_name} title=\"#{style_name}\">")
         inline_cnt += 1
         superscript = "after"
       when "Historical Character"
         elem_name = "a"
-        append_inline_markup(event_context, elem_name, "<#{elem_name} style=\"#{style_name}\">")
+        append_inline_markup(event_context, elem_name, "<#{elem_name} title=\"#{style_name}\">")
         inline_cnt += 1
       when "endnote reference"
         #superscript = "after"

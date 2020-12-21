@@ -181,7 +181,45 @@ module UMPTG::RTF
         val = nil
         return [ctrl, val, current_pos]
       end
-      return super(src, current_pos)
+      #return super(src, current_pos)
+
+      # Debug
+      ctrl = ''
+      val = nil
+
+      max_len = src.length
+      start = current_pos
+
+      # handle hex special
+      if src[current_pos] == "'"
+        val = src[(current_pos + 1), 2].hex.chr
+        if encoding
+          val = val.force_encoding(encoding).encode('UTF-8')
+        end
+        current_pos += 3
+        return [:hex, val, current_pos]
+      end
+
+      while (true)
+        break if current_pos >= max_len
+        break if STOP_CHARS.include?(src[current_pos])
+
+        current_pos += 1
+      end
+      return [src[current_pos].to_sym, nil, current_pos + 1] if start == current_pos
+
+      contents = src[start, current_pos - start]
+      m = contents.match(/([\*\-a-z]+)(\-?\d+)?\*?/)
+      if m.nil? or m.length < 3
+        puts "Error: start=#{start},current_pos=#{current_pos},contents=#{contents}"
+      end
+      ctrl = m[1].to_sym
+      val = m[2].to_i unless m[2].nil?
+
+      # we advance past the optional space if present
+      current_pos += 1 if src[current_pos] == ' '
+
+      [ctrl, val, current_pos]
     end
 
     # Handle a given control

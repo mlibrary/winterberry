@@ -36,7 +36,12 @@ rtf_file_list.each do |rtf_file|
     next
   end
 
-  html_file = File.join(File.dirname(rtf_file), File.basename(rtf_file, ".*") + ".html")
+  #html_file = File.join(File.dirname(rtf_file), File.basename(rtf_file, ".*") + ".html")
+  base_name = File.basename(rtf_file, ".*")
+  base_name = base_name.gsub(/[\(\)]/,'')
+  base_name = base_name.gsub(/[ \-]+/,'_')
+
+  html_file = File.join(File.dirname(rtf_file), base_name + ".xhtml")
   puts "#{File.basename(rtf_file)} ==> #{File.basename(html_file)}"
 
   html_markup = UMPTG::RTF::Processor.process(
@@ -44,4 +49,5 @@ rtf_file_list.each do |rtf_file|
           :rtf_listener => rtf_listener
         )
   File.write(html_file, html_markup)
+  rtf_listener.reset()
 end
