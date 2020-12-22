@@ -142,7 +142,8 @@ unless need_noid_list.empty?
               monograph_info_file,
               "w",
               :write_headers=> true,
-              :headers => info_csv.headers
+              :headers => info_csv.headers,
+              :force_quotes => true
             ) do |csv|
         csv << row
       end
