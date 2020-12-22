@@ -1,0 +1,70 @@
+#!/usr/bin/env ruby
+# encoding: utf-8
+
+require 'optparse'
+require 'ostruct'
+
+# Process the script parameters.
+options = OpenStruct.new
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)}  manifest_file [<manifest_file>..]"
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    puts opts
+    exit(0)
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  puts option_parser.help
+  exit(0)
+end
+
+manifest_file_list = ARGV
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require 'csv'
+
+require_relative File.join(root_dir, 'lib', 'manifest')
+
+LOCATIONS = {
+    "Fordham UP" => "New York, New York",
+    "Georgetown UP" => "Washington DC",
+    "Johns Hopkins UP" => "Baltimore, Maryland",
+    "Louisiana State UP" => "Baton Rouge, Lousiana",
+    "SUNY Press" => "Albany, New York",
+    "Temple UP" => "Philadelphia, Pennsylvania",
+    "University of Hawai’i Press" => "Honolulu, Hawaii",
+    "University of Tennessee Press" => "Knoxville, Tennessee",
+    "U of Toronto Press" => "Toronto, Ontario",
+    "U of Washington Press" => "Seattle, Washington"
+}
+
+csv_dir = File.dirname(File.expand_path(ARGV[0]))
+csv_file = File.join(csv_dir, "monograph_pub_locations.csv")
+CSV.open(
+        csv_file,
+        "w",
+        :write_headers=> true,
+        :headers => ["NOID", "Pub Location"]
+      ) do |csv|
+  manifest_file_list.each do |manifest_file|
+    manifest_file = File.expand_path(manifest_file)
+    unless File.file?(manifest_file)
+      puts "Error: File \"#{File.basename(manifest_file)}\" does not exist."
+      next
+    end
+    puts "Processing file \"#{File.basename(manifest_file)}\""
+    STDOUT.flush
+
+    manifest = UMPTG::Manifest::Document.new(csv_body: File.read(manifest_file))
+    pub_loc = LOCATIONS[manifest.monograph_row['publisher']]
+    csv << {
+          "NOID" => manifest.monograph_row['noid'],
+          "Pub Location" => pub_loc
+      }
+    #puts "#{manifest.monograph_row['identifier(s)']},#{manifest.monograph_row['noid']},#{manifest.monograph_row['publisher']},#{manifest.monograph_row['pub_location']}"
+  end
+end

@@ -1,0 +1,37 @@
+#!/usr/bin/env ruby
+# encoding: utf-8
+
+require 'optparse'
+require 'ostruct'
+
+# Process the script parameters.
+options = OpenStruct.new
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)}  csv_file"
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    puts opts
+    exit(0)
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  puts option_parser.help
+  exit(0)
+end
+
+csv_file = ARGV[0]
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require 'csv'
+
+CSV.foreach(
+        csv_file,
+        "r",
+        headers: true,
+        return_headers: false
+      ) do |row|
+  puts "#{row['ID']}: #{row['Rights Holder City']} #{row['Rights Holder State']},#{row['Pub City 1']},#{row['Pub City 2']},#{row['Pub City 3']}"
+end
