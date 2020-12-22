@@ -12,8 +12,7 @@ require 'os'
 options = OpenStruct.new
 options.import = false
 #options.fulcrum_dir = Dir.pwd
-#options.fulcrum_dir = OS.windows? ? "s:/Information\ Management/Fulcrum" : "/mnt/umptmm"
-options.fulcrum_dir = OS.windows? ? "c:/Users/Tim/Documents/UM/winterberry_test" : "/mnt/umptmm"
+options.fulcrum_dir = OS.windows? ? "s:/Information\ Management/Fulcrum" : "/mnt/umptmm"
 option_parser = OptionParser.new do |opts|
   opts.banner = "Usage: #{File.basename(__FILE__)} [-i] [-p <fulcrum_dir>] <monograph_isbn> [<monograph_isbn>..]"
   opts.on('-i', '--import', 'Performing import') do |do_import|
@@ -112,13 +111,13 @@ end
 unless need_noid_list.empty?
   info_script = File.join(File.dirname(__FILE__), "isbn_noid_doi_id.rb")
   info_csv_file = Tempfile.new(["isbn_noid_doi_id", ".csv"]).path
-  cmd = "sudo -u heliotrope-production RAILS_ENV=production bundle exec rails runner #{info_script} 9780472128105 >& #{info_csv_file}"
+  cmd = "sudo -u heliotrope-production RAILS_ENV=production bundle exec rails runner #{info_script} #{need_noid_list.join} >& #{info_csv_file}"
   puts cmd
 
   sv_cddir = Dir.pwd
   Dir.chdir "/hydra/heliotrope-production/current"
-  ok = system(cmd)
-  #ok = true
+  #ok = system(cmd)
+  ok = true
   status = $?
   Dir.chdir sv_cddir
 
