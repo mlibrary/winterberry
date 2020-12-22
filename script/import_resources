@@ -110,7 +110,7 @@ end
 # Retrieve ISBN,NOID,DOI,ID for monographs.
 unless need_noid_list.empty?
   info_script = File.join(File.dirname(File.expand_path(__FILE__)), "isbn_noid_doi_id.rb")
-  info_csv_file = Tempfile.new(["isbn_noid_doi_id", ".csv"]).path
+  info_csv_file = File.join(fulcrum_dir, "tbelc", "isbn_noid_doi_id.csv")
   cmd = "sudo -u heliotrope-production RAILS_ENV=production bundle exec rails runner #{info_script} #{info_csv_file} #{need_noid_list.join}"
   puts cmd
 
