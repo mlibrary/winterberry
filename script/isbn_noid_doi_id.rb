@@ -1,7 +1,12 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
 # Script given a list of ISBNs, it generates a CSV
 # of ISBN,NOID,DOI[,identifier]
-isbn_list = ARGV
+csv_file = ARGV[0]
+isbn_list = ARGV[1..-1]
 
+=begin
 puts "ISBN,NOID,DOI,ID"
 isbn_list.each do |isbn|
   monograph_list = Monograph.where(isbn_numeric: [isbn])
@@ -16,9 +21,10 @@ isbn_list.each do |isbn|
     end
   end
 end
+=end
 
-=begin
-csv_file = File.join(File.dirname(__FILE__), "isbn_noid_doi_id.csv")
+#csv_file = File.join(File.dirname(__FILE__), "isbn_noid_doi_id.csv")
+#csv_file = Tempfile.new(["isbn_noid_doi_id", ".csv"]).path
 File.open(csv_file, "w") do |fp|
   fp.puts "ISBN,NOID,DOI,ID"
   isbn_list.each do |isbn|
@@ -35,4 +41,3 @@ File.open(csv_file, "w") do |fp|
     end
   end
 end
-=end
