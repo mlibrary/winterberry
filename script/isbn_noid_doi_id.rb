@@ -34,9 +34,9 @@ File.open(csv_file, "w") do |fp|
     else
       monograph = monograph_list.first
       if monograph.identifier.empty?
-        fp.puts "#{isbn},#{monograph.id},https://doi.org/#{monograph.doi},"
+        fp.puts "\"#{isbn}\",\"#{monograph.id}\",\"https://doi.org/#{monograph.doi}\","
       else
-        fp.puts "#{isbn},#{monograph.id},https://doi.org/#{monograph.doi},#{monograph.identifier.first}"
+        fp.puts "\"#{isbn}\",\"#{monograph.id}\",\"https://doi.org/#{monograph.doi}\",\"#{monograph.identifier.first}\""
       end
     end
   end
