@@ -19,8 +19,7 @@ require 'os'
 # Process the script parameters.
 options = OpenStruct.new
 #options.publisher_dir = Dir.pwd
-#options.publisher_dir = OS.windows? ? "s:/Information\ Management/Fulcrum/UMP" : "/mnt/umptmm/UMP"
-options.publisher_dir = OS.windows? ? "c:/Users/tbelc/Documents/winterberry_production/Information\ Management/Fulcrum/UMP" : "/mnt/umptmm/UMP"
+options.publisher_dir = OS.windows? ? "s:/Information\ Management/Fulcrum/UMP" : "/mnt/umptmm/UMP"
 options.update_fmsl = true
 options.use_map = true
 options.vendor = "default"

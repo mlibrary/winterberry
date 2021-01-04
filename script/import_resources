@@ -134,20 +134,23 @@ unless need_noid_list.empty?
   info_csv.each do |row|
     isbn = row['ISBN']
     minfo = isbn_info[isbn]
-    unless minfo.nil?
-      minfo.monograph_info = info_csv
-      monograph_info_file = File.join(minfo.processing_dir, "monograph_manifest.csv")
-
-      CSV.open(
-              monograph_info_file,
-              "w",
-              :write_headers=> true,
-              :headers => info_csv.headers
-            ) do |csv|
-        csv << row
-      end
-      minfo.log.puts "Retrieved monograph info for ISBN #{isbn}"
+    if minfo.nil?
+      minfo.log.puts "No monograph info for ISBN #{isbn}"
+      next
     end
+
+    minfo.monograph_info = info_csv
+    monograph_info_file = File.join(minfo.processing_dir, "monograph_manifest.csv")
+
+    CSV.open(
+            monograph_info_file,
+            "w",
+            :write_headers=> true,
+            :headers => info_csv.headers
+          ) do |csv|
+      csv << row
+    end
+    minfo.log.puts "Retrieved monograph info for ISBN #{isbn}"
   end
 end
 
