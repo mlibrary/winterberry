@@ -12,8 +12,8 @@ ROOTDIR=ENV['HEBROOTDIR'] || ""
 # the last component of the HEB directory
 # is the ID.
 HEBID=File.basename(HEBDIR)
-#HEBPRFX=HEBID[0..7]
-HEBPRFX=HEBID
+HEBPRFX=HEBID[0..7]
+#HEBPRFX=HEBID
 OS=ENV['OS']
 
 # Determine process paths relative to this file.
@@ -88,6 +88,7 @@ SRCASSETLIST=asset_list
 # Set the path to the directory containing
 # the source MARC records.
 SRCMARCPATH=File.join(RESOURCESDIR, "marc", "#{HEBPRFX}.xml")
+puts "SRCMARCPATH=#{SRCMARCPATH}"
 
 # Set the paths to the bundle CSV file,
 # the book epub file, and the bundle zip file.

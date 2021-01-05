@@ -37,7 +37,8 @@ heb_dir_list = ARGV.count > 1 ? ARGV[1..-1] : [ Dir.pwd ]
 # Explicitly set for my laptop (Windows) or tang (Linux).
 if Gem.win_platform?
   java_home = File.join(ENV['SYSTEMDRIVE'], "Program Files", "Java", "jre1.8.0_172")
-  hebrootdir = File.expand_path(File.join("~", "Documents", "winterberry_hebepub"))
+  #hebrootdir = File.expand_path(File.join("~", "Documents", "winterberry_hebepub"))
+  hebrootdir = File.expand_path(File.join("~", "Documents", "hebproduction"))
 else
   java_home = File.join(File::SEPARATOR, "usr", "lib", "jvm", "java-8-openjdk-amd64")
   hebrootdir = File.join(File::SEPARATOR, "quod-prep", "prep", "a", "acls", "hebepub")
