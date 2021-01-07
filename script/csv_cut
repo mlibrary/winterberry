@@ -1,0 +1,43 @@
+#!/usr/bin/env ruby
+# encoding: utf-8
+
+require 'optparse'
+require 'ostruct'
+
+# Process the script parameters.
+options = OpenStruct.new
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)}  <csv_file> column_name [column_name..]"
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    puts opts
+    exit(0)
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 2
+  puts option_parser.help
+  exit(0)
+end
+
+csv_file = ARGV[0]
+column_list = ARGV[1..-1]
+
+unless File.exist?(csv_file)
+  puts "Error: CSV \"#{File.basename(csv_file)}\" does not exist."
+  exit(1)
+end
+puts "Using CSV file \"#{File.basename(csv_file)}\""
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require 'csv'
+
+CSV.parse(File.read(csv_file), {:headers => true, :encoding => 'ISO-8859-1'}).each do |row|
+  result = []
+  column_list.each do |col|
+    result << "\"#{row[col]}\""
+  end
+  puts result.join(',')
+end
