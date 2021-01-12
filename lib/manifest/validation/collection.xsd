@@ -34,6 +34,7 @@
     <xs:element name="exclusive_to_platform" type="type_exclusive_to_platform"/>
     <xs:element name="external_resource_url" type="type_external_resource_url"/>
     <xs:element name="funder" type="type_funder"/>
+    <xs:element name="funder_display" type="type_funder_display"/>
     <xs:element name="hdl" type="type_hdl"/>
     <xs:element name="holding_contact" type="type_holding_contact"/>
     <xs:element name="identifier" type="type_identifier"/>
@@ -431,6 +432,7 @@
             <xs:element ref="hdl" minOccurs="0"/>
             <xs:element ref="open_access" minOccurs="0"/>
             <xs:element ref="funder" minOccurs="0"/>
+            <xs:element ref="funder_display" minOccurs="0"/>
             <xs:element ref="creator_display" minOccurs="0"/>
             <xs:element ref="publisher" minOccurs="0"/>
             <xs:element ref="subject_list" minOccurs="0"/>
@@ -642,6 +644,15 @@
             <xs:extension base="type_string">
                 <xs:attribute name="object" type="xs:string" fixed="monograph"/>
                 <xs:attribute name="field_name" type="xs:string" fixed="Funder"/>
+                <xs:attribute name="multivalued" type="xs:string" fixed="no"/>
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+    <xs:complexType name="type_funder_display">
+        <xs:simpleContent>
+            <xs:extension base="type_string">
+                <xs:attribute name="object" type="xs:string" fixed="monograph"/>
+                <xs:attribute name="field_name" type="xs:string" fixed="Funder Display"/>
                 <xs:attribute name="multivalued" type="xs:string" fixed="no"/>
             </xs:extension>
         </xs:simpleContent>
