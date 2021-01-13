@@ -118,12 +118,12 @@ monograph_dir_list.each do |monograph_dir|
 
   unless fm_row.nil?
     format_isbn = {}
-    isbn, format = convert_isbn(fm_row['ISBN1_13'], fm_row['Pub Format'], "HARDCOVER")
-    format_isbn[format] = isbn
-    isbn, format = convert_isbn(fm_row['ISBN2_13'], fm_row['Pub Format 2'], "PAPERBACK")
-    format_isbn[format] = isbn
-    isbn, format = convert_isbn(fm_row['ISBN3_13'], nil, "EBOOK")
-    format_isbn[format] = isbn
+    isbn, format = convert_isbn(fm_row['ISBN1_13'], fm_row['Pub Format'], "hardcover")
+    format_isbn[format] = isbn unless isbn.nil? or isbn.empty?
+    isbn, format = convert_isbn(fm_row['ISBN2_13'], fm_row['Pub Format 2'], "paperback")
+    format_isbn[format] = isbn unless isbn.nil? or isbn.empty?
+    isbn, format = convert_isbn(fm_row['ISBN3_13'], nil, "ebook")
+    format_isbn[format] = isbn unless isbn.nil? or isbn.empty?
 
     # Monograph row
     isbn_list = []

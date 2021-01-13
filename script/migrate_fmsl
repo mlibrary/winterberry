@@ -68,6 +68,7 @@ fmsl_file_list.each do |fmsl_file|
     puts "Error: invalid FMSL file #{fmsl_file}"
     next
   end
+  puts "Migrating FMSL #{File.basename(fmsl_file)}"
 
   # Load the FMSL and migrate it to a Fulcrum metadata CSV.
   fmsl_body = UMPTG::FMSL.load(:fmsl_file => fmsl_file)

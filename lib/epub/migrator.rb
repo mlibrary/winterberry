@@ -87,7 +87,9 @@ module UMPTG::EPUB
             )
           new_entry_name = File.join(File.dirname(spine_item.name), File.basename(spine_item.name, ".*") + ".xhtml")
           epub.add(entry_name: new_entry_name, entry_content: File.read(destpath))
-          epub.remove(entry_name: spine_item.name)
+          unless new_entry_name == spine_item.name
+            epub.remove(entry_name: spine_item.name)
+          end
         end
       end
 

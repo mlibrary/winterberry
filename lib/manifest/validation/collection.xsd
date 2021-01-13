@@ -1090,7 +1090,6 @@
     <xs:group name="type_base_properties">
         <xs:all>
             <xs:element ref="title"/>
-            <xs:element ref="url"/>
         </xs:all>
     </xs:group>
 

@@ -138,13 +138,24 @@ module UMPTG::Manifest::Validation
 
         attrs = ""
         attrs = content_type == :metadata ? "" : sprintf(" label=\"%s\"", row["file_name"])
-        if content_type != :metadata and row.has_key?("noid") and !row["noid"].empty?
+        if content_type != :metadata and row.has_key?("noid") and !row["noid"].nil? and !row["noid"].empty?
           attrs += sprintf(" id=\"%s\"", row["noid"])
         end
         content[content_type] += sprintf(CollectionSchema.MARKUP_OBJECT, elem, attrs, collection_list.join, elem)
       end
 
-      monograph_id = monograph_row == nil ? manifest.name : monograph_row["noid"]
+      if monograph_row.nil?
+        monograph_id = manifest.name
+      else
+        noid = monograph_row["noid"]
+        if noid.nil? or noid.empty?
+          monograph_id = "monograph"
+        else
+          monograph_id = noid
+        end
+      end
+      puts "monograph_id:#{monograph_id}"
+      #monograph_id = monograph_row == nil ? manifest.name : monograph_row["noid"]
       #monograph_id = @name
 
       return sprintf(

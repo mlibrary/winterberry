@@ -29,8 +29,6 @@ xsd_file_list = ARGV
 # Determine the root directory of the code base.
 script_dir = File.expand_path(File.join(File.dirname(__FILE__), ".."))
 root_dir = File.dirname(script_dir)
-puts script_dir
-puts root_dir
 
 require 'nokogiri'
 require 'yaml'

@@ -150,7 +150,8 @@ module UMPTG::Manifest::Validation
       if @@REPRESENTATIVES.nil?
         @@REPRESENTATIVES = {}
         CollectionSchema.FIELD_MAP['representative_kind'][:acceptable_values].each do |rep|
-          @@REPRESENTATIVES[rep] = 1
+          next unless rep["active"]
+          @@REPRESENTATIVES[rep["term"]] = 1
         end
       end
       return @@REPRESENTATIVES

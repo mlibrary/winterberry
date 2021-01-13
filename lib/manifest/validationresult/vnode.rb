@@ -10,7 +10,7 @@ module UMPTG::Manifest::ValidationResult
     end
 
     def resource_name
-      @parent.resource_name
+      @parent.resource_name unless @parent.nil?
     end
 
     def to_s
