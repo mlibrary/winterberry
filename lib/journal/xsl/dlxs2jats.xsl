@@ -416,6 +416,17 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
         </xsl:element>
     </xsl:template>
 
+    <xsl:template match="HEAD" mode="group-title">
+        <xsl:element name="title">
+            <xsl:apply-templates select="@*|node()"/>
+        </xsl:element>
+    </xsl:template>
+
+    <xsl:template match="HEAD[parent::*[starts-with(local-name(),'DIV')] and following-sibling::*[position()=1 and (local-name()='NOTE1' or local-name()='LISTBIBL')]]">
+        <!-- Insert an empty <title>. The heading is added within the group. -->
+        <xsl:element name="title"/>
+    </xsl:template>
+
     <xsl:template match="P[@TYPE='title' or @TYPE='author' or @TYPE='author-notes']"/>
 
     <xsl:template match="P">
@@ -439,10 +450,10 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
 
     <xsl:template match="PTR">
         <xsl:element name="xref">
-            <xsl:attribute name="rid" select="@TARGET"/>
+            <xsl:attribute name="rid" select="lower-case(@TARGET)"/>
             <xsl:attribute name="ref-type" select="'fn'"/>
             <xsl:apply-templates select="@*[name()!='TARGET' and name()!='N']|node()"/>
-            <xsl:value-of select="@N"/>
+            <xsl:value-of select="lower-case(@N)"/>
         </xsl:element>
     </xsl:template>
 
@@ -534,6 +545,10 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
 
     <xsl:template match="NOTE1[(empty(preceding-sibling::*) or preceding-sibling::*[position()=1 and local-name()!='NOTE1']) and (empty(following-sibling::*) or following-sibling::*[position()=1 and local-name()!='NOTE1'])]">
         <xsl:element name="fn-group">
+            <xsl:variable name="titleNode" select="./preceding-sibling::*[position()=1 and local-name()='HEAD']"/>
+            <xsl:if test="exists($titleNode)">
+                <xsl:apply-templates select="$titleNode" mode="group-title"/>
+            </xsl:if>
             <xsl:call-template name="add-footnote">
                 <xsl:with-param name="fnNode" select="."/>
             </xsl:call-template>
@@ -542,6 +557,10 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
 
     <xsl:template match="NOTE1[(empty(preceding-sibling::*) or preceding-sibling::*[position()=1 and local-name()!='NOTE1']) and following-sibling::*[position()=1 and local-name()='NOTE1']]">
         <xsl:element name="fn-group">
+            <xsl:variable name="titleNode" select="./preceding-sibling::*[position()=1 and local-name()='HEAD']"/>
+            <xsl:if test="exists($titleNode)">
+                <xsl:apply-templates select="$titleNode" mode="group-title"/>
+            </xsl:if>
             <xsl:call-template name="add-footnote">
                 <xsl:with-param name="fnNode" select="."/>
             </xsl:call-template>
@@ -620,6 +639,10 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
 
     <xsl:template match="LISTBIBL">
         <xsl:element name="ref-list">
+            <xsl:variable name="titleNode" select="./preceding-sibling::*[position()=1 and local-name()='HEAD']"/>
+            <xsl:if test="exists($titleNode)">
+                <xsl:apply-templates select="$titleNode" mode="group-title"/>
+            </xsl:if>
             <xsl:apply-templates select="@*|node()"/>
         </xsl:element>
     </xsl:template>
@@ -789,6 +812,10 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
     <xsl:template match="FRONT|LB|MILESTONE"/>
 
     <xsl:template match="TD/@TYPE"/>
+
+    <xsl:template match="NOTE1/@ID">
+        <xsl:attribute name="{lower-case(local-name())}" select="lower-case(.)"/>
+    </xsl:template>
 
     <xsl:template match="element()">
         <xsl:element name="{lower-case(local-name())}">
