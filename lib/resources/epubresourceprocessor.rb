@@ -4,8 +4,19 @@ module UMPTG::Resources
 
   class EpubResourceProcessor
     def self.process(args = {})
+      # EPUB parameter processing
+      case
+      when args.key?(:epub)
+        epub = args[:epub]
+        raise "Error: invalid EPUB." if epub.nil? or epub.class != "UMPTG::EPUB::Archive"
+      when args.key?(:epub_file)
+        # Create the EPUB from the specified file.
+        epub_file = args[:epub_file]
+        epub = UMPTG::EPUB::Archive.new(epub_file: epub_file)
+      else
+        raise "Error: :epub or :epub_file must be specified"
+      end
 
-      epub_file = args[:epub_file]
       default_action_str = args[:default_action_str]
       resource_metadata = args[:resource_metadata]
       resource_map_file = args[:resource_map_file]

@@ -43,10 +43,13 @@ unless File.file?(epub_file)
 end
 puts "Processing file #{File.basename(epub_file)}"
 
+# Create the EPUB from the specified file.
+epub = UMPTG::EPUB::Archive.new(epub_file: epub_file)
+puts epub.class
 # Create a new EPUB with the resource references detailed
 # in the resource map processed.
 processed_epub = UMPTG::Keywords::EpubKeywordProcessor.process(
-      epub_file: epub_file,
+      epub: epub,
       noid: noid
     )
 

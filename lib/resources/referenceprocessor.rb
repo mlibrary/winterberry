@@ -27,15 +27,6 @@ module UMPTG::Resources
     # One expression is used to capture all references
     # so they can be processed in the order they appear
     # in the document.
-  @@SELECTION_XPATH = <<-SXPATH
-  //*[
-  (local-name()='p' and @class='fig')
-  or (local-name()='div' and @class='figurewrap')
-  or (local-name()='figure' and count(*[local-name()='p' and @class='fig'])=0)
-  or @class='rb'
-  or @class='rbi'
-  ]
-  SXPATH
 
     def initialize(args = {})
       @selector = args[:selector]
@@ -51,8 +42,6 @@ module UMPTG::Resources
             if reference_action_defs.nil?
 
       # Retrieve the resource references from this document.
-      #reference_container_list = xml_doc.xpath(@@SELECTION_XPATH)
-      #reference_container_list = xml_doc.xpath(@@SELECTION_XPATH) + xml_doc.xpath("//comment()")
       reference_container_list = @selector.references(xml_doc)
 
       # For each reference found, create the appropriate action
@@ -60,7 +49,6 @@ module UMPTG::Resources
       # :element or :marker
       reference_action_list = []
       reference_container_list.each do |refnode|
-        #case ReferenceProcessor.reference_type(refnode)
         case @selector.reference?(refnode)
         when :element
           list = element_reference_actions(
