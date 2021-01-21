@@ -99,8 +99,14 @@ fmsl_file_list.each do |fmsl_file|
       resource_name = row['File Name']
       next if resource_name == UMPTG::Manifest.BLANK_ROW_FILE_NAME
 
+      # Determine if the resource file exists and is not 0 size.
       resource_file = File.join(File.dirname(fmsl_file), resource_name)
-      unless File.file?(resource_file)
+      if File.file?(resource_file)
+        if File.size(resource_file) == 0
+          error_count += 1
+          resource_errors[resource_name] = [ "Error: resource file is 0 size." ]
+        end
+      else
         error_count += 1
         resource_errors[resource_name] = [ "Error: resource file does not exist." ]
       end
