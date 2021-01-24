@@ -3,18 +3,18 @@ module UMPTG
 
   class EpubProcessor
     def self.process(args = {})
+      # EPUB parameter processing
       case
-      when args.has_key?(:epub_file)
-        epub_file = File.expand_path(args[:epub_file])
-        raise "Error: invalid EPUB file." unless File.exists?(epub_file)
-        epub = nil
-      when args.has_key?(:epub)
+      when args.key?(:epub)
         epub = args[:epub]
-        raise "Error: invalid EPUB." if epub.nil?
+        raise "Error: invalid EPUB." if epub.nil? or epub.class != "UMPTG::EPUB::Archive"
+      when args.key?(:epub_file)
+        # Create the EPUB from the specified file.
+        epub_file = args[:epub_file]
+        epub = UMPTG::EPUB::Archive.new(epub_file: epub_file)
       else
-        raise "Error: no :epub_file or :epub parameter specified."
+        raise "Error: :epub or :epub_file must be specified"
       end
-      epub = UMPTG::EPUB::Archive.new(:epub_file => epub_file) if epub.nil?
 
       raise "Error: missing :processors parameter." unless args.has_key?(:processors)
       processors = args[:processors]

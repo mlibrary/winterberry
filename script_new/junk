@@ -1,0 +1,58 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require 'optparse'
+require 'ostruct'
+
+# Process the script parameters.
+options = OpenStruct.new
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-h] epub_file [epub_file...]"
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    puts opts
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  puts option_parser.help
+  return
+end
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.expand_path(File.join(script_dir, ".."))
+
+epub_file_list = ARGV
+
+require_relative File.join(root_dir, "lib_new", "fmetadata")
+
+processors = UMPTG::FMetadata.vendor_processor('default')
+
+epub_file_list.each do |epub_file|
+  action_list = UMPTG::EPUB::Processor.process(
+          epub_file: epub_file,
+          entry_processors: processors
+          )
+  action_list[:image].each do |action|
+    action.property(:object_list).each do |object|
+      puts "#{action.status}: #{object.node.name}"
+    end
+  end
+  action_list[:marker].each do |action|
+    action.property(:object_list).each do |object|
+      puts "#{action.status}: #{object.node.name}"
+    end
+  end
+=begin
+  epub_actions.each do |entry_name, action_list|
+    puts "Processing entry #{entry_name}"
+    action_list.each do |action|
+      object_list = action.property(:object_list)
+      object_list.each do |object|
+        puts "#{action.status}: #{object.node.name}"
+      end
+    end
+  end
+=end
+end

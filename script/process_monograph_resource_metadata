@@ -59,7 +59,7 @@ root_dir = File.dirname(script_dir)
 
 require 'fileutils'
 
-require_relative File.join(root_dir, "lib", "epub")
+require_relative File.join(root_dir, "lib_new", "fmetadata")
 require_relative File.join(root_dir, "lib", "csvfile")
 require_relative File.join(root_dir, "lib", "manifest")
 require_relative File.join(root_dir, "lib", "resourcemap")
@@ -70,7 +70,7 @@ blank_row_pattern = "^\*\*\*.* intentionally blank[ ]*\*\*\*$"
 
 # Initialize EPUB markup processors, figure/image and marker.
 options.vendor = 'default' if options.vendor.nil? or options.vendor.empty?
-processors = UMPTG::EPUB.vendor_processor(options.vendor.downcase)
+processors = UMPTG::FMetadata.vendor_processor(options.vendor.downcase)
 
 # Process all monograph directories specified.
 monograph_dir_list.each do |mdir|
@@ -125,12 +125,12 @@ monograph_dir_list.each do |mdir|
     # needs to be generated.
 
     # Reset the markup processors.
-    processors.each_value {|p| p.reset }
+    #processors.each_value {|p| p.reset }
 
     # Process the epub and generate the image information.
-    UMPTG::EPUB::Processor.process(
+    action_list = UMPTG::EPUB::Processor.process(
           epub_file: epub_file,
-          processors: processors
+          entry_processors: processors
         )
 
     # If a resource map exists, use it. Otherwise,
@@ -148,6 +148,52 @@ monograph_dir_list.each do |mdir|
       end
     end
 
+    action_list[:image].each do |action|
+      action.object_list.each do |object|
+        node = object.node
+        #node_map = node.map
+        node_map = object.map
+        reference_name = node_map['src']
+
+        resource = resource_map.reference_resource(reference_name)
+        if resource.nil?
+          log_fp.puts "Warning: #{object.name}: no resource found for reference \"#{reference_name}\"."
+        else
+          log_fp.puts "INFO:    #{object.name}: mapping reference \"#{reference_name}\" to resource \"#{resource.name}\"."
+          node_map["caption"] = node_map["caption"].text unless node_map["caption"].nil?
+          resource.properties = node_map
+        end
+
+        resource_map.add(
+              :reference_name => reference_name,
+              :resource => resource,
+              :type => "default"
+            )
+      end
+    end
+    action_list[:marker].each do |action|
+      action.object_list.each do |object|
+        node = object.node
+        #node_map = node.map
+        node_map = object.map
+        resource_name = node_map['resource_name'].strip
+
+        resource = resource_map.reference_resource(resource_name)
+        if resource.nil?
+          log_fp.puts "Warning: #{node.name}: no resource found for marker \"#{resource_name}\"."
+        else
+          log_fp.puts "INFO:    #{node.name}: mapping reference \"#{resource_name}\" to resource \"#{resource.name}\"."
+          #resource.properties = node_map
+        end
+
+        resource_map.add(
+              :reference_name => resource_name,
+              :resource => resource,
+              :type => "default"
+            )
+      end
+    end
+=begin
     # Process image information and generate the resource map.
     processors[:image].img_list.each do |node|
       node_map = node.map
@@ -188,6 +234,7 @@ monograph_dir_list.each do |mdir|
             :type => "default"
           )
     end
+=end
 
     # Save the resource map XML file.
     resource_map.save(resource_map_file) unless resource_map_exists
