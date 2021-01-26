@@ -137,8 +137,9 @@ monograph_dir_list.each do |monograph_dir|
     author_list << "#{fm_row['Author last 2']}, #{fm_row['Author first 2']}" unless fm_row['Author last 2'].nil? or fm_row['Author last 2'].empty?
     monograph_row['Creator(s)'] = author_list.join(';')
 
-    monograph_row['Handle'] = fm_row['Handle Prefix'] + fm_row['ID'][3..7] unless fm_row['Handle Prefix'].nil?
-    monograph_row['Handle'] = "http://hdl.handle.net/2027/heb." + fm_row['ID'][3..7] if fm_row['Handle Prefix'].nil?
+    #monograph_row['Handle'] = fm_row['Handle Prefix'] + fm_row['ID'][3..7] unless fm_row['Handle Prefix'].nil?
+    #monograph_row['Handle'] = "http://hdl.handle.net/2027/heb." + fm_row['ID'][3..7] if fm_row['Handle Prefix'].nil?
+    monograph_row['Handle'] = "2027/heb." + fm_row['ID'][3..7] if fm_row['Handle Prefix'].nil?
 
     fm_row.each do |key,val|
       next if key.nil? or key.strip.empty?
@@ -150,6 +151,8 @@ monograph_dir_list.each do |monograph_dir|
         monograph_row['Pub Year'] = val
       when 'Publisher'
         monograph_row['Publisher'] = val
+      when 'Pub City 1'
+        monograph_row['Pub Location'] = val
       when 'Handle Prefix'
       when 'ISBN1_13', 'ISBN2_13', 'ISBN3_13'
       when 'Pub Format', 'Pub Format 2'

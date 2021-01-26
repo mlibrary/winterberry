@@ -1,0 +1,82 @@
+#!/usr/bin/env ruby
+# encoding: utf-8
+
+require 'optparse'
+require 'ostruct'
+
+# Process the script parameters.
+options = OpenStruct.new
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)}  <csv_file> [<csv_file>..]"
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    puts opts
+    exit(0)
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  puts option_parser.help
+  exit(0)
+end
+
+csv_file_list = ARGV
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, 'lib', 'csvfile')
+
+csv_file_list.each do |csv_file|
+  csv_file = File.expand_path(csv_file)
+  unless File.file?(csv_file)
+    puts "Error: File \"#{File.basename(csv_file)}\" does not exist."
+    next
+  end
+  puts "Processing file \"#{File.basename(csv_file)}\""
+
+  csv = CSVFile.read(csv_path: csv_file)
+
+  publisher_cities = {}
+  csv.each do |row|
+    heb_id = row['ID'].downcase
+    publisher = row['Publisher'].nil? ? "" : row['Publisher'].strip
+    city = row['Pub City 1'].nil? ? "" : row['Pub City 1'].strip
+
+    if city.empty?
+      puts "#{heb_id}: unknown city for publisher #{publisher}"
+    end
+  end
+
+=begin
+    unless city.nil? or city.strip.empty?
+      puts "#{heb_id}: using publisher: #{publisher}  City: #{row['Pub City 1']}"
+      next
+    end
+   end
+
+    case publisher
+    when 'U of Michigan Press'
+      city = 'Ann Arbor'
+    when 'Cambridge UP'
+      city = 'Cambridge'
+    when 'U of California Press'
+      city = 'Berkeley'
+    when 'U of Tennessee Press', 'University of Tennessee Press'
+      city = 'Knoxville'
+    when 'Louisiana State UP'
+      city = 'Baton Rouge'
+    when 'Stanford UP'
+      city = 'Redwood City'
+    when 'U of Wisconsin Press'
+      city = 'Madison'
+    else
+      puts "#{heb_id}: unknown publisher #{publisher}"
+      unknown[publisher] = [heb_id] if unknown[publisher].nil?
+      unknown[publisher] << heb_id unless unknown[publisher].nil?
+      next
+    end
+    row['Pub City 1'] = city
+    puts "#{heb_id}: updating publisher: #{publisher}  City: #{city}"
+=end
+end
