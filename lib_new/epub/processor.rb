@@ -17,18 +17,16 @@ module UMPTG::EPUB
       entry_processors = args[:entry_processors]
       raise "Error: no entry_processors specified." if entry_processors.nil? or entry_processors.empty?
 
+
       epub_actions = {}
-      entry_processors.each_key do |key|
-        epub_actions[key] = []
-      end
       epub.spine.each do |entry|
-        entry_actions = []
-        entry_processors.each do |key, proc|
-          entry_proc_actions = proc.process(
-                      epub: epub,
-                      entry: entry
+        epub_actions[entry.name] = []
+        entry_processors.each do |key,proc|
+          entry_proc_actions = proc.action_list(
+                      name: entry.name,
+                      content: entry.get_input_stream.read
                       )
-          epub_actions[key] += entry_proc_actions
+          epub_actions[entry.name] += entry_proc_actions
         end
       end
       return epub_actions

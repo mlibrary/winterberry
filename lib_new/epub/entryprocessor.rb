@@ -5,19 +5,17 @@ module UMPTG::EPUB
     end
 
     # This must be overridden. The base method does nothing.
-    def process(args = {})
-      epub = args[:epub]
-      entry = args[:entry]
+    def action_list(args = {})
+      name = args[:name]
+      content = args[:content]
 
-      action_list = []
+      alist = []
       action = UMPTG::Action.new(
-            epub_file: epub.epub_file,
-            entry_name: entry.name
+            name: name
             )
-      #action.process()
-      action_list << action
+      alist << action
 
-      return action_list
+      return alist
     end
   end
 end

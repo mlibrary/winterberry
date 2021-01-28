@@ -18,9 +18,9 @@ module UMPTG::FMetadata
       rnames.each do |r|
         next if r.nil? or r.strip.empty?
         marker = UMPTG::FMetadata::MarkerObject.new(
-                :node => fragment.node,
-                :name => args[:name],
-                :resource_name => r
+                node: fragment.node,
+                name: @properties[:name],
+                resource_name: r
               )
         olist << marker
       end

@@ -9,7 +9,7 @@ module UMPTG::FMetadata
 
     def initialize(args = {})
       super(args)
-      @resource_name = args[:resource_name]
+      @resource_name = @properties[:resource_name]
     end
 
     def map

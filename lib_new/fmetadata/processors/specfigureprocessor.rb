@@ -3,12 +3,9 @@ module UMPTG::FMetadata::Processors
   class SpecFigureProcessor < FigureProcessor
     @@selector = nil
 
-    def process(args = {})
-      epub = args[:epub]
-      entry = args[:entry]
-
-      args[:name] = entry.name
-      args[:content] = entry.get_input_stream.read
+    def action_list(args = {})
+      name = args[:name]
+      content = args[:content]
 
       # Figure are expected to be contained within a <figure> and
       # images within a <img>. Generate a list of XML fragments
@@ -17,11 +14,11 @@ module UMPTG::FMetadata::Processors
       @@selector.containers = [ 'img', 'figure' ]
       args[:selector] = @@selector
 
-      action_list = super(args)
-      action_list.each do |action|
-        action.process(name: entry.name)
+      alist = super(args)
+      alist.each do |action|
+        action.process(name: name)
       end
-      return action_list
+      return alist
     end
   end
 end

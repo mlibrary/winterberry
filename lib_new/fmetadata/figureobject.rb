@@ -9,11 +9,13 @@ module UMPTG::FMetadata
 
     def initialize(args = {})
       super(args)
+      @resource_name = @node['src']
       @caption = args[:caption]
     end
 
     def map
       row = super()
+      row['resource_name'] = @resource_name
       row['caption'] = @caption
       return row
     end

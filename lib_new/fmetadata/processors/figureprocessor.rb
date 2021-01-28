@@ -4,8 +4,7 @@ module UMPTG::FMetadata::Processors
 
     def new_action(args = {})
       action = UMPTG::FMetadata::FigureAction.new(
-          epub_file: args[:epub_file],
-          entry_name: args[:entry_name],
+          name: args[:name],
           fragment: args[:fragment]
           )
       return action
