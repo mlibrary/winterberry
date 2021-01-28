@@ -2,37 +2,34 @@ module UMPTG::EPUB
   class Processor
     def self.process(args = {})
       case
-      when args.has_key?(:epub_file)
+      when args.key?(:epub_file)
         epub_file = File.expand_path(args[:epub_file])
         raise "Error: invalid EPUB file." unless File.exists?(epub_file)
-        epub = nil
-      when args.has_key?(:epub)
+        epub = UMPTG::EPUB::Archive.new(:epub_file => epub_file) if epub.nil?
+      when args.key?(:epub)
         epub = args[:epub]
         raise "Error: invalid EPUB." if epub.nil?
       else
         raise "Error: no :epub_file or :epub parameter specified."
       end
-      epub = UMPTG::EPUB::Archive.new(:epub_file => epub_file) if epub.nil?
 
-      raise "Error: missing :processors parameter." unless args.has_key?(:processors)
-      processors = args[:processors]
-      raise "Error: no processors specified." if processors.nil? or processors.empty?
+      raise "Error: missing :entry_processors parameter." unless args.key?(:entry_processors)
+      entry_processors = args[:entry_processors]
+      raise "Error: no entry_processors specified." if entry_processors.nil? or entry_processors.empty?
 
-      item_fragments = {}
 
-      epub_items = [ epub.opf ] + epub.spine
-      epub_items.each do |item|
-        fragments_list = []
-        processors.each_value do |proc|
-          fragments = proc.process(
-                  :name => item.name,
-                  :content => item.get_input_stream.read
-                )
-          fragments_list += fragments
+      epub_actions = {}
+      epub.spine.each do |entry|
+        epub_actions[entry.name] = []
+        entry_processors.each do |key,proc|
+          entry_proc_actions = proc.action_list(
+                      name: entry.name,
+                      content: entry.get_input_stream.read
+                      )
+          epub_actions[entry.name] += entry_proc_actions
         end
-        item_fragments[item.name] = fragments_list
       end
-      return item_fragments
+      return epub_actions
     end
   end
 end

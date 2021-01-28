@@ -2,22 +2,17 @@ module UMPTG::Resources
 
   require 'nokogiri'
 
-  class Action
-    @@PENDING = "Pending"
-    @@COMPLETED = "Completed"
-    @@FAILED = "Failed"
-    @@NO_ACTION = "No action"
+  class Action < UMPTG::Action
 
-    attr_reader :reference_action_def, :reference_container, :reference_node, \
-                :status, :message
+    attr_reader :reference_action_def, :reference_container, :reference_node, :name
 
-    def initialize(args)
-      @reference_action_def = args[:reference_action_def]
-      @reference_container = args[:reference_container]
-      @reference_node = args[:reference_node]
+    def initialize(args = {})
+      super(args)
 
-      @status = Action.PENDING
-      @message = ""
+      @name = @properties[:name]
+      @reference_node = @properties[:reference_node]
+      @reference_action_def = @properties[:reference_action_def]
+      @reference_container = @properties[:reference_container]
     end
 
     def process
@@ -63,22 +58,6 @@ module UMPTG::Resources
     def self.find_caption(container)
       caption = container.xpath(".//*[local-name()='figcaption' or @class='figcap' or @class='figh']")
       return caption
-    end
-
-    def self.COMPLETED
-      @@COMPLETED
-    end
-
-    def self.PENDING
-      @@PENDING
-    end
-
-    def self.NO_ACTION
-      @@NO_ACTION
-    end
-
-    def self.FAILED
-      @@FAILED
     end
   end
 end

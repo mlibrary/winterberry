@@ -1,4 +1,4 @@
-module UMPTG::EPUB::Processors
+module UMPTG::FMetadata::Processors
 
   # Class selects markers found within an EPUB.
   class SpecMarkerSelector < UMPTG::Fragment::Selector

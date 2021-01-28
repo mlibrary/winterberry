@@ -10,11 +10,6 @@ module UMPTG::EPUB
       content = args[:content]
 
       alist = []
-      action = UMPTG::Action.new(
-            name: name
-            )
-      alist << action
-
       return alist
     end
   end

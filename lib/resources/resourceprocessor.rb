@@ -1,34 +1,165 @@
 module UMPTG::Resources
 
-  class ResourceProcessor
+  class ResourceProcessor < UMPTG::EPUB::EntryProcessor
     def initialize(args = {})
-      @resource_map = args[:resource_map]
-      @resource_metadata = args[:resource_metadata]
-      @default_action_str = args[:default_action_str]
-      @reference_processor = args[:reference_processor]
+      super(args)
+      @resource_map = @properties[:resource_map]
+      @resource_metadata = @properties[:resource_metadata]
+      @default_action_str = @properties[:default_action_str]
+      @reference_processor = @properties[:reference_processor]
       @reference_action_defs = nil
+
+      @selector = @properties[:selector]
     end
+    
+    def action_list(args = {})
+      name = args[:name]
+      content = args[:content]
 
-    def process(doc)
-      init_reference_action_defs
-
-      reference_action_list = @reference_processor.reference_actions(
-                                  :xml_doc => doc,
-                                  :reference_action_defs => @reference_action_defs
-                                )
-      reference_action_list.each do |reference_action|
-        reference_action.process
-        puts reference_action
-        puts reference_action.message \
-            unless reference_action.message.nil? or reference_action.message.empty?
+      alist = []
+      begin
+        doc = Nokogiri::XML(content, nil, 'UTF-8')
+      rescue Exception => e
+        puts e.message
+        return alist
       end
 
+      init_reference_action_defs()
+
+      reference_container_list = @selector.references(doc)
+
+      reference_action_list = []
+      reference_container_list.each do |refnode|
+        case @selector.reference_type(refnode)
+        when :element
+          list = element_reference_actions(
+                      name: name,
+                      reference_container: refnode
+                    )
+        when :marker
+          list = marker_reference_actions(
+                      name: name,
+                      reference_container: refnode
+                    )
+        else
+          next
+        end
+        reference_action_list += list
+      end
+
+      reference_action_list.each do |action|
+        action.process()
+      end
       return reference_action_list
     end
 
     private
 
-    def init_reference_action_defs
+    def element_reference_actions(args = {})
+      name = args[:name]
+      reference_container = args[:reference_container]
+
+      node_list = reference_container.xpath(".//*[local-name()='img']")
+
+      reference_action_list = []
+      node_list.each do |node|
+        src_attr = node.attribute("src")
+        next if src_attr.nil?
+
+        spath = src_attr.value.strip
+        reference_action_def_list = @reference_action_defs[spath]
+        if reference_action_def_list.nil?
+          puts "Warning: reference #{spath} has no action definition."
+          next
+        end
+
+        args = {
+                  name: name,
+                  reference_container: reference_container,
+                  reference_node: node
+              }
+
+        reference_action_def_list.each do |reference_action_def|
+          args[:reference_action_def] = reference_action_def
+
+          case reference_action_def.action_str
+          when "embed"
+            case reference_action_def.resource_type
+            when 'interactive map'
+              reference_action = EmbedMapAction.new(args)
+            else
+              reference_action = EmbedElementAction.new(args)
+            end
+          when "link"
+            reference_action = LinkElementAction.new(args)
+          when "remove"
+            reference_action = RemoveElementAction.new(
+                                reference_action_def: reference_action_def,
+                                reference_container: reference_container,
+                                reference_node: node
+                              )
+          when "none"
+            reference_action = NoneAction.new(args)
+          else
+            puts "Warning: invalid element action #{reference_action.to_s}"
+            next
+          end
+          reference_action_list << reference_action
+        end
+      end
+      return reference_action_list
+    end
+
+    def marker_reference_actions(args = {})
+      name = args[:name]
+      reference_container = args[:reference_container]
+
+      # Return the nodes that reference resources.
+      # For marker callouts, this should be within
+      # a XML comment, but not always the case.
+      # NOTE: either display warning if no comment,
+      # or just use the node content?
+      node_list = reference_container.xpath(".//comment()")
+      node_list = [ reference_container ] if node_list.nil? or node_list.empty?
+
+      reference_action_list = []
+      node_list.each do |node|
+        path = node.text.strip
+        #path = path.match(/insert[ ]+([^\>]+)/)[1]
+
+        reference_action_def_list = @reference_action_defs[path]
+        if reference_action_def_list.nil?
+          puts "Warning: marker #{path} has no action definition."
+          next
+        end
+
+        args = {
+                  name: name,
+                  reference_container: reference_container,
+                  reference_node: node
+              }
+        reference_action_def_list.each do |reference_action_def|
+          args[:reference_action_def] = reference_action_def
+
+          case reference_action_def.action_str
+          when "embed"
+            reference_action = EmbedMarkerAction.new(args)
+          when "link"
+            reference_action = LinkMarkerAction.new(args)
+          when "none"
+            reference_action = NoneAction.new(args)
+          else
+            puts "Warning: invalid marker action #{reference_action_def.action_str}"
+            reference_action = nil
+          end
+
+          reference_action_list << reference_action unless reference_action.nil?
+        end
+      end
+      return reference_action_list
+    end
+
+    def init_reference_action_defs()
       if @reference_action_defs.nil?
 
         # Generate the resource action map,
@@ -69,13 +200,12 @@ module UMPTG::Resources
 
           map_action.type = @default_action_str if map_action.type == "default"
           reference_action_def = UMPTG::Resources::ReferenceActionDef.new(
-                      :resource_map_action => map_action,
-                      :resource_metadata => fileset_row
+                      resource_map_action: map_action,
+                      resource_metadata: fileset_row
                     )
 
           def_list << reference_action_def
           reference_action_def_map[reference_name] = def_list
-          #reference_action_def_list << reference_action_def
         end
         @reference_action_defs = reference_action_def_map
       end

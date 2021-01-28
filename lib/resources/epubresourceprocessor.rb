@@ -29,9 +29,6 @@ module UMPTG::Resources
             :default_action => default_action_str
           )
 
-      # Create the EPUB from the specified file.
-      epub = UMPTG::EPUB::Archive.new(:epub_file => epub_file)
-
       # Save the resource actions file within a new epub structure
       # for archival purposes.
       epub.add(
@@ -39,6 +36,8 @@ module UMPTG::Resources
             entry_content: File.read(resource_map_file)
           )
 
+      # Declare the selector for the resource references. This may be
+      # vendor specific.
       case vendor
       when 'newgen'
         reference_selector = UMPTG::Resources::NewgenReferenceSelector.new
@@ -46,15 +45,19 @@ module UMPTG::Resources
         reference_selector = UMPTG::Resources::SpecReferenceSelector.new
       end
 
-      reference_processor = UMPTG::Resources::ReferenceProcessor.new(
-                  selector: reference_selector
-                  )
       resource_processor = UMPTG::Resources::ResourceProcessor.new(
                   resource_map: resource_map,
                   resource_metadata: resource_metadata,
                   default_action_str: default_action_str,
-                  reference_processor: reference_processor
+                  selector: reference_selector
                   )
+
+      # Process the epub and generate the image information.
+      processors = { spec: resource_processor }
+      action_map = UMPTG::EPUB::Processor.process(
+            epub: epub,
+            entry_processors: processors
+          )
 
       # Provide the directory path for adding the stylesheet link.
       # Possible option?
@@ -65,25 +68,15 @@ module UMPTG::Resources
 
       remote_resources_list = []
       update_opf = false
-      spine_items = epub.spine
-      spine_items.each do |item|
-        puts "Processing file #{item.name}"
-        STDOUT.flush
-
-        # Create the XML tree.
-        content = item.get_input_stream.read
-        begin
-          doc = Nokogiri::XML(content, nil, 'UTF-8')
-        rescue Exception => e
-          puts e.message
-          next
+      action_map.each do |entry_name,action_list|
+        puts entry_name
+        result = false
+        action_list.each do |action|
+          puts action
+          unless result
+            result = action.status == UMPTG::Action.COMPLETED
+          end
         end
-
-        # Determine the list of actions completed.
-        # The -e flag must be specified for the actions
-        # to be completed.
-        action_list = resource_processor.process(doc)
-        result = action_list.index { |action| action.status == Action.COMPLETED }
         if result
 
           # At last one action was completed. Remember that this
@@ -96,11 +89,13 @@ module UMPTG::Resources
                       action.status == Action.COMPLETED and action.reference_action_def.action_str == "embed"
           }
           if has_remote_resources
-            remote_resources_list << item.name
+            remote_resources_list << entry_name
           end
 
+          doc = action_list.first.reference_container.document
+
           # Add the CSS stylesheet link that manages the Fulcrum resource display.
-          level = File.dirname(item.name).split(File::SEPARATOR).count
+          level = File.dirname(entry_name).split(File::SEPARATOR).count
           if level == 1
             UMPTG::XMLUtil.add_css(doc, fulcrum_dest_css_file)
           else
@@ -109,10 +104,9 @@ module UMPTG::Resources
           end
           puts "Added CSS stylesheet \"#{fulcrum_css_name}\"."
 
-          # Update the entry content
-          epub.add(entry_name: item.name, entry_content: UMPTG::XMLUtil.doc_to_xml(doc))
+          epub.remove(entry_name: entry_name)
+          epub.add(entry_name: entry_name, entry_content: UMPTG::XMLUtil.doc_to_xml(doc))
         end
-        puts "\n"
       end
 
       if update_opf
@@ -161,10 +155,11 @@ module UMPTG::Resources
         end
 
         # Save the OPF file.
+        epub.remove(entry_name: epub.opf_name)
         epub.add(entry_name: epub.opf_name, entry_content: UMPTG::XMLUtil.doc_to_xml(opf_doc))
       end
 
-      # Return the modified EPUB
+      # Return the possibly modified EPUB
       return epub
     end
   end

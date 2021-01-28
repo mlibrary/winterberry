@@ -17,7 +17,7 @@ module UMPTG::Resources
       return xml_doc.xpath(@@SELECTION_XPATH)
     end
 
-    def reference?(node)
+    def reference_type(node)
       attr = node.attribute("class")
       unless attr.nil?
         attr = attr.text.downcase

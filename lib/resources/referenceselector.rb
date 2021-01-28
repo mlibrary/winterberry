@@ -7,7 +7,7 @@ module UMPTG::Resources
       return []
     end
 
-    def reference?(node)
+    def reference_type(node)
       return node.comment? ? :marker : :element
     end
   end

@@ -1,31 +1,23 @@
-module UMPTG::EPUB::Processors
+module UMPTG::FMetadata::Processors
 
-  # Base class for processing figures/images found within an EPUB.
-  # The RO property @img_list is an array of figures/images
-  # encountered during the processing, containing the
-  # figure/image fragment and figure caption if present.
-  class ImageProcessor < UMPTG::Fragment::Processor
-    attr_reader :img_list
+  class FigureProcessor < EntryProcessor
 
-    def initialize
-      super()
-      reset
-    end
-
-    def process(args = {})
-      # Generate list of figure/image fragments.
-      fragments = super(args)
-      return fragments
+    def new_action(args = {})
+      action = UMPTG::FMetadata::FigureAction.new(
+          name: args[:name],
+          fragment: args[:fragment]
+          )
+      return action
     end
 
     def self.process_images(fragments, args = {})
-      # Generate a list of Object consisting of
+      # Generate a list of ImageObject consisting of
       # image fragments.
       img_list = []
       fragments.each do |fragment|
         if fragment.node.name == 'img'
           # Image fragment. Just add object to list. No caption.
-          img_list << Object.new(
+          img_list << UMPTG::FMetadata::FigureObject.new(
                   :node => fragment.node,
                   :name => args[:name]
                 )
@@ -37,7 +29,7 @@ module UMPTG::EPUB::Processors
     def self.process_image(fragment, args = {})
       # Image fragment. Just add object to list. No caption.
       return [
-                Object.new(
+                UMPTG::FMetadata::FigureObject.new(
                   :node => fragment.node,
                   :name => args[:name]
                 )
@@ -73,7 +65,7 @@ module UMPTG::EPUB::Processors
       nodes.each do |node|
         if node.name == 'img'
           caption = caption_ndx == -1 ? nil : captions_list[caption_ndx]
-          img_list << Object.new(
+          img_list << UMPTG::FMetadata::FigureObject.new(
                   :node=> node,
                   :name => args[:name],
                   :caption=> caption
@@ -85,10 +77,6 @@ module UMPTG::EPUB::Processors
 
       # Return list of Object with image fragments and associated captions.
       return img_list
-    end
-
-    def reset
-      @img_list = []
     end
   end
 end
