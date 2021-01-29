@@ -1,12 +1,16 @@
 module UMPTG::FMetadata
 
-  # Class is base object representing figures/images
+  # Class represents additional resources (Marker)
   # found when processing an EPUB. The super contains
-  # the figure/image fragment while this class extends
-  # the base to include the figure caption.
+  # the Marker fragment while this class extends
+  # the base to include the resource name.
   class MarkerObject < UMPTG::Fragment::Object
     attr_accessor :resource_name
 
+    # Arguments:
+    #   :node           XML fragment node
+    #   :name           Fragment identifier, e.g. EPUB entry name.
+    #   :resource_name  Resource name associated with fragment.
     def initialize(args = {})
       super(args)
       @resource_name = @properties[:resource_name]

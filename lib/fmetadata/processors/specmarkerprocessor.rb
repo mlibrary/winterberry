@@ -1,25 +1,34 @@
 module UMPTG::FMetadata::Processors
 
+  # Class processes references for additional resources found
+  # within XML content.
   class SpecMarkerProcessor < EntryProcessor
     @@selector = nil
 
+    # Select the XML fragments that refer to additional resources (Markers)
+    # to process and create Actions for each fragment.
+    #
+    # Arguments:
+    #   :name       Content identifier, e.g. EPUB entry name or file name.
+    #   :content    Entry XML content
     def action_list(args = {})
       name = args[:name]
-      content = args[:content]
 
-      # Figure are expected to be contained within a <figure> and
-      # images within a <img>. Generate a list of XML fragments
-      # for these containers.
+      # Generate and perform necessary Actions for the
+      # selected, referenced additional resources.
       @@selector = SpecMarkerSelector.new if @@selector.nil?
       args[:selector] = @@selector
-
       alist = super(args)
-      alist.each do |action|
-        action.process(name: name)
-      end
+
       return alist
     end
 
+    # Instantiate a new Action for the XML fragment of a referenced
+    # additional resource.
+    #
+    # Arguments:
+    #   :name       Content identifier, e.g. EPUB entry name or file name.
+    #   :fragment   XML fragment for Marker to process.
     def new_action(args = {})
       action = UMPTG::FMetadata::MarkerAction.new(
           name: args[:name],

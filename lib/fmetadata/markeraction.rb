@@ -1,5 +1,8 @@
 module UMPTG::FMetadata
+
   class MarkerAction < Action
+
+    # Process an additional resource (Marker) action.
     def process(args = {})
       # Marker fragment. If there is a comment,
       # then use it value. Otherwise use the
@@ -10,16 +13,27 @@ module UMPTG::FMetadata
         rnames << fragment.node.text
       else
         comment.each do |c|
+          # Generally, additional resource references are expected
+          # to use the markup:
+          #     <p class="rb|rbi"><!-- resource_file_name.ext --></p>
+          # But recently, Newgen has been using the markup
+          #     <!-- <insert resource_file_name.ext> -->
+          # So here we check for this case.
           r = c.text.match(/\<insert[ ]+([^\>]+)\>/)
           if r.nil? or r.empty?
+            # Not Newgen markup.
             rn = c.text
           else
+            # Appears to be Newgen markup.
             rn = r[1]
           end
           rnames << rn
         end
       end
 
+      # Create a Marker object for each reference found.
+      # Include the XML fragment node, the fragment identifier
+      # (:name) and the resource name found within the markup.
       olist = []
       rnames.each do |r|
         next if r.nil? or r.strip.empty?
@@ -30,6 +44,9 @@ module UMPTG::FMetadata
               )
         olist << marker
       end
+
+      # Attach the list of Marker objects to this action
+      # and set it status to COMPLETED.
       @object_list = olist
       @status = Action.COMPLETED
     end

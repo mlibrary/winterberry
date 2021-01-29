@@ -1,5 +1,7 @@
 module UMPTG::FMetadata::Processors
-  # Class selects containers found within an EPUB from vendor Newgen.
+
+  # Class selects references to resources found within
+  # an EPUB produced by vendor Newgen.
   class NewgenContainerSelector < UMPTG::Fragment::Selector
     def select_element(name, attrs = [])
       # Select either a <img> or a <div class="figurewrap">.

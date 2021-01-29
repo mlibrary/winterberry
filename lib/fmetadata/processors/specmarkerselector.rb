@@ -1,6 +1,7 @@
 module UMPTG::FMetadata::Processors
 
-  # Class selects markers found within an EPUB.
+  # Class selects references to additional resources (Markers)
+  # found within an EPUB.
   class SpecMarkerSelector < UMPTG::Fragment::Selector
     def select_element(name, attrs = [])
 
