@@ -10,7 +10,13 @@ module UMPTG::FMetadata
         rnames << fragment.node.text
       else
         comment.each do |c|
-          rnames << c.text
+          r = c.text.match(/\<insert[ ]+([^\>]+)\>/)
+          if r.nil? or r.empty?
+            rn = c.text
+          else
+            rn = r[1]
+          end
+          rnames << rn
         end
       end
 
