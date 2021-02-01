@@ -12,7 +12,7 @@ options.publisher_dir = "s:/Information\ Management/Fulcrum/UMP"
 options.vendor = "default"
 options.fulcrum_host = nil
 option_parser = OptionParser.new do |opts|
-  opts.banner = "Usage: #{File.basename(__FILE__)} [-f production|preview|staging] [-p <publisher_dir>] [-v vendor] [embed_resources|link_resources] <monograph_noid> [<monograph_noid>..]"
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-f production|preview|staging] [-p <publisher_dir>] [-v vendor] [embed_resources|link_resources] <monograph_id> [<monograph_id>..]"
   opts.on('-f', '--fulcrum_host [production|preview|staging]', 'Fulcrum environment') do |fulcrum_host|
     options.fulcrum_host = fulcrum_host
   end
@@ -39,7 +39,7 @@ task = ARGV[0].downcase
 abort("Error: invalid task #{task}.") unless TASK_LIST.find {|t| t == task }
 puts "Invoking task #{task}"
 
-monograph_noid_list = ARGV[1..-1]
+monograph_id_list = ARGV[1..-1]
 
 # Determine the root directory of the code base.
 script_dir = File.expand_path(File.dirname(__FILE__))
@@ -66,13 +66,13 @@ service = UMPTG::Services::Heliotrope.new(
                 :fulcrum_host => options.fulcrum_host
               )
 
-monograph_noid_list.each do |monograph_noid|
+monograph_id_list.each do |monograph_id|
   # Use the noid to retrieve the monograph manifest from Fulcrum.
-  puts "*" * 10 + " #{monograph_noid} " + "*" * 10
+  puts "*" * 10 + " #{monograph_id} " + "*" * 10
 
-  csv_body = service.monograph_noid_export(monograph_noid)
+  csv_body = service.monograph_export(identifier: monograph_id)
   if csv_body.nil? or csv_body.empty?
-    puts "Error: no manifest found for noid #{monograph_noid}"
+    puts "Error: no manifest found for noid #{monograph_id}"
     next
   end
 
@@ -84,27 +84,27 @@ monograph_noid_list.each do |monograph_noid|
   ebook_isbn = manifest.isbn["open access"]
   ebook_isbn = manifest.isbn["ebook"] if ebook_isbn.nil?
   if ebook_isbn.nil?
-    puts "Error: no ebook ISBN found for NOID #{monograph_noid}."
+    puts "Error: no ebook ISBN found for NOID #{monograph_id}."
     next
   end
 
   # Find the ebook source folder. First look for a directory
   # using the monograph noid. If not found, then look for one
   # using the ISBN.
-  monograph_dir_list = Dir.glob(File.join(publisher_dir, monograph_noid))
+  monograph_dir_list = Dir.glob(File.join(publisher_dir, monograph_id))
   if monograph_dir_list.count == 0
-    puts "Warning: ebook source directory using noid #{monograph_noid} not found. Using ISBN #{ebook_isbn}."
+    puts "Warning: ebook source directory using noid #{monograph_id} not found. Using ISBN #{ebook_isbn}."
 
     ebook_isbn = ebook_isbn.strip.gsub('-', '')
     monograph_dir_list = Dir.glob(File.join(publisher_dir, "#{ebook_isbn}_*"))
     if monograph_dir_list.count == 0
-      puts "Error: ebook source directory not found for noid #{monograph_noid}."
+      puts "Error: ebook source directory not found for noid #{monograph_id}."
       next
     end
   end
 
   monograph_dir = monograph_dir_list[0]
-  puts "Multiple ebook source directories found for noid #{monograph_noid}. Using #{monograph_dir}" \
+  puts "Multiple ebook source directories found for noid #{monograph_id}. Using #{monograph_dir}" \
         if monograph_dir_list.count > 1
   puts "Using directory #{monograph_dir}" if monograph_dir_list.count == 1
 
@@ -128,10 +128,10 @@ monograph_noid_list.each do |monograph_noid|
   epub_file_name = epub_row['file_name']
   epub_file = File.join(monograph_dir, epub_file_name)
   if !File.exist?(epub_file)
-    puts "Error: #{epub_file_name} not found in manifest for noid #{monograph_noid}"
+    puts "Error: #{epub_file_name} not found in manifest for noid #{monograph_id}"
     next
   end
-  puts "#{epub_file_name} found in manifest for noid #{monograph_noid}"
+  puts "#{epub_file_name} found in manifest for noid #{monograph_id}"
 
   # Determine the resource_processing directory.
   process_dir = File.join(monograph_dir, "resource_processing")

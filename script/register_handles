@@ -14,14 +14,17 @@ require 'ostruct'
 options = OpenStruct.new
 options.output_dir = Dir.pwd
 options.execute = false
-
+options.fulcrum_host = nil
 option_parser = OptionParser.new do |opts|
-  opts.banner = "Usage: #{File.basename(__FILE__)} [-e] [-d output_dir] monograph_noid [monograph_noid...]"
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-e] [-f production|preview|staging] [-d output_dir] monograph_id [monograph_id...]"
   opts.on('-d', '--output_dir [DIRECTORY]', 'Output directory') do |output_dir|
     options.output_dir = output_dir
   end
   opts.on('-e', '--execute', 'Execute making Fulcrum handles') do |execute|
     options.execute = true
+  end
+  opts.on('-f', '--fulcrum_host [production|preview|staging]', 'Fulcrum environment') do |fulcrum_host|
+    options.fulcrum_host = fulcrum_host
   end
   opts.on_tail('-h', '--help', 'Print this help message') do
     puts opts
@@ -34,7 +37,7 @@ if ARGV.count < 1
   exit 0
 end
 
-monograph_noid_list = ARGV
+monograph_id_list = ARGV
 
 # Determine the root directory of the code base.
 script_dir = File.expand_path(File.dirname(__FILE__))
@@ -54,14 +57,15 @@ service = UMPTG::Services::Heliotrope.new(
                 :fulcrum_host => options.fulcrum_host
               )
 
-monograph_noid_list.each do |monograph_noid|
-  puts "*" * 10 + " #{monograph_noid} " + "*" * 10
+monograph_id_list.each do |monograph_id|
+  puts "*" * 10 + " #{monograph_id} " + "*" * 10
   STDOUT.flush
 
+  monograph_noid = service.monograph_noid(identifier: monograph_id)
 
-  csv_body = service.monograph_noid_export(monograph_noid)
+  csv_body = service.monograph_export(noid: monograph_noid)
   if csv_body.nil? or csv_body.empty?
-    puts "Error: no manifest found for noid #{monograph_noid}"
+    puts "Error: no manifest found for ID #{monograph_id}"
     next
   end
   manifest = UMPTG::Manifest::Document.new(
@@ -70,7 +74,7 @@ monograph_noid_list.each do |monograph_noid|
   #File.write("manifest.csv", manifest.csv.to_s)
 
   if manifest.monograph_row.nil?
-    puts "Error: no manifest monograph row found for noid #{monograph_noid}."
+    puts "Error: no manifest monograph row found for ID #{monograph_id}."
     next
   end
 

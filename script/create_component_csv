@@ -8,10 +8,14 @@ require 'ostruct'
 options = OpenStruct.new
 options.output_dir = Dir.pwd
 options.press = "ebc"
+options.fulcrum_host = nil
 option_parser = OptionParser.new do |opts|
-  opts.banner = "Usage: #{File.basename(__FILE__)} [-d output_dir] monograph_noid [monograph_noid...]"
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-d output_dir] [-f production|preview|staging] monograph_id [monograph_id...]"
   opts.on('-d', '--output_dir [DIRECTORY]', 'Output directory') do |output_dir|
     options.output_dir = output_dir
+  end
+  opts.on('-f', '--fulcrum_host [production|preview|staging]', 'Fulcrum environment') do |fulcrum_host|
+    options.fulcrum_host = fulcrum_host
   end
   opts.on('-p', '--press [bar|ebc]', 'Press') do |press|
     options.press = press.downcase
@@ -29,7 +33,8 @@ end
 
 fail "Error: invalid press #{options.press}" unless ["bar", "ebc"].include?(options.press)
 
-monograph_noid_list = ARGV
+# Rest of the parameters is a list of monograph noids.
+monograph_id_list = ARGV
 
 output_dir = File.expand_path(options.output_dir)
 fail "Error: output directory #{output_dir} is not valid." unless File.directory?(output_dir)
@@ -38,14 +43,27 @@ fail "Error: output directory #{output_dir} is not valid." unless File.directory
 script_dir = File.expand_path(File.dirname(__FILE__))
 root_dir = File.dirname(script_dir)
 
+require_relative File.join(root_dir, "lib", "services")
 require_relative File.join(root_dir, "lib", "manifest")
 
-components_list = []
-monograph_noid_list.each do |monograph_noid|
-  puts "*" * 10 + " #{monograph_noid} " + "*" * 10
+# Create the serivce for retrieving the NOID.
+service = UMPTG::Services::Heliotrope.new(
+                :fulcrum_host => options.fulcrum_host
+              )
 
-  manifest = UMPTG::Manifest::Document.new(:noid => monograph_noid)
-  raise "Error: creating manifest from noid #{noid}" if manifest.nil?
+components_list = []
+monograph_id_list.each do |monograph_id|
+  puts "*" * 10 + " #{monograph_id} " + "*" * 10
+
+  # Retrieve the monograph manifest.
+  csv_body = service.monograph_export(identifier: monograph_id)
+  if csv_body.nil? or csv_body.empty?
+    puts "Error: no manifest found for noid #{monograph_id}"
+    next
+  end
+  manifest = UMPTG::Manifest::Document.new(
+                :csv_body => csv_body
+              )
 
   unless manifest.monograph_row.nil?
     sales_id = "**UKNOWN**"
