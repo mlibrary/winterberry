@@ -33,7 +33,7 @@ if ARGV.count < 2
   return
 end
 
-TASK_LIST = [ "embed_resources", "link_resources" ]
+TASK_LIST = [ "embed_resources", "link_resources", "link_keywords" ]
 
 task = ARGV[0].downcase
 abort("Error: invalid task #{task}.") unless TASK_LIST.find {|t| t == task }
@@ -54,10 +54,18 @@ end
 
 require_relative File.join(root_dir, 'lib', 'manifest')
 require_relative File.join(root_dir, 'lib', 'resources')
+require_relative File.join(root_dir, 'lib', 'keywords')
 require_relative File.join(root_dir, 'lib', 'services')
 
 # Create the default action object.
-default_action_str = task == "embed_resources" ? "embed" : "link"
+case task
+when "embed_resources"
+  default_action_str = "embed"
+when "link_resources"
+  default_action_str = "link"
+else
+  default_action_str = task
+end
 
 options.vendor = 'default' if options.vendor.nil? or options.vendor.empty?
 
@@ -67,12 +75,19 @@ service = UMPTG::Services::Heliotrope.new(
               )
 
 monograph_id_list.each do |monograph_id|
-  # Use the noid to retrieve the monograph manifest from Fulcrum.
+  # Use the monograph ID to retrieve the NOID from Fulcrum.
   puts "*" * 10 + " #{monograph_id} " + "*" * 10
 
-  csv_body = service.monograph_export(identifier: monograph_id)
+  monograph_noid = service.monograph_noid(identifier: monograph_id)
+  if monograph_noid.nil? or monograph_noid.empty?
+    puts "Error: no NOID found for monograph ID #{monograph_id}"
+    next
+  end
+
+  # Use the monograph NOID to retrieve the monograph manifest from Fulcrum.
+  csv_body = service.monograph_export(noid: monograph_noid)
   if csv_body.nil? or csv_body.empty?
-    puts "Error: no manifest found for noid #{monograph_id}"
+    puts "Error: no manifest found for id #{monograph_id}"
     next
   end
 
@@ -84,27 +99,27 @@ monograph_id_list.each do |monograph_id|
   ebook_isbn = manifest.isbn["open access"]
   ebook_isbn = manifest.isbn["ebook"] if ebook_isbn.nil?
   if ebook_isbn.nil?
-    puts "Error: no ebook ISBN found for NOID #{monograph_id}."
+    puts "Error: no ebook ISBN found for ID #{monograph_id}."
     next
   end
 
   # Find the ebook source folder. First look for a directory
-  # using the monograph noid. If not found, then look for one
+  # using the monograph id. If not found, then look for one
   # using the ISBN.
   monograph_dir_list = Dir.glob(File.join(publisher_dir, monograph_id))
   if monograph_dir_list.count == 0
-    puts "Warning: ebook source directory using noid #{monograph_id} not found. Using ISBN #{ebook_isbn}."
+    puts "Warning: ebook source directory using id #{monograph_id} not found. Using ISBN #{ebook_isbn}."
 
     ebook_isbn = ebook_isbn.strip.gsub('-', '')
     monograph_dir_list = Dir.glob(File.join(publisher_dir, "#{ebook_isbn}_*"))
     if monograph_dir_list.count == 0
-      puts "Error: ebook source directory not found for noid #{monograph_id}."
+      puts "Error: ebook source directory not found for id #{monograph_id}."
       next
     end
   end
 
   monograph_dir = monograph_dir_list[0]
-  puts "Multiple ebook source directories found for noid #{monograph_id}. Using #{monograph_dir}" \
+  puts "Multiple ebook source directories found for id #{monograph_id}. Using #{monograph_dir}" \
         if monograph_dir_list.count > 1
   puts "Using directory #{monograph_dir}" if monograph_dir_list.count == 1
 
@@ -129,46 +144,54 @@ monograph_id_list.each do |monograph_id|
     next
   end
 
-  # Determine if the resources directory contains any files.
-  resource_file_list = Dir.glob(File.join(resources_dir, "*"))
-  if resource_file_list.count == 0
-    log_fp.puts "Error: #{File.basename(resources_dir)} contains no resources."
-    next
-  end
-  log_fp.puts "Resources directory exists containing #{resource_file_list.count} files."
-
   # Find the epub file name and determine whether it exists.
   epub_row = manifest.representative_row(:kind => "epub")
   epub_file_name = epub_row['file_name']
   epub_file = File.join(monograph_dir, epub_file_name)
   if !File.exist?(epub_file)
-    log_fp.puts "Error: #{epub_file_name} not found in manifest for noid #{monograph_id}"
+    log_fp.puts "Error: #{epub_file_name} not found in manifest for id #{monograph_id}"
     next
   end
-  log_fp.puts "#{epub_file_name} found in manifest for noid #{monograph_id}"
+  log_fp.puts "#{epub_file_name} found in manifest for id #{monograph_id}"
 
-  # Determine if the resource map file exists.
-  resource_map_file = File.join(process_dir, "resource_map.xml")
-  if !File.exists?(resource_map_file)
-    log_fp.puts "Error: resource map file #{File.basename(resource_map_file)} must exist."
-    next
+  if task == "link_keywords"
+    processed_epub = UMPTG::Keywords::EpubKeywordProcessor.process(
+          epub_file: epub_file,
+          noid: monograph_noid,
+          log: log_fp
+        )
+  else
+    # Determine if the resources directory contains any files.
+    resource_file_list = Dir.glob(File.join(resources_dir, "*"))
+    if resource_file_list.count == 0
+      log_fp.puts "Error: #{File.basename(resources_dir)} contains no resources."
+      next
+    end
+    log_fp.puts "Resources directory exists containing #{resource_file_list.count} files."
+
+    # Determine if the resource map file exists.
+    resource_map_file = File.join(process_dir, "resource_map.xml")
+    if !File.exists?(resource_map_file)
+      log_fp.puts "Error: resource map file #{File.basename(resource_map_file)} must exist."
+      next
+    end
+
+    # Provide the directory path for adding the stylesheet link.
+    fulcrum_css_name = 'fulcrum_default.css'
+    fulcrum_css_file = File.join(root_dir, 'lib', 'css', fulcrum_css_name)
+
+    # Create a new EPUB with the resource references detailed
+    # in the resource map processed.
+    processed_epub = UMPTG::Resources::EpubResourceProcessor.process(
+          epub_file: epub_file,
+          default_action_str: default_action_str,
+          resource_metadata: manifest,
+          resource_map_file: resource_map_file,
+          fulcrum_css_file: fulcrum_css_file,
+          vendor: options.vendor,
+          log: log_fp
+        )
   end
-
-  # Provide the directory path for adding the stylesheet link.
-  fulcrum_css_name = 'fulcrum_default.css'
-  fulcrum_css_file = File.join(root_dir, 'lib', 'css', fulcrum_css_name)
-
-  # Create a new EPUB with the resource references detailed
-  # in the resource map processed.
-  processed_epub = UMPTG::Resources::EpubResourceProcessor.process(
-        epub_file: epub_file,
-        default_action_str: default_action_str,
-        resource_metadata: manifest,
-        resource_map_file: resource_map_file,
-        fulcrum_css_file: fulcrum_css_file,
-        vendor: options.vendor,
-        log: log_fp
-      )
 
   # Remove the old one if it exists.
   processed_epub_file = File.join(process_dir, File.basename(epub_file))

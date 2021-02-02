@@ -1,4 +1,7 @@
 module UMPTG::EPUB
+
+  # Class is an interface for processing XML content found
+  # wiithin an EPUB.
   class EntryProcessor < UMPTG::Object
     def initialize(args = {})
       super(args)

@@ -2,8 +2,9 @@ module UMPTG::Keywords
 
   require 'nokogiri'
 
+  # Class selects XML elements that contain keywords
+  # to be linked to Fulcrum pages.
   class SpecKeywordSelector
-
 
   # XPath expression for retrieving keywords
 @@SELECTION_XPATH = <<-SXPATH

@@ -2,6 +2,7 @@ module UMPTG::Keywords
 
   require 'zip'
 
+  # Class processes the keywords found within an EPUB.
   class EpubKeywordProcessor
     def self.process(args = {})
       # EPUB parameter processing
@@ -18,41 +19,49 @@ module UMPTG::Keywords
       end
 
       # NOID parameter
-      noid = args[:noid]
-      raise "Error: missing NOID" if noid.nil?
+      monograph_noid = args[:noid]
+      raise "Error: missing NOID" if monograph_noid.nil?
 
-      reference_selector = UMPTG::Keywords::SpecKeywordSelector.new
-      reference_processor = UMPTG::Keywords::ReferenceProcessor.new(
-                  selector: reference_selector,
-                  noid: noid
-                  )
+      log = args[:log]
+
       keyword_processor = UMPTG::Keywords::KeywordProcessor.new(
-                  reference_processor: reference_processor
+                  noid: monograph_noid,
+                  log: log
                   )
-      spine_items = epub.spine
-      epub.spine.each do |item|
-        puts "Processing file #{item.name}"
-        STDOUT.flush
 
-        # Create the XML tree.
-        content = item.get_input_stream.read
-        begin
-          doc = Nokogiri::XML(content, nil, 'UTF-8')
-        rescue Exception => e
-          puts e.message
-          next
+      # Process the epub. Returned is a hash table where each
+      # item key is an EPUB entry name and the item value is
+      # a list of processing actions.
+      processors = { keywords: keyword_processor }
+      action_map = UMPTG::EPUB::Processor.process(
+            epub: epub,
+            entry_processors: processors
+          )
+
+      action_map.each do |entry_name,action_list|
+        # Action list for this EPUB entry. Determine if
+        # at least one Action within the list completed
+        # successfully.
+        log.puts entry_name
+        result = false
+
+        action_list.each do |action|
+          log.puts action
+          unless result
+            result = action.status == UMPTG::Action.COMPLETED
+          end
         end
 
-        # Determine the list of actions completed.
-        # The -e flag must be specified for the actions
-        # to be completed.
-        action_list = keyword_processor.process(doc)
-        result = action_list.index { |action| action.status == Action.COMPLETED }
         if result
-          # Update the entry content
-          epub.add(entry_name: item.name, entry_content: UMPTG::XMLUtil.doc_to_xml(doc))
+          # At last one action was completed. Remember that this
+          # file was updated.
+          doc = action_list.first.keyword_container.document
+
+          # Update the entry in the EPUB. Remove old entry and
+          # add the new one.
+          epub.remove(entry_name: entry_name)
+          epub.add(entry_name: entry_name, entry_content: UMPTG::XMLUtil.doc_to_xml(doc))
         end
-        puts "\n"
       end
 
       # Return the modified EPUB

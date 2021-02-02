@@ -72,7 +72,7 @@ module UMPTG::Resources
 
     # Generate a string for this Action.
     def to_s
-      return "#{@status}: #{self.class}, #{@reference_action_def.to_s}"
+      return super.to_s + ", #{@reference_action_def.to_s}"
     end
 
     # For the specified XML element, attempt to locate a caption
