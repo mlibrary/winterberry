@@ -1,84 +1,123 @@
 module UMPTG::Resources
 
+  # Class processes each resource reference found within XML content.
   class ResourceProcessor < UMPTG::EPUB::EntryProcessor
+
+    # Processing parameters:
+    #   :default_action_str     Default resource action, embed|link
+    #   :resource_metadata      Monograph resource metadata
+    #   :resource_map           Resource reference to fileset mapping
+    #   :selector               Class for selecting resource references
     def initialize(args = {})
       super(args)
-      @resource_map = @properties[:resource_map]
-      @resource_metadata = @properties[:resource_metadata]
-      @default_action_str = @properties[:default_action_str]
-      @reference_processor = @properties[:reference_processor]
-      @reference_action_defs = nil
 
+      @default_action_str = @properties[:default_action_str]
+      @resource_metadata = @properties[:resource_metadata]
+      @resource_map = @properties[:resource_map]
       @selector = @properties[:selector]
+
+      @reference_action_defs = nil
+      @log = STDOUT
     end
-    
+
+    # Method generates and processes a list of actions
+    # for the specified XML content.
+    #
+    # Parameters:
+    #   :name         Identifier associated with XML content
+    #   :content      XML content.
     def action_list(args = {})
       name = args[:name]
       content = args[:content]
 
+      # Create XML document tree from content.
       alist = []
       begin
         doc = Nokogiri::XML(content, nil, 'UTF-8')
       rescue Exception => e
-        puts e.message
-        return alist
+        raise e.message
       end
 
       init_reference_action_defs()
 
+      # Select the elements that contain resource references.
       reference_container_list = @selector.references(doc)
 
+      # For each container element, determine the necessary actions.
+      # A container may reference one or more resources. A reference
+      # may be a resource that should be replaced with embed|link
+      # markup or an additional resource that should be inserted.
       reference_action_list = []
       reference_container_list.each do |refnode|
         case @selector.reference_type(refnode)
         when :element
+          # Container has one or more resources to be replaced with
+          # embed|link markup.
           list = element_reference_actions(
                       name: name,
                       reference_container: refnode
                     )
         when :marker
+          # Container has one or more additional resources to be inserted.
           list = marker_reference_actions(
                       name: name,
                       reference_container: refnode
                     )
         else
+          # Shouldn't happen
           next
         end
+
+        # Add the list of Actions for this container to
+        # the list for the entire XML content.
         reference_action_list += list
       end
 
+      # Process all the Actions for this XML content.
       reference_action_list.each do |action|
         action.process()
       end
+
+      # Return the list of Actions which contains the status
+      # for each.
       return reference_action_list
     end
 
     private
 
+    # Method selects all resource references within a container.
+    #
+    # Parameters:
+    #   :name                   XML content identifier
+    #   :reference_container    XML element containing references
     def element_reference_actions(args = {})
       name = args[:name]
       reference_container = args[:reference_container]
 
+      # Select references within container
       node_list = reference_container.xpath(".//*[local-name()='img']")
 
+      # For each reference, create an action.
       reference_action_list = []
       node_list.each do |node|
+        # Determine the resource name from the reference node
         src_attr = node.attribute("src")
         next if src_attr.nil?
 
+        # Determine the assigned action for this reference
         spath = src_attr.value.strip
         reference_action_def_list = @reference_action_defs[spath]
         if reference_action_def_list.nil?
-          puts "Warning: reference #{spath} has no action definition."
+          @log.puts "Warning: reference #{spath} has no action definition."
           next
         end
 
+        # Create the Action for this reference
         args = {
                   name: name,
                   reference_container: reference_container,
                   reference_node: node
               }
-
         reference_action_def_list.each do |reference_action_def|
           args[:reference_action_def] = reference_action_def
 
@@ -101,7 +140,7 @@ module UMPTG::Resources
           when "none"
             reference_action = NoneAction.new(args)
           else
-            puts "Warning: invalid element action #{reference_action.to_s}"
+            @log.puts "Warning: invalid element action #{reference_action.to_s}"
             next
           end
           reference_action_list << reference_action
@@ -110,6 +149,11 @@ module UMPTG::Resources
       return reference_action_list
     end
 
+    # Method selects all additional resource references within a container.
+    #
+    # Parameters:
+    #   :name                   XML content identifier
+    #   :reference_container    XML element containing references
     def marker_reference_actions(args = {})
       name = args[:name]
       reference_container = args[:reference_container]
@@ -125,14 +169,28 @@ module UMPTG::Resources
       reference_action_list = []
       node_list.each do |node|
         path = node.text.strip
-        #path = path.match(/insert[ ]+([^\>]+)/)[1]
 
+        #path = path.match(/insert[ ]+([^\>]+)/)[1]
+        # Generally, additional resource references are expected
+        # to use the markup:
+        #     <p class="rb|rbi"><!-- resource_file_name.ext --></p>
+        # But recently, Newgen has been using the markup
+        #     <!-- <insert resource_file_name.ext> -->
+        # So here we check for this case.
+        r = path.match(/\<insert[ ]+([^\>]+)\>/)
+        unless r.nil? or r.empty?
+          # Appears to be Newgen markup.
+          path = r[1]
+        end
+
+        # Determine the assigned action for this reference
         reference_action_def_list = @reference_action_defs[path]
         if reference_action_def_list.nil?
-          puts "Warning: marker #{path} has no action definition."
+          @log.puts "Warning: marker #{path} has no action definition."
           next
         end
 
+        # Create the Action for this reference
         args = {
                   name: name,
                   reference_container: reference_container,
@@ -149,7 +207,7 @@ module UMPTG::Resources
           when "none"
             reference_action = NoneAction.new(args)
           else
-            puts "Warning: invalid marker action #{reference_action_def.action_str}"
+            @log.puts "Warning: invalid marker action #{reference_action_def.action_str}"
             reference_action = nil
           end
 
@@ -170,7 +228,7 @@ module UMPTG::Resources
           reference_name = map_action.reference.name
           resource_name = map_action.resource.name
           if resource_name == nil or resource_name.strip.empty?
-            puts "Warning: no resource  mapping found for reference #{File.basename(reference_name)}"
+            @log.puts "Warning: no resource  mapping found for reference #{File.basename(reference_name)}"
             next
           end
 
@@ -184,7 +242,7 @@ module UMPTG::Resources
               d.reference_name == reference_name and d.resource_name == resource_name
             }
             unless dlist.nil?
-              puts "Warning: multiple action definitions #{reference_name}/#{resource_name}. Using first instance."
+              @log.puts "Warning: multiple action definitions #{reference_name}/#{resource_name}. Using first instance."
               next
             end
           end
@@ -193,9 +251,9 @@ module UMPTG::Resources
           # NOID specified, then this is an invalid row.
           fileset_row = @resource_metadata.fileset(resource_name)
           if fileset_row['noid'].empty?
-            puts "Error: no fileset row for resource #{resource_name}"
+            @log.puts "Error: no fileset row for resource #{resource_name}"
           else
-            puts "Reference #{File.basename(reference_name)} mapped to resource #{resource_name}"
+            @log.puts "Reference #{File.basename(reference_name)} mapped to resource #{resource_name}"
           end
 
           map_action.type = @default_action_str if map_action.type == "default"

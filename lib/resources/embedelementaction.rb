@@ -1,5 +1,7 @@
 module UMPTG::Resources
 
+  # Class that inserts resource embed viewer markup into
+  # XML content (image, video, audio).
   class EmbedElementAction < Action
     def process()
       if reference_container.node_name == "p"
@@ -9,6 +11,8 @@ module UMPTG::Resources
         reference_container.node_name = "div"
       end
 
+      # Retrieve the resource embed markup from the
+      # Fulcrum resource metadata.
       emb_fragment = embed_fragment()
       if emb_fragment.nil?
         @status = Action.FAILED
@@ -27,15 +31,21 @@ module UMPTG::Resources
         def_container.add_child(reference_node)
       end
 =end
+
+      # Wrap the current resource XML markup with a container
+      # that allows it to be visible when not in the Fulcrum reader.
       def_container = default_container
       reference_node.add_next_sibling(def_container)
       def_container.add_child(reference_node)
 
+      # Insert new resource XML markup that will embed the
+      # resource when viewed in the Fulcrum reader.
       emb_container = embed_container()
       emb_container.add_child(emb_fragment)
 
       def_container.add_next_sibling(emb_container)
 
+      # Action completed.
       @status = Action.COMPLETED
     end
   end

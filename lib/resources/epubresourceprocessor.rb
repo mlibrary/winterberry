@@ -2,6 +2,7 @@ module UMPTG::Resources
 
   require 'zip'
 
+  # Class processes the resources found within an EPUB.
   class EpubResourceProcessor
     def self.process(args = {})
       # EPUB parameter processing
@@ -17,13 +18,22 @@ module UMPTG::Resources
         raise "Error: :epub or :epub_file must be specified"
       end
 
+      # Processing parameters:
+      #   Default resource action, embed|link
+      #   Monograph resource metadata
+      #   Monograph resource reference to fileset mapping
+      #   CSS file for styling resources with Fulcrum reader
+      #   Vendor that delivered the EPUB, to aid in processing
+      #     the references.
       default_action_str = args[:default_action_str]
       resource_metadata = args[:resource_metadata]
       resource_map_file = args[:resource_map_file]
       fulcrum_css_file = args[:fulcrum_css_file]
       vendor = args[:vendor]
+      log = args[:log]
 
-      puts "Using resource map file #{File.basename(resource_map_file)}"
+      # Construct the resource reference to fileset mapping
+      log.puts "Using resource map file #{File.basename(resource_map_file)}"
       resource_map = UMPTG::ResourceMap::Map.new(
             :xml_path => resource_map_file,
             :default_action => default_action_str
@@ -45,6 +55,7 @@ module UMPTG::Resources
         reference_selector = UMPTG::Resources::SpecReferenceSelector.new
       end
 
+      # Instantiate the class that will process each resource reference.
       resource_processor = UMPTG::Resources::ResourceProcessor.new(
                   resource_map: resource_map,
                   resource_metadata: resource_metadata,
@@ -52,33 +63,42 @@ module UMPTG::Resources
                   selector: reference_selector
                   )
 
-      # Process the epub and generate the image information.
+      # Process the epub. Returned is a hash table where each
+      # item key is an EPUB entry name and the item value is
+      # a list of processing actions.
       processors = { spec: resource_processor }
       action_map = UMPTG::EPUB::Processor.process(
             epub: epub,
             entry_processors: processors
           )
 
-      # Provide the directory path for adding the stylesheet link.
-      # Possible option?
+      # Provide the directory path for adding the CSS stylesheet link.
+      # Possible option? Sometimes CSS files are found in a
+      # subdirectory from the OPF file, most times it is found
+      # in the same directory.
       fulcrum_css_name = File.basename(fulcrum_css_file)
       #fulcrum_css_dir = "../Styles"
       fulcrum_dest_css_dir = "./"
       fulcrum_dest_css_file = File.join(fulcrum_dest_css_dir, fulcrum_css_name)
 
+      # Review each action and determine its success.
       remote_resources_list = []
       update_opf = false
       action_map.each do |entry_name,action_list|
-        puts entry_name
+        # Action list for this EPUB entry. Determine if
+        # at least one Action within the list completed
+        # successfully.
+        log.puts entry_name
         result = false
+
         action_list.each do |action|
-          puts action
+          log.puts action
           unless result
             result = action.status == UMPTG::Action.COMPLETED
           end
         end
-        if result
 
+        if result
           # At last one action was completed. Remember that this
           # file was updated.
           update_opf = true
@@ -92,9 +112,8 @@ module UMPTG::Resources
             remote_resources_list << entry_name
           end
 
-          doc = action_list.first.reference_container.document
-
           # Add the CSS stylesheet link that manages the Fulcrum resource display.
+          doc = action_list.first.reference_container.document
           level = File.dirname(entry_name).split(File::SEPARATOR).count
           if level == 1
             UMPTG::XMLUtil.add_css(doc, fulcrum_dest_css_file)
@@ -102,8 +121,10 @@ module UMPTG::Resources
             fpath = (('..' + File::SEPARATOR) * (level-1)) + fulcrum_css_name
             UMPTG::XMLUtil.add_css(doc, fpath)
           end
-          puts "Added CSS stylesheet \"#{fulcrum_css_name}\"."
+          log.puts "Added CSS stylesheet \"#{fulcrum_css_name}\"."
 
+          # Update the entry in the EPUB. Remove old entry and
+          # add the new one.
           epub.remove(entry_name: entry_name)
           epub.add(entry_name: entry_name, entry_content: UMPTG::XMLUtil.doc_to_xml(doc))
         end
@@ -116,7 +137,7 @@ module UMPTG::Resources
         # Locate the <manifest>.
         manifest_node = opf_doc.xpath("//*[local-name()='manifest']")
         if manifest_node == nil
-          puts "No manifest node"
+          log.puts "No manifest node"
         else
           # Add the manifest entry for the Fulcrum CSS stylesheet.
           # If another CSS stylesheet is present, add it after.
@@ -141,7 +162,7 @@ module UMPTG::Resources
         end
 
         # Add remote resources to the OPF file.
-        puts "Adding remote resources to OPF file #{File.basename(epub.opf_name)}"
+        log.puts "Adding remote resources to OPF file #{File.basename(epub.opf_name)}"
         remote_resources_list.each do |path|
           path_basename = File.basename(path)
           node_list = opf_doc.xpath("//*[local-name()='manifest']/*[local-name()='item' and contains(@href, '#{path_basename}')]")
@@ -154,7 +175,7 @@ module UMPTG::Resources
           end
         end
 
-        # Save the OPF file.
+        # Update the OPF file in the EPUB.
         epub.remove(entry_name: epub.opf_name)
         epub.add(entry_name: epub.opf_name, entry_content: UMPTG::XMLUtil.doc_to_xml(opf_doc))
       end

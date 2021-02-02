@@ -2,6 +2,7 @@ module UMPTG::Resources
 
   require 'nokogiri'
 
+  # Class is base for resource reference selection.
   class ReferenceSelector
     def references(xml_doc)
       return []

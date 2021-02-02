@@ -2,7 +2,9 @@ module UMPTG::Resources
 
   require 'nokogiri'
 
-  class SpecReferenceSelector
+  # Class selects XML elements that contain resources
+  # to embed|link
+  class SpecReferenceSelector < ReferenceSelector
 
   @@SELECTION_XPATH = <<-SXPATH
   //*[
@@ -13,10 +15,14 @@ module UMPTG::Resources
   ]
   SXPATH
 
+    # Method select the references found within the XML tree
     def references(xml_doc)
       return xml_doc.xpath(@@SELECTION_XPATH)
     end
 
+    # Method determines whether a reference is either a
+    # resource to be embed|link, or an additional resource
+    # to be inserted
     def reference_type(node)
       attr = node.attribute("class")
       unless attr.nil?

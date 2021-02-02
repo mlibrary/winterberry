@@ -108,37 +108,8 @@ monograph_id_list.each do |monograph_id|
         if monograph_dir_list.count > 1
   puts "Using directory #{monograph_dir}" if monograph_dir_list.count == 1
 
-  # Determine if the resources directory exists.
-  resources_dir = File.join(monograph_dir, "resources")
-  if !File.exists?(resources_dir) or !File.directory?(resources_dir)
-    puts "Error: #{File.basename(resources_dir)} is not a valid directory."
-    next
-  end
-
-  # Determine if the resources directory contains any files.
-  resource_file_list = Dir.glob(File.join(resources_dir, "*"))
-  if resource_file_list.count == 0
-    puts "Error: #{File.basename(resources_dir)} contains no resources."
-    next
-  end
-  puts "Resources directory exists containing #{resource_file_list.count} files."
-
-  # Find the epub file name and determine whether it exists.
-  epub_row = manifest.representative_row(:kind => "epub")
-  epub_file_name = epub_row['file_name']
-  epub_file = File.join(monograph_dir, epub_file_name)
-  if !File.exist?(epub_file)
-    puts "Error: #{epub_file_name} not found in manifest for noid #{monograph_id}"
-    next
-  end
-  puts "#{epub_file_name} found in manifest for noid #{monograph_id}"
-
   # Determine the resource_processing directory.
   process_dir = File.join(monograph_dir, "resource_processing")
-
-  # Determine the project directory for storing the modified .xhtml
-  # and the OPF files.
-  dest_epub_dir = File.join(process_dir, "epub")
 
   # Verify that the resource_processing directory exists.
   if !File.exists?(process_dir) or !File.directory?(process_dir)
@@ -146,10 +117,40 @@ monograph_id_list.each do |monograph_id|
     next
   end
 
+  # Create the log file in the resource_processing directory.
+  log_file = File.join(process_dir, File.basename(__FILE__) + ".log")
+  #log_fp = File.open(log_file, "w")
+  log_fp = STDOUT
+
+  # Determine if the resources directory exists.
+  resources_dir = File.join(monograph_dir, "resources")
+  if !File.exists?(resources_dir) or !File.directory?(resources_dir)
+    log_fp.puts "Error: #{File.basename(resources_dir)} is not a valid directory."
+    next
+  end
+
+  # Determine if the resources directory contains any files.
+  resource_file_list = Dir.glob(File.join(resources_dir, "*"))
+  if resource_file_list.count == 0
+    log_fp.puts "Error: #{File.basename(resources_dir)} contains no resources."
+    next
+  end
+  log_fp.puts "Resources directory exists containing #{resource_file_list.count} files."
+
+  # Find the epub file name and determine whether it exists.
+  epub_row = manifest.representative_row(:kind => "epub")
+  epub_file_name = epub_row['file_name']
+  epub_file = File.join(monograph_dir, epub_file_name)
+  if !File.exist?(epub_file)
+    log_fp.puts "Error: #{epub_file_name} not found in manifest for noid #{monograph_id}"
+    next
+  end
+  log_fp.puts "#{epub_file_name} found in manifest for noid #{monograph_id}"
+
   # Determine if the resource map file exists.
   resource_map_file = File.join(process_dir, "resource_map.xml")
   if !File.exists?(resource_map_file)
-    puts "Error: resource map file #{File.basename(resource_map_file)} must exist."
+    log_fp.puts "Error: resource map file #{File.basename(resource_map_file)} must exist."
     next
   end
 
@@ -165,7 +166,8 @@ monograph_id_list.each do |monograph_id|
         resource_metadata: manifest,
         resource_map_file: resource_map_file,
         fulcrum_css_file: fulcrum_css_file,
-        vendor: options.vendor
+        vendor: options.vendor,
+        log: log_fp
       )
 
   # Remove the old one if it exists.

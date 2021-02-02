@@ -1,16 +1,23 @@
 module UMPTG::Resources
 
+  # Class that inserts a link markup to a resource fileset page.
   class LinkElementAction < Action
     def process()
+      # Generate the link XML markup.
       link_markup = link_markup()
       link_markup = "<span class=\"enhanced-media-display\">#{link_markup}</span>"
 
+      # Generate the link XML fragment.
       link_fragment = Nokogiri::XML.fragment(link_markup)
       if link_fragment == nil
         @message = "Warning: error creating embed markup document"
         @status = Action.FAILED
       end
 
+      # Locate a caption, if possible. If the reference container
+      # is a <p>, then search within the container parent.
+      # If a caption is found, then append the link markup to the caption.
+      # Otherwise, add the caption as last child to the container.
       container = reference_node.node_name == 'p' ? reference_node.parent : reference_node
       caption = Action.find_caption(container)
       if caption == nil or caption.count == 0
@@ -23,6 +30,7 @@ module UMPTG::Resources
         c.add_child(link_fragment)
       end
 
+      # Action completed.
       @status = Action.COMPLETED
     end
   end
