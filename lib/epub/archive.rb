@@ -13,12 +13,16 @@ module UMPTG::EPUB
 
       case
       when @properties.key?(:epub_file)
-        load_epub
+        load(epub_file: @properties[:epub_file])
       else
         label = "OEBPS/content.opf"
         rend = UMPTG::EPUB::Rendition.new(name: label)
         @renditions[label] = rend
       end
+    end
+
+    def entry(name)
+      return @name2entry[name]
     end
 
     def entries
@@ -121,8 +125,8 @@ module UMPTG::EPUB
       return item_list(rend.ncx_items, File.dirname(label))
     end
 
-    def load_epub()
-      @epub_file = @properties[:epub_file]
+    def load(args = {})
+      @epub_file = args[:epub_file]
 
       raise "Error: missing file path" if @epub_file.strip.empty?
       raise "Error: invalid file path" unless File.exist?(@epub_file)

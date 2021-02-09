@@ -189,6 +189,7 @@ monograph_id_list.each do |monograph_id|
           resource_map_file: resource_map_file,
           fulcrum_css_file: fulcrum_css_file,
           vendor: options.vendor,
+          monograph_noid: monograph_noid,
           log: log_fp
         )
   end

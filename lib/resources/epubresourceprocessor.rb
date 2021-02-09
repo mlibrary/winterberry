@@ -30,6 +30,7 @@ module UMPTG::Resources
       resource_map_file = args[:resource_map_file]
       fulcrum_css_file = args[:fulcrum_css_file]
       vendor = args[:vendor]
+      monograph_noid = args[:monograph_noid]
       log = args[:log]
 
       # Construct the resource reference to fileset mapping
@@ -63,13 +64,23 @@ module UMPTG::Resources
                   selector: reference_selector
                   )
 
+      keyword_processor = UMPTG::Keywords::KeywordProcessor.new(
+                  monograph_noid: monograph_noid,
+                  log: log
+                  )
+
       # Process the epub. Returned is a hash table where each
       # item key is an EPUB entry name and the item value is
       # a list of processing actions.
-      processors = { spec: resource_processor }
+      processors = {
+              keywords: keyword_processor,
+              resources: resource_processor
+            }
+
       action_map = UMPTG::EPUB::Processor.process(
             epub: epub,
-            entry_processors: processors
+            entry_processors: processors,
+            pass_xml_doc: true
           )
 
       # Provide the directory path for adding the CSS stylesheet link.
@@ -84,13 +95,14 @@ module UMPTG::Resources
       # Review each action and determine its success.
       remote_resources_list = []
       update_opf = false
-      action_map.each do |entry_name,action_list|
+      action_map.each do |entry_name,proc_map|
         # Action list for this EPUB entry. Determine if
         # at least one Action within the list completed
         # successfully.
         log.puts entry_name
-        result = false
 
+        action_list = proc_map[:resources]
+        result = false
         action_list.each do |action|
           log.puts action
           unless result
@@ -98,6 +110,7 @@ module UMPTG::Resources
           end
         end
 
+        entry_updated = false
         if result
           # At last one action was completed. Remember that this
           # file was updated.
@@ -125,7 +138,22 @@ module UMPTG::Resources
 
           # Update the entry in the EPUB. Remove old entry and
           # add the new one.
-          epub.remove(entry_name: entry_name)
+          entry_updated = true
+          epub.add(entry_name: entry_name, entry_content: UMPTG::XMLUtil.doc_to_xml(doc))
+        end
+
+        action_list = proc_map[:keywords]
+        result = false
+        action_list.each do |action|
+          log.puts action
+          unless result
+            result = action.status == UMPTG::Action.COMPLETED
+          end
+        end
+        if result and !entry_updated
+          entry = epub.entry(entry_name)
+          doc = entry.xml_doc
+          entry_updated = true
           epub.add(entry_name: entry_name, entry_content: UMPTG::XMLUtil.doc_to_xml(doc))
         end
       end
@@ -176,7 +204,6 @@ module UMPTG::Resources
         end
 
         # Update the OPF file in the EPUB.
-        epub.remove(entry_name: epub.opf_name)
         epub.add(entry_name: epub.opf_name, entry_content: UMPTG::XMLUtil.doc_to_xml(opf_doc))
       end
 

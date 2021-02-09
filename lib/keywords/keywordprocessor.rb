@@ -6,7 +6,7 @@ module UMPTG::Keywords
     def initialize(args = {})
       super(args)
 
-      @monograph_noid = @properties[:noid]
+      @monograph_noid = @properties[:monograph_noid]
       @selector = SpecKeywordSelector.new
     end
 
@@ -15,21 +15,13 @@ module UMPTG::Keywords
     #
     # Parameters:
     #   :name         Identifier associated with XML content
-    #   :content      XML content.
+    #   :xml_doc      XML content document.
     def action_list(args = {})
       name = args[:name]
-      content = args[:content]
-
-      # Create XML document tree from content.
-      alist = []
-      begin
-        doc = Nokogiri::XML(content, nil, 'UTF-8')
-      rescue Exception => e
-        raise e.message
-      end
+      xml_doc = args[:xml_doc]
 
       # Select the elements that contain resource references.
-      keyword_list = @selector.references(doc)
+      keyword_list = @selector.references(xml_doc)
 
       # For each container element, determine the necessary actions.
       # A container may reference one or more resources. A reference
@@ -39,7 +31,7 @@ module UMPTG::Keywords
       keyword_list.each do |keyword|
         action = LinkKeywordAction.new(
                   keyword_container: keyword,
-                  noid: @monograph_noid
+                  monograph_noid: @monograph_noid
                   )
 
         # Add the list of Actions for this container to

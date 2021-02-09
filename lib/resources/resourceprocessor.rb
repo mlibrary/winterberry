@@ -25,23 +25,15 @@ module UMPTG::Resources
     #
     # Parameters:
     #   :name         Identifier associated with XML content
-    #   :content      XML content.
+    #   :xml_doc      XML content document.
     def action_list(args = {})
       name = args[:name]
-      content = args[:content]
-
-      # Create XML document tree from content.
-      alist = []
-      begin
-        doc = Nokogiri::XML(content, nil, 'UTF-8')
-      rescue Exception => e
-        raise e.message
-      end
+      xml_doc = args[:xml_doc]
 
       init_reference_action_defs()
 
       # Select the elements that contain resource references.
-      reference_container_list = @selector.references(doc)
+      reference_container_list = @selector.references(xml_doc)
 
       # For each container element, determine the necessary actions.
       # A container may reference one or more resources. A reference
