@@ -24,7 +24,7 @@ options.update_fmsl = true
 options.use_map = true
 options.vendor = "default"
 option_parser = OptionParser.new do |opts|
-  opts.banner = "Usage: #{File.basename(__FILE__)} [-map] [-nofmsl] [-p <publisher_dir>] [-v vendor] <monograph_dir> [<monograph_dir>...]"
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-map] [-nofmsl] [-p <publisher_dir>] [-v vendor] <monograph_id> [<monograph_id>...]"
   opts.on('-map', '--map', 'Overwrite existing resource map file.') do |da|
     options.use_map = false
   end
@@ -49,7 +49,7 @@ if ARGV.count < 1
 end
 
 # Process the command line parameters.
-monograph_dir_list = ARGV
+monograph_id_list = ARGV
 update_fmsl = options.update_fmsl
 use_map = options.use_map
 
@@ -73,12 +73,20 @@ options.vendor = 'default' if options.vendor.nil? or options.vendor.empty?
 processors = UMPTG::FMetadata.vendor_processor(options.vendor.downcase)
 
 # Process all monograph directories specified.
-monograph_dir_list.each do |mdir|
-  monograph_dir = File.expand_path(mdir, options.publisher_dir)
-  unless File.directory?(monograph_dir)
-    puts "Error: invalid directory #{mdir}"
+monograph_id_list.each do |monograph_id|
+  # Determine the monograph directory
+  monograph_dir_list = Dir.glob(File.join(options.publisher_dir, monograph_id + "*"))
+  dlist = []
+  monograph_dir_list.each do |d|
+    dlist << d if File.directory?(d)
+  end
+  if dlist.empty?
+    puts "Error: the monograph directory for ID #{monograph_id} was not found."
     next
   end
+  puts "Warning: found multiple monograph directories for ID #{monograph_id}." if dlist.count > 1
+  monograph_dir = dlist.first
+  puts "INFO: using monograph directory #{File.basename(monograph_dir)} for ID #{monograph_id}"
 
   # Find the monograph processing directory and insure that it exists.
   processing_dir = File.join(monograph_dir, "resource_processing")

@@ -52,6 +52,8 @@ service = UMPTG::Services::Heliotrope.new(
               )
 
 components_list = []
+ebc_list = []
+bar_list = []
 monograph_id_list.each do |monograph_id|
   puts "*" * 10 + " #{monograph_id} " + "*" * 10
 
@@ -66,42 +68,62 @@ monograph_id_list.each do |monograph_id|
               )
 
   unless manifest.monograph_row.nil?
-    sales_id = "**UKNOWN**"
+    noid = manifest.monograph_row['noid']
 
-    case options.press
-    when "bar"
-      identifier = manifest.monograph_row['identifier(s)']
-      puts "Warning: no identifier value for BAR noid #{monograph_noid}" if identifier.nil?
+    identifier = manifest.monograph_row['identifier(s)']
+    puts "Warning: no identifier value for ISBN #{monograph_id}" if identifier.nil?
 
-      unless identifier.nil?
-        identifier_list = identifier.split(';')
+    bar_num = "**UNKNOWN**"
+    unless identifier.nil?
+      identifier_list = identifier.split(';')
 
-        found = false
-        identifier_list.each do |id|
-          id.strip.downcase!
-          if id.start_with?('bar_number:')
-            sales_id = id.split(':')[1].strip
-            found = true
-            break
-          end
+      found = false
+      identifier_list.each do |id|
+        id.strip.downcase!
+        if id.start_with?('bar_number:')
+          bar_num = id.split(':')[1].strip
+          found = true
+          break
         end
-        puts "Warning: no sails_id found for BAR noid #{monograph_noid}" unless found
       end
-    when "ebc"
-      sales_id = manifest.monograph_row['doi']
+      puts "Warning: no BAR Number found for ISBN #{monograph_id}" unless found
     end
 
-    components_row = [
-                "#{manifest.monograph_row['noid']},#{sales_id}"
-              ]
-    components_list << components_row
+    doi = manifest.monograph_row['doi']
+    puts "Warning: no DOI for ISBN #{monograph_id}" if doi.nil? or doi.empty?
+
+    components_list << {
+              monograph_id: monograph_id,
+              noid: noid,
+              doi: doi,
+              bar_num: bar_num
+            }
   end
 end
 
-# Write the temp file. system command may strip out the newlines
-components_file = File.join(output_dir, "components.csv")
+# Write the file with the full values.
+components_file = File.join(output_dir, "isbn_noid_doi_barnum.csv")
+puts "Writing CSV #{File.basename(components_file)}"
 File.open(components_file, "w") do |fp|
-  components_list.each do |row|
-    fp.puts row
+  components_list.each do |item|
+    fp.puts "#{item[:monograph_id]},#{item[:noid]},#{item[:doi]},#{item[:bar_num]}"
+  end
+end
+
+# Write the file with the EBC values.
+ebc_file = File.join(output_dir, "noid_doi.csv")
+puts "Writing CSV #{File.basename(ebc_file)}"
+File.open(ebc_file, "w") do |fp|
+  components_list.each do |item|
+    fp.puts "#{item[:noid]},#{item[:doi]}"
+  end
+end
+
+# Write the file with the BAR values.
+bar_file = File.join(output_dir, "noid_barnum.csv")
+puts "Writing CSV #{File.basename(bar_file)}"
+File.open(bar_file, "w") do |fp|
+  components_list.each do |item|
+    fp.puts "#{item[:noid]},#{item[:bar_num]}"
   end
 end
