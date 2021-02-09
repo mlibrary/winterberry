@@ -156,27 +156,29 @@ monograph_id_list.each do |monograph_id|
       end
     end
 
-    action_map.each do |entry_name,action_list|
-      action_list.each do |action|
-        action.object_list.each do |object|
-          node = object.node
-          node_map = object.map
-          reference_name = node_map['resource_name'].strip
+    action_map.each do |entry_name,proc_map|
+      proc_map.each do |key,action_list|
+        action_list.each do |action|
+          action.object_list.each do |object|
+            node = object.node
+            node_map = object.map
+            reference_name = node_map['resource_name'].strip
 
-          resource = resource_map.reference_resource(reference_name)
-          if resource.nil?
-            log_fp.puts "Warning: #{object.name}: no resource found for reference \"#{reference_name}\"."
-          else
-            log_fp.puts "INFO:    #{object.name}: mapping reference \"#{reference_name}\" to resource \"#{resource.name}\"."
-            node_map["caption"] = node_map["caption"].text unless node_map["caption"].nil?
-            resource.properties = node_map
+            resource = resource_map.reference_resource(reference_name)
+            if resource.nil?
+              log_fp.puts "Warning: #{object.name}: no resource found for reference \"#{reference_name}\"."
+            else
+              log_fp.puts "INFO:    #{object.name}: mapping reference \"#{reference_name}\" to resource \"#{resource.name}\"."
+              node_map["caption"] = node_map["caption"].text unless node_map["caption"].nil?
+              resource.properties = node_map
+            end
+
+            resource_map.add(
+                  :reference_name => reference_name,
+                  :resource => resource,
+                  :type => "default"
+                )
           end
-
-          resource_map.add(
-                :reference_name => reference_name,
-                :resource => resource,
-                :type => "default"
-              )
         end
       end
     end
