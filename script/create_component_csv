@@ -10,7 +10,7 @@ options.output_dir = Dir.pwd
 options.press = "ebc"
 options.fulcrum_host = nil
 option_parser = OptionParser.new do |opts|
-  opts.banner = "Usage: #{File.basename(__FILE__)} [-d output_dir] [-f production|preview|staging] monograph_id [monograph_id...]"
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-d output_dir] [-f production|preview|staging] -p [bar|ebc|heb] monograph_id [monograph_id...]"
   opts.on('-d', '--output_dir [DIRECTORY]', 'Output directory') do |output_dir|
     options.output_dir = output_dir
   end
@@ -31,10 +31,10 @@ if ARGV.count < 1
   exit 0
 end
 
-fail "Error: invalid press #{options.press}" unless ["bar", "ebc"].include?(options.press)
-
 # Rest of the parameters is a list of monograph noids.
 monograph_id_list = ARGV
+
+fail "Error: invalid press #{options.press}" unless ["bar", "ebc", "heb"].include?(options.press)
 
 output_dir = File.expand_path(options.output_dir)
 fail "Error: output directory #{output_dir} is not valid." unless File.directory?(output_dir)
@@ -51,9 +51,9 @@ service = UMPTG::Services::Heliotrope.new(
                 :fulcrum_host => options.fulcrum_host
               )
 
+puts "Using press #{options.press}"
+
 components_list = []
-ebc_list = []
-bar_list = []
 monograph_id_list.each do |monograph_id|
   puts "*" * 10 + " #{monograph_id} " + "*" * 10
 
@@ -70,60 +70,64 @@ monograph_id_list.each do |monograph_id|
   unless manifest.monograph_row.nil?
     noid = manifest.monograph_row['noid']
 
-    identifier = manifest.monograph_row['identifier(s)']
-    puts "Warning: no identifier value for ISBN #{monograph_id}" if identifier.nil?
-
-    bar_num = "**UNKNOWN**"
-    unless identifier.nil?
-      identifier_list = identifier.split(';')
-
-      found = false
-      identifier_list.each do |id|
-        id.strip.downcase!
-        if id.start_with?('bar_number:')
-          bar_num = id.split(':')[1].strip
-          found = true
-          break
-        end
+    case options.press
+    when 'ebc'
+      doi = manifest.monograph_row['doi']
+      if doi.nil? or doi.empty?
+        puts "Warning: no DOI for ID #{monograph_id}"
+      else
+        sales_id = doi
       end
-      puts "Warning: no BAR Number found for ISBN #{monograph_id}" unless found
+    else
+      # BAR and HEB presses
+      identifier = manifest.monograph_row['identifier(s)']
+      if identifier.nil? or identifier.empty?
+        puts "Warning: no identifier value for ID #{monograph_id}"
+      else
+        identifier_list = identifier.split(';')
+        identifier_list.each do |id|
+          id.strip.downcase!
+
+          case options.press
+          when 'bar'
+            if id.start_with?('bar_number:')
+              sales_id = id.split(':')[1].strip
+              break
+            end
+          when 'heb'
+            if id.match?(/^heb[0-9]{5}\.[0-9]{4}\.[0-9]{3}/)
+              sales_id = id
+              break
+            end
+          end
+        end
+        puts "Warning: no sales id found for ID #{monograph_id}" if sales_id.nil?
+      end
     end
 
-    doi = manifest.monograph_row['doi']
-    puts "Warning: no DOI for ISBN #{monograph_id}" if doi.nil? or doi.empty?
-
+    sales_id = "**NOT FOUND**" if sales_id.nil?
     components_list << {
               monograph_id: monograph_id,
               noid: noid,
-              doi: doi,
-              bar_num: bar_num
+              sales_id: sales_id
             }
   end
 end
 
 # Write the file with the full values.
-components_file = File.join(output_dir, "isbn_noid_doi_barnum.csv")
+id_file = File.join(output_dir, "id_noid_salesid.csv")
+puts "Writing CSV #{File.basename(id_file)}"
+File.open(id_file, "w") do |fp|
+  components_list.each do |item|
+    fp.puts "#{item[:monograph_id]},#{item[:noid]},#{item[:sales_id]}"
+  end
+end
+
+# Write the file for creating the components.
+components_file = File.join(output_dir, "noid_salesid.csv")
 puts "Writing CSV #{File.basename(components_file)}"
 File.open(components_file, "w") do |fp|
   components_list.each do |item|
-    fp.puts "#{item[:monograph_id]},#{item[:noid]},#{item[:doi]},#{item[:bar_num]}"
-  end
-end
-
-# Write the file with the EBC values.
-ebc_file = File.join(output_dir, "noid_doi.csv")
-puts "Writing CSV #{File.basename(ebc_file)}"
-File.open(ebc_file, "w") do |fp|
-  components_list.each do |item|
-    fp.puts "#{item[:noid]},#{item[:doi]}"
-  end
-end
-
-# Write the file with the BAR values.
-bar_file = File.join(output_dir, "noid_barnum.csv")
-puts "Writing CSV #{File.basename(bar_file)}"
-File.open(bar_file, "w") do |fp|
-  components_list.each do |item|
-    fp.puts "#{item[:noid]},#{item[:bar_num]}"
+    fp.puts "#{item[:noid]},#{item[:sales_id]}"
   end
 end
