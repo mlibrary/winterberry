@@ -1,9 +1,12 @@
-module UMPTG::Resources
+module UMPTG
 
   require 'zip'
 
+  require_relative 'resources'
+  require_relative 'keywords'
+
   # Class processes the resources found within an EPUB.
-  class EpubResourceProcessor
+  class FulcrumEPUBProcessor
     def self.process(args = {})
       # EPUB parameter processing
       case
@@ -64,6 +67,7 @@ module UMPTG::Resources
                   selector: reference_selector
                   )
 
+      # Instantiate the class that will process each keyword reference.
       keyword_processor = UMPTG::Keywords::KeywordProcessor.new(
                   monograph_noid: monograph_noid,
                   log: log

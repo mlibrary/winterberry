@@ -53,8 +53,9 @@ if !File.exists?(publisher_dir)
 end
 
 require_relative File.join(root_dir, 'lib', 'manifest')
-require_relative File.join(root_dir, 'lib', 'resources')
-require_relative File.join(root_dir, 'lib', 'keywords')
+#require_relative File.join(root_dir, 'lib', 'resources')
+#require_relative File.join(root_dir, 'lib', 'keywords')
+require_relative File.join(root_dir, 'lib', 'fulcrumepubprocessor')
 require_relative File.join(root_dir, 'lib', 'services')
 
 # Create the default action object.
@@ -182,7 +183,7 @@ monograph_id_list.each do |monograph_id|
 
     # Create a new EPUB with the resource references detailed
     # in the resource map processed.
-    processed_epub = UMPTG::Resources::EpubResourceProcessor.process(
+    processed_epub = UMPTG::FulcrumEPUBProcessor.process(
           epub_file: epub_file,
           default_action_str: default_action_str,
           resource_metadata: manifest,

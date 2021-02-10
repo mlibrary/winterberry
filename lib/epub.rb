@@ -1,10 +1,7 @@
 module UMPTG
   require_relative 'object'
   require_relative 'action'
-
-  require_relative '../lib/fragment'
-  require_relative '../lib/xmlutil'
-  require_relative '../lib/xslt'
+  require_relative 'fragment'
 
   require_relative File.join('epub', 'entry')
   require_relative File.join('epub', 'rendition')
