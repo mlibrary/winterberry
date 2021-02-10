@@ -101,6 +101,7 @@ module UMPTG::Resources
         # successfully.
         log.puts entry_name
 
+        xml_doc = proc_map[:xml_doc]
         action_list = proc_map[:resources]
         result = false
         action_list.each do |action|
@@ -126,20 +127,19 @@ module UMPTG::Resources
           end
 
           # Add the CSS stylesheet link that manages the Fulcrum resource display.
-          doc = action_list.first.reference_container.document
           level = File.dirname(entry_name).split(File::SEPARATOR).count
           if level == 1
-            UMPTG::XMLUtil.add_css(doc, fulcrum_dest_css_file)
+            UMPTG::XMLUtil.add_css(xml_doc, fulcrum_dest_css_file)
           else
             fpath = (('..' + File::SEPARATOR) * (level-1)) + fulcrum_css_name
-            UMPTG::XMLUtil.add_css(doc, fpath)
+            UMPTG::XMLUtil.add_css(xml_doc, fpath)
           end
           log.puts "Added CSS stylesheet \"#{fulcrum_css_name}\"."
 
           # Update the entry in the EPUB. Remove old entry and
           # add the new one.
           entry_updated = true
-          epub.add(entry_name: entry_name, entry_content: UMPTG::XMLUtil.doc_to_xml(doc))
+          epub.add(entry_name: entry_name, entry_content: UMPTG::XMLUtil.doc_to_xml(xml_doc))
         end
 
         action_list = proc_map[:keywords]
@@ -151,10 +151,8 @@ module UMPTG::Resources
           end
         end
         if result and !entry_updated
-          entry = epub.entry(entry_name)
-          doc = entry.xml_doc
           entry_updated = true
-          epub.add(entry_name: entry_name, entry_content: UMPTG::XMLUtil.doc_to_xml(doc))
+          epub.add(entry_name: entry_name, entry_content: UMPTG::XMLUtil.doc_to_xml(xml_doc))
         end
       end
 

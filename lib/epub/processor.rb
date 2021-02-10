@@ -27,11 +27,13 @@ module UMPTG::EPUB
 
         if pass_xml_doc
           content = nil
-          xml_doc = entry.xml_doc
+          xml_doc = UMPTG::XMLUtil.parse(xml_content: entry.content)
         else
           content = entry.content
           xml_doc = nil
         end
+        epub_actions[entry.name][:xml_doc] = xml_doc
+
         entry_processors.each do |key,processor|
           entry_proc_actions = processor.action_list(
                       name: entry.name,
