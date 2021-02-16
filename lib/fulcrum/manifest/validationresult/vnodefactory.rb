@@ -1,4 +1,4 @@
-module UMPTG::Manifest::ValidationResult
+module UMPTG::Fulcrum::Manifest::ValidationResult
   class VNodeFactory
     def self.construct(args = {})
       name = args[:name]

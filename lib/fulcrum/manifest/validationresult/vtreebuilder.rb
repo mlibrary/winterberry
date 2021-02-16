@@ -1,4 +1,4 @@
-module UMPTG::Manifest::ValidationResult
+module UMPTG::Fulcrum::Manifest::ValidationResult
   class VTreeBuilder
     @@handler = nil
     @@parser = nil

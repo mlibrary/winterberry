@@ -1,4 +1,4 @@
-module UMPTG::Manifest::ValidationResult
+module UMPTG::Fulcrum::Manifest::ValidationResult
   class VNode
     attr_accessor :name, :attrs, :parent, :line_num
 

@@ -1,4 +1,4 @@
-module UMPTG
+module UMPTG::Fulcrum
   require 'csv'
 
   require_relative File.join('manifest', 'document')

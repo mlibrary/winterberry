@@ -1,4 +1,4 @@
-module UMPTG::Manifest
+module UMPTG::Fulcrum::Manifest
   require 'nokogiri'
   
   require_relative File.join('validationresult', 'vnode.rb')

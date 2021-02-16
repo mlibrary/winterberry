@@ -1,4 +1,4 @@
-module UMPTG::Manifest
+module UMPTG::Fulcrum::Manifest
   @@BLANK_ROW_FILE_NAME = "***row left intentionally blank***"
 
   class Document

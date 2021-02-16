@@ -1,4 +1,4 @@
-module UMPTG::Manifest::ValidationResult
+module UMPTG::Fulcrum::Manifest::ValidationResult
   class VTree
     def initialize(args = {})
       @line_map = args[:line_map]

@@ -1,4 +1,4 @@
-module UMPTG::Manifest::ValidationResult
+module UMPTG::Fulcrum::Manifest::ValidationResult
   class VMNode < VNode
     def initialize(args = {})
       super(args)

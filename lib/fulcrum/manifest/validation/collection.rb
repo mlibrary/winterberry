@@ -1,4 +1,4 @@
-module UMPTG::Manifest::Validation
+module UMPTG::Fulcrum::Manifest::Validation
   require 'htmlentities'
 
   class Collection

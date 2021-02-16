@@ -1,4 +1,4 @@
-module UMPTG::Manifest::ValidationResult
+module UMPTG::Fulcrum::Manifest::ValidationResult
   class VSaxDocument < Nokogiri::XML::SAX::Document
     attr_accessor :line_num, :root, :line_map
 

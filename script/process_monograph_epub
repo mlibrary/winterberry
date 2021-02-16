@@ -52,7 +52,6 @@ if !File.exists?(publisher_dir)
   exit
 end
 
-require_relative File.join(root_dir, 'lib', 'manifest')
 require_relative File.join(root_dir, 'lib', 'fulcrum')
 require_relative File.join(root_dir, 'lib', 'services')
 
@@ -90,7 +89,7 @@ monograph_id_list.each do |monograph_id|
     next
   end
 
-  manifest = UMPTG::Manifest::Document.new(
+  manifest = UMPTG::Fulcrum::Manifest::Document.new(
                 :csv_body => csv_body
               )
 
