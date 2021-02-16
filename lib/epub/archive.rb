@@ -127,7 +127,6 @@ module UMPTG::EPUB
 
     def load(args = {})
       @epub_file = args[:epub_file]
-
       raise "Error: missing file path" if @epub_file.strip.empty?
       raise "Error: invalid file path" unless File.exist?(@epub_file)
 
@@ -136,6 +135,7 @@ module UMPTG::EPUB
 
       Zip::File.open(@epub_file) do |zip|
         zip.entries.each do |zip_entry|
+          next if zip_entry.file_type_is?(:directory)
           @name2entry[zip_entry.name] = Entry.new(zip_entry: zip_entry)
         end
 
