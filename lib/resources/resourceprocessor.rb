@@ -157,7 +157,6 @@ module UMPTG::Resources
       # or just use the node content?
       node_list = reference_container.xpath(".//comment()")
       node_list = [ reference_container ] if node_list.nil? or node_list.empty?
-
       reference_action_list = []
       node_list.each do |node|
         path = node.text.strip
