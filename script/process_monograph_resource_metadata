@@ -158,6 +158,7 @@ monograph_id_list.each do |monograph_id|
 
     action_map.each do |entry_name,proc_map|
       proc_map.each do |key,action_list|
+        next if action_list.nil?
         action_list.each do |action|
           action.object_list.each do |object|
             node = object.node

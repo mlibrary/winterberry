@@ -107,56 +107,60 @@ module UMPTG
 
         xml_doc = proc_map[:xml_doc]
         action_list = proc_map[:resources]
-        result = false
-        action_list.each do |action|
-          log.puts action
-          unless result
-            result = action.status == UMPTG::Action.COMPLETED
-          end
-        end
-
-        entry_updated = false
-        if result
-          # At last one action was completed. Remember that this
-          # file was updated.
-          update_opf = true
-
-          # If resources were embedded, then we need to set the
-          # remote-resource property in the OPF file.
-          has_remote_resources = action_list.index { |action|
-                      action.status == Action.COMPLETED and action.reference_action_def.action_str == "embed"
-          }
-          if has_remote_resources
-            remote_resources_list << entry_name
+        unless action_list.nil?
+          result = false
+          action_list.each do |action|
+            log.puts action
+            unless result
+              result = action.status == UMPTG::Action.COMPLETED
+            end
           end
 
-          # Add the CSS stylesheet link that manages the Fulcrum resource display.
-          level = File.dirname(entry_name).split(File::SEPARATOR).count
-          if level == 1
-            UMPTG::XMLUtil.add_css(xml_doc, fulcrum_dest_css_file)
-          else
-            fpath = (('..' + File::SEPARATOR) * (level-1)) + fulcrum_css_name
-            UMPTG::XMLUtil.add_css(xml_doc, fpath)
-          end
-          log.puts "Added CSS stylesheet \"#{fulcrum_css_name}\"."
+          entry_updated = false
+          if result
+            # At last one action was completed. Remember that this
+            # file was updated.
+            update_opf = true
 
-          # Update the entry in the EPUB. Remove old entry and
-          # add the new one.
-          entry_updated = true
-          epub.add(entry_name: entry_name, entry_content: UMPTG::XMLUtil.doc_to_xml(xml_doc))
+            # If resources were embedded, then we need to set the
+            # remote-resource property in the OPF file.
+            has_remote_resources = action_list.index { |action|
+                        action.status == Action.COMPLETED and action.reference_action_def.action_str == "embed"
+            }
+            if has_remote_resources
+              remote_resources_list << entry_name
+            end
+
+            # Add the CSS stylesheet link that manages the Fulcrum resource display.
+            level = File.dirname(entry_name).split(File::SEPARATOR).count
+            if level == 1
+              UMPTG::XMLUtil.add_css(xml_doc, fulcrum_dest_css_file)
+            else
+              fpath = (('..' + File::SEPARATOR) * (level-1)) + fulcrum_css_name
+              UMPTG::XMLUtil.add_css(xml_doc, fpath)
+            end
+            log.puts "Added CSS stylesheet \"#{fulcrum_css_name}\"."
+
+            # Update the entry in the EPUB. Remove old entry and
+            # add the new one.
+            entry_updated = true
+            epub.add(entry_name: entry_name, entry_content: UMPTG::XMLUtil.doc_to_xml(xml_doc))
+          end
         end
 
         action_list = proc_map[:keywords]
-        result = false
-        action_list.each do |action|
-          log.puts action
-          unless result
-            result = action.status == UMPTG::Action.COMPLETED
+        unless action_list.nil?
+          result = false
+          action_list.each do |action|
+            log.puts action
+            unless result
+              result = action.status == UMPTG::Action.COMPLETED
+            end
           end
-        end
-        if result and !entry_updated
-          entry_updated = true
-          epub.add(entry_name: entry_name, entry_content: UMPTG::XMLUtil.doc_to_xml(xml_doc))
+          if result and !entry_updated
+            entry_updated = true
+            epub.add(entry_name: entry_name, entry_content: UMPTG::XMLUtil.doc_to_xml(xml_doc))
+          end
         end
       end
 
