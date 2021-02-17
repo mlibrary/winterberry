@@ -62,7 +62,7 @@ require 'fileutils'
 require_relative File.join(root_dir, "lib", "fmetadata")
 require_relative File.join(root_dir, "lib", "csvfile")
 require_relative File.join(root_dir, "lib", "fulcrum", "manifest")
-require_relative File.join(root_dir, "lib", "resourcemap")
+require_relative File.join(root_dir, "lib", "fulcrum", "resourcemap")
 
 #blank_row_file_name = "***row left intentionally blank***"
 blank_row_file_name = UMPTG::Fulcrum::Manifest.BLANK_ROW_FILE_NAME
@@ -143,7 +143,7 @@ monograph_id_list.each do |monograph_id|
 
     # If a resource map exists, use it. Otherwise,
     # it should be generated and saved.
-    resource_map = UMPTG::ResourceMap::Map.new
+    resource_map = UMPTG::Fulcrum::ResourceMap::Map.new
     if resource_map_exists
       resource_map.load(:xml_path => resource_map_file)
     else

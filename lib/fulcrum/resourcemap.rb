@@ -1,4 +1,4 @@
-module UMPTG
+module UMPTG::Fulcrum
   require_relative File.join('resourcemap', 'action')
   require_relative File.join('resourcemap', 'resourcemapobject')
   require_relative File.join('resourcemap', 'reference')

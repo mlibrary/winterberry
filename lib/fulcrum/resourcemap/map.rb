@@ -1,4 +1,4 @@
-module UMPTG::ResourceMap
+module UMPTG::Fulcrum::ResourceMap
 
   require 'nokogiri'
   require 'csv'
@@ -17,7 +17,7 @@ module UMPTG::ResourceMap
     @@resource_map_file_headers = [ "File Name", "Resource Name", "Resource Action" ]
 
     @@parser = nil
-    @@processor = UMPTG::ResourceMap::XMLSaxDocument.new
+    @@processor = XMLSaxDocument.new
 
     attr_reader :actions, :resources
 
@@ -38,11 +38,11 @@ module UMPTG::ResourceMap
     def add_reference(args = {})
       name = args[:name]
       id = args[:id]
-      id = UMPTG::ResourceMap::ResourceMapObject.name_id(name) if id.nil?
+      id = ResourceMapObject.name_id(name) if id.nil?
 
       reference = @references[id]
       if reference.nil?
-        reference = UMPTG::ResourceMap::Reference.new(
+        reference = Reference.new(
                   :id => id,
                   :name => name
                 )
@@ -55,11 +55,11 @@ module UMPTG::ResourceMap
       name = args[:name]
       resource_properties = args[:resource_properties]
       id = args.has_key?(:id) ? args[:id] : \
-            UMPTG::ResourceMap::ResourceMapObject.name_id(name)
+            ResourceMapObject.name_id(name)
 
       resource = @resources[id]
       if resource.nil?
-        resource = UMPTG::ResourceMap::Resource.new(
+        resource = Resource.new(
                   :id => id,
                   :name => name
                 )
@@ -84,7 +84,7 @@ module UMPTG::ResourceMap
       unless resource.nil?
         action = @actions.find {|a| a.reference.id == reference.id and a.resource.id == resource.id }
         if action.nil?
-          action = UMPTG::ResourceMap::Action.new(
+          action = Action.new(
                   :reference => reference,
                   :resource => resource,
                   :type => type

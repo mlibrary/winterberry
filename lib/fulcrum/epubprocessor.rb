@@ -35,7 +35,7 @@ module UMPTG::Fulcrum
 
       # Construct the resource reference to fileset mapping
       log.puts "Using resource map file #{File.basename(resource_map_file)}"
-      resource_map = UMPTG::ResourceMap::Map.new(
+      resource_map = ResourceMap::Map.new(
             :xml_path => resource_map_file,
             :default_action => default_action_str
           )

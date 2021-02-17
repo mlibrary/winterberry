@@ -1,4 +1,4 @@
-module UMPTG::ResourceMap
+module UMPTG::Fulcrum::ResourceMap
 
   class Action
 
