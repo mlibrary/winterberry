@@ -23,8 +23,11 @@ options.publisher_dir = OS.windows? ? "s:/Information\ Management/Fulcrum/UMP" :
 options.update_fmsl = true
 options.use_map = true
 options.vendor = "default"
+options.default_actions = {
+        resources: :embed
+        }
 option_parser = OptionParser.new do |opts|
-  opts.banner = "Usage: #{File.basename(__FILE__)} [-map] [-nofmsl] [-p <publisher_dir>] [-v vendor] <monograph_dir> [<monograph_dir>...]"
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-map] [-nofmsl] [-p <publisher_dir>] [-v vendor] [-r embed|link|none|remove] <monograph_id> [<monograph_id>...]"
   opts.on('-map', '--map', 'Overwrite existing resource map file.') do |da|
     options.use_map = false
   end
@@ -33,6 +36,9 @@ option_parser = OptionParser.new do |opts|
   end
   opts.on('-p', '--publisher_directory [DIRECTORY]', 'Publisher site directory') do |publisher_dir|
     options.publisher_dir = publisher_dir
+  end
+  opts.on('-r', '--keywords [embed|link|none|remove]', 'Default resoorces processing action') do |action|
+    options.default_actions[:resources] = action.to_sym
   end
   opts.on('-v', '--vendor [vendor]', 'Vendor specific markup newgen|default') do |vendor|
     options.vendor = vendor
@@ -49,7 +55,7 @@ if ARGV.count < 1
 end
 
 # Process the command line parameters.
-monograph_dir_list = ARGV
+monograph_id_list = ARGV
 update_fmsl = options.update_fmsl
 use_map = options.use_map
 
@@ -59,26 +65,36 @@ root_dir = File.dirname(script_dir)
 
 require 'fileutils'
 
-require_relative File.join(root_dir, "lib", "epub")
 require_relative File.join(root_dir, "lib", "csvfile")
-require_relative File.join(root_dir, "lib", "manifest")
-require_relative File.join(root_dir, "lib", "resourcemap")
+require_relative File.join(root_dir, "lib", "fulcrum")
+
+abort("Error: invalid default resources action #{options.resources_default_action}.") \
+      unless [:embed,:link,:none,:remove].find {|t| t == options.default_actions[:resources] }
+puts "Processing resources #{options.default_actions[:resources].to_s}"
 
 #blank_row_file_name = "***row left intentionally blank***"
-blank_row_file_name = UMPTG::Manifest.BLANK_ROW_FILE_NAME
+blank_row_file_name = UMPTG::Fulcrum::Manifest.BLANK_ROW_FILE_NAME
 blank_row_pattern = "^\*\*\*.* intentionally blank[ ]*\*\*\*$"
 
 # Initialize EPUB markup processors, figure/image and marker.
 options.vendor = 'default' if options.vendor.nil? or options.vendor.empty?
-processors = UMPTG::EPUB.vendor_processor(options.vendor.downcase)
+processors = UMPTG::Fulcrum::Metadata.vendor_processor(options.vendor.downcase)
 
 # Process all monograph directories specified.
-monograph_dir_list.each do |mdir|
-  monograph_dir = File.expand_path(mdir, options.publisher_dir)
-  unless File.directory?(monograph_dir)
-    puts "Error: invalid directory #{mdir}"
+monograph_id_list.each do |monograph_id|
+  # Determine the monograph directory
+  monograph_dir_list = Dir.glob(File.join(options.publisher_dir, monograph_id + "*"))
+  dlist = []
+  monograph_dir_list.each do |d|
+    dlist << d if File.directory?(d)
+  end
+  if dlist.empty?
+    puts "Error: the monograph directory for ID #{monograph_id} was not found."
     next
   end
+  puts "Warning: found multiple monograph directories for ID #{monograph_id}." if dlist.count > 1
+  monograph_dir = dlist.first
+  puts "INFO: using monograph directory #{File.basename(monograph_dir)} for ID #{monograph_id}"
 
   # Find the monograph processing directory and insure that it exists.
   processing_dir = File.join(monograph_dir, "resource_processing")
@@ -125,21 +141,24 @@ monograph_dir_list.each do |mdir|
     # needs to be generated.
 
     # Reset the markup processors.
-    processors.each_value {|p| p.reset }
+    #processors.each_value {|p| p.reset }
 
     # Process the epub and generate the image information.
-    UMPTG::EPUB::Processor.process(
+    action_map = UMPTG::EPUB::Processor.process(
           epub_file: epub_file,
-          processors: processors
+          entry_processors: processors
         )
 
     # If a resource map exists, use it. Otherwise,
     # it should be generated and saved.
-    resource_map = UMPTG::ResourceMap::Map.new
+    resource_map = UMPTG::Fulcrum::ResourceMap::Map.new
     if resource_map_exists
       resource_map.load(:xml_path => resource_map_file)
     else
       log_fp.puts "INFO: generating resource map file #{File.basename(resource_map_file)}."
+
+      # Set the default action
+      resource_map.default_action = options.default_actions[:resources]
 
       # Add the resources
       resources = Dir.glob(File.join(resources_dir, "*"))
@@ -148,45 +167,32 @@ monograph_dir_list.each do |mdir|
       end
     end
 
-    # Process image information and generate the resource map.
-    processors[:image].img_list.each do |node|
-      node_map = node.map
-      reference_name = node_map['src']
+    action_map.each do |entry_name,proc_map|
+      proc_map.each do |key,action_list|
+        next if action_list.nil?
+        action_list.each do |action|
+          action.object_list.each do |object|
+            node = object.node
+            node_map = object.map
+            reference_name = node_map['resource_name'].strip
 
-      resource = resource_map.reference_resource(reference_name)
-      if resource.nil?
-        log_fp.puts "Warning: #{node.name}: no resource found for reference \"#{reference_name}\"."
-      else
-        log_fp.puts "INFO:    #{node.name}: mapping reference \"#{reference_name}\" to resource \"#{resource.name}\"."
-        node_map["caption"] = node_map["caption"].text unless node_map["caption"].nil?
-        resource.properties = node_map
+            resource = resource_map.reference_resource(reference_name)
+            if resource.nil?
+              log_fp.puts "Warning: #{object.name}: no resource found for reference \"#{reference_name}\"."
+            else
+              log_fp.puts "INFO:    #{object.name}: mapping reference \"#{reference_name}\" to resource \"#{resource.name}\"."
+              node_map["caption"] = node_map["caption"].text unless node_map["caption"].nil?
+              resource.properties = node_map
+            end
+
+            resource_map.add(
+                  :reference_name => reference_name,
+                  :resource => resource,
+                  :type => "default"
+                )
+          end
+        end
       end
-
-      resource_map.add(
-            :reference_name => reference_name,
-            :resource => resource,
-            :type => "default"
-          )
-    end
-
-    # Process marker information and generate the resource map.
-    processors[:marker].img_list.each do |node|
-      node_map = node.map
-      resource_name = node_map['resource_name'].strip
-
-      resource = resource_map.reference_resource(resource_name)
-      if resource.nil?
-        log_fp.puts "Warning: #{node.name}: no resource found for marker \"#{resource_name}\"."
-      else
-        log_fp.puts "INFO:    #{node.name}: mapping reference \"#{resource_name}\" to resource \"#{resource.name}\"."
-        #resource.properties = node_map
-      end
-
-      resource_map.add(
-            :reference_name => resource_name,
-            :resource => resource,
-            :type => "default"
-          )
     end
 
     # Save the resource map XML file.

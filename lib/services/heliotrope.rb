@@ -11,6 +11,8 @@ module UMPTG::Services
     @@STAGING_API = 'https://heliotrope-staging.hydra.lib.umich.edu/api'
     @@STAGING_TOKEN = 'eyJhbGciOiJIUzI1NiJ9.eyJlbWFpbCI6InRiZWxjQHVtaWNoLmVkdSIsInBpbiI6IiQyYSQxMCR1RkhXT0tWNWR1RUo3TWd3dzY5VklPNmR5bk9oZWZHT1g4c1N3Rm9hSUtNbmZoVjJETDFYZSJ9.kOGesNkYeoIqsZzaQ5U1R_oduja4VhFu9q-Fd62wmp0'
 
+    @@DOI_PREFIX = "https://doi.org/"
+
     def self.FULCRUM_API
       @@FULCRUM_API
     end
@@ -35,17 +37,51 @@ module UMPTG::Services
       @@STAGING_TOKEN
     end
 
+    def self.DOI_PREFIX
+      @@DOI_PREFIX
+    end
+
     #
-    # Manifest
+    # Monograph NOID
     #
-    def monograph_noid_export(noid)
+    # ISBN may contain dashes.
+    # Identifier may be HEB ID or BAR number.
+    # DOI should not contain the prefix.
+    def monograph_noid(args = {})
+      identifier = args[:identifier]
+
+      # Try each type until success
+      ["isbn", "identifier", "doi"].each do |t|
+        case
+        when t == "doi", identifier.start_with?(@@DOI_PREFIX)
+          id = identifier.delete_prefix(@@DOI_PREFIX)
+        else
+          id = identifier
+        end
+
+        begin
+          response = connection.get("noids?#{t}=#{id}")
+        rescue StandardError => e
+          e.message
+        end
+        next if response.nil? or !response.success? or response.body.empty?
+
+        return response.body.first["id"]
+      end
+      return ""
+    end
+
+    # Monograph Manifest from the NOID or an identifier
+    #
+    def monograph_export(args = {})
+      noid = args.key?(:noid) ? args[:noid] : monograph_noid(args)
+
       begin
         response = connection.get("monographs/#{noid}/manifest")
       rescue StandardError => e
         e.message
       end
-
-      return nil if response == nil || !response.success?
+      return "" if response == nil || !response.success?
       return response.body
     end
 

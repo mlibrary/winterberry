@@ -2,7 +2,7 @@ module UMPTG::EPUB
 
   require 'nokogiri'
 
-  class Rendition
+  class Rendition < UMPTG::Object
     attr_accessor :name, :opf_doc
 
     @@PKG_TEMPLATE = <<-PKG
@@ -15,12 +15,12 @@ module UMPTG::EPUB
     PKG
 
     def initialize(args = {})
-      load(args)
+      super(args)
+      load()
     end
 
-    def load(args = {})
-      @name = args[:name]
-      content = args[:content]
+    def load()
+      content = @properties[:content]
       content = @@PKG_TEMPLATE if content.nil? or content.empty?
 
       @opf_doc = Nokogiri::XML::Document.parse(content)
@@ -41,13 +41,6 @@ module UMPTG::EPUB
 
     def manifest
       return @opf_doc.root.xpath("./*[local-name()='manifest']/*[local-name()='item']")
-=begin
-      manifest = {}
-      @opf_doc.root.xpath("./*[local-name()='manifest']/*[local-name()='item']").each do |node|
-        manifest[node['id']] = node
-      end
-      return manifest.values
-=end
     end
 
     def spine

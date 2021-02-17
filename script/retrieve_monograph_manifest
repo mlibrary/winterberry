@@ -12,8 +12,13 @@ require 'csv'
 
 # Process the script parameters.
 options = OpenStruct.new
+options.directory_path = nil
+options.fulcrum_host = nil
 option_parser = OptionParser.new do |opts|
-  opts.banner = "Usage: #{File.basename(__FILE__)} [--output_dir <output_dir>] <monograph noid> [<monograph node>..]"
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-f production|preview|staging]  [--output_dir <output_dir>] <monograph_id> [<monograph_id>..]"
+  opts.on('-f', '--fulcrum_host [production|preview|staging]', 'Fulcrum environment') do |fulcrum_host|
+    options.fulcrum_host = fulcrum_host
+  end
   opts.on('-o', '--output_dir [DIRECTORY]', 'Path of output directory') do |dir_path|
     options.directory_path = dir_path
   end
@@ -34,7 +39,7 @@ root_dir = File.dirname(script_dir)
 
 require_relative File.join(root_dir, 'lib', 'services')
 
-if options.directory_path == nil
+if options.directory_path.nil?
   options.directory_path = Dir.pwd
 else
   require 'fileutils'
@@ -42,25 +47,22 @@ else
 end
 
 # Rest of the parameters is a list of monograph noids.
-noid_list = ARGV
+monograph_id_list = ARGV
 
-# Create the service object.
-base = UMPTG::Services::Heliotrope.FULCRUM_API
-token = UMPTG::Services::Heliotrope.FULCRUM_TOKEN
-#base = UMPTG::Services::Heliotrope.PREVIEW_API
-#token = UMPTG::Services::Heliotrope.PREVIEW_TOKEN
-#base = UMPTG::Services::Heliotrope.STAGING_API
-#token = UMPTG::Services::Heliotrope.STAGING_TOKEN
-service = UMPTG::Services::Heliotrope.new(:base => base, :token => token)
+# Create the serivce for retrieving the NOID.
+service = UMPTG::Services::Heliotrope.new(
+                :fulcrum_host => options.fulcrum_host
+              )
 
-noid_list.each do |noid|
+monograph_id_list.each do |monograph_id|
   # Attempt to download the monograph manifest.
-  #puts "API: #{base}"
-  service_response = service.monograph_noid_export(noid)
+  service_response = service.monograph_export(identifier: monograph_id)
 
-  if !service_response.empty?
-    # Not empty, save the manifest using its noid as the file name.
-    output_path = File.join(options.directory_path, noid + ".csv")
+  unless service_response.empty?
+    # Not empty, save the manifest using its id as the file name.
+    output_path = File.join(options.directory_path, File.basename(monograph_id) + ".csv")
+
+    puts "Writing CSV file #{output_path}"
     File.open(output_path, "w") do |f|
       f.write(service_response)
     end

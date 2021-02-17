@@ -1,7 +1,7 @@
 module UMPTG
   require 'csv'
 
-  require_relative 'manifest'
+  require_relative File.join('fulcrum', 'manifest')
 
   class FMSL
     @@FMSL_2_FULCRUM_HEADERS = {
@@ -43,7 +43,7 @@ module UMPTG
               :headers => fmsl_csv.headers
             ) do |csv|
 
-        csv << { "File Name" => Manifest.BLANK_ROW_FILE_NAME }
+        csv << { "File Name" => UMPTG::Fulcrum::Manifest.BLANK_ROW_FILE_NAME }
 
         fmsl_csv.each do |row|
           file_name = row['File Name']
@@ -53,7 +53,7 @@ module UMPTG
           unless file_name.nil?
             next if file_name.strip.downcase.start_with?('"this should be') \
                  or file_name.strip.downcase.start_with?('this should be')
-            next if file_name.start_with?(Manifest.BLANK_ROW_FILE_NAME)
+            next if file_name.start_with?(UMPTG::Fulcrum::Manifest.BLANK_ROW_FILE_NAME)
           end
 
           unless row['Fulcrum'].nil? or row['Fulcrum'].downcase == 'yes'
@@ -89,7 +89,7 @@ module UMPTG
 
     def self.header_convert(header)
       #nh = header.strip.downcase.gsub(/[ \-\/]+/, '_')
-      nh = UMPTG::Manifest::Validation::CollectionSchema.normalize(header)
+      nh = UMPTG::Fulcrum::Manifest::Validation::CollectionSchema.normalize(header)
       return @@FMSL_2_FULCRUM_HEADERS[nh] if @@FMSL_2_FULCRUM_HEADERS.has_key?(nh)
       return header.strip
     end

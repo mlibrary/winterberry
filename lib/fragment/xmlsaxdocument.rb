@@ -1,11 +1,14 @@
 module UMPTG::Fragment
 
   require "nokogiri"
+  require 'htmlentities'
 
   class XMLSaxDocument < Nokogiri::XML::SAX::Document
 
     attr_accessor :info, :name, :selector
     attr_reader :fragments
+
+    @@encoder = nil
 
     def initialize(args = {})
       @name = args[:name]
@@ -43,13 +46,13 @@ module UMPTG::Fragment
 
     def characters(string)
       if @fragment_refcnt > 0
-        s = string.gsub(/[\n\r ]+/, ' ')
+        s = normalize(string)
         @fragment_markup += s
       end
     end
 
     def comment(string)
-      s = string.gsub(/[\n\r ]+/, ' ')
+      s = normalize(string)
       markup = "<!--#{s}-->"
 
       case
@@ -69,6 +72,16 @@ module UMPTG::Fragment
       @fragments = []
       @fragment_refcnt = 0
       @fragment_markup = ""
+    end
+
+    private
+
+    def normalize(str)
+      # Replace newlines with spaces. Replace '<' with XML entity.
+      @@encoder = HTMLEntities.new if @@encoder.nil?
+      str = str.gsub(/[\n\r ]+/, ' ')
+      str = @@encoder.encode(str)
+      return str
     end
   end
 end

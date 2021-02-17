@@ -2,23 +2,27 @@ module UMPTG::EPUB
 
   require 'zip'
 
-  class Archive
+  class Archive < UMPTG::Object
     attr_reader :epub_file
 
     def initialize(args = {})
-      @renditions = {}
-      @epub_file = ""
+      super(args)
 
+      @renditions = {}
       @name2entry = {}
 
       case
-      when args.key?(:epub_file)
-        load(args)
+      when @properties.key?(:epub_file)
+        load(epub_file: @properties[:epub_file])
       else
         label = "OEBPS/content.opf"
         rend = UMPTG::EPUB::Rendition.new(name: label)
         @renditions[label] = rend
       end
+    end
+
+    def entry(name)
+      return @name2entry[name]
     end
 
     def entries
@@ -61,11 +65,11 @@ module UMPTG::EPUB
     end
 
     def save(args = {})
-      epub_file = args[:epub_file]
-      epub_file = @epub_file if epub_file.nil? or epub_file.empty?
-      raise "Error: missing EPUB file path" if epub_file.nil? or epub_file.empty?
+      efile = args[:epub_file]
+      efile = @epub_file if efile.nil? or efile.empty?
+      raise "Error: missing EPUB file path" if efile.nil? or efile.empty?
 
-      Zip::OutputStream.open(epub_file) do |zos|
+      Zip::OutputStream.open(efile) do |zos|
         # Make the mimetype the first item
         mimetype_entry = @name2entry["mimetype"]
         raise "Error: mimetype file missing" if mimetype_entry.nil?
@@ -123,7 +127,6 @@ module UMPTG::EPUB
 
     def load(args = {})
       @epub_file = args[:epub_file]
-
       raise "Error: missing file path" if @epub_file.strip.empty?
       raise "Error: invalid file path" unless File.exist?(@epub_file)
 
@@ -132,6 +135,7 @@ module UMPTG::EPUB
 
       Zip::File.open(@epub_file) do |zip|
         zip.entries.each do |zip_entry|
+          next if zip_entry.file_type_is?(:directory)
           @name2entry[zip_entry.name] = Entry.new(zip_entry: zip_entry)
         end
 

@@ -8,10 +8,14 @@ require 'ostruct'
 options = OpenStruct.new
 options.output_dir = Dir.pwd
 options.press = "ebc"
+options.fulcrum_host = nil
 option_parser = OptionParser.new do |opts|
-  opts.banner = "Usage: #{File.basename(__FILE__)} [-d output_dir] monograph_noid [monograph_noid...]"
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-d output_dir] [-f production|preview|staging] -p [bar|ebc|heb] monograph_id [monograph_id...]"
   opts.on('-d', '--output_dir [DIRECTORY]', 'Output directory') do |output_dir|
     options.output_dir = output_dir
+  end
+  opts.on('-f', '--fulcrum_host [production|preview|staging]', 'Fulcrum environment') do |fulcrum_host|
+    options.fulcrum_host = fulcrum_host
   end
   opts.on('-p', '--press [bar|ebc]', 'Press') do |press|
     options.press = press.downcase
@@ -27,9 +31,10 @@ if ARGV.count < 1
   exit 0
 end
 
-fail "Error: invalid press #{options.press}" unless ["bar", "ebc"].include?(options.press)
+# Rest of the parameters is a list of monograph noids.
+monograph_id_list = ARGV
 
-monograph_noid_list = ARGV
+fail "Error: invalid press #{options.press}" unless ["bar", "ebc", "heb"].include?(options.press)
 
 output_dir = File.expand_path(options.output_dir)
 fail "Error: output directory #{output_dir} is not valid." unless File.directory?(output_dir)
@@ -38,52 +43,91 @@ fail "Error: output directory #{output_dir} is not valid." unless File.directory
 script_dir = File.expand_path(File.dirname(__FILE__))
 root_dir = File.dirname(script_dir)
 
+require_relative File.join(root_dir, "lib", "services")
 require_relative File.join(root_dir, "lib", "manifest")
 
-components_list = []
-monograph_noid_list.each do |monograph_noid|
-  puts "*" * 10 + " #{monograph_noid} " + "*" * 10
+# Create the serivce for retrieving the NOID.
+service = UMPTG::Services::Heliotrope.new(
+                :fulcrum_host => options.fulcrum_host
+              )
 
-  manifest = UMPTG::Manifest::Document.new(:noid => monograph_noid)
-  raise "Error: creating manifest from noid #{noid}" if manifest.nil?
+puts "Using press #{options.press}"
+
+components_list = []
+monograph_id_list.each do |monograph_id|
+  puts "*" * 10 + " #{monograph_id} " + "*" * 10
+
+  # Retrieve the monograph manifest.
+  csv_body = service.monograph_export(identifier: monograph_id)
+  if csv_body.nil? or csv_body.empty?
+    puts "Error: no manifest found for noid #{monograph_id}"
+    next
+  end
+  manifest = UMPTG::Manifest::Document.new(
+                :csv_body => csv_body
+              )
 
   unless manifest.monograph_row.nil?
-    sales_id = "**UKNOWN**"
+    noid = manifest.monograph_row['noid']
 
     case options.press
-    when "bar"
+    when 'ebc'
+      doi = manifest.monograph_row['doi']
+      if doi.nil? or doi.empty?
+        puts "Warning: no DOI for ID #{monograph_id}"
+      else
+        sales_id = doi
+      end
+    else
+      # BAR and HEB presses
       identifier = manifest.monograph_row['identifier(s)']
-      puts "Warning: no identifier value for BAR noid #{monograph_noid}" if identifier.nil?
-
-      unless identifier.nil?
+      if identifier.nil? or identifier.empty?
+        puts "Warning: no identifier value for ID #{monograph_id}"
+      else
         identifier_list = identifier.split(';')
-
-        found = false
         identifier_list.each do |id|
           id.strip.downcase!
-          if id.start_with?('bar_number:')
-            sales_id = id.split(':')[1].strip
-            found = true
-            break
+
+          case options.press
+          when 'bar'
+            if id.start_with?('bar_number:')
+              sales_id = id.split(':')[1].strip
+              break
+            end
+          when 'heb'
+            if id.match?(/^heb[0-9]{5}\.[0-9]{4}\.[0-9]{3}/)
+              sales_id = id
+              break
+            end
           end
         end
-        puts "Warning: no sails_id found for BAR noid #{monograph_noid}" unless found
+        puts "Warning: no sales id found for ID #{monograph_id}" if sales_id.nil?
       end
-    when "ebc"
-      sales_id = manifest.monograph_row['doi']
     end
 
-    components_row = [
-                "#{manifest.monograph_row['noid']},#{sales_id}"
-              ]
-    components_list << components_row
+    sales_id = "**NOT FOUND**" if sales_id.nil?
+    components_list << {
+              monograph_id: monograph_id,
+              noid: noid,
+              sales_id: sales_id
+            }
   end
 end
 
-# Write the temp file. system command may strip out the newlines
-components_file = File.join(output_dir, "components.csv")
+# Write the file with the full values.
+id_file = File.join(output_dir, "id_noid_salesid.csv")
+puts "Writing CSV #{File.basename(id_file)}"
+File.open(id_file, "w") do |fp|
+  components_list.each do |item|
+    fp.puts "#{item[:monograph_id]},#{item[:noid]},#{item[:sales_id]}"
+  end
+end
+
+# Write the file for creating the components.
+components_file = File.join(output_dir, "noid_salesid.csv")
+puts "Writing CSV #{File.basename(components_file)}"
 File.open(components_file, "w") do |fp|
-  components_list.each do |row|
-    fp.puts row
+  components_list.each do |item|
+    fp.puts "#{item[:noid]},#{item[:sales_id]}"
   end
 end

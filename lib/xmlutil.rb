@@ -29,6 +29,16 @@ module UMPTG
         end
     end
 
+    def self.parse(args = {})
+      content = args[:xml_content]
+      begin
+        xml_doc = Nokogiri::XML(content, nil, 'UTF-8')
+      rescue Exception => e
+        raise e.message
+      end
+      return xml_doc
+    end
+
     def self.XML_PI
       return @@XML_PI
     end
