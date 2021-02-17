@@ -1,4 +1,4 @@
-module UMPTG::Keywords
+module UMPTG::Fulcrum::Keywords
   require 'erb'
 
   class LinkKeywordAction < UMPTG::Action

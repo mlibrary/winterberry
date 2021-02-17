@@ -65,7 +65,7 @@ module UMPTG::Fulcrum
                   )
 
       # Instantiate the class that will process each keyword reference.
-      keyword_processor = UMPTG::Keywords::KeywordProcessor.new(
+      keyword_processor = Keywords::KeywordProcessor.new(
                   monograph_noid: monograph_noid,
                   log: log
                   )
