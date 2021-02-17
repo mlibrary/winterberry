@@ -64,9 +64,9 @@ abort("Error: invalid default keywords action #{options.keywords_default_action}
 abort("Error: invalid default resources action #{options.resources_default_action}.") \
       unless UMPTG::Fulcrum::EPUBProcessor.DEFAULT_ACTIONS[:resources].find {|t| t == options.default_actions[:resources] }
 puts "Processing keywords #{options.default_actions[:keywords].to_s}" \
-      unless options.default_actions[:keywords] == :none
+      unless options.default_actions[:keywords] == :disable
 puts "Processing resources #{options.default_actions[:resources].to_s}" \
-      unless options.default_actions[:resources] == :none
+      unless options.default_actions[:resources] == :disable
 
 options.vendor = 'default' if options.vendor.nil? or options.vendor.empty?
 

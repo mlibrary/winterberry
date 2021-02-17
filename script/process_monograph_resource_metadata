@@ -23,8 +23,11 @@ options.publisher_dir = OS.windows? ? "s:/Information\ Management/Fulcrum/UMP" :
 options.update_fmsl = true
 options.use_map = true
 options.vendor = "default"
+options.default_actions = {
+        resources: :embed
+        }
 option_parser = OptionParser.new do |opts|
-  opts.banner = "Usage: #{File.basename(__FILE__)} [-map] [-nofmsl] [-p <publisher_dir>] [-v vendor] <monograph_id> [<monograph_id>...]"
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-map] [-nofmsl] [-p <publisher_dir>] [-v vendor] [-r embed|link|none|remove] <monograph_id> [<monograph_id>...]"
   opts.on('-map', '--map', 'Overwrite existing resource map file.') do |da|
     options.use_map = false
   end
@@ -33,6 +36,9 @@ option_parser = OptionParser.new do |opts|
   end
   opts.on('-p', '--publisher_directory [DIRECTORY]', 'Publisher site directory') do |publisher_dir|
     options.publisher_dir = publisher_dir
+  end
+  opts.on('-r', '--keywords [embed|link|none|remove]', 'Default resoorces processing action') do |action|
+    options.default_actions[:resources] = action.to_sym
   end
   opts.on('-v', '--vendor [vendor]', 'Vendor specific markup newgen|default') do |vendor|
     options.vendor = vendor
@@ -61,6 +67,10 @@ require 'fileutils'
 
 require_relative File.join(root_dir, "lib", "csvfile")
 require_relative File.join(root_dir, "lib", "fulcrum")
+
+abort("Error: invalid default resources action #{options.resources_default_action}.") \
+      unless [:embed,:link,:none,:remove].find {|t| t == options.default_actions[:resources] }
+puts "Processing resources #{options.default_actions[:resources].to_s}"
 
 #blank_row_file_name = "***row left intentionally blank***"
 blank_row_file_name = UMPTG::Fulcrum::Manifest.BLANK_ROW_FILE_NAME
@@ -146,6 +156,9 @@ monograph_id_list.each do |monograph_id|
       resource_map.load(:xml_path => resource_map_file)
     else
       log_fp.puts "INFO: generating resource map file #{File.basename(resource_map_file)}."
+
+      # Set the default action
+      resource_map.default_action = options.default_actions[:resources]
 
       # Add the resources
       resources = Dir.glob(File.join(resources_dir, "*"))

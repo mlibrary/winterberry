@@ -19,7 +19,8 @@ module UMPTG::Fulcrum::ResourceMap
     @@parser = nil
     @@processor = XMLSaxDocument.new
 
-    attr_reader :actions, :resources, :default_action
+    attr_reader :actions, :resources
+    attr_accessor :default_action
 
     def initialize(args = {})
       # Load the XML document is one is specified
