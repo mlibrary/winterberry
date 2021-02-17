@@ -9,26 +9,23 @@ module UMPTG::Fulcrum::Metadata
       # element content.
       rnames = []
       comment = @fragment.node.xpath(".//comment()")
-      if comment.empty?
-        rnames << fragment.node.text
-      else
-        comment.each do |c|
-          # Generally, additional resource references are expected
-          # to use the markup:
-          #     <p class="rb|rbi"><!-- resource_file_name.ext --></p>
-          # But recently, Newgen has been using the markup
-          #     <!-- <insert resource_file_name.ext> -->
-          # So here we check for this case.
-          r = c.text.match(/\<insert[ ]+([^\>]+)\>/)
-          if r.nil? or r.empty?
-            # Not Newgen markup.
-            rn = c.text
-          else
-            # Appears to be Newgen markup.
-            rn = r[1]
-          end
-          rnames << rn
+      comment << fragment.node if comment.empty?
+      comment.each do |c|
+        # Generally, additional resource references are expected
+        # to use the markup:
+        #     <p class="rb|rbi"><!-- resource_file_name.ext --></p>
+        # But recently, Newgen has been using the markup
+        #     <!-- <insert resource_file_name.ext> -->
+        # So here we check for this case.
+        r = c.text.match(/\<insert[ ]+([^\>]+)\>/)
+        if r.nil?
+          # Not Newgen markup.
+          rn = c.text
+        else
+          # Appears to be Newgen markup.
+          rn = r[1]
         end
+        rnames << rn
       end
 
       # Create a Marker object for each reference found.

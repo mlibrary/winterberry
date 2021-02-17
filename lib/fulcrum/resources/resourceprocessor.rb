@@ -169,7 +169,7 @@ module UMPTG::Fulcrum::Resources
         #     <!-- <insert resource_file_name.ext> -->
         # So here we check for this case.
         r = path.match(/\<insert[ ]+([^\>]+)\>/)
-        unless r.nil? or r.empty?
+        unless r.nil?
           # Appears to be Newgen markup.
           path = r[1]
         end

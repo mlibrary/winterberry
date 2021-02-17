@@ -60,14 +60,9 @@ module UMPTG::Fulcrum
             entry_content: File.read(resource_map_file)
           )
 
-      # Declare the selector for the resource references. This may be
+      # Determine the selector for the resource references. This may be
       # vendor specific.
-      case vendor
-      when 'newgen'
-        reference_selector = Resources::NewgenReferenceSelector.new
-      else
-        reference_selector = Resources::SpecReferenceSelector.new
-      end
+      reference_selector = Resources::ReferenceSelectorFactory.select(vendor: vendor)
 
       processors = {}
       unless default_actions[:resources].nil? or default_actions[:resources] == :disable

@@ -43,7 +43,7 @@ module UMPTG::Fulcrum::Resources
     # a specific resource.
     def embed_fragment
       emb_markup = reference_action_def.embed_markup
-      if emb_markup == nil or emb_markup.strip.empty?
+      if emb_markup.nil? or emb_markup.strip.empty?
         @message = "Warning: no embed markup for resource node #{reference_action_def.reference_name}"
         return nil
       end
