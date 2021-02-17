@@ -3,10 +3,12 @@ module UMPTG::Fulcrum::Resources
   # Class defines the Action for a specific resource reference.
   # It contains the type of action (embed|link) and the Fulcrum
   # metadata for the resource.
-  class ReferenceActionDef
+  class ReferenceActionDef < UMPTG::Object
     def initialize(args = {})
-      @resource_map_action = args[:resource_map_action]
-      @resource_metadata = args[:resource_metadata]
+      super(args)
+
+      @resource_map_action = @properties[:resource_map_action]
+      @resource_metadata = @properties[:resource_metadata]
     end
 
     # Resource reference name.

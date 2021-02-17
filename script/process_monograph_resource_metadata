@@ -182,7 +182,7 @@ monograph_id_list.each do |monograph_id|
             else
               log_fp.puts "INFO:    #{object.name}: mapping reference \"#{reference_name}\" to resource \"#{resource.name}\"."
               node_map["caption"] = node_map["caption"].text unless node_map["caption"].nil?
-              resource.properties = node_map
+              resource.resource_properties = node_map
             end
 
             resource_map.add(

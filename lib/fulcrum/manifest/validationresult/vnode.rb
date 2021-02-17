@@ -1,12 +1,14 @@
 module UMPTG::Fulcrum::Manifest::ValidationResult
-  class VNode
+  class VNode < UMPTG::Object
     attr_accessor :name, :attrs, :parent, :line_num
 
     def initialize(args = {})
-      @name = args[:name]
-      @attrs = args[:attrs]
-      @line_num = args[:line_num]
-      @parent = args[:parent]
+      super(args)
+
+      @name = @properties[:name]
+      @attrs = @properties[:attrs]
+      @line_num = @properties[:line_num]
+      @parent = @properties[:parent]
     end
 
     def resource_name

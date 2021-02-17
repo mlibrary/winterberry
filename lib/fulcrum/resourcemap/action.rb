@@ -1,14 +1,16 @@
 module UMPTG::Fulcrum::ResourceMap
 
-  class Action
+  class Action < UMPTG::Object
 
     attr_reader :reference, :resource
     attr_accessor :type
 
     def initialize(args = {})
-      @reference = args[:reference]
-      @resource = args[:resource]
-      @type = args[:type]
+      super(args)
+
+      @reference = @properties[:reference]
+      @resource = @properties[:resource]
+      @type = @properties[:type]
     end
   end
 end

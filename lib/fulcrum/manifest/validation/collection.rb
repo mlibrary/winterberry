@@ -1,10 +1,14 @@
 module UMPTG::Fulcrum::Manifest::Validation
   require 'htmlentities'
 
-  class Collection
+  class Collection < UMPTG::Object
     MONOGRAPH_FILE_NAME = '://:MONOGRAPH://:'
 
-    def initialize
+    # Parameters:
+    #   None expected.
+    def initialize(args = {})
+      super(args)
+
       @manifest_list = []
       @collection_tree = nil
     end

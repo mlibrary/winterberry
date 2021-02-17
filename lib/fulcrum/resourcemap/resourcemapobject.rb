@@ -1,10 +1,12 @@
 module UMPTG::Fulcrum::ResourceMap
-  class ResourceMapObject
+  class ResourceMapObject < UMPTG::Object
     attr_reader :id, :name
 
     def initialize(args = {})
-      @id = args[:id]
-      @name = args[:name]
+      super(args)
+
+      @id = @properties[:id]
+      @name = @properties[:name]
     end
 
     def to_s

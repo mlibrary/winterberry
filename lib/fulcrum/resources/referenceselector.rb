@@ -3,7 +3,8 @@ module UMPTG::Fulcrum::Resources
   require 'nokogiri'
 
   # Class is base for resource reference selection.
-  class ReferenceSelector
+  class ReferenceSelector < UMPTG::Object
+
     def references(xml_doc)
       return []
     end

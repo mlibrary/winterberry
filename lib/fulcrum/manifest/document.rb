@@ -1,14 +1,16 @@
 module UMPTG::Fulcrum::Manifest
   @@BLANK_ROW_FILE_NAME = "***row left intentionally blank***"
 
-  class Document
+  class Document < UMPTG::Object
     attr_reader :name, :noid, :csv, :monograph_row, :isbn
 
     @@MONOGRAPH_FILE_NAME = '://:MONOGRAPH://:'
 
     def initialize(args = {})
-      @name = args[:name]
-      csv_body = args[:csv_body]
+      super(args)
+
+      @name = @properties[:name]
+      csv_body = @properties[:csv_body]
       fail "Error: manifest is empty" if csv_body.nil? or csv_body.empty?
 
       begin

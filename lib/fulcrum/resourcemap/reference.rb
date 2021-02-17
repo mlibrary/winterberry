@@ -2,6 +2,8 @@ module UMPTG::Fulcrum::ResourceMap
   class Reference < ResourceMapObject
 
     def initialize(args = {})
+      super(args)
+
       name = args[:name]
       args[:name] = name
 

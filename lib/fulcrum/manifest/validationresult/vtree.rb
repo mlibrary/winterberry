@@ -1,7 +1,9 @@
 module UMPTG::Fulcrum::Manifest::ValidationResult
-  class VTree
+  class VTree < UMPTG::Object
     def initialize(args = {})
-      @line_map = args[:line_map]
+      super(args)
+
+      @line_map = @properties[:line_map]
     end
 
     def resource(line_num)

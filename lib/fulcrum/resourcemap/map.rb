@@ -9,7 +9,7 @@ module UMPTG::Fulcrum::ResourceMap
   # Currently, this reads/writes an XML file and writes
   # a CSV, but hopefully the CSV can be deprecated.
 
-  class Map
+  class Map < UMPTG::Object
     @@DEFAULT_VERSION = "1.0"
     @@DEFAULT_ACTION = :embed
 
@@ -23,6 +23,8 @@ module UMPTG::Fulcrum::ResourceMap
     attr_accessor :default_action
 
     def initialize(args = {})
+      super(args)
+
       # Load the XML document is one is specified
       # either by string or path.
       load(args)
@@ -66,7 +68,7 @@ module UMPTG::Fulcrum::ResourceMap
                 )
         @resources[id] = resource
       end
-      resource.properties = resource_properties
+      resource.resource_properties = resource_properties
       return resource
     end
 
@@ -100,7 +102,7 @@ module UMPTG::Fulcrum::ResourceMap
     # For a specified resource, return a property map.
     def resource_properties(resource_name)
       action = @actions.find {|a| a.resource.name == resource_name }
-      return action.resource.properties unless action.nil?
+      return action.resource.resource_properties unless action.nil?
     end
 
     def reference_resource(reference)
@@ -242,7 +244,7 @@ module UMPTG::Fulcrum::ResourceMap
           # Add values for the other columns, which are
           # the object properties (node attribute and
           # added properties).
-          properties = action.resource.properties
+          properties = action.resource.resource_properties
           if !properties.nil?
             properties.each do |attr,value|
               crow[attr] = value
