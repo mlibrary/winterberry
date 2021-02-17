@@ -1,4 +1,4 @@
-module UMPTG::FMetadata
+module UMPTG::Fulcrum::Metadata
   require_relative File.join('processors', 'entryprocessor')
   require_relative File.join('processors', 'figureprocessor')
   require_relative File.join('processors', 'newgencontainerselector')
@@ -20,15 +20,15 @@ module UMPTG::FMetadata
     when "newgen"
       # Newgen processors
       return {
-                image: UMPTG::EPUB::Processors::NewgenImageProcessor.new,
-                marker: UMPTG::EPUB::Processors::NewgenMarkerProcessor.new
+                image: Processors::NewgenImageProcessor.new,
+                marker: Processors::NewgenMarkerProcessor.new
              }
     end
 
     # Default processors.
     return {
-              image: UMPTG::FMetadata::Processors::SpecFigureProcessor.new,
-              marker: UMPTG::FMetadata::Processors::SpecMarkerProcessor.new
+              image: Processors::SpecFigureProcessor.new,
+              marker: Processors::SpecMarkerProcessor.new
            }
   end
 end

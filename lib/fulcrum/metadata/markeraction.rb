@@ -1,4 +1,4 @@
-module UMPTG::FMetadata
+module UMPTG::Fulcrum::Metadata
 
   class MarkerAction < Action
 
@@ -37,7 +37,7 @@ module UMPTG::FMetadata
       olist = []
       rnames.each do |r|
         next if r.nil? or r.strip.empty?
-        marker = UMPTG::FMetadata::MarkerObject.new(
+        marker = MarkerObject.new(
                 node: fragment.node,
                 name: @properties[:name],
                 resource_name: r

@@ -1,4 +1,4 @@
-module UMPTG::FMetadata::Processors
+module UMPTG::Fulcrum::Metadata::Processors
 
   # Class selects references to additional resources (Markers)
   # found within an EPUB.

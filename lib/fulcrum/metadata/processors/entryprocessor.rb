@@ -1,4 +1,4 @@
-module UMPTG::FMetadata::Processors
+module UMPTG::Fulcrum::Metadata::Processors
 
   class EntryProcessor < UMPTG::EPUB::EntryProcessor
   
@@ -41,7 +41,7 @@ module UMPTG::FMetadata::Processors
     #   :name       Content identifier, e.g. EPUB entry name or file name.
     #   :fragment   XML fragment to process.
     def new_action(args = {})
-      action = UMPTG::FMetadata::Action.new(
+      action = UMPTG::Fulcrum::Metadata::Action.new(
           name: args[:name],
           fragment: args[:fragment]
           )

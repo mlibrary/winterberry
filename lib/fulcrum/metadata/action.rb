@@ -1,4 +1,4 @@
-module UMPTG::FMetadata
+module UMPTG::Fulcrum::Metadata
 
   # Class is the base for resource metadata processing.
   class Action < UMPTG::Action
@@ -24,7 +24,7 @@ module UMPTG::FMetadata
       fragments.each do |fragment|
         if fragment.node.name == 'img'
           # Image fragment. Just add object to list. No caption.
-          img_list << UMPTG::FMetadata::FigureObject.new(
+          img_list << FigureObject.new(
                   :node => fragment.node,
                   :name => args[:name]
                 )
@@ -36,7 +36,7 @@ module UMPTG::FMetadata
     def self.process_image(fragment, args = {})
       # Image fragment. Just add object to list. No caption.
       return [
-                UMPTG::FMetadata::FigureObject.new(
+                FigureObject.new(
                   :node => fragment.node,
                   :name => args[:name]
                 )
@@ -72,7 +72,7 @@ module UMPTG::FMetadata
       nodes.each do |node|
         if node.name == 'img'
           caption = caption_ndx == -1 ? nil : captions_list[caption_ndx]
-          img_list << UMPTG::FMetadata::FigureObject.new(
+          img_list << FigureObject.new(
                   :node=> node,
                   :name => args[:name],
                   :caption=> caption

@@ -59,10 +59,8 @@ root_dir = File.dirname(script_dir)
 
 require 'fileutils'
 
-require_relative File.join(root_dir, "lib", "fmetadata")
 require_relative File.join(root_dir, "lib", "csvfile")
-require_relative File.join(root_dir, "lib", "fulcrum", "manifest")
-require_relative File.join(root_dir, "lib", "fulcrum", "resourcemap")
+require_relative File.join(root_dir, "lib", "fulcrum")
 
 #blank_row_file_name = "***row left intentionally blank***"
 blank_row_file_name = UMPTG::Fulcrum::Manifest.BLANK_ROW_FILE_NAME
@@ -70,7 +68,7 @@ blank_row_pattern = "^\*\*\*.* intentionally blank[ ]*\*\*\*$"
 
 # Initialize EPUB markup processors, figure/image and marker.
 options.vendor = 'default' if options.vendor.nil? or options.vendor.empty?
-processors = UMPTG::FMetadata.vendor_processor(options.vendor.downcase)
+processors = UMPTG::Fulcrum::Metadata.vendor_processor(options.vendor.downcase)
 
 # Process all monograph directories specified.
 monograph_id_list.each do |monograph_id|

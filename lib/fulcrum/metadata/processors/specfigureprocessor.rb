@@ -1,4 +1,4 @@
-module UMPTG::FMetadata::Processors
+module UMPTG::Fulcrum::Metadata::Processors
 
   # Class processes <figure|img> references for resources found
   # within XML content.

@@ -1,4 +1,4 @@
-module UMPTG::FMetadata
+module UMPTG::Fulcrum::Metadata
 
   # Class represents resources references figures/images
   # found when processing an EPUB. The super contains
