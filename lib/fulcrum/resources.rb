@@ -1,8 +1,5 @@
-module UMPTG
-  require_relative 'epub'
-  require_relative 'xmlutil'
-
-  require_relative File.join('fulcrum', 'resourcemap')
+module UMPTG::Fulcrum
+  require_relative 'resourcemap'
 
   require_relative File.join('resources', 'referenceactiondef')
   require_relative File.join('resources', 'referenceselector')

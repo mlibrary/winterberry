@@ -1,4 +1,4 @@
-module UMPTG::Resources
+module UMPTG::Fulcrum::Resources
 
   # Class processes each resource reference found within XML content.
   class ResourceProcessor < UMPTG::EPUB::EntryProcessor
@@ -248,7 +248,7 @@ module UMPTG::Resources
           end
 
           map_action.type = @default_action_str if map_action.type == "default"
-          reference_action_def = UMPTG::Resources::ReferenceActionDef.new(
+          reference_action_def = ReferenceActionDef.new(
                       resource_map_action: map_action,
                       resource_metadata: fileset_row
                     )

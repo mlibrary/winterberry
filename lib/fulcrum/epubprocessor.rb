@@ -51,13 +51,13 @@ module UMPTG::Fulcrum
       # vendor specific.
       case vendor
       when 'newgen'
-        reference_selector = UMPTG::Resources::NewgenReferenceSelector.new
+        reference_selector = Resources::NewgenReferenceSelector.new
       else
-        reference_selector = UMPTG::Resources::SpecReferenceSelector.new
+        reference_selector = Resources::SpecReferenceSelector.new
       end
 
       # Instantiate the class that will process each resource reference.
-      resource_processor = UMPTG::Resources::ResourceProcessor.new(
+      resource_processor = Resources::ResourceProcessor.new(
                   resource_map: resource_map,
                   resource_metadata: resource_metadata,
                   default_action_str: default_action_str,

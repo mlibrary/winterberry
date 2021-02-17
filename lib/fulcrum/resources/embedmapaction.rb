@@ -1,4 +1,4 @@
-module UMPTG::Resources
+module UMPTG::Fulcrum::Resources
 
   # Class that inserts resource embed viewer markup into
   # XML content (interactive map).

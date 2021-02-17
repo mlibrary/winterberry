@@ -1,4 +1,4 @@
-module UMPTG::Resources
+module UMPTG::Fulcrum::Resources
 
   # Class that defines no Action necessary.
   class NoneAction < Action

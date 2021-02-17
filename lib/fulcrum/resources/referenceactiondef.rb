@@ -1,4 +1,4 @@
-module UMPTG::Resources
+module UMPTG::Fulcrum::Resources
 
   # Class defines the Action for a specific resource reference.
   # It contains the type of action (embed|link) and the Fulcrum

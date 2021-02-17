@@ -1,4 +1,4 @@
-module UMPTG::Resources
+module UMPTG::Fulcrum::Resources
 
   class RemoveElementAction < Action
     def process()

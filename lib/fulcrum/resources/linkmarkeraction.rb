@@ -1,4 +1,4 @@
-module UMPTG::Resources
+module UMPTG::Fulcrum::Resources
 
   # Class that inserts a link markup to a resource fileset page.
   class LinkMarkerAction < Action
