@@ -24,7 +24,7 @@ module UMPTG::Fulcrum::ResourceMap
         attrs_h = attrs.to_h
         @resources[attrs_h["id"]] = attrs_h["name"]
       when "actions"
-        @default_action = attrs.to_h["default"]
+        @default_action = attrs.to_h["default"].to_sym
       when "action"
         @actions << attrs.to_h
       end
@@ -32,7 +32,7 @@ module UMPTG::Fulcrum::ResourceMap
 
     def reset
       @version = ""
-      @default_action = ""
+      @default_action = :none
 
       @references = {}
       @resources = {}

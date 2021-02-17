@@ -11,7 +11,7 @@ module UMPTG::Fulcrum::ResourceMap
 
   class Map
     @@DEFAULT_VERSION = "1.0"
-    @@DEFAULT_ACTION = "embed"
+    @@DEFAULT_ACTION = :embed
 
     # Headers to use for writing CSV version.
     @@resource_map_file_headers = [ "File Name", "Resource Name", "Resource Action" ]
@@ -19,7 +19,7 @@ module UMPTG::Fulcrum::ResourceMap
     @@parser = nil
     @@processor = XMLSaxDocument.new
 
-    attr_reader :actions, :resources
+    attr_reader :actions, :resources, :default_action
 
     def initialize(args = {})
       # Load the XML document is one is specified
@@ -87,7 +87,7 @@ module UMPTG::Fulcrum::ResourceMap
           action = Action.new(
                   :reference => reference,
                   :resource => resource,
-                  :type => type
+                  :type => type.to_sym
                 )
           @actions << action
         else
@@ -198,7 +198,7 @@ module UMPTG::Fulcrum::ResourceMap
           f.puts("</resources>")
         end
 
-        f.puts("<actions default=\"#{@default_action}\">")
+        f.puts("<actions default=\"#{@default_action.to_s}\">")
         @actions.each do |action|
           m = "<action reference_id=\"#{action.reference.id}\""
           m += " resource_id=\"#{action.resource.id}\""

@@ -8,16 +8,26 @@ require 'ostruct'
 options = OpenStruct.new
 #options.publisher_dir = Dir.pwd
 options.publisher_dir = "s:/Information\ Management/Fulcrum/UMP"
-#options.publisher_dir = "c:/Users/tbelc/Documents/winterberry_production/Information\ Management/Fulcrum/UMP/"
+#options.publisher_dir = "c:/Users/tbelc/Documents/Fulcrum/UMP/"
 options.vendor = "default"
 options.fulcrum_host = nil
+options.default_actions = {
+        keywords:  :disable,
+        resources: :embed
+        }
 option_parser = OptionParser.new do |opts|
-  opts.banner = "Usage: #{File.basename(__FILE__)} [-f production|preview|staging] [-p <publisher_dir>] [-v vendor] [embed_resources|link_resources] <monograph_id> [<monograph_id>..]"
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-f production|preview|staging] [-p <publisher_dir>] [-v vendor] [-r disable|embed|link|none] [-k disable|link|none] <monograph_id> [<monograph_id>..]"
   opts.on('-f', '--fulcrum_host [production|preview|staging]', 'Fulcrum environment') do |fulcrum_host|
     options.fulcrum_host = fulcrum_host
   end
+  opts.on('-k', '--keywords [disable|link|none]', 'Default keywords processing action') do |action|
+    options.default_actions[:keywords] = action.to_sym
+  end
   opts.on('-p', '--publisher_directory [DIRECTORY]', 'Publisher site directory') do |publisher_dir|
     options.publisher_dir = publisher_dir
+  end
+  opts.on('-r', '--keywords [disable|embed|link|none]', 'Default resoorces processing action') do |action|
+    options.default_actions[:resources] = action.to_sym
   end
   opts.on('-v', '--vendor [vendor]', 'Vendor specific markup newgen|default') do |vendor|
     options.vendor = vendor
@@ -28,18 +38,12 @@ option_parser = OptionParser.new do |opts|
   end
 end
 option_parser.parse!(ARGV)
-if ARGV.count < 2
+if ARGV.count < 1
   puts option_parser.help
   return
 end
 
-TASK_LIST = [ "embed_resources", "link_resources", "link_keywords" ]
-
-task = ARGV[0].downcase
-abort("Error: invalid task #{task}.") unless TASK_LIST.find {|t| t == task }
-puts "Invoking task #{task}"
-
-monograph_id_list = ARGV[1..-1]
+monograph_id_list = ARGV
 
 # Determine the root directory of the code base.
 script_dir = File.expand_path(File.dirname(__FILE__))
@@ -55,15 +59,14 @@ end
 require_relative File.join(root_dir, 'lib', 'fulcrum')
 require_relative File.join(root_dir, 'lib', 'services')
 
-# Create the default action object.
-case task
-when "embed_resources"
-  default_action_str = "embed"
-when "link_resources"
-  default_action_str = "link"
-else
-  default_action_str = task
-end
+abort("Error: invalid default keywords action #{options.keywords_default_action}.") \
+      unless UMPTG::Fulcrum::EPUBProcessor.DEFAULT_ACTIONS[:keywords].find {|t| t == options.default_actions[:keywords] }
+abort("Error: invalid default resources action #{options.resources_default_action}.") \
+      unless UMPTG::Fulcrum::EPUBProcessor.DEFAULT_ACTIONS[:resources].find {|t| t == options.default_actions[:resources] }
+puts "Processing keywords #{options.default_actions[:keywords].to_s}" \
+      unless options.default_actions[:keywords] == :none
+puts "Processing resources #{options.default_actions[:resources].to_s}" \
+      unless options.default_actions[:resources] == :none
 
 options.vendor = 'default' if options.vendor.nil? or options.vendor.empty?
 
@@ -152,45 +155,37 @@ monograph_id_list.each do |monograph_id|
   end
   log_fp.puts "#{epub_file_name} found in manifest for id #{monograph_id}"
 
-  if task == "link_keywords"
-    processed_epub = UMPTG::Fulcrum::Keywords::EpubKeywordProcessor.process(
-          epub_file: epub_file,
-          noid: monograph_noid,
-          log: log_fp
-        )
-  else
-    # Determine if the resources directory contains any files.
-    resource_file_list = Dir.glob(File.join(resources_dir, "*"))
-    if resource_file_list.count == 0
-      log_fp.puts "Error: #{File.basename(resources_dir)} contains no resources."
-      next
-    end
-    log_fp.puts "Resources directory exists containing #{resource_file_list.count} files."
-
-    # Determine if the resource map file exists.
-    resource_map_file = File.join(process_dir, "resource_map.xml")
-    if !File.exists?(resource_map_file)
-      log_fp.puts "Error: resource map file #{File.basename(resource_map_file)} must exist."
-      next
-    end
-
-    # Provide the directory path for adding the stylesheet link.
-    fulcrum_css_name = 'fulcrum_default.css'
-    fulcrum_css_file = File.join(root_dir, 'lib', 'css', fulcrum_css_name)
-
-    # Create a new EPUB with the resource references detailed
-    # in the resource map processed.
-    processed_epub = UMPTG::Fulcrum::EPUBProcessor.process(
-          epub_file: epub_file,
-          default_action_str: default_action_str,
-          resource_metadata: manifest,
-          resource_map_file: resource_map_file,
-          fulcrum_css_file: fulcrum_css_file,
-          vendor: options.vendor,
-          monograph_noid: monograph_noid,
-          log: log_fp
-        )
+  # Determine if the resources directory contains any files.
+  resource_file_list = Dir.glob(File.join(resources_dir, "*"))
+  if resource_file_list.count == 0
+    log_fp.puts "Error: #{File.basename(resources_dir)} contains no resources."
+    next
   end
+  log_fp.puts "Resources directory exists containing #{resource_file_list.count} files."
+
+  # Determine if the resource map file exists.
+  resource_map_file = File.join(process_dir, "resource_map.xml")
+  if !File.exists?(resource_map_file)
+    log_fp.puts "Error: resource map file #{File.basename(resource_map_file)} must exist."
+    next
+  end
+
+  # Provide the directory path for adding the stylesheet link.
+  fulcrum_css_name = 'fulcrum_default.css'
+  fulcrum_css_file = File.join(root_dir, 'lib', 'css', fulcrum_css_name)
+
+  # Create a new EPUB with the resource references detailed
+  # in the resource map processed.
+  processed_epub = UMPTG::Fulcrum::EPUBProcessor.process(
+        epub_file: epub_file,
+        default_actions: options.default_actions,
+        resource_metadata: manifest,
+        resource_map_file: resource_map_file,
+        fulcrum_css_file: fulcrum_css_file,
+        vendor: options.vendor,
+        monograph_noid: monograph_noid,
+        log: log_fp
+      )
 
   # Remove the old one if it exists.
   processed_epub_file = File.join(process_dir, File.basename(epub_file))

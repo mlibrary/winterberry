@@ -4,6 +4,12 @@ module UMPTG::Fulcrum
 
   # Class processes the resources found within an EPUB.
   class EPUBProcessor
+
+    @@DEFAULT_ACTIONS = {
+            keywords:  [:default, :disable, :link, :none],
+            resources: [:default, :disable, :embed, :link, :none, :remove]
+          }
+
     def self.process(args = {})
       # EPUB parameter processing
       case
@@ -19,25 +25,32 @@ module UMPTG::Fulcrum
       end
 
       # Processing parameters:
-      #   Default resource action, embed|link
-      #   Monograph resource metadata
-      #   Monograph resource reference to fileset mapping
-      #   CSS file for styling resources with Fulcrum reader
-      #   Vendor that delivered the EPUB, to aid in processing
-      #     the references.
-      default_action_str = args[:default_action_str]
+      #   :default_actions      Map specifying default processing actions
+      #                         :keywords  :disable|:link|:none
+      #                         :resources :disable|:embed|:none
+      #   :resource_metadata    Monograph resource metadata
+      #   :resource_map_file    Monograph resource reference=>fileset mapping
+      #   :fulcrum_css_file     CSS file for styling resources with Fulcrum reader
+      #   :vendor               Vendor that delivered the EPUB, to aid in processing
+      #                         the references.
+      default_actions = args[:default_actions]
       resource_metadata = args[:resource_metadata]
       resource_map_file = args[:resource_map_file]
       fulcrum_css_file = args[:fulcrum_css_file]
       vendor = args[:vendor]
-      monograph_noid = args[:monograph_noid]
       log = args[:log]
+
+      # If processing keywords, need monograph NOID
+      # for constructing URLs.
+      monograph_noid = args[:monograph_noid]
+      raise "Error: missing keywords processing needs monograph NOID." \
+          if default_actions[:keywords] == :link and monograph_noid.nil?
 
       # Construct the resource reference to fileset mapping
       log.puts "Using resource map file #{File.basename(resource_map_file)}"
       resource_map = ResourceMap::Map.new(
             :xml_path => resource_map_file,
-            :default_action => default_action_str
+            :default_action => default_actions[:resources]
           )
 
       # Save the resource actions file within a new epub structure
@@ -56,28 +69,30 @@ module UMPTG::Fulcrum
         reference_selector = Resources::SpecReferenceSelector.new
       end
 
-      # Instantiate the class that will process each resource reference.
-      resource_processor = Resources::ResourceProcessor.new(
-                  resource_map: resource_map,
-                  resource_metadata: resource_metadata,
-                  default_action_str: default_action_str,
-                  selector: reference_selector
-                  )
+      processors = {}
+      unless default_actions[:resources].nil? or default_actions[:resources] == :disable
+        # Instantiate the class that will process each resource reference.
+        resource_processor = Resources::ResourceProcessor.new(
+                    resource_map: resource_map,
+                    resource_metadata: resource_metadata,
+                    :default_action => default_actions[:resources],
+                    selector: reference_selector
+                    )
+        processors[:resources] = resource_processor
+      end
 
-      # Instantiate the class that will process each keyword reference.
-      keyword_processor = Keywords::KeywordProcessor.new(
-                  monograph_noid: monograph_noid,
-                  log: log
-                  )
+      unless default_actions[:keywords].nil? or default_actions[:keywords] == :disable
+        # Instantiate the class that will process each keyword reference.
+        keyword_processor = Keywords::KeywordProcessor.new(
+                    monograph_noid: monograph_noid,
+                    log: log
+                    )
+        processors[:keywords] = keyword_processor
+      end
 
       # Process the epub. Returned is a hash table where each
       # item key is an EPUB entry name and the item value is
       # a list of processing actions.
-      processors = {
-              keywords: keyword_processor,
-              resources: resource_processor
-            }
-
       action_map = UMPTG::EPUB::Processor.process(
             epub: epub,
             entry_processors: processors,
@@ -122,7 +137,7 @@ module UMPTG::Fulcrum
             # If resources were embedded, then we need to set the
             # remote-resource property in the OPF file.
             has_remote_resources = action_list.index { |action|
-                        action.status == UMPTG::Action.COMPLETED and action.reference_action_def.action_str == "embed"
+                        action.status == UMPTG::Action.COMPLETED and action.reference_action_def.action_str == :embed
             }
             if has_remote_resources
               remote_resources_list << entry_name
@@ -212,6 +227,10 @@ module UMPTG::Fulcrum
 
       # Return the possibly modified EPUB
       return epub
+    end
+
+    def self.DEFAULT_ACTIONS
+      return @@DEFAULT_ACTIONS
     end
   end
 end

@@ -4,14 +4,14 @@ module UMPTG::Fulcrum::Resources
   class ResourceProcessor < UMPTG::EPUB::EntryProcessor
 
     # Processing parameters:
-    #   :default_action_str     Default resource action, embed|link
+    #   :default_action         Default resource action, embed|link|none
     #   :resource_metadata      Monograph resource metadata
     #   :resource_map           Resource reference to fileset mapping
     #   :selector               Class for selecting resource references
     def initialize(args = {})
       super(args)
 
-      @default_action_str = @properties[:default_action_str]
+      @default_action = @properties[:default_action]
       @resource_metadata = @properties[:resource_metadata]
       @resource_map = @properties[:resource_map]
       @selector = @properties[:selector]
@@ -114,25 +114,25 @@ module UMPTG::Fulcrum::Resources
           args[:reference_action_def] = reference_action_def
 
           case reference_action_def.action_str
-          when "embed"
+          when :embed
             case reference_action_def.resource_type
             when 'interactive map'
               reference_action = EmbedMapAction.new(args)
             else
               reference_action = EmbedElementAction.new(args)
             end
-          when "link"
+          when :link
             reference_action = LinkElementAction.new(args)
-          when "remove"
+          when :remove
             reference_action = RemoveElementAction.new(
                                 reference_action_def: reference_action_def,
                                 reference_container: reference_container,
                                 reference_node: node
                               )
-          when "none"
+          when :none
             reference_action = NoneAction.new(args)
           else
-            @log.puts "Warning: invalid element action #{reference_action.to_s}"
+            @log.puts "Warning: invalid element action #{reference_action_def.action_str}"
             next
           end
           reference_action_list << reference_action
@@ -191,11 +191,11 @@ module UMPTG::Fulcrum::Resources
           args[:reference_action_def] = reference_action_def
 
           case reference_action_def.action_str
-          when "embed"
+          when :embed
             reference_action = EmbedMarkerAction.new(args)
-          when "link"
+          when :link
             reference_action = LinkMarkerAction.new(args)
-          when "none"
+          when :none
             reference_action = NoneAction.new(args)
           else
             @log.puts "Warning: invalid marker action #{reference_action_def.action_str}"
@@ -247,7 +247,7 @@ module UMPTG::Fulcrum::Resources
             @log.puts "Reference #{File.basename(reference_name)} mapped to resource #{resource_name}"
           end
 
-          map_action.type = @default_action_str if map_action.type == "default"
+          map_action.type = @resource_map.default_action if map_action.type == :default
           reference_action_def = ReferenceActionDef.new(
                       resource_map_action: map_action,
                       resource_metadata: fileset_row
