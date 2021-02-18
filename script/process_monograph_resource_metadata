@@ -64,13 +64,19 @@ script_dir = File.expand_path(File.dirname(__FILE__))
 root_dir = File.dirname(script_dir)
 
 require 'fileutils'
+require 'logger'
 
 require_relative File.join(root_dir, "lib", "csvfile")
 require_relative File.join(root_dir, "lib", "fulcrum")
 
-abort("Error: invalid default resources action #{options.resources_default_action}.") \
+script_logger = Logger.new(STDOUT)
+script_logger.formatter = proc do |severity, datetime, progname, msg|
+  "#{severity}: #{msg}\n"
+end
+
+script_logger.fatal("Error: invalid default resources action #{options.resources_default_action}.") \
       unless [:embed,:link,:none,:remove].find {|t| t == options.default_actions[:resources] }
-puts "Processing resources #{options.default_actions[:resources].to_s}"
+script_logger.info("Processing resources #{options.default_actions[:resources].to_s}")
 
 #blank_row_file_name = "***row left intentionally blank***"
 blank_row_file_name = UMPTG::Fulcrum::Manifest.BLANK_ROW_FILE_NAME
@@ -81,6 +87,7 @@ options.vendor = 'default' if options.vendor.nil? or options.vendor.empty?
 processors = UMPTG::Fulcrum::Metadata.vendor_processor(options.vendor.downcase)
 
 # Process all monograph directories specified.
+monograph_loggers = {}
 monograph_id_list.each do |monograph_id|
   # Determine the monograph directory
   monograph_dir_list = Dir.glob(File.join(options.publisher_dir, monograph_id + "*"))
@@ -89,12 +96,12 @@ monograph_id_list.each do |monograph_id|
     dlist << d if File.directory?(d)
   end
   if dlist.empty?
-    puts "Error: the monograph directory for ID #{monograph_id} was not found."
+    script_logger.error("Error: the monograph directory for ID #{monograph_id} was not found.")
     next
   end
-  puts "Warning: found multiple monograph directories for ID #{monograph_id}." if dlist.count > 1
+  script_logger.warn("Found multiple monograph directories for ID #{monograph_id}.") if dlist.count > 1
   monograph_dir = dlist.first
-  puts "INFO: using monograph directory #{File.basename(monograph_dir)} for ID #{monograph_id}"
+  script_logger.info("Using monograph directory #{File.basename(monograph_dir)} for ID #{monograph_id}")
 
   # Find the monograph processing directory and insure that it exists.
   processing_dir = File.join(monograph_dir, "resource_processing")
@@ -102,27 +109,31 @@ monograph_id_list.each do |monograph_id|
 
   # Log the processing into a file for this monograph.
   monograph_log_file = File.join(processing_dir, File.basename(__FILE__) + ".log")
-  log_fp = File.open(monograph_log_file, "w")
-
-  log_fp.puts "*** Processing Monograph directory #{File.basename(monograph_dir)} ***"
+  monograph_log = File.open(monograph_log_file, File::WRONLY | File::TRUNC | File::CREAT)
+  monograph_loggers[monograph_id] = Logger.new(monograph_log)
+  monograph_loggers[monograph_id].formatter = proc do |severity, datetime, progname, msg|
+    "#{severity}: #{msg}\n"
+  end
+  monograph_loggers[monograph_id].info("*" * 10 + " #{monograph_id} " + "*" * 10)
+  monograph_loggers[monograph_id].info("*** Processing Monograph directory #{File.basename(monograph_dir)} ***")
 
   # Find the monograph resources directory.
   resources_dir = File.join(monograph_dir, "resources")
   if !File.directory?(resources_dir)
-    log_fp.puts "Error: no resources directory found for monograph #{monograph_dir}."
+    monograph_loggers[monograph_id].error("No resources directory found for monograph #{monograph_dir}.")
     next
   end
 
   # Find the EPUB.
   epub_file_list = Dir.glob(File.join(monograph_dir, "*.epub"))
   if epub_file_list.count == 0
-    log_fp.puts "Error: no EPUB found for monograph #{monograph_dir}."
+    monograph_loggers[monograph_id].error("No EPUB found for monograph #{monograph_dir}.")
     next
   end
   epub_file = epub_file_list.first
-  log_fp.puts "Warning: multiple EPUBs for monograph #{monograph_dir}. Using #{File.basename(epub_file)}." \
+  monograph_loggers[monograph_id].warn("Multiple EPUBs for monograph #{monograph_dir}. Using #{File.basename(epub_file)}.") \
         if epub_file_list.count > 1
-  log_fp.puts "Using EPUB #{File.basename(epub_file)}." if epub_file_list.count == 1
+  monograph_loggers[monograph_id].info("Using EPUB #{File.basename(epub_file)}.") if epub_file_list.count == 1
 
   # Find the monograph processing directory.
   processing_dir = File.join(monograph_dir, "resource_processing")
@@ -132,9 +143,8 @@ monograph_id_list.each do |monograph_id|
   resource_map_file = File.join(processing_dir, "resource_map.xml")
   resource_map_exists = File.exists?(resource_map_file) && use_map
 
-  if resource_map_exists
-    log_fp.puts "INFO: using existing resource map file #{File.basename(resource_map_file)}"
-  end
+  monograph_loggers[monograph_id].info("Using existing resource map file #{File.basename(resource_map_file)}") \
+      if resource_map_exists
 
   if update_fmsl or !resource_map_exists
     # Either updating the FMSL or the resource map file
@@ -155,7 +165,7 @@ monograph_id_list.each do |monograph_id|
     if resource_map_exists
       resource_map.load(:xml_path => resource_map_file)
     else
-      log_fp.puts "INFO: generating resource map file #{File.basename(resource_map_file)}."
+      monograph_loggers[monograph_id].info("Generating resource map file #{File.basename(resource_map_file)}.")
 
       # Set the default action
       resource_map.default_action = options.default_actions[:resources]
@@ -178,9 +188,9 @@ monograph_id_list.each do |monograph_id|
 
             resource = resource_map.reference_resource(reference_name)
             if resource.nil?
-              log_fp.puts "Warning: #{object.name}: no resource found for reference \"#{reference_name}\"."
+              monograph_loggers[monograph_id].warn("#{object.name}: no resource found for reference \"#{reference_name}\".")
             else
-              log_fp.puts "INFO:    #{object.name}: mapping reference \"#{reference_name}\" to resource \"#{resource.name}\"."
+              monograph_loggers[monograph_id].info("#{object.name}: mapping reference \"#{reference_name}\" to resource \"#{resource.name}\".")
               node_map["caption"] = node_map["caption"].text unless node_map["caption"].nil?
               resource.resource_properties = node_map
             end
@@ -204,18 +214,18 @@ monograph_id_list.each do |monograph_id|
       # Find the monograph source FMSL.
       fmsl_file_list = Dir.glob(File.join(resources_dir, "*.csv"))
       if fmsl_file_list.count == 0
-        log_fp.puts "Error: no FMSL found for monograph #{monograph_dir}."
+        monograph_loggers[monograph_id].error("No FMSL found for monograph #{monograph_dir}.")
         next
       end
       fmsl_file = fmsl_file_list.first
-      log_fp.puts "Warning: multiple FMSLs for monograph #{monograph_dir}. Using #{File.basename(fmsl_file)}." \
+      monograph_loggers[monograph_id].warn("Multiple FMSLs for monograph #{monograph_dir}. Using #{File.basename(fmsl_file)}.") \
             if fmsl_file_list.count > 1
-      log_fp.puts "Using FMSL #{File.basename(fmsl_file)}." if fmsl_file_list.count == 1
+      monograph_loggers[monograph_id].info("Using FMSL #{File.basename(fmsl_file)}.") if fmsl_file_list.count == 1
 
       # Read the monograph source FMSL.
       fmsl_csv = CSVFile.read(:csv_path => fmsl_file)
       if fmsl_csv.nil?
-        log_fp.puts "Error: reading FMSL #{File.basename(fmsl_file)}."
+        monograph_loggers[monograph_id].error("Reading FMSL #{File.basename(fmsl_file)}.")
         next
       end
 
@@ -224,14 +234,14 @@ monograph_id_list.each do |monograph_id|
         resource_name = fmsl_row['File Name']
         if resource_name.nil? or resource_name.empty?
           ext_resource_url = fmsl_row['External Resource URL']
-          log_fp.puts "Error: Empty resource name and external resource URL" \
+          monograph_loggers[monograph_id].error("Empty resource name and external resource URL") \
               if ext_resource_url.nil? or ext_resource_url.empty?
           next
         end
 
         resource_row = resource_map.resource_properties(resource_name)
         if resource_row.nil?
-          log_fp.puts "Warning: No alt text/caption found for resource \"#{resource_name}\"."
+          monograph_loggers[monograph_id].warn("No alt text/caption found for resource \"#{resource_name}\".")
           next
         end
 
@@ -240,24 +250,24 @@ monograph_id_list.each do |monograph_id|
         epub_alt = resource_row["alt"]
         epub_caption = resource_row["caption"]
 
-        log_fp.puts "INFO: FMSL alt text matches EPUB alt text for resource \"#{resource_name}\"" \
+        monograph_loggers[monograph_id].info("FMSL alt text matches EPUB alt text for resource \"#{resource_name}\"") \
             unless alt.nil? or alt != epub_alt
-        log_fp.puts "Warning: no alt text found within EPUB for resource \"#{resource_name}\"." \
+        monograph_loggers[monograph_id].warn("No alt text found within EPUB for resource \"#{resource_name}\".") \
             if epub_alt.nil? or epub_alt.empty?
-        log_fp.puts "Warning: overwriting FMSL alt text with EPUB alt text for resource \"#{resource_name}\"" \
+        monograph_loggers[monograph_id].warn("Overwriting FMSL alt text with EPUB alt text for resource \"#{resource_name}\"") \
             if !(alt.nil? or alt.empty?) and !(epub_alt.nil? or epub_alt.empty?) and alt != epub_alt
             #unless (alt.nil? or alt.empty?) and !(epub_alt.nil? or epub_alt.empty?)
-        log_fp.puts "INFO: updating FMSL alt text with EPUB alt text for resource \"#{resource_name}\"" \
+        monograph_loggers[monograph_id].info("Updating FMSL alt text with EPUB alt text for resource \"#{resource_name}\"") \
             if (alt.nil? or alt.empty?) and !(epub_alt.nil? or epub_alt.empty?)
         fmsl_row["Alternative Text"] = epub_alt unless epub_alt.nil? or epub_alt.empty?
 
-        log_fp.puts "INFO: FMSL caption matches EPUB caption for resource \"#{resource_name}\"" \
+        monograph_loggers[monograph_id].info("FMSL caption matches EPUB caption for resource \"#{resource_name}\"") \
             unless caption.nil? or caption != epub_caption
-        log_fp.puts "Warning: no caption found within EPUB for resource \"#{resource_name}\"." \
+        monograph_loggers[monograph_id].warn("No caption found within EPUB for resource \"#{resource_name}\".") \
             if epub_caption.nil? or epub_caption.empty?
-        log_fp.puts "Warning: overwriting FMSL caption with EPUB caption for resource \"#{resource_name}\"" \
+        monograph_loggers[monograph_id].warn("Overwriting FMSL caption with EPUB caption for resource \"#{resource_name}\"") \
             if !(caption.nil? or caption.empty?) and !(epub_caption.nil? or epub_caption.empty?) and caption != epub_caption
-        log_fp.puts "INFO: updating FMSL caption with EPUB caption for resource \"#{resource_name}\"" \
+        monograph_loggers[monograph_id].info("Updating FMSL caption with EPUB caption for resource \"#{resource_name}\"") \
             if (caption.nil? or caption.empty?) and !(epub_caption.nil? or epub_caption.empty?)
         fmsl_row["Caption"] = epub_caption unless epub_caption.nil? or epub_caption.empty?
       end
@@ -284,7 +294,7 @@ monograph_id_list.each do |monograph_id|
           # Make sure the blank row exists, otherwise
           # first resource will not be loaded by
           # the importer.
-          log_fp.puts "INFO: no blank row found. Inserting one."
+          monograph_loggers[monograph_id].info("No blank row found. Inserting one.")
           new_row['File Name'] = blank_row_file_name
           csv << new_row
         end
@@ -299,5 +309,8 @@ monograph_id_list.each do |monograph_id|
       end
     end
   end
-  log_fp.close
+end
+
+monograph_loggers.each do |monograph_id, logger|
+  logger.close
 end

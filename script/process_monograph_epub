@@ -62,6 +62,9 @@ require_relative File.join(root_dir, 'lib', 'fulcrum')
 require_relative File.join(root_dir, 'lib', 'services')
 
 script_logger = Logger.new(STDOUT)
+script_logger.formatter = proc do |severity, datetime, progname, msg|
+  "#{severity}: #{msg}\n"
+end
 
 script_logger.fatal("Error: invalid default keywords action #{options.keywords_default_action}.") \
       unless UMPTG::Fulcrum::EPUBProcessor.DEFAULT_ACTIONS[:keywords].find {|t| t == options.default_actions[:keywords] }
@@ -142,6 +145,9 @@ monograph_id_list.each do |monograph_id|
   monograph_log_file = File.join(process_dir, File.basename(__FILE__) + ".log")
   monograph_log = File.open(monograph_log_file, File::WRONLY | File::TRUNC | File::CREAT)
   monograph_loggers[monograph_id] = Logger.new(monograph_log)
+  monograph_loggers[monograph_id].formatter = proc do |severity, datetime, progname, msg|
+    "#{severity}: #{msg}\n"
+  end
 
   monograph_loggers[monograph_id].info("*" * 10 + " #{monograph_id} " + "*" * 10)
 
