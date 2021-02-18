@@ -46,7 +46,7 @@ module UMPTG::Fulcrum::Keywords
 
       # Process all the Actions for this XML content.
       alist.each do |action|
-        action.process()
+        #action.process()
       end
 
       # Return the list of Actions which contains the status

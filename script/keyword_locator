@@ -1,0 +1,184 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Script uses a monograph id to locate the monograph
+# EPUB on the shared drive and search that EPUB for
+# keywords. It returns the list of keywords and the
+# number of occurrences.
+
+require 'optparse'
+require 'ostruct'
+require 'os'
+
+# Process the script parameters.
+options = OpenStruct.new
+#options.publisher_dir = Dir.pwd
+options.publisher_dir = OS.windows? ? "s:/Information\ Management/Fulcrum/UMP" : "/mnt/umptmm/UMP"
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-p <publisher_dir>] <monograph_id> [<monograph_id>...]"
+  opts.on('-map', '--map', 'Overwrite existing resource map file.') do |da|
+    options.use_map = false
+  end
+  opts.on('-p', '--publisher_directory [DIRECTORY]', 'Publisher site directory') do |publisher_dir|
+    options.publisher_dir = publisher_dir
+  end
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    puts opts
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  puts option_parser.help
+  return
+end
+
+# Process the command line parameters.
+monograph_id_list = ARGV
+
+require 'logger'
+
+script_logger = Logger.new(STDOUT)
+script_logger.formatter = proc do |severity, datetime, progname, msg|
+  "#{severity}: #{msg}\n"
+end
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "fulcrum")
+require_relative File.join(root_dir, 'lib', 'services')
+
+# Instantiate the class that will process each keyword reference.
+keyword_processor = UMPTG::Fulcrum::Keywords::KeywordProcessor.new(
+            monograph_noid: nil,
+            logger: script_logger
+            )
+processors = { keywords: keyword_processor }
+
+# Create the serivce for retrieving the NOID manifest.
+service = UMPTG::Services::Heliotrope.new(
+                :fulcrum_host => options.fulcrum_host
+              )
+
+monograph_id_list.each do |monograph_id|
+  # Determine the monograph directory
+  monograph_dir_list = Dir.glob(File.join(options.publisher_dir, monograph_id + "*"))
+  dlist = []
+  monograph_dir_list.each do |d|
+    dlist << d if File.directory?(d)
+  end
+  if dlist.empty?
+    script_logger.error("Error: the monograph directory for ID #{monograph_id} was not found.")
+    next
+  end
+  script_logger.warn("Found multiple monograph directories for ID #{monograph_id}.") if dlist.count > 1
+  monograph_dir = dlist.first
+  script_logger.info("Using monograph directory #{File.basename(monograph_dir)} for ID #{monograph_id}")
+
+  # Determine the monograph EPUB
+  epub_file_list = Dir.glob(File.join(monograph_dir, "*.epub"))
+  dlist = []
+  epub_file_list.each do |d|
+    dlist << d if File.file?(d)
+  end
+  if dlist.empty?
+    script_logger.error("Error: the monograph EPUB for ID #{monograph_id} was not found.")
+    next
+  end
+  script_logger.warn("Found multiple monograph EPUBs for ID #{monograph_id}.") if dlist.count > 1
+  epub_file = dlist.first
+  script_logger.info("Using monograph EPUB #{File.basename(epub_file)} for ID #{monograph_id}")
+
+  # Process the epub. Returned is a hash table where each
+  # item key is an EPUB entry name and the item value is
+  # a list of processing actions.
+  action_map = UMPTG::EPUB::Processor.process(
+        epub_file: epub_file,
+        entry_processors: processors,
+        pass_xml_doc: true
+      )
+
+  epub_keywords = {}
+  entry_keywords = {}
+  action_map.each do |entry_name,proc_map|
+    entry_keywords[entry_name] = {}
+
+    action_list = proc_map[:keywords]
+    action_list.each do |action|
+      kw = action.keyword_container.text
+      next if kw.nil?
+      kw = kw.strip.downcase
+      entry_keywords[entry_name][kw] = 0 unless entry_keywords[entry_name].key?(kw)
+      entry_keywords[entry_name][kw] += 1
+      epub_keywords[kw] = 0 unless epub_keywords.key?(kw)
+      epub_keywords[kw] += 1
+    end
+  end
+
+  manifest_file = File.join(monograph_dir, "manifest.csv")
+  csv_body = File.read(manifest_file)
+=begin
+  monograph_noid = service.monograph_noid(identifier: monograph_id)
+  if monograph_noid.nil? or monograph_noid.empty?
+    script_logger.error("Error: no NOID found for monograph ID #{monograph_id}")
+    next
+  end
+
+  # Use the monograph NOID to retrieve the monograph manifest from Fulcrum.
+  csv_body = service.monograph_export(noid: monograph_noid)
+  if csv_body.nil? or csv_body.empty?
+    script_logger.error("Error: no manifest found for id #{monograph_id}")
+    next
+  end
+=end
+
+  manifest = UMPTG::Fulcrum::Manifest::Document.new(
+                :csv_body => csv_body
+              )
+
+  found = {}
+  not_found = {}
+  manifest_keywords = {}
+  manifest.csv.each do |row|
+    mkeywords = row["keywords"]
+    next if mkeywords.nil?
+    mkeywords.split(';').each do |kw|
+      kw = kw.strip.downcase
+      manifest_keywords[kw] = 0 unless manifest_keywords.key?(kw)
+      manifest_keywords[kw] += 1
+      found[kw] = 1 if epub_keywords.key?(kw)
+    end
+  end
+  epub_keywords.each do |kw,cnt|
+    not_found[kw] = 1 unless found.key?(kw)
+  end
+
+  script_logger.info("MANI:#{manifest_keywords.count}")
+  script_logger.info("EPUB:#{epub_keywords.count}")
+  script_logger.info("Matches:#{found.count}")
+  manifest_keywords.keys.sort.each do |k|
+    #script_logger.info(k)
+  end
+  script_logger.info("Not Found:#{not_found.count}")
+  not_found.keys.sort.each do |k|
+    #script_logger.info(k)
+    #puts k
+  end
+  script_logger.info("Found:#{found.count}")
+  found.keys.sort.each do |k|
+    #script_logger.info(k)
+    #puts k
+  end
+  entry_keywords.each do |entry_name,keywords|
+    script_logger.info(entry_name)
+    keywords.keys.sort.each do |keyword|
+      #script_logger.info("#{keyword}:#{cnt}")
+      puts keyword if found.key?(keyword)
+    end
+  end
+end
+
+script_logger.close
+
