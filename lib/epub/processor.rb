@@ -1,21 +1,23 @@
 module UMPTG::EPUB
   class Processor
     def self.process(args = {})
+      logger = args[:logger]
+
       case
       when args.key?(:epub_file)
         epub_file = File.expand_path(args[:epub_file])
-        raise "Error: invalid EPUB file." unless File.exists?(epub_file)
+        logger.fatal("Error: invalid EPUB file.") unless File.exists?(epub_file)
         epub = UMPTG::EPUB::Archive.new(:epub_file => epub_file) if epub.nil?
       when args.key?(:epub)
         epub = args[:epub]
-        raise "Error: invalid EPUB." if epub.nil?
+        logger.fatal("Error: invalid EPUB.") if epub.nil?
       else
-        raise "Error: no :epub_file or :epub parameter specified."
+        logger.fatal("Error: no :epub_file or :epub parameter specified.")
       end
 
-      raise "Error: missing :entry_processors parameter." unless args.key?(:entry_processors)
+      logger.fatal("Error: missing :entry_processors parameter.") unless args.key?(:entry_processors)
       entry_processors = args[:entry_processors]
-      raise "Error: no entry_processors specified." if entry_processors.nil? or entry_processors.empty?
+      logger.fatal("Error: no entry_processors specified.") if entry_processors.nil? or entry_processors.empty?
 
       # Parameter indicates whether content should be provided as
       # string or as a XML doc.
@@ -38,6 +40,7 @@ module UMPTG::EPUB
           entry_proc_actions = processor.action_list(
                       name: entry.name,
                       content: content,
+                      logger: logger,
                       xml_doc: xml_doc
                       )
           epub_actions[entry.name][key] = entry_proc_actions

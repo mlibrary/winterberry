@@ -3,11 +3,16 @@ module UMPTG::Fulcrum::Keywords
   require 'nokogiri'
 
   class KeywordProcessor < UMPTG::EPUB::EntryProcessor
+
+    # Parameters:
+    #     :monograph_noid         Monograph NOID used for formatting URLs
+    #     :logger                 Log messages
     def initialize(args = {})
       super(args)
 
       @monograph_noid = @properties[:monograph_noid]
       @selector = SpecKeywordSelector.new
+      @logger = @properties[:logger]
     end
 
     # Method generates and processes a list of actions

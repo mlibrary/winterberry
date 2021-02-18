@@ -8,6 +8,7 @@ module UMPTG::Fulcrum::Resources
     #   :resource_metadata      Monograph resource metadata
     #   :resource_map           Resource reference to fileset mapping
     #   :selector               Class for selecting resource references
+    #   :logger                 Log messages
     def initialize(args = {})
       super(args)
 
@@ -15,9 +16,9 @@ module UMPTG::Fulcrum::Resources
       @resource_metadata = @properties[:resource_metadata]
       @resource_map = @properties[:resource_map]
       @selector = @properties[:selector]
+      @logger = @properties[:logger]
 
       @reference_action_defs = nil
-      @log = STDOUT
     end
 
     # Method generates and processes a list of actions
@@ -100,7 +101,7 @@ module UMPTG::Fulcrum::Resources
         spath = src_attr.value.strip
         reference_action_def_list = @reference_action_defs[spath]
         if reference_action_def_list.nil?
-          @log.puts "Warning: reference #{spath} has no action definition."
+          @logger.warn("Reference #{spath} has no action definition.")
           next
         end
 
@@ -132,7 +133,7 @@ module UMPTG::Fulcrum::Resources
           when :none
             reference_action = NoneAction.new(args)
           else
-            @log.puts "Warning: invalid element action #{reference_action_def.action_str}"
+            @logger.warn("Invalid element action #{reference_action_def.action_str}")
             next
           end
           reference_action_list << reference_action
@@ -177,7 +178,7 @@ module UMPTG::Fulcrum::Resources
         # Determine the assigned action for this reference
         reference_action_def_list = @reference_action_defs[path]
         if reference_action_def_list.nil?
-          @log.puts "Warning: marker #{path} has no action definition."
+          @logger.warn("Marker #{path} has no action definition.")
           next
         end
 
@@ -198,7 +199,7 @@ module UMPTG::Fulcrum::Resources
           when :none
             reference_action = NoneAction.new(args)
           else
-            @log.puts "Warning: invalid marker action #{reference_action_def.action_str}"
+            @logger.warn("Invalid marker action #{reference_action_def.action_str}")
             reference_action = nil
           end
 
@@ -219,7 +220,7 @@ module UMPTG::Fulcrum::Resources
           reference_name = map_action.reference.name
           resource_name = map_action.resource.name
           if resource_name == nil or resource_name.strip.empty?
-            @log.puts "Warning: no resource  mapping found for reference #{File.basename(reference_name)}"
+            @logger.warn("No resource  mapping found for reference #{File.basename(reference_name)}")
             next
           end
 
@@ -233,7 +234,7 @@ module UMPTG::Fulcrum::Resources
               d.reference_name == reference_name and d.resource_name == resource_name
             }
             unless dlist.nil?
-              @log.puts "Warning: multiple action definitions #{reference_name}/#{resource_name}. Using first instance."
+              @logger.warn("Multiple action definitions #{reference_name}/#{resource_name}. Using first instance.")
               next
             end
           end
@@ -242,9 +243,9 @@ module UMPTG::Fulcrum::Resources
           # NOID specified, then this is an invalid row.
           fileset_row = @resource_metadata.fileset(resource_name)
           if fileset_row['noid'].empty?
-            @log.puts "Error: no fileset row for resource #{resource_name}"
+            @logger.error("No fileset row for resource #{resource_name}")
           else
-            @log.puts "Reference #{File.basename(reference_name)} mapped to resource #{resource_name}"
+            @logger.info("Reference #{File.basename(reference_name)} mapped to resource #{resource_name}")
           end
 
           map_action.type = @resource_map.default_action if map_action.type == :default

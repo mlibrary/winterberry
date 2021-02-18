@@ -12,16 +12,19 @@ module UMPTG::Fulcrum
 
     def self.process(args = {})
       # EPUB parameter processing
+
+      #   :logger               Logger for messages
+      logger = args[:logger]
       case
       when args.key?(:epub)
         epub = args[:epub]
-        raise "Error: invalid EPUB." if epub.nil? or epub.class != "UMPTG::EPUB::Archive"
+        logger.fatal("Error: invalid EPUB.") if epub.nil? or epub.class != "UMPTG::EPUB::Archive"
       when args.key?(:epub_file)
         # Create the EPUB from the specified file.
         epub_file = args[:epub_file]
         epub = UMPTG::EPUB::Archive.new(epub_file: epub_file)
       else
-        raise "Error: :epub or :epub_file must be specified"
+        logger.fatal("Error: :epub or :epub_file must be specified")
       end
 
       # Processing parameters:
@@ -38,16 +41,15 @@ module UMPTG::Fulcrum
       resource_map_file = args[:resource_map_file]
       fulcrum_css_file = args[:fulcrum_css_file]
       vendor = args[:vendor]
-      log = args[:log]
 
       # If processing keywords, need monograph NOID
       # for constructing URLs.
       monograph_noid = args[:monograph_noid]
-      raise "Error: missing keywords processing needs monograph NOID." \
+      logger.fatal("Error: missing keywords processing needs monograph NOID.") \
           if default_actions[:keywords] == :link and monograph_noid.nil?
 
       # Construct the resource reference to fileset mapping
-      log.puts "Using resource map file #{File.basename(resource_map_file)}"
+      logger.info("Using resource map file #{File.basename(resource_map_file)}")
       resource_map = ResourceMap::Map.new(
             :xml_path => resource_map_file,
             :default_action => default_actions[:resources]
@@ -71,7 +73,8 @@ module UMPTG::Fulcrum
                     resource_map: resource_map,
                     resource_metadata: resource_metadata,
                     :default_action => default_actions[:resources],
-                    selector: reference_selector
+                    selector: reference_selector,
+                    logger: logger,
                     )
         processors[:resources] = resource_processor
       end
@@ -80,7 +83,7 @@ module UMPTG::Fulcrum
         # Instantiate the class that will process each keyword reference.
         keyword_processor = Keywords::KeywordProcessor.new(
                     monograph_noid: monograph_noid,
-                    log: log
+                    logger: logger
                     )
         processors[:keywords] = keyword_processor
       end
@@ -110,16 +113,21 @@ module UMPTG::Fulcrum
         # Action list for this EPUB entry. Determine if
         # at least one Action within the list completed
         # successfully.
-        log.puts entry_name
+        logger.info(entry_name)
 
         xml_doc = proc_map[:xml_doc]
         action_list = proc_map[:resources]
         unless action_list.nil?
           result = false
           action_list.each do |action|
-            log.puts action
-            unless result
-              result = action.status == UMPTG::Action.COMPLETED
+            case action.status
+            when UMPTG::Action.COMPLETED
+              logger.info(action.to_s)
+              result = true
+            when UMPTG::Action.FAILED
+              logger.error(action.to_s)
+            else
+              logger.info(action.to_s)
             end
           end
 
@@ -146,7 +154,7 @@ module UMPTG::Fulcrum
               fpath = (('..' + File::SEPARATOR) * (level-1)) + fulcrum_css_name
               UMPTG::XMLUtil.add_css(xml_doc, fpath)
             end
-            log.puts "Added CSS stylesheet \"#{fulcrum_css_name}\"."
+            logger.info("Added CSS stylesheet \"#{fulcrum_css_name}\".")
 
             # Update the entry in the EPUB. Remove old entry and
             # add the new one.
@@ -159,9 +167,14 @@ module UMPTG::Fulcrum
         unless action_list.nil?
           result = false
           action_list.each do |action|
-            log.puts action
-            unless result
-              result = action.status == UMPTG::Action.COMPLETED
+            case action.status
+            when UMPTG::Action.COMPLETED
+              logger.info(action.to_s)
+              result = true
+            when UMPTG::Action.FAILED
+              logger.error(action.to_s)
+            else
+              logger.info(action.to_s)
             end
           end
           if result and !entry_updated
@@ -178,7 +191,7 @@ module UMPTG::Fulcrum
         # Locate the <manifest>.
         manifest_node = opf_doc.xpath("//*[local-name()='manifest']")
         if manifest_node == nil
-          log.puts "No manifest node"
+          logger.warn("No manifest node")
         else
           # Add the manifest entry for the Fulcrum CSS stylesheet.
           # If another CSS stylesheet is present, add it after.
@@ -203,7 +216,7 @@ module UMPTG::Fulcrum
         end
 
         # Add remote resources to the OPF file.
-        log.puts "Adding remote resources to OPF file #{File.basename(epub.opf_name)}"
+        logger.info("Adding remote resources to OPF file #{File.basename(epub.opf_name)}")
         remote_resources_list.each do |path|
           path_basename = File.basename(path)
           node_list = opf_doc.xpath("//*[local-name()='manifest']/*[local-name()='item' and contains(@href, '#{path_basename}')]")

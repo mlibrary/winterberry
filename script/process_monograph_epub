@@ -56,16 +56,20 @@ if !File.exists?(publisher_dir)
   exit
 end
 
+require 'logger'
+
 require_relative File.join(root_dir, 'lib', 'fulcrum')
 require_relative File.join(root_dir, 'lib', 'services')
 
-abort("Error: invalid default keywords action #{options.keywords_default_action}.") \
+script_logger = Logger.new(STDOUT)
+
+script_logger.fatal("Error: invalid default keywords action #{options.keywords_default_action}.") \
       unless UMPTG::Fulcrum::EPUBProcessor.DEFAULT_ACTIONS[:keywords].find {|t| t == options.default_actions[:keywords] }
-abort("Error: invalid default resources action #{options.resources_default_action}.") \
+script_logger.fatal("Error: invalid default resources action #{options.resources_default_action}.") \
       unless UMPTG::Fulcrum::EPUBProcessor.DEFAULT_ACTIONS[:resources].find {|t| t == options.default_actions[:resources] }
-puts "Processing keywords #{options.default_actions[:keywords].to_s}" \
+script_logger.info("Processing keywords #{options.default_actions[:keywords].to_s}") \
       unless options.default_actions[:keywords] == :disable
-puts "Processing resources #{options.default_actions[:resources].to_s}" \
+script_logger.info("Processing resources #{options.default_actions[:resources].to_s}") \
       unless options.default_actions[:resources] == :disable
 
 options.vendor = 'default' if options.vendor.nil? or options.vendor.empty?
@@ -75,20 +79,21 @@ service = UMPTG::Services::Heliotrope.new(
                 :fulcrum_host => options.fulcrum_host
               )
 
+monograph_loggers = {}
 monograph_id_list.each do |monograph_id|
   # Use the monograph ID to retrieve the NOID from Fulcrum.
-  puts "*" * 10 + " #{monograph_id} " + "*" * 10
+  script_logger.info("*" * 10 + " #{monograph_id} " + "*" * 10)
 
   monograph_noid = service.monograph_noid(identifier: monograph_id)
   if monograph_noid.nil? or monograph_noid.empty?
-    puts "Error: no NOID found for monograph ID #{monograph_id}"
+    script_logger.error("Error: no NOID found for monograph ID #{monograph_id}")
     next
   end
 
   # Use the monograph NOID to retrieve the monograph manifest from Fulcrum.
   csv_body = service.monograph_export(noid: monograph_noid)
   if csv_body.nil? or csv_body.empty?
-    puts "Error: no manifest found for id #{monograph_id}"
+    script_logger.error("Error: no manifest found for id #{monograph_id}")
     next
   end
 
@@ -100,7 +105,7 @@ monograph_id_list.each do |monograph_id|
   ebook_isbn = manifest.isbn["open access"]
   ebook_isbn = manifest.isbn["ebook"] if ebook_isbn.nil?
   if ebook_isbn.nil?
-    puts "Error: no ebook ISBN found for ID #{monograph_id}."
+    script_logger.error("Error: no ebook ISBN found for ID #{monograph_id}.")
     next
   end
 
@@ -109,39 +114,41 @@ monograph_id_list.each do |monograph_id|
   # using the ISBN.
   monograph_dir_list = Dir.glob(File.join(publisher_dir, monograph_id))
   if monograph_dir_list.count == 0
-    puts "Warning: ebook source directory using id #{monograph_id} not found. Using ISBN #{ebook_isbn}."
+    script_logger.warn("Warning: ebook source directory using id #{monograph_id} not found. Using ISBN #{ebook_isbn}.")
 
     ebook_isbn = ebook_isbn.strip.gsub('-', '')
     monograph_dir_list = Dir.glob(File.join(publisher_dir, "#{ebook_isbn}_*"))
     if monograph_dir_list.count == 0
-      puts "Error: ebook source directory not found for id #{monograph_id}."
+      script_logger.error("Error: ebook source directory not found for id #{monograph_id}.")
       next
     end
   end
 
   monograph_dir = monograph_dir_list[0]
-  puts "Multiple ebook source directories found for id #{monograph_id}. Using #{monograph_dir}" \
+  script_logger.warn("Multiple ebook source directories found for id #{monograph_id}. Using #{monograph_dir}") \
         if monograph_dir_list.count > 1
-  puts "Using directory #{monograph_dir}" if monograph_dir_list.count == 1
+  script_logger.info("Using directory #{monograph_dir}") if monograph_dir_list.count == 1
 
   # Determine the resource_processing directory.
   process_dir = File.join(monograph_dir, "resource_processing")
 
   # Verify that the resource_processing directory exists.
   if !File.exists?(process_dir) or !File.directory?(process_dir)
-    puts "Error: directory #{File.basename(process_dir)} is not a valid directory."
+    script_logger.error("Error: directory #{File.basename(process_dir)} is not a valid directory.")
     next
   end
 
   # Create the log file in the resource_processing directory.
-  log_file = File.join(process_dir, File.basename(__FILE__) + ".log")
-  #log_fp = File.open(log_file, "w")
-  log_fp = STDOUT
+  monograph_log_file = File.join(process_dir, File.basename(__FILE__) + ".log")
+  monograph_log = File.open(monograph_log_file, File::WRONLY | File::TRUNC | File::CREAT)
+  monograph_loggers[monograph_id] = Logger.new(monograph_log)
+
+  monograph_loggers[monograph_id].info("*" * 10 + " #{monograph_id} " + "*" * 10)
 
   # Determine if the resources directory exists.
   resources_dir = File.join(monograph_dir, "resources")
   if !File.exists?(resources_dir) or !File.directory?(resources_dir)
-    log_fp.puts "Error: #{File.basename(resources_dir)} is not a valid directory."
+    monograph_loggers[monograph_id].error("Error: #{File.basename(resources_dir)} is not a valid directory.")
     next
   end
 
@@ -150,23 +157,23 @@ monograph_id_list.each do |monograph_id|
   epub_file_name = epub_row['file_name']
   epub_file = File.join(monograph_dir, epub_file_name)
   if !File.exist?(epub_file)
-    log_fp.puts "Error: #{epub_file_name} not found in manifest for id #{monograph_id}"
+    monograph_loggers[monograph_id].error("Error: #{epub_file_name} not found in manifest for id #{monograph_id}")
     next
   end
-  log_fp.puts "#{epub_file_name} found in manifest for id #{monograph_id}"
+  monograph_loggers[monograph_id].info("#{epub_file_name} found in manifest for id #{monograph_id}")
 
   # Determine if the resources directory contains any files.
   resource_file_list = Dir.glob(File.join(resources_dir, "*"))
   if resource_file_list.count == 0
-    log_fp.puts "Error: #{File.basename(resources_dir)} contains no resources."
+    monograph_loggers[monograph_id].error("Error: #{File.basename(resources_dir)} contains no resources.")
     next
   end
-  log_fp.puts "Resources directory exists containing #{resource_file_list.count} files."
+  monograph_loggers[monograph_id].info("Resources directory exists containing #{resource_file_list.count} files.")
 
   # Determine if the resource map file exists.
   resource_map_file = File.join(process_dir, "resource_map.xml")
   if !File.exists?(resource_map_file)
-    log_fp.puts "Error: resource map file #{File.basename(resource_map_file)} must exist."
+    monograph_loggers[monograph_id].error("Error: resource map file #{File.basename(resource_map_file)} must exist.")
     next
   end
 
@@ -184,7 +191,7 @@ monograph_id_list.each do |monograph_id|
         fulcrum_css_file: fulcrum_css_file,
         vendor: options.vendor,
         monograph_noid: monograph_noid,
-        log: log_fp
+        logger: monograph_loggers[monograph_id]
       )
 
   # Remove the old one if it exists.
@@ -193,4 +200,8 @@ monograph_id_list.each do |monograph_id|
 
   # Save the processed EPUB in the processing directory.
   processed_epub.save(epub_file: processed_epub_file)
+end
+
+monograph_loggers.each do |monograph_id, logger|
+  logger.close
 end
