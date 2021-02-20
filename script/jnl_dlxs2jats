@@ -59,7 +59,7 @@ monograph_dir_list.each do |monograph_dir|
   params = {
               "image_list" => resource_list_param
            }
-  XSLT.transform(
+  UMPTG::XSLT.transform(
           :xslpath => dlxs2jats_xsl_file,
           :srcpath => dlxs_file,
           :destpath => jats_file,
@@ -68,7 +68,7 @@ monograph_dir_list.each do |monograph_dir|
 
   if options.gen_html
     html_file = File.join(File.dirname(jats_file), File.basename(jats_file, ".*") + ".html")
-    XSLT.transform(
+    UMPTG::XSLT.transform(
             :xslpath => jats2html_xsl_file,
             :srcpath => jats_file,
             :destpath => html_file

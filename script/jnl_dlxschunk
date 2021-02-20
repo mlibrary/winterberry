@@ -45,7 +45,7 @@ dlxs_file_list.each do |dlxs_file|
   output_uri = URI(output_dir)
   params = {}
   params["output_dir"] = "file:///" + output_uri.to_s + "/"
-  XSLT.transform(
+  UMPTG::XSLT.transform(
           :xslpath => dlxchunk_xsl_file,
           :srcpath => dlxs_file,
           :parameters => params
