@@ -27,7 +27,7 @@ options.default_actions = {
         resources: :embed
         }
 option_parser = OptionParser.new do |opts|
-  opts.banner = "Usage: #{File.basename(__FILE__)} [-map] [-nofmsl] [-p <publisher_dir>] [-v vendor] [-r embed|link|none|remove] <monograph_id> [<monograph_id>...]"
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-map] [-nofmsl] [-p <publisher_dir>] [-v apex|newgen|default] [-r embed|link|none|remove] <monograph_id> [<monograph_id>...]"
   opts.on('-map', '--map', 'Overwrite existing resource map file.') do |da|
     options.use_map = false
   end
@@ -40,7 +40,7 @@ option_parser = OptionParser.new do |opts|
   opts.on('-r', '--keywords [embed|link|none|remove]', 'Default resoorces processing action') do |action|
     options.default_actions[:resources] = action.to_sym
   end
-  opts.on('-v', '--vendor [vendor]', 'Vendor specific markup newgen|default') do |vendor|
+  opts.on('-v', '--vendor [vendor]', 'Vendor specific markup apex|ewgen|default') do |vendor|
     options.vendor = vendor
   end
   opts.on_tail('-h', '--help', 'Print this help message') do
@@ -85,6 +85,7 @@ blank_row_pattern = "^\*\*\*.* intentionally blank[ ]*\*\*\*$"
 # Initialize EPUB markup processors, figure/image and marker.
 options.vendor = 'default' if options.vendor.nil? or options.vendor.empty?
 processors = UMPTG::Fulcrum::Metadata.vendor_processor(options.vendor.downcase)
+script_logger.info("Using #{options.vendor} processor")
 
 # Process all monograph directories specified.
 monograph_loggers = {}
@@ -116,6 +117,7 @@ monograph_id_list.each do |monograph_id|
   end
   monograph_loggers[monograph_id].info("*" * 10 + " #{monograph_id} " + "*" * 10)
   monograph_loggers[monograph_id].info("*** Processing Monograph directory #{File.basename(monograph_dir)} ***")
+  monograph_loggers[monograph_id].info("Using #{options.vendor} processor")
 
   # Find the monograph resources directory.
   resources_dir = File.join(monograph_dir, "resources")

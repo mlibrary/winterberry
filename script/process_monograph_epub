@@ -16,7 +16,7 @@ options.default_actions = {
         resources: :embed
         }
 option_parser = OptionParser.new do |opts|
-  opts.banner = "Usage: #{File.basename(__FILE__)} [-f production|preview|staging] [-p <publisher_dir>] [-v vendor] [-r disable|embed|link|none] [-k disable|link|none] <monograph_id> [<monograph_id>..]"
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-f production|preview|staging] [-p <publisher_dir>] [-v apex|newgen|default] [-r disable|embed|link|none] [-k disable|link|none] <monograph_id> [<monograph_id>..]"
   opts.on('-f', '--fulcrum_host [production|preview|staging]', 'Fulcrum environment') do |fulcrum_host|
     options.fulcrum_host = fulcrum_host
   end
@@ -29,7 +29,7 @@ option_parser = OptionParser.new do |opts|
   opts.on('-r', '--keywords [disable|embed|link|none]', 'Default resoorces processing action') do |action|
     options.default_actions[:resources] = action.to_sym
   end
-  opts.on('-v', '--vendor [vendor]', 'Vendor specific markup newgen|default') do |vendor|
+  opts.on('-v', '--vendor [vendor]', 'Vendor specific markup apex|newgen|default') do |vendor|
     options.vendor = vendor
   end
   opts.on_tail('-h', '--help', 'Print this help message') do
@@ -76,6 +76,7 @@ script_logger.info("Processing resources #{options.default_actions[:resources].t
       unless options.default_actions[:resources] == :disable
 
 options.vendor = 'default' if options.vendor.nil? or options.vendor.empty?
+script_logger.info("Using #{options.vendor} processor")
 
 # Create the serivce for retrieving the NOID manifest.
 service = UMPTG::Services::Heliotrope.new(
@@ -150,6 +151,7 @@ monograph_id_list.each do |monograph_id|
   end
 
   monograph_loggers[monograph_id].info("*" * 10 + " #{monograph_id} " + "*" * 10)
+  monograph_loggers[monograph_id].info("Using #{options.vendor} processor")
 
   # Determine if the resources directory exists.
   resources_dir = File.join(monograph_dir, "resources")
