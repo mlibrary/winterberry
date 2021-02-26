@@ -94,8 +94,12 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
         </xsl:element>
     </xsl:variable>
 
+    <!--
     <xsl:variable name="abstractDiv"
                   select="/DLPSTEXTCLASS/TEXT//*[local-name()='DIV1' and ./*[local-name()='HEAD' and lower-case(string())='abstract']]"/>
+    -->
+    <xsl:variable name="abstractDiv"
+                  select="/DLPSTEXTCLASS/TEXT//*[@TYPE='prelim']"/>
 
     <xsl:template match="DLPSTEXTCLASS">
         <xsl:element name="article">
@@ -104,6 +108,7 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
             <xsl:namespace name="xsi" select="'http://www.w3.org/2001/XMLSchema-instance'"/>
 
             <xsl:attribute name="article-type" select="'research-article'"/>
+            <xsl:attribute name="dtd-version" select="'1.2'"/>
 
             <xsl:apply-templates select="@*|node()"/>
         </xsl:element>
@@ -126,6 +131,14 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
             </xsl:element>
             <xsl:element name="article-meta">
                 <xsl:apply-templates select="FILEDESC/PUBLICATIONSTMT/IDNO[@TYPE!='issn']"/>
+                <xsl:element name="article-categories">
+                    <xsl:element name="subj-group">
+                        <xsl:attribute name="subj-group-type" select="'heading'"/>
+                        <xsl:element name="subject">
+                            <xsl:value-of select="'Article'"/>
+                        </xsl:element>
+                    </xsl:element>
+                </xsl:element>
                 <xsl:element name="title-group">
                     <xsl:apply-templates select="FILEDESC/TITLESTMT/TITLE[@TYPE='main' or not(exists(@TYPE))]"/>
                 </xsl:element>
@@ -189,29 +202,35 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
                     </xsl:element>
                 </xsl:if>
 
-                <xsl:choose>
-                    <xsl:when test="exists($abstractDiv)">
-                        <xsl:element name="abstract">
-                            <xsl:call-template name="add-section">
-                                <xsl:with-param name="divNode" select="$abstractDiv"/>
-                            </xsl:call-template>
-                        </xsl:element>
-                    </xsl:when>
-                    <!--
-                    <xsl:when test="exists(/DLPSTEXTCLASS/TEXT/FRONT/DIV1)">
-                        <xsl:element name="abstract">
-                            <xsl:apply-templates select="/DLPSTEXTCLASS/TEXT/FRONT/DIV1"/>
-                        </xsl:element>
-                    </xsl:when>
-                    -->
-                </xsl:choose>
+                <xsl:for-each select="$abstractDiv">
+                    <xsl:variable name="normalizedContent" select="normalize-space(string())"/>
+
+                    <xsl:choose>
+                        <xsl:when test="lower-case($normalizedContent)='abstract'"/>
+                        <xsl:when test="starts-with(lower-case($normalizedContent),'keywords:')">
+                            <xsl:element name="kwd-group">
+                                <xsl:attribute name="kwd-group-type" select="'author'"/>
+                                <xsl:for-each select="tokenize(substring($normalizedContent,10),',')">
+                                    <xsl:element name="kwd">
+                                        <xsl:value-of select="normalize-space(.)"/>
+                                    </xsl:element>
+                                </xsl:for-each>
+                            </xsl:element>
+                        </xsl:when>
+                        <xsl:otherwise>
+                            <xsl:element name="abstract">
+                                <xsl:apply-templates select="."/>
+                            </xsl:element>
+                        </xsl:otherwise>
+                    </xsl:choose>
+                </xsl:for-each>
             </xsl:element>
         </xsl:element>
     </xsl:template>
 
     <xsl:template match="FILEDESC/PUBLICATIONSTMT/IDNO[@TYPE='dlps']" mode="journal-id">
         <xsl:element name="journal-id">
-            <xsl:attribute name="journal-id-type" select="@TYPE"/>
+            <xsl:attribute name="journal-id-type" select="'publisher-id'"/>
             <xsl:value-of select="."/>
         </xsl:element>
     </xsl:template>
@@ -230,6 +249,7 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
 
     <xsl:template match="FILEDESC/SERIESSTMT/IDNO[@TYPE='issn']">
         <xsl:element name="issn">
+            <xsl:attribute name="pub-type" select="'epub'"/>
             <xsl:value-of select="."/>
         </xsl:element>
     </xsl:template>
@@ -248,14 +268,22 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
                         <xsl:value-of select="'handle'"/>
                     </xsl:when>
                     <xsl:when test="@TYPE='dlps'">
-                        <xsl:value-of select="'other'"/>
+                        <xsl:value-of select="'publisher-id'"/>
                     </xsl:when>
                     <xsl:otherwise>
                         <xsl:value-of select="@TYPE"/>
                     </xsl:otherwise>
                 </xsl:choose>
             </xsl:attribute>
-            <xsl:value-of select="."/>
+
+            <xsl:choose>
+                <xsl:when test="@TYPE='doi'">
+                    <xsl:value-of select="substring-after(.,'http://dx.doi.org/')"/>
+                </xsl:when>
+                <xsl:otherwise>
+                    <xsl:value-of select="."/>
+                </xsl:otherwise>
+            </xsl:choose>
         </xsl:element>
     </xsl:template>
 
@@ -341,10 +369,14 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
     </xsl:template>
 
     <xsl:template match="FILEDESC/PUBLICATIONSTMT/DATE[@TYPE='sort']">
-        <xsl:call-template name="dateToDMYTags">
-            <xsl:with-param name="inDate" select="."/>
-            <xsl:with-param name="outTagName" select="'pub-date'"/>
-        </xsl:call-template>
+        <xsl:element name="pub-date">
+            <xsl:attribute name="date-type" select="'pub'"/>
+            <xsl:attribute name="iso-8601-date" select="."/>
+            <xsl:attribute name="publication-format" select="'electronic'"/>
+            <xsl:call-template name="dateToDMYTags">
+                <xsl:with-param name="inDate" select="."/>
+            </xsl:call-template>
+        </xsl:element>
     </xsl:template>
 
     <xsl:template match="FILEDESC/SOURCEDESC/BIBL/BIBLSCOPE[@TYPE='volno']">
@@ -401,6 +433,9 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
                 <!-- This should be the abtract and should have
                     been processed by the HEADER. Skip. -->
                 <xsl:message>Skip <xsl:value-of select="local-name(.)"/></xsl:message>
+            </xsl:when>
+            <xsl:when test="exists(./LISTBIBL)">
+                <xsl:apply-templates select="./*[local-name()!='HEAD']"/>
             </xsl:when>
             <xsl:otherwise>
                 <xsl:call-template name="add-section">
@@ -613,9 +648,7 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
     <xsl:template match="BIBL">
         <xsl:element name="ref">
             <xsl:element name="mixed-citation">
-                <xsl:element name="source">
-                    <xsl:apply-templates/>
-                </xsl:element>
+                <xsl:apply-templates/>
             </xsl:element>
         </xsl:element>
     </xsl:template>
@@ -972,6 +1005,21 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
     </xsl:template>
 
     <xsl:template name="dateToDMYTags">
+        <xsl:param name="inDate" />
+
+        <xsl:variable name="frags" select="tokenize($inDate, '-')" />
+        <xsl:if test="count($frags) gt 2">
+            <day><xsl:value-of select="$frags[3]" /></day>
+        </xsl:if>
+        <xsl:if test="count($frags) gt 1">
+            <month><xsl:value-of select="$frags[2]" /></month>
+        </xsl:if>
+        <xsl:if test="count($frags) gt 0">
+            <year><xsl:value-of select="$frags[1]" /></year>
+        </xsl:if>
+    </xsl:template>
+
+    <xsl:template name="dateToDMYTagsOLD">
         <xsl:param name="inDate" />
         <xsl:param name="outTagName" />
         <xsl:element name="{$outTagName}">
