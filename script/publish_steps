@@ -1,0 +1,283 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Generate publishing steps
+
+require 'optparse'
+require 'ostruct'
+require 'os'
+
+# Process the script parameters.
+options = OpenStruct.new
+options.fulcrum_dir = OS.windows? ? "s:/Information\ Management/Fulcrum" : "/mnt/umptmm"
+#options.fulcrum_dir = OS.windows? ? "c:/Users/tbelc/Documents/Fulcrum" : "/mnt/umptmm"
+options.press = :ebc
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-f <fulcrum_dir>] [-p press] <task_id> <monograph_id> [<monograph_id>..]"
+  opts.on('-p', '--press [press]', 'Press bar|ebc|heb') do |pres|
+    options.press = press.to_sym
+  end
+  opts.on('-f', '--fulcrum_directory [DIRECTORY]', 'Fulcrum directory') do |fulcrum_dir|
+    options.fulcrum_dir = fulcrum_dir
+  end
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    puts opts
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 2
+  puts option_parser.help
+  return
+end
+
+task_id = ARGV[0]
+monograph_id_list = ARGV[1..-1]
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require 'fileutils'
+require_relative File.join(root_dir, "lib", "logger")
+require_relative File.join(root_dir, "lib", "services")
+require_relative File.join(root_dir, "lib", "fulcrum", "manifest")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+# Verify existence of the source/project root directories.
+fulcrum_dir = File.expand_path(options.fulcrum_dir)
+unless File.directory?(fulcrum_dir)
+  script_logger.fatal("Error: source directory #{fulcrum_dir} does not exist.")
+  exit 1
+end
+
+# Verify press, either UM Press or MPS services.
+press_dir = {
+        bar: "MPS",
+        ebc: "UMP",
+        heb: "MPS"
+        }
+unless press_dir.key?(options.press)
+  script_logger.fatal("Error: invalid press #{options.press}")
+  exit 1
+end
+
+# Determine publishing directory
+publish_dir = File.join(fulcrum_dir, "tbelc", "PublishingSteps", \
+    press_dir[options.press])
+unless File.directory?(publish_dir)
+  script_logger.fatal("Error: processing directory #{publish_dir} does not exist.")
+  exit 1
+end
+
+# Determine the Fulcrum monograph directory
+monograph_dept_dir = File.join(fulcrum_dir, press_dir[options.press])
+unless File.directory?(monograph_dept_dir)
+  script_logger.fatal("Error: monograph directory #{monograph_dept_dir} does not exist.")
+  exit 1
+end
+
+# Create the task processing directory.
+task_dir = File.join(publish_dir, task_id)
+FileUtils.mkdir_p task_dir
+
+script_logger.info("Using task directory #{File.basename(task_dir)}")
+
+# Create the serivce for retrieving the NOID manifest.
+service = UMPTG::Services::Heliotrope.new(
+                :fulcrum_host => options.fulcrum_host
+              )
+
+# For each monograph ID, retrieve NOID, DOI, and BAR number
+monograph_info = {}
+monograph_id_list.each do |monograph_id|
+  # Process monograph ID.
+  script_logger.info("*" * 10 + " #{monograph_id} " + "*" * 10)
+
+  # Find the directory using the monograph id.
+  monograph_dir_list = Dir.glob(File.join(monograph_dept_dir, monograph_id + "*"))
+  if monograph_dir_list.count == 0
+    script_logger.error("Error: monograph directory using id #{monograph_id} not found.")
+    next
+  end
+  monograph_dir = monograph_dir_list[0]
+  script_logger.warn("Multiple monograph directories found for id #{monograph_id}. Using #{monograph_dir}") \
+        if monograph_dir_list.count > 1
+  script_logger.info("Using monograph directory #{monograph_dir}") if monograph_dir_list.count == 1
+
+  # Use the monograph ID to retrieve the NOID from Fulcrum.
+  monograph_noid = service.monograph_noid(identifier: monograph_id)
+  if monograph_noid.nil? or monograph_noid.empty?
+    script_logger.error("Error: no NOID found for monograph ID #{monograph_id}")
+    next
+  end
+
+  # Use the monograph NOID to retrieve the monograph manifest from Fulcrum.
+  csv_body = service.monograph_export(noid: monograph_noid)
+  if csv_body.nil? or csv_body.empty?
+    script_logger.error("Error: no manifest found for id #{monograph_id}")
+    next
+  end
+  manifest = UMPTG::Fulcrum::Manifest::Document.new(
+                :csv_body => csv_body
+              )
+  monograph_row = manifest.monograph_row
+
+  series_id = ""
+  if options.press == :ebc
+    series_id = monograph_row["doi"]
+  elsif
+    id_list = monograph_row["identifier(s)"]
+    unless id_list.nil?
+      id_a = id_list.split(';')
+      case options.press
+      when :bar
+        list = id_a.select {|id| id.strip.downcase.start_with?('bar_number:') }
+        series_id = list.first.delete_prefix('bar_number:').strip unless list.empty?
+      when :heb
+        list = id_a.select {|id| id.strip.downcase.matches?(/^heb[0-9]{5}\.[0-9]{4}\.[0-9]{3}/) }
+        series_id = list.first.delete_prefix('bar_number:').strip unless list.empty?
+      end
+    end
+  end
+
+
+  monograph_info[monograph_id] = {
+       dir: monograph_dir,
+       component_info: {
+            noid: monograph_noid,
+            doi: monograph_row["doi"],
+            series_id: series_id
+          }
+       }
+end
+
+# Write components file.
+components_file = File.join(task_dir, "noid_series.csv")
+File.open(components_file, "w") do |fp|
+  monograph_info.each do |monograph_id,info|
+    fp.puts "#{info[:component_info][:noid]},#{info[:component_info][:series_id]}"
+  end
+end
+
+# Write the commands file.
+product_yr = options.press.to_s + "_" + Date.today.year.to_s
+product_backlist = options.press.to_s + "_backlist"
+cmds_file = File.join(task_dir, task_id + "_cmds.txt")
+File.open(cmds_file, "w") do |fp|
+  fp.puts "# Import resources"
+  monograph_info.each do |monograph_id,info|
+    noid = info[:component_info][:noid]
+
+    prefix = ""
+    resources_dir_list = Dir.glob(File.join(info[:dir], "[Rr]esources"))
+    if resources_dir_list.empty?
+      script_logger.warn("no resources directory found for #{File.basename(info[:dir])}")
+      resources_dir = File.join(info[:dir], "Resources")
+      prefix = "#"
+    else
+      resources_dir = resources_dir_list.first
+    end
+    fp.puts "#{prefix}sudo -u heliotrope-production RAILS_ENV=production bundle exec script/import -m #{noid} -d #{resources_dir}"
+    fp.puts
+  end
+  fp.puts "# Create components (nectar)"
+  fp.puts "bundle exec ruby bin/restrict_items.rb -f #{components_file} -p #{product_yr} >& #{task_dir}/restrict_items_#{product_yr}.log"
+  fp.puts
+  fp.puts "bundle exec ruby bin/restrict_items.rb -f #{components_file} -p #{product_backlist} >& #{task_dir}/restrict_items_#{product_backlist}.log"
+  fp.puts
+  fp.puts "# Rails console"
+  fp.puts "sudo -u heliotrope-production RAILS_ENV=production bundle exec rails console"
+  fp.puts
+  fp.puts "# Publish monographs"
+  fp.puts "[#{monograph_info.keys.join(',')}].each do |id|"
+  fp.puts "  monograph_list = Monograph.where(isbn_numeric: [ id ])"
+  fp.puts "  if monograph_list.empty?"
+  fp.puts "    puts \"Error: no monograph for ID \#{id}.\""
+  fp.puts "  else"
+  fp.puts "    puts \"Publishing monograph \#{id}.\""
+  fp.puts "    PublishJob.perform_later(monograph_list.first)"
+  fp.puts "  end"
+  fp.puts "end;0"
+  fp.puts
+  fp.puts "# Monograph information"
+  monograph_info.each do |monograph_id,info|
+    fp.puts "#{monograph_id},#{info[:component_info].values.join(',')}"
+  end
+  fp.puts
+  fp.puts "# Create monographs"
+  fp.puts "find /mnt/umptmm/<monograph_dir>/ -maxdepth 1 -mindepth 1 -type d -print0 | sort -zn | xargs -0 -I '{}' echo sudo -u heliotrope-production RAILS_ENV=production bundle exec script/import -d '{}' -p <heb|michigan|um-pccn> -v private -q"
+  fp.puts
+  fp.puts "# Replace resources"
+  fp.puts "sudo -u heliotrope-production RAILS_ENV=production bundle exec rake \"heliotrope:replace_files[/mnt/umptmm/<directory>, noid]\""
+  fp.puts
+  fp.puts "# Retrieve NOIDs"
+  fp.puts "sudo -u heliotrope-production RAILS_ENV=production bundle exec rake \"heliotrope:qc_csv_heb[2018-06-08T00:00:00-04:00]\""
+end
+
+=begin
+# Write the isbn_noid_doi_barnum.csv file
+info_file = File.join(task_dir, "isbn_noid_doi_series.csv")
+File.open(info_file, "w") do |fp|
+  monograph_info.each do |monograph_id,info|
+    fp.puts "#{monograph_id},#{info[:component_info].values.join(',')}"
+  end
+end
+=end
+
+=begin
+# Determine the base monograph directory
+monograph_dir = File.join(fulcrum_dir, "UMP")
+publish_label_list.each do |publish_label|
+  # Determine the publish step directory
+  label_dir = File.join(publish_dir, publish_label)
+  unless File.directory?(label_dir)
+    puts "Error: no directory for label #{publish_label}"
+    next
+  end
+
+  # Locate the monograph information file.
+  monograph_info_file = File.join(label_dir, "isbn_noid_doi_id.csv")
+  unless File.file?(monograph_info_file)
+    puts "Error: missing file #{File.basename(monograph_info_file)} for label #{publish_label}"
+    next
+  end
+  monograph_info = File.readlines(monograph_info_file)
+
+  # Generate the publishing steps script file
+  import_file = File.join(label_dir, "import.sh")
+  File.open(import_file, "w") do |fp|
+    fp.puts("# Import resources")
+    monograph_info.each do |info_line|
+      info = info_line.split(',')
+
+      # Determine monograph directory
+      isbn = info[0]
+      resources_dir_list = Dir.glob(File.join(monograph_dir, "#{isbn}_*", "[Rr]esources*"))
+      if resources_dir_list.empty?
+        resources_dir = File.join(monograph_dir, "#{isbn}_unknown", "resources")
+      else
+        resources_dir = resources_dir_list.first
+      end
+      noid = info[1]
+
+      fp.puts("sudo -u heliotrope-production RAILS_ENV=production bundle exec script/import -m #{info[1]} -d #{resources_dir}")
+      fp.puts
+    end
+  end
+  puts "Wrote script file #{File.basename(import_file)}"
+
+  restrict_file = File.join(label_dir, "restrict_items.sh")
+  File.open(restrict_file, "w") do |fp|
+    fp.puts("# Create components")
+    components_csv = File.join(label_dir, "noid_doi.csv")
+    log_2020_file = File.join(label_dir, "restrict_items_ebc_2020.log")
+    log_backlist_file = File.join(label_dir, "restrict_items_ebc_backlist.log")
+    fp.puts("bundle exec ruby bin/restrict_items.rb -f #{components_csv} -p ebc_2020 >& #{log_2020_file}")
+    fp.puts
+    fp.puts("bundle exec ruby bin/restrict_items.rb -f #{components_csv} -p ebc_backlist >& #{log_backlist_file}")
+  end
+  puts "Wrote script file #{File.basename(restrict_file)}"
+end
+=end
