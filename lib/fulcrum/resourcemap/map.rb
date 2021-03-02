@@ -105,11 +105,14 @@ module UMPTG::Fulcrum::ResourceMap
       return action.resource.resource_properties unless action.nil?
     end
 
+    # For a specified reference path, return a possible
+    # associated resource.
     def reference_resource(reference)
       action = @actions.find {|a| a.reference.name == reference }
       if action.nil?
         ref_base = File.basename(reference, ".*")
-        r = @resources.select {|id,resource| File.basename(resource.name, ".*") == ref_base }
+        ref_base.downcase! unless ref_base.nil?
+        r = @resources.select {|id,resource| File.basename(resource.name, ".*").downcase == ref_base }
         return r.values.first unless r.nil?
       end
       return action.resource unless action.nil?
