@@ -158,12 +158,10 @@ monograph_id_list.each do |monograph_id|
 
   minfo = {
        monograph_dir: monograph_dir,
-       component_info: {
-            noid: monograph_noid,
-            doi: monograph_row["doi"],
-            series_id: series_id,
-            pub_date: pub_date
-          }
+       monograph_noid: monograph_noid,
+       monograph_doi: monograph_row["doi"],
+       monograph_series: series_id,
+       monograph_pub_date: pub_date
        }
 
   monograph_info[monograph_id] = minfo
@@ -175,17 +173,16 @@ case options.press
 when :heb
   cfile = File.join(task_dir, "noid_heb.csv")
   File.open(cfile, "w") do |fp|
-    monograph_info.each do |monograph_id,info|
-      fp.puts "#{info[:component_info][:noid]},#{info[:component_info][:series_id]}"
+    monograph_info.each do |monograph_id,minfo|
+      fp.puts "#{minfo[:monograph_noid]},#{minfo[:monograph_series]}"
     end
   end
   bulleit1_cfile = File.join(bulleit1_task_dir, File.basename(cfile))
   components_files["heb"] = bulleit1_cfile
 else
   component_product = {}
-  monograph_info.each do |monograph_id,info|
-    component_info = info[:component_info]
-    pub_year = component_info[:pub_date].year
+  monograph_info.each do |monograph_id,minfo|
+    pub_year = minfo[:monograph_pub_date].year
     if pub_year < 2020
       perd = "pre"
     else
@@ -193,14 +190,14 @@ else
     end
     product = options.press.to_s + "_" + perd
     if component_product.key?(product)
-      component_product[product] << info
+      component_product[product] << minfo
     else
-      component_product[product] = [info]
+      component_product[product] = [minfo]
     end
 
     case options.press
     when :bar
-      if component_info[:series_id][0].downcase == 'b'
+      if minfo[:monograph_series][0].downcase == 'b'
         product += "_brit"
       else
         product += "_int"
@@ -209,17 +206,17 @@ else
       product = options.press.to_s + "_backlist"
     end
     if component_product.key?(product)
-      component_product[product] << info
+      component_product[product] << minfo
     else
-      component_product[product] = [info]
+      component_product[product] = [minfo]
     end
   end
 
-  component_product.each do |product,info_list|
+  component_product.each do |product,minfo_list|
     cfile = File.join(task_dir, "noid_#{product}.csv")
     File.open(cfile, "w") do |fp|
-      info_list.each do |info|
-        fp.puts "#{info[:component_info][:noid]},#{info[:component_info][:series_id]}"
+      minfo_list.each do |minfo|
+        fp.puts "#{minfo[:monograph_noid]},#{minfo[:monograph_series]}"
       end
     end
     bulleit1_cfile = File.join(bulleit1_task_dir, File.basename(cfile))
@@ -231,11 +228,11 @@ end
 cmds_file = File.join(task_dir, task_id + "_publishing_cmds.txt")
 File.open(cmds_file, "w") do |fp|
   fp.puts "# Import resources"
-  monograph_info.each do |monograph_id,info|
-    noid = info[:component_info][:noid]
+  monograph_info.each do |monograph_id,minfo|
+    noid = minfo[:monograph_noid]
 
     prefix = ""
-    monograph_dir = info[:monograph_dir]
+    monograph_dir = minfo[:monograph_dir]
     unless monograph_dir.nil?
       resources_dir_list = Dir.glob(File.join(monograph_dir, "[Rr]esources"))
 
@@ -275,8 +272,9 @@ File.open(cmds_file, "w") do |fp|
   fp.puts "end;0"
   fp.puts
   fp.puts "# Monograph information"
-  monograph_info.each do |monograph_id,info|
-    fp.puts "#{monograph_id},#{info[:component_info].values.join(',')}"
+  monograph_info.each do |monograph_id,minfo|
+    mminfo = minfo.delete_if {|key,value| key == :monograph_dir}
+    fp.puts "#{monograph_id},#{mminfo.values.join(',')}"
   end
   fp.puts
   fp.puts "# Create monographs"
