@@ -44,7 +44,7 @@ script_dir = File.expand_path(File.dirname(__FILE__))
 root_dir = File.dirname(script_dir)
 
 require_relative File.join(root_dir, "lib", "services")
-require_relative File.join(root_dir, "lib", "manifest")
+require_relative File.join(root_dir, "lib", "fulcrum", "manifest")
 
 # Create the serivce for retrieving the NOID.
 service = UMPTG::Services::Heliotrope.new(
@@ -63,7 +63,7 @@ monograph_id_list.each do |monograph_id|
     puts "Error: no manifest found for noid #{monograph_id}"
     next
   end
-  manifest = UMPTG::Manifest::Document.new(
+  manifest = UMPTG::Fulcrum::Manifest::Document.new(
                 :csv_body => csv_body
               )
 
