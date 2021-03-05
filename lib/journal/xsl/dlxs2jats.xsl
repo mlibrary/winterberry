@@ -96,10 +96,12 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
 
     <!--
     <xsl:variable name="abstractDiv"
-                  select="/DLPSTEXTCLASS/TEXT//*[local-name()='DIV1' and ./*[local-name()='HEAD' and lower-case(string())='abstract']]"/>
+                  select="/DLPSTEXTCLASS/TEXT//*[@TYPE='prelim']"/>
     -->
     <xsl:variable name="abstractDiv"
-                  select="/DLPSTEXTCLASS/TEXT//*[@TYPE='prelim']"/>
+                  select="/DLPSTEXTCLASS/TEXT//*[@TYPE='prelim' and not(starts-with(lower-case(normalize-space(string())),'abstract')) and not(starts-with(lower-case(normalize-space(string())),'keywords'))]"/>
+    <xsl:variable name="keywordDiv"
+                  select="/DLPSTEXTCLASS/TEXT//*[@TYPE='prelim' and starts-with(lower-case(normalize-space(string())),'keywords:')]"/>
 
     <xsl:template match="DLPSTEXTCLASS">
         <xsl:element name="article">
@@ -202,6 +204,7 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
                     </xsl:element>
                 </xsl:if>
 
+                <!--
                 <xsl:for-each select="$abstractDiv">
                     <xsl:variable name="normalizedContent" select="normalize-space(string())"/>
 
@@ -224,6 +227,18 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
                         </xsl:otherwise>
                     </xsl:choose>
                 </xsl:for-each>
+                 -->
+                <xsl:if test="not(empty($abstractDiv))">
+                    <xsl:element name="abstract">
+                        <xsl:apply-templates select="$abstractDiv"/>
+                    </xsl:element>
+                </xsl:if>
+                <xsl:if test="not(empty($keywordDiv))">
+                    <xsl:element name="kwd-group">
+                        <xsl:attribute name="kwd-group-type" select="'author'"/>
+                        <xsl:apply-templates select="$keywordDiv"/>
+                    </xsl:element>
+                </xsl:if>
             </xsl:element>
         </xsl:element>
     </xsl:template>
@@ -434,8 +449,21 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
                     been processed by the HEADER. Skip. -->
                 <xsl:message>Skip <xsl:value-of select="local-name(.)"/></xsl:message>
             </xsl:when>
+            <xsl:when test="@TYPE='notes'">
+                <xsl:element name="notes">
+                    <xsl:apply-templates select="./*[local-name()!='HEAD']"/>
+                </xsl:element>
+            </xsl:when>
             <xsl:when test="exists(./LISTBIBL)">
                 <xsl:apply-templates select="./*[local-name()!='HEAD']"/>
+            </xsl:when>
+            <xsl:when test="exists(./FIGURE[@REND='author'])">
+                <xsl:element name="bio">
+                    <xsl:apply-templates select="./*"/>
+                </xsl:element>
+            </xsl:when>
+            <xsl:when test="not(exists(./HEAD))">
+                <xsl:apply-templates select="./*"/>
             </xsl:when>
             <xsl:otherwise>
                 <xsl:call-template name="add-section">
@@ -466,9 +494,12 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
 
     <xsl:template match="P">
         <xsl:element name="p">
-            <xsl:if test="@TYPE">
-                <xsl:attribute name="content-type" select="@TYPE"/>
-            </xsl:if>
+            <xsl:choose>
+                <xsl:when test="@TYPE='prelim'"/>
+                <xsl:when test="exists(@TYPE)">
+                    <xsl:attribute name="content-type" select="@TYPE"/>
+                </xsl:when>
+            </xsl:choose>
             <xsl:choose>
                 <xsl:when test="exists(@REND) and not(empty(@REND))">
                     <xsl:call-template name="add-inline-style">
@@ -543,6 +574,7 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
 
     <xsl:template match="FIGURE">
         <xsl:element name="fig">
+            <xsl:apply-templates select="@*[name()!='ENTITY' and name()!='REND']"/>
             <xsl:if test="exists(@REND)">
                 <xsl:attribute name="fig-type" select="@REND"/>
             </xsl:if>
@@ -551,13 +583,18 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
                     <xsl:apply-templates select="."/>
                 </xsl:for-each>
             </xsl:if>
-            <xsl:apply-templates select="@*[name()!='ENTITY' and name()!='REND']|*[local-name()!='HEAD']"/>
             <xsl:if test="exists(@ENTITY)">
                 <xsl:element name="graphic">
                     <xsl:attribute name="xlink:href" select="mlibxsl:make-resource-path(@ENTITY)"/>
                 </xsl:element>
             </xsl:if>
+            <xsl:if test="@REND!='author'">
+                <xsl:apply-templates select="*[local-name()!='HEAD']"/>
+            </xsl:if>
         </xsl:element>
+        <xsl:if test="@REND='author'">
+            <xsl:apply-templates select="*[local-name()!='HEAD']"/>
+        </xsl:if>
     </xsl:template>
 
     <xsl:template match="FIGURE/HEAD">
@@ -638,7 +675,33 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
     </xsl:template>
 
     <xsl:template match="LIST/@TYPE">
-        <xsl:attribute name="list-type" select="."/>
+        <xsl:variable name="type" select="lower-case(.)"/>
+        <xsl:choose>
+            <xsl:when test="starts-with($type,'bullet')">
+                <xsl:attribute name="list-type" select="'bullet'"/>
+            </xsl:when>
+            <xsl:when test="starts-with($type,'number')">
+                <xsl:attribute name="list-type" select="'order'"/>
+            </xsl:when>
+            <xsl:when test="$type='lowercasealpha'">
+                <xsl:attribute name="list-type" select="'alpha-lower'"/>
+            </xsl:when>
+            <xsl:when test="$type='uppercasealpha'">
+                <xsl:attribute name="list-type" select="'alpha-upper'"/>
+            </xsl:when>
+            <xsl:when test="$type='lowercaseroman'">
+                <xsl:attribute name="list-type" select="'roman-lower'"/>
+            </xsl:when>
+            <xsl:when test="$type='uppercaseroman'">
+                <xsl:attribute name="list-type" select="'roman-upper'"/>
+            </xsl:when>
+            <xsl:when test="$type='nomarker' or starts-with($type,'unnumber')">
+                <xsl:attribute name="list-type" select="'simple'"/>
+            </xsl:when>
+            <xsl:otherwise>
+                <xsl:attribute name="list-type" select="."/>
+            </xsl:otherwise>
+        </xsl:choose>
     </xsl:template>
 
     <xsl:template match="BIBL/P">
