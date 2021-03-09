@@ -1,10 +1,10 @@
 module UMPTG::Fulcrum::Manifest
   @@BLANK_ROW_FILE_NAME = "***row left intentionally blank***"
 
+  @@MONOGRAPH_FILE_NAME = '://:MONOGRAPH://:'
+
   class Document < UMPTG::Object
     attr_reader :name, :noid, :csv, :monograph_row, :isbn
-
-    @@MONOGRAPH_FILE_NAME = '://:MONOGRAPH://:'
 
     def initialize(args = {})
       super(args)
@@ -75,5 +75,9 @@ module UMPTG::Fulcrum::Manifest
 
   def self.BLANK_ROW_FILE_NAME
     return @@BLANK_ROW_FILE_NAME
+  end
+
+  def self.MONOGRAPH_FILE_NAME
+    return @@MONOGRAPH_FILE_NAME
   end
 end

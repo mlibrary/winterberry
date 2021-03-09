@@ -29,7 +29,7 @@ require 'fileutils'
 
 require_relative File.join(root_dir, 'lib', 'xslt')
 
-dlxchunk_xsl_file = File.join(root_dir, "lib", "journal", "xsl", "dlxschunk.xsl")
+dlxschunk_xsl_file = File.join(root_dir, "lib", "dlxs", "xsl", "chunk.xsl")
 
 dlxs_file_list = ARGV
 dlxs_file_list.each do |dlxs_file|
@@ -46,7 +46,7 @@ dlxs_file_list.each do |dlxs_file|
   params = {}
   params["output_dir"] = "file:///" + output_uri.to_s + "/"
   UMPTG::XSLT.transform(
-          :xslpath => dlxchunk_xsl_file,
+          :xslpath => dlxschunk_xsl_file,
           :srcpath => dlxs_file,
           :parameters => params
           )

@@ -1,0 +1,130 @@
+#!/usr/bin/env ruby
+# encoding: utf-8
+
+require 'optparse'
+require 'ostruct'
+
+# Process the script parameters.
+options = OpenStruct.new
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)}  <csv_file> <volume_dir> [<volume_dir>..]"
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    puts opts
+    exit(0)
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 2
+  puts option_parser.help
+  exit(0)
+end
+
+csv_file = ARGV[0]
+volume_dir_list = ARGV[1..-1]
+
+unless File.exist?(csv_file)
+  puts "Error: CSV \"#{File.basename(csv_file)}\" does not exist."
+  exit(1)
+end
+puts "Using CSV file \"#{File.basename(csv_file)}\""
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require 'csv'
+
+require_relative File.join(root_dir, 'lib', 'fulcrum')
+
+FULCRUM_MONOGRAPH_HEADERS = UMPTG::Fulcrum::Manifest::Validation::CollectionSchema.headers()
+
+fm_csv = CSV.parse(
+          File.read(csv_file),
+          :headers => true,
+          #:header_converters=> lambda {|f| fm_header_convert(f)},
+          :return_headers => false
+        )
+
+volume_dir_list.each do |volume_dir|
+  volume_dir = File.expand_path(volume_dir)
+  unless File.directory?(volume_dir)
+    puts "Error: Directory \"#{File.basename(volume_dir)}\" does not exist."
+    next
+  end
+  puts "Processing directory \"#{File.basename(volume_dir)}\""
+
+  title_id = File.basename(volume_dir)
+  puts "title_id: #{title_id}"
+
+  file_list = Dir.glob(File.join(volume_dir, "*"))
+  rep_row_list = []
+  file_list.each do |fl|
+    file_name = File.basename(fl)
+    ext = File.extname(file_name)
+    next if ext.nil? or ext.strip.empty?
+
+    case ext.strip.downcase
+    when '.jpg', '.png', '.bmp', '.jpeg'
+      rep_kind = 'cover'
+    when '.epub'
+      rep_kind = 'epub'
+    when '.pdf'
+      rep_kind = 'pdf_ebook'
+    else
+      puts "Skipping file #{file_name}"
+      next
+    end
+
+    rep_row_list << {
+          'File Name' => file_name,
+          'Title' => file_name,
+          'Representative Kind' => rep_kind
+      }
+  end
+
+  monograph_row = {
+      'File Name' => UMPTG::Fulcrum::Manifest.MONOGRAPH_FILE_NAME,
+      'Section' => UMPTG::Fulcrum::Manifest.MONOGRAPH_FILE_NAME
+      }
+
+  # Search CSV for monograph metadata.
+  fm_row_list = fm_csv.select {|row| !row['ID'].nil? and row['ID'].strip.downcase == title_id }
+  if fm_row_list.empty?
+    puts "Warning: no CSV row found for #{title_id}. Skipping."
+    next
+  end
+  puts "Found CSV row for #{title_id}."
+  fm_row = fm_row_list.first
+  unless fm_row.nil?
+
+    # Monograph row
+    fm_row.each do |key,val|
+      next if key.nil? or key.strip.empty?
+
+      case key
+      when 'ID'
+        monograph_row['Identifier(s)'] = val.downcase
+      else
+        monograph_row[key] = val
+      end
+    end
+  end
+
+  fulcrum_body = CSV.generate(
+          :headers => FULCRUM_MONOGRAPH_HEADERS,
+          :write_headers => true
+        ) do |csv|
+
+    csv << { "File Name" => "***row left intentionally blank***" }
+    rep_row_list.each do |rep_row|
+      csv << rep_row
+    end
+    csv << monograph_row
+  end
+
+  # Save the Fulcrum metadata CSV file.
+  fulcrum_file = File.join(volume_dir, title_id + ".csv")
+  puts "Creating metadata file #{fulcrum_file}"
+  File.write(fulcrum_file, fulcrum_body)
+  #break
+end

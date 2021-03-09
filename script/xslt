@@ -1,0 +1,51 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require 'optparse'
+require 'ostruct'
+
+# Process the script parameters.
+options = OpenStruct.new
+options.gen_html = false
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-h] xsl_file xml_file [xml_file...]"
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    puts opts
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 2
+  puts option_parser.help
+  return
+end
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require 'uri'
+require 'fileutils'
+
+require_relative File.join(root_dir, 'lib', 'xslt')
+
+xsl_file = ARGV[0]
+
+xml_file_list = ARGV[1..-1]
+xml_file_list.each do |xml_file|
+  xml_file = File.expand_path(xml_file)
+  if !File.file?(xml_file)
+      puts "Error: invalid file #{xml_file}"
+      next
+  end
+
+  output_file = File.join(File.dirname(xml_file), File.basename(xml_file, ".*") + ".csv")
+
+  output_uri = URI(output_file)
+  UMPTG::XSLT.transform(
+          xslpath: xsl_file,
+          srcpath: xml_file,
+          destpath: output_file
+          )
+end
+
