@@ -10,16 +10,17 @@ class CSVFile
     end
     return nil if csv_body == nil or csv_body.empty?
 
+    CSV::Converters[:strip_field] = ->(value) { value.strip rescue value }
     begin
       csv_data = CSV.parse(
                 csv_body,
-                :headers => true,
-                :return_headers => false)
+                headers: true,
+                converters: :strip_field,
+                return_headers: false)
      #          :header_converters => lambda { |h| h.downcase.gsub(' ', '_') })
      #          :headers => true, :converters => :all,
     rescue Exception => e
-      puts e.message
-      return nil
+      raise e.message
     end
 
     return csv_data

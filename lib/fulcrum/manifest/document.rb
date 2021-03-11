@@ -24,7 +24,7 @@ module UMPTG::Fulcrum::Manifest
         raise e.message
       end
 
-      @monograph_row = @csv.find {|row| row['file_name'] == @@MONOGRAPH_FILE_NAME }
+      @monograph_row = @csv.find {|row| row['file_name'] == UMPTG::Fulcrum::Manifest.MONOGRAPH_FILE_NAME }
       @noid = @monograph_row['noid'] unless @monograph_row.nil?
       @isbn = {}
       unless @monograph_row.nil?

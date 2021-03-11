@@ -53,12 +53,15 @@
             <xsl:variable name="volumeYear" select="current-grouping-key()"/>
 
             <!-- File Name (volume) -->
+            <!--
             <xsl:value-of select="concat($QUOTE,FILEDESC/SERIESSTMT/IDNO[@TYPE='aleph'],'_',$volumeYear,$QUOTE)"/>
+            -->
+            <xsl:value-of select="concat($QUOTE,FILEDESC/PUBLICATIONSTMT/IDNO[@TYPE='dlps'],$QUOTE)"/>
             <xsl:call-template name="insertFieldSeparator"/>
 
             <!-- Title (issuetitle) -->
             <xsl:call-template name="insertValue">
-                <xsl:with-param name="list" select="current-group()/FILEDESC/SOURCEDESC/BIBL/BIBLSCOPE[@TYPE='issuetitle']"/>
+                <xsl:with-param name="list" select="current-group()/FILEDESC/SOURCEDESC/BIBL/TITLE"/>
             </xsl:call-template>
             <!--
             <xsl:variable name="title">
@@ -90,8 +93,8 @@
             </xsl:call-template>
 
             <!-- Pub Year -->
-            <xsl:call-template name="insertField">
-                <xsl:with-param name="value" select="$volumeYear"/>
+            <xsl:call-template name="insertValue">
+                <xsl:with-param name="list" select="current-group()/FILEDESC/PUBLICATIONSTMT/DATE[not(exists(@TYPE))]"/>
             </xsl:call-template>
 
             <!-- Series -->
