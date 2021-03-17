@@ -112,8 +112,9 @@ monograph_dir_list.each do |monograph_dir|
   if fm_row_list.empty?
     puts "Warning: no CSV row found for #{title_id}. Skipping."
     #next
+  else
+    puts "Found CSV row for #{title_id}."
   end
-  puts "Found CSV row for #{title_id}."
   fm_row = fm_row_list.first
 
   unless fm_row.nil?
