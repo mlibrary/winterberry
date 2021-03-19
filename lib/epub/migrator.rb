@@ -18,14 +18,17 @@ module UMPTG::EPUB
       replace_set = {}
       add_set = []
       epub.renditions.each do |rendition|
+        raise "Error rendition has no name" if rendition.name.nil? or rendition.name.strip.empty?
+        rend_name = File.basename(rendition.name)
+
         puts "Processing file #{rendition.name}"
 
-        epub.version(rendition: rendition.name, version: "3.0")
+        epub.version(rendition: rendition, version: "3.0")
 
-        srcfile = Tempfile.new(File.basename(rendition.name))
+        srcfile = Tempfile.new(rend_name)
         srcfile.write(rendition.opf_to_s)
         srcfile.close
-        destpath = File.join(File.dirname(srcfile.path), File.basename(rendition.name))
+        destpath = File.join(File.dirname(srcfile.path), rend_name)
         UMPTG::XSLT.transform(
               xslpath: File.join(UMPTG::XSLT.XSL_DIR, "update_opf.xsl"),
               srcpath: srcfile.path,
@@ -33,10 +36,10 @@ module UMPTG::EPUB
           )
         epub.add(entry_name: rendition.name, entry_content: File.read(destpath))
 
-        nav_items = epub.navigation(rendition: rendition.name)
+        nav_items = epub.navigation(rendition: rendition)
         puts "nav_items: #{nav_items.count}"
         if nav_items.empty?
-          ncx_item_list = epub.ncx(rendition: rendition.name)
+          ncx_item_list = epub.ncx(rendition: rendition)
           if ncx_item_list.empty?
             puts "Warning: no NCX item found."
           else
@@ -68,7 +71,7 @@ module UMPTG::EPUB
           end
         end
 
-        spine_items = epub.spine(rendition: rendition.name)
+        spine_items = epub.spine(rendition: rendition)
         spine_items.each do |spine_item|
 
           puts "Processing file #{spine_item.name}"
@@ -92,7 +95,6 @@ module UMPTG::EPUB
           end
         end
       end
-
       output_epub_file = File.join(File.dirname(epub_file), File.basename(epub_file, ".*") + "_migrate.epub")
       if File.exist?(output_epub_file)
         FileUtils.remove(output_epub_file)

@@ -16,6 +16,7 @@ module UMPTG::EPUB
 
     def initialize(args = {})
       super(args)
+      @name = @properties[:name]
       load()
     end
 
@@ -56,7 +57,7 @@ module UMPTG::EPUB
     def nav_items
       return manifest.select do |node|
         unless node['properties'].nil?
-          ' ' + node['properties'].downcase + ' '.include?(' nav ')
+          (' ' + node['properties'].downcase + ' ').include?(' nav ')
         end
       end
     end

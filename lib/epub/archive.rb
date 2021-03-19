@@ -152,7 +152,6 @@ module UMPTG::EPUB
         fragment_list.each do |fragment|
           root_elem = fragment.node
           opf_file = root_elem['full-path']
-
           opf_entry = @name2entry[opf_file]
           raise "Error: invalid OPF path" if opf_entry.nil?
 
@@ -170,7 +169,11 @@ module UMPTG::EPUB
     def rendition(args = {})
       case
       when args.key?(:rendition)
-        label = args[:rendition]
+        rend = args[:rendition]
+        label = rend.name unless rend.name.nil? or rend.name.strip.empty?
+        label = "default" if rend.name.nil? or rend.name.strip.empty?
+      when args.key?(:rendition_name)
+        label = args[:rendition_name]
         rend = @renditions[label]
         raise "Error: invalid rendition #{label}" if rend.nil?
       else

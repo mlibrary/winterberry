@@ -96,6 +96,27 @@
         </xsl:choose>
    </xsl:template>
 
+    <xsl:template match="*[local-name()='metadata']/*[local-name()='identifier']/@*[local-name()='scheme']
+                | *[local-name()='metadata']/*[local-name()='date']/@*[local-name()='event']">
+        <xsl:message>Skipping <xsl:value-of select="name()"/></xsl:message>
+        <!--
+            Skipping this attribute metadata/identifier/@opf:scheme
+            In future, may need to prefix the value with 'url:' or 'urn:'.
+            But this may cause the value in the toc.ncx file not to match.
+        <xsl:element name="{local-name()}" namespace="{$PURL_DC_URL}">
+            <xsl:apply-templates select="@*[local-name()!='scheme']"/>
+            <xsl:choose>
+                <xsl:when test="exists(@*[local-name()='scheme']) and not(starts-with(lower-case(.),'url:'))">
+                    <xsl:value-of select="concat('url:',.)"/>
+                </xsl:when>
+                <xsl:otherwise>
+                    <xsl:value-of select="."/>
+                </xsl:otherwise>
+            </xsl:choose>
+        </xsl:element>
+        -->
+    </xsl:template>
+
     <xsl:template match="*">
         <xsl:element name="{local-name()}" namespace="{$IDPF_URL}">
             <xsl:apply-templates select="@*"/>

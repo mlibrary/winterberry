@@ -1,4 +1,6 @@
 module UMPTG
+  require_relative 'xmlutil'
+  require_relative 'xslt'
   require_relative 'object'
   require_relative 'action'
   require_relative 'fragment'
