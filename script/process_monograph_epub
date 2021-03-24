@@ -26,7 +26,7 @@ option_parser = OptionParser.new do |opts|
   opts.on('-p', '--publisher_directory [DIRECTORY]', 'Publisher site directory') do |publisher_dir|
     options.publisher_dir = publisher_dir
   end
-  opts.on('-r', '--keywords [disable|embed|link|none]', 'Default resoorces processing action') do |action|
+  opts.on('-r', '--resources [disable|embed|link|none]', 'Default resources processing action') do |action|
     options.default_actions[:resources] = action.to_sym
   end
   opts.on('-v', '--vendor [vendor]', 'Vendor specific markup apex|newgen|default') do |vendor|
@@ -82,6 +82,10 @@ script_logger.info("Using #{options.vendor} processor")
 service = UMPTG::Services::Heliotrope.new(
                 :fulcrum_host => options.fulcrum_host
               )
+
+# Provide the directory path for adding the stylesheet link.
+fulcrum_css_name = 'fulcrum_default.css'
+fulcrum_css_file = File.join(root_dir, 'lib', 'css', fulcrum_css_name)
 
 monograph_loggers = {}
 monograph_id_list.each do |monograph_id|
@@ -184,10 +188,6 @@ monograph_id_list.each do |monograph_id|
     monograph_loggers[monograph_id].error("Error: resource map file #{File.basename(resource_map_file)} must exist.")
     next
   end
-
-  # Provide the directory path for adding the stylesheet link.
-  fulcrum_css_name = 'fulcrum_default.css'
-  fulcrum_css_file = File.join(root_dir, 'lib', 'css', fulcrum_css_name)
 
   # Create a new EPUB with the resource references detailed
   # in the resource map processed.
