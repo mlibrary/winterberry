@@ -65,13 +65,13 @@ unless press_dir.key?(options.press)
 end
 
 # Determine publishing directory
-publish_dir = File.join(fulcrum_dir, "tbelc", "PublishingSteps", \
+publish_dir = File.join(fulcrum_dir, "PTG", "PublishingSteps", \
     press_dir[options.press])
 unless File.directory?(publish_dir)
   script_logger.fatal("processing directory #{publish_dir} does not exist.")
   exit 1
 end
-bulleit1_publish_dir = File.join(options.bulleit1_dir, "tbelc", "PublishingSteps", \
+bulleit1_publish_dir = File.join(options.bulleit1_dir, "PTG", "PublishingSteps", \
                            press_dir[options.press])
 
 # Determine the Fulcrum monograph directory
@@ -261,8 +261,7 @@ File.open(cmds_file, "w") do |fp|
   fp.puts "sudo -u heliotrope-production RAILS_ENV=production bundle exec rails console"
   fp.puts
   fp.puts "# Publish monographs"
-  fp.puts "isbns=[#{monograph_info.keys.join(',')}];0"
-  fp.puts "isbns.each do |isbn|"
+  fp.puts "%w[#{monograph_info.keys.join(' ')}].each do |isbn|"
   fp.puts "  monograph_list = Monograph.where(isbn_numeric: [ isbn ])"
   fp.puts "  if monograph_list.empty?"
   fp.puts "    puts \"Error: no monograph for ID \#{isbn}.\""
