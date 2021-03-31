@@ -575,21 +575,44 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
     <xsl:template match="FIGURE">
         <xsl:element name="fig">
             <xsl:apply-templates select="@*[name()!='ENTITY' and name()!='REND']"/>
+
             <xsl:if test="exists(@REND)">
                 <xsl:attribute name="fig-type" select="@REND"/>
             </xsl:if>
-            <xsl:if test="exists(HEAD)">
-                <xsl:for-each select="HEAD">
-                    <xsl:apply-templates select="."/>
-                </xsl:for-each>
-            </xsl:if>
+
+            <xsl:choose>
+                <xsl:when test="@REND='author'">
+                    <xsl:if test="exists(HEAD)">
+                        <xsl:element name="caption">
+                            <xsl:element name="title">
+                                <xsl:for-each select="HEAD">
+                                    <xsl:apply-templates select="@*|node()"/>
+                                </xsl:for-each>
+                            </xsl:element>
+                        </xsl:element>
+                    </xsl:if>
+                </xsl:when>
+                <xsl:otherwise>
+                    <xsl:if test="exists(*[local-name()='HEAD' or local-name()='P'])">
+                        <xsl:variable name="content">
+                            <xsl:for-each select="*[local-name()='HEAD' or local-name()='P']">
+                                <xsl:apply-templates select="node()"/>
+                                <xsl:text> </xsl:text>
+                            </xsl:for-each>
+                        </xsl:variable>
+                        <xsl:element name="caption">
+                            <xsl:element name="title">
+                                <xsl:value-of select="normalize-space($content)"/>
+                            </xsl:element>
+                        </xsl:element>
+                    </xsl:if>
+                </xsl:otherwise>
+            </xsl:choose>
+
             <xsl:if test="exists(@ENTITY)">
                 <xsl:element name="graphic">
                     <xsl:attribute name="xlink:href" select="mlibxsl:make-resource-path(@ENTITY)"/>
                 </xsl:element>
-            </xsl:if>
-            <xsl:if test="@REND!='author'">
-                <xsl:apply-templates select="*[local-name()!='HEAD']"/>
             </xsl:if>
         </xsl:element>
         <xsl:if test="@REND='author'">
@@ -597,6 +620,7 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
         </xsl:if>
     </xsl:template>
 
+    <!--
     <xsl:template match="FIGURE/HEAD">
         <xsl:element name="caption">
             <xsl:element name="title">
@@ -604,6 +628,7 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
             </xsl:element>
         </xsl:element>
     </xsl:template>
+    -->
 
     <xsl:template match="NOTE1[@TYPE='sidebar']">
         <xsl:element name="boxed-text">
@@ -771,6 +796,19 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
         <xsl:element name="verse-group">
             <xsl:apply-templates select="@*[name()!='TYPE']|node()"/>
         </xsl:element>
+    </xsl:template>
+
+    <xsl:template match="Q1[@TYPE='poem']">
+        <xsl:choose>
+            <xsl:when test="local-name(./*[1])='LG'">
+                <xsl:apply-templates select="node()"/>
+            </xsl:when>
+            <xsl:otherwise>
+                <xsl:element name="verse-group">
+                    <xsl:apply-templates select="@*[name()!='TYPE']|node()"/>
+                </xsl:element>
+            </xsl:otherwise>
+        </xsl:choose>
     </xsl:template>
 
     <xsl:template match="LG">
