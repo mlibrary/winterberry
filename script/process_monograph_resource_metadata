@@ -97,7 +97,7 @@ monograph_id_list.each do |monograph_id|
     dlist << d if File.directory?(d)
   end
   if dlist.empty?
-    script_logger.error("Error: the monograph directory for ID #{monograph_id} was not found.")
+    script_logger.error("The monograph directory for ID #{monograph_id} was not found.")
     next
   end
   script_logger.warn("Found multiple monograph directories for ID #{monograph_id}.") if dlist.count > 1

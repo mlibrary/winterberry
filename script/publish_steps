@@ -55,9 +55,10 @@ end
 
 # Verify press, either UM Press or MPS services.
 press_dir = {
-        bar: "MPS",
-        ebc: "UMP",
-        heb: "MPS"
+        bar:   "MPS",
+        ebc:   "UMP",
+        heb:   "MPS",
+        ummaa: "UMMAA"
         }
 unless press_dir.key?(options.press)
   script_logger.fatal("invalid press #{options.press}")
@@ -188,7 +189,13 @@ else
     else
       perd = pub_year.to_s
     end
-    product = options.press.to_s + "_" + perd
+
+    case options.press
+    when :ebc, :ummaa
+      product = "ebc_" + perd
+    else
+      product = options.press.to_s + "_" + perd
+    end
     if component_product.key?(product)
       component_product[product] << minfo
     else
@@ -202,8 +209,8 @@ else
       else
         product += "_int"
       end
-    when :ebc
-      product = options.press.to_s + "_backlist"
+    when :ebc, :ummaa
+      product = "ebc_backlist"
     end
     if component_product.key?(product)
       component_product[product] << minfo
