@@ -1,0 +1,44 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require 'optparse'
+require 'ostruct'
+
+# Process the script parameters.
+options = OpenStruct.new
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} pdf_file [pdf_file...]"
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    puts opts
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  puts option_parser.help
+  return
+end
+
+pdf_file_list = ARGV
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require 'hexapdf'
+
+pdf_file_list.each do |pdf_file|
+  pdf_file = File.expand_path(pdf_file)
+  unless File.exists?(pdf_file)
+    puts "Error: invalid EPUB file path #{pdf_file}."
+    next
+  end
+  puts "Processing #{File.basename(pdf_file)}"
+
+  pdf_doc = HexaPDF::Document.open(pdf_file)
+  ndx = 0
+  pdf_doc.images.each do |image|
+    ndx += 1
+    puts "#{ndx}:#{image.info().type},#{image.info().color_space}"
+  end
+end
