@@ -31,6 +31,10 @@ module UMPTG::EPUB
       return @properties[:zip_entry].name_is_directory?
     end
 
+    def extract(path = nil)
+      return @properties[:zip_entry].extract(path)
+    end
+
     def write(output_stream, args = {})
       raise "Error: missing output stream" if output_stream.nil?
 

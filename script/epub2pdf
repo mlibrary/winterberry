@@ -1,0 +1,110 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require 'optparse'
+require 'ostruct'
+
+# Process the script parameters.
+options = OpenStruct.new
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)}  <epub_file> [<epub_file>..]"
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    puts opts
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  puts option_parser.help
+  return
+end
+
+epub_file_list = ARGV
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require 'logger'
+require 'open3'
+
+script_logger = Logger.new(STDOUT)
+script_logger.formatter = proc do |severity, datetime, progname, msg|
+  "#{severity}: #{msg}\n"
+end
+
+require_relative File.join(root_dir, 'lib', 'epub2pdf')
+
+processors = { page: UMPTG::EPUB2PDF::PageProcessor.new }
+
+epub_file_list.each do |epub_file|
+  epub_file = File.expand_path(epub_file)
+  unless File.exists?(epub_file)
+    script_logger.error("invalid EPUB file path #{epub_file}.")
+    next
+  end
+  script_logger.info("processing #{File.basename(epub_file)}")
+  STDOUT.flush
+
+  epub = UMPTG::EPUB::Archive.new(epub_file: epub_file)
+
+  # Process the epub and generate the image information.
+  action_map = UMPTG::EPUB::Processor.process(
+        epub: epub,
+        entry_processors: processors,
+        logger: script_logger
+      )
+
+  img_entry_list = []
+  action_map.each do |entry_name,proc_map|
+    img_list = proc_map[:page]
+    img_list.each do |action|
+      img_node = action.property(:fragment).node
+      img_src = img_node["src"]
+      img_path = File.expand_path(File.join(File.dirname(entry_name), img_src))
+      img_entry_path = img_path.delete_prefix(Dir.pwd + File::SEPARATOR)
+      img_entry = epub.entry(img_entry_path)
+      img_entry_list << img_entry
+    end
+  end
+
+  #img_entry_list = img_entry_list[0..10]
+
+  # Create the temporary directory
+  tmpdir = Dir.mktmpdir
+
+  # Generate file list and extract images
+  script_logger.info("extracting #{img_entry_list.count} entries.")
+  STDOUT.flush
+
+  img_list = []
+  img_entry_list.each do |img_entry|
+    img_file = File.join(tmpdir, File.basename(img_entry.name))
+    img_entry.extract(img_file)
+    img_list << img_file
+  end
+
+  img_list_file = File.join(tmpdir, File.basename(epub_file, ".*") + "_img.lst")
+  File.write(img_list_file, img_list.join("\n"))
+
+  # Generate the PDF
+  pdf_base = File.join(File.dirname(epub_file), File.basename(epub_file, ".*"))
+  cmd = "tesseract \"#{img_list_file}\" \"#{pdf_base}\" pdf"
+
+  script_logger.info("generating PDF #{pdf_base}.")
+  STDOUT.flush
+
+  elines = nil
+  olines = nil
+  exit_status = nil
+  Open3.popen3(cmd) do |stdin, stdout, stderr, wait_thr|
+    elines = stderr.readlines
+    olines = stdout.readlines
+    exit_status = wait_thr.value
+  end
+  script_logger.info(exit_status)
+
+  script_logger.info("removing temp directory #{tmpdir}")
+  STDOUT.flush
+  FileUtils.rm_rf(tmpdir)
+end
