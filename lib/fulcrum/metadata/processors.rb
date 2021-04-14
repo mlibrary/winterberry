@@ -3,6 +3,8 @@ module UMPTG::Fulcrum::Metadata
   require_relative File.join('processors', 'figureprocessor')
   require_relative File.join('processors', 'apexmarkerselector')
   require_relative File.join('processors', 'apexmarkerprocessor')
+  require_relative File.join('processors', 'apexcontainerselector')
+  require_relative File.join('processors', 'apexfigureprocessor')
   require_relative File.join('processors', 'newgencontainerselector')
   require_relative File.join('processors', 'newgenmarkerselector')
   require_relative File.join('processors', 'newgenimageprocessor')
@@ -22,7 +24,7 @@ module UMPTG::Fulcrum::Metadata
     when "apex"
       # Apex processors
       return {
-                image: Processors::SpecFigureProcessor.new,
+                image: Processors::ApexFigureProcessor.new,
                 marker: Processors::ApexMarkerProcessor.new
              }
     when "newgen"

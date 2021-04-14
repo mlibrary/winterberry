@@ -7,7 +7,7 @@ module UMPTG::Fulcrum
 
     @@DEFAULT_ACTIONS = {
             keywords:  [:default, :disable, :link, :none],
-            resources: [:default, :disable, :embed, :link, :none, :remove]
+            resources: [:default, :disable, :embed, :link, :none, :remove, :update_alt]
           }
 
     def self.process(args = {})
@@ -135,7 +135,7 @@ module UMPTG::Fulcrum
           if result
             # At last one action was completed. Remember that this
             # file was updated.
-            update_opf = true
+            #update_opf = true
 
             # If resources were embedded, then we need to set the
             # remote-resource property in the OPF file.
@@ -143,18 +143,19 @@ module UMPTG::Fulcrum
                         action.status == UMPTG::Action.COMPLETED and action.reference_action_def.action_str == :embed
             }
             if has_remote_resources
+              update_opf = true
               remote_resources_list << entry_name
-            end
 
-            # Add the CSS stylesheet link that manages the Fulcrum resource display.
-            level = File.dirname(entry_name).split(File::SEPARATOR).count
-            if level == 1
-              UMPTG::XMLUtil.add_css(xml_doc, fulcrum_dest_css_file)
-            else
-              fpath = (('..' + File::SEPARATOR) * (level-1)) + fulcrum_css_name
-              UMPTG::XMLUtil.add_css(xml_doc, fpath)
+              # Add the CSS stylesheet link that manages the Fulcrum resource display.
+              level = File.dirname(entry_name).split(File::SEPARATOR).count
+              if level == 1
+                UMPTG::XMLUtil.add_css(xml_doc, fulcrum_dest_css_file)
+              else
+                fpath = (('..' + File::SEPARATOR) * (level-1)) + fulcrum_css_name
+                UMPTG::XMLUtil.add_css(xml_doc, fpath)
+              end
+              logger.info("Added CSS stylesheet \"#{fulcrum_css_name}\".")
             end
-            logger.info("Added CSS stylesheet \"#{fulcrum_css_name}\".")
 
             # Update the entry in the EPUB. Remove old entry and
             # add the new one.
@@ -184,7 +185,7 @@ module UMPTG::Fulcrum
         end
       end
 
-      if update_opf
+      if update_opf and
         # xhtml files were modified. Need to update the OPF file.
         opf_doc = epub.opf_doc()
 

@@ -132,6 +132,8 @@ module UMPTG::Fulcrum::Resources
                               )
           when :none
             reference_action = NoneAction.new(args)
+          when :update_alt
+            reference_action = UpdateAltAction.new(args)
           else
             @logger.warn("Invalid element action #{reference_action_def.action_str}")
             next

@@ -16,4 +16,5 @@ module UMPTG::Fulcrum
   require_relative File.join('resources', 'embedmapaction')
   require_relative File.join('resources', 'linkelementaction')
   require_relative File.join('resources', 'removeelementaction')
+  require_relative File.join('resources', 'updatealtaction')
 end
