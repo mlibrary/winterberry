@@ -11,6 +11,8 @@ module UMPTG::Fulcrum::Resources
           return ApexReferenceSelector.new
         when 'newgen'
           return NewgenReferenceSelector.new
+        when 'rekihaku'
+          return RekihakuReferenceSelector.new
         else
         end
       end
