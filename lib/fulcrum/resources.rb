@@ -5,7 +5,6 @@ module UMPTG::Fulcrum
   require_relative File.join('resources', 'referenceselector')
   require_relative File.join('resources', 'apexreferenceselector')
   require_relative File.join('resources', 'newgenreferenceselector')
-  require_relative File.join('resources', 'rekihakureferenceselector')
   require_relative File.join('resources', 'specreferenceselector')
   require_relative File.join('resources', 'referenceselectorfactory')
   require_relative File.join('resources', 'resourceprocessor')
@@ -17,4 +16,5 @@ module UMPTG::Fulcrum
   require_relative File.join('resources', 'embedmapaction')
   require_relative File.join('resources', 'linkelementaction')
   require_relative File.join('resources', 'removeelementaction')
+  require_relative File.join('resources', 'updatealtaction')
 end

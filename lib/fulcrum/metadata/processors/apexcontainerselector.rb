@@ -2,9 +2,9 @@ module UMPTG::Fulcrum::Metadata::Processors
 
   # Class selects references to resources found within
   # an EPUB produced by vendor Rekihaku.
-  class RekihakuContainerSelector < UMPTG::Fragment::Selector
+  class ApexContainerSelector < UMPTG::Fragment::Selector
     def select_element(name, attrs = [])
-      # Select img or a <div class="fig">.
+      # Select <figure> or <img> or a <div class="fig">.
       case name
       when "div"
         attrs_map = attrs.to_h
@@ -13,7 +13,7 @@ module UMPTG::Fulcrum::Metadata::Processors
             return true if attrval == "fig"
           end
         end
-      when "img"
+      when "figure", "img"
         return true
       end
       return false

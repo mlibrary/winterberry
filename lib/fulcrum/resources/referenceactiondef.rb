@@ -46,6 +46,11 @@ module UMPTG::Fulcrum::Resources
       return ""
     end
 
+    # Resource alternative text.
+    def alt_text
+      return @resource_metadata['alternative_text'] unless @resource_metadata.nil?
+    end
+
     # Generate a string for this definition.
     def to_s
       return "#{action_str}: #{reference_name} => #{resource_name}"

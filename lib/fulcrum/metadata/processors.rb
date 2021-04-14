@@ -3,18 +3,18 @@ module UMPTG::Fulcrum::Metadata
   require_relative File.join('processors', 'figureprocessor')
   require_relative File.join('processors', 'apexmarkerselector')
   require_relative File.join('processors', 'apexmarkerprocessor')
+  require_relative File.join('processors', 'apexcontainerselector')
+  require_relative File.join('processors', 'apexfigureprocessor')
   require_relative File.join('processors', 'newgencontainerselector')
   require_relative File.join('processors', 'newgenmarkerselector')
   require_relative File.join('processors', 'newgenimageprocessor')
   require_relative File.join('processors', 'newgenmarkerprocessor')
-  require_relative File.join('processors', 'rekihakucontainerselector')
-  require_relative File.join('processors', 'rekihakuimageprocessor')
   require_relative File.join('processors', 'specfigureprocessor')
   require_relative File.join('processors', 'specmarkerselector')
   require_relative File.join('processors', 'specmarkerprocessor')
 
 
-  @@VENDOR_PROCESSORS = [ 'apex', 'newgen', 'rekihaku', 'default' ]
+  @@VENDOR_PROCESSORS = [ 'apex', 'newgen', 'default' ]
 
   # Vendors may produce different markup for resource references.
   # Below is an association of resource/additional resource processors
@@ -24,7 +24,7 @@ module UMPTG::Fulcrum::Metadata
     when "apex"
       # Apex processors
       return {
-                image: Processors::SpecFigureProcessor.new,
+                image: Processors::ApexFigureProcessor.new,
                 marker: Processors::ApexMarkerProcessor.new
              }
     when "newgen"
@@ -32,12 +32,6 @@ module UMPTG::Fulcrum::Metadata
       return {
                 image: Processors::NewgenImageProcessor.new,
                 marker: Processors::NewgenMarkerProcessor.new
-             }
-    when "rekihaku"
-      # Rekihaku processors
-      return {
-                image: Processors::RekihakuImageProcessor.new,
-                marker: Processors::SpecMarkerProcessor.new
              }
     end
 
