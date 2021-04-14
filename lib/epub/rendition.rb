@@ -49,7 +49,9 @@ module UMPTG::EPUB
       spine = []
       @opf_doc.root.xpath("./*[local-name()='spine']/*[local-name()='itemref']").each do |node|
         ref = node['idref']
-        spine << manifest_items[ref]
+        mitem = manifest_items[ref]
+        raise "Invalid spine item #{ref}" if mitem.nil?
+        spine << mitem
       end
       return spine
     end
