@@ -14,7 +14,7 @@ ROOTDIR=ENV['HEBROOTDIR'] || ""
 HEBID=File.basename(HEBDIR)
 HEBPRFX=HEBID[0..7]
 #HEBPRFX=HEBID
-OS=ENV['OS']
+#OS=ENV['OS']
 
 # Determine process paths relative to this file.
 RAKEPATH="#{__FILE__}"
@@ -33,24 +33,12 @@ SRCFIXEPUBDLXS=File.join(SRCFIXEPUBDIR, "#{HEBID}_dlxs.xml")
 SRCFIXEPUBDLXSORG=File.join(SRCFIXEPUBDIR, "#{HEBID}_dlxs_org.xml")
 SRCFIXEPUBIMGS=File.join(SRCFIXEPUBDIR, HEBID, "OEBPS", "images")
 
-# Determine where the source DLXS XML file resides, thus
-# determining the book layout.
-layout="flowepub"
-layout_found = true
-srcdlxspath=File.join(ROOTDIR, layout, "dlxs", "#{HEBID}.xml")
-if (!File.exists?(srcdlxspath))
-    layout="fixepub"
-    #srcdlxspath=SRCFIXEPUBDLXS
-    srcdlxspath=File.join(SRCTIFSCANDIR, "#{HEBID}.xml")
-    if (!File.exists?(srcdlxspath))
-        layout_found = false
-    end
-end
-LAYOUT=layout
+# Determine the book layout.
+LAYOUT=ENV['LAYOUT']
 TARGETLAYOUTROOT=File.join(TARGETHEB, "layouts", LAYOUT)
 
-SRCDLXSPATH=srcdlxspath
-ORGSRCDLXSPATH=File.join(File.dirname(srcdlxspath),"#{HEBID}_dlxs_org.xml")
+#SRCDLXSPATH=srcdlxspath
+#ORGSRCDLXSPATH=File.join(File.dirname(srcdlxspath),"#{HEBID}_dlxs_org.xml")
 
 # Set paths for the XSLT, image utilities, and epubcheck jars
 XSLTJAR=File.join(TARGETLIB, "jars", "hebxslt-jar-with-dependencies.jar")
@@ -88,7 +76,6 @@ SRCASSETLIST=asset_list
 # Set the path to the directory containing
 # the source MARC records.
 SRCMARCPATH=File.join(RESOURCESDIR, "marc", "#{HEBPRFX}.xml")
-puts "SRCMARCPATH=#{SRCMARCPATH}"
 
 # Set the paths to the bundle CSV file,
 # the book epub file, and the bundle zip file.
@@ -154,9 +141,3 @@ MRA
 
 directory HEBDIR
 directory METAINFSRCDIR
-
-if (!layout_found)
-    puts "Error: unknown HEB ID #{HEBID}"
-    return
-end
-

@@ -6,8 +6,13 @@ require 'ostruct'
 
 # Process the script parameters.
 options = OpenStruct.new
+options.layout = "fixepub"
 option_parser = OptionParser.new do |opts|
-  opts.banner = "Usage: #{File.basename(__FILE__)} [task] [hebdir]"
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-l fixepub|flowepub] [task] [hebdir]"
+  opts.on('-l', '--layout [fixepub|flowepub]', 'EPUB Layout') do |layout|
+    raise "Invalid layout #{layout}" unless ["fixepub", "flowepub"].include?(layout)
+    options.layout = layout
+  end
   opts.on_tail('-h', '--help', 'Print this help message') do
     puts opts
     exit 0
@@ -47,6 +52,7 @@ end
 ENV['JAVA_HOME'] = java_home
 ENV['HEBROOTDIR'] = hebrootdir
 ENV['PATH'] = File.join(java_home, "bin") + Gem.path_separator + ENV['PATH']
+ENV['LAYOUT'] = options.layout
 
 Rails.application.load_tasks
 

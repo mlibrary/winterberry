@@ -48,6 +48,7 @@ require_relative "asset_list.rb"
 require_relative "resources.rb"
 
 require_relative "../../xslt"
+require_relative "../../epub"
 
 Dir.glob("#{TARGETTASKS}/*.rake").each do |r|
   #import r
@@ -227,6 +228,11 @@ namespace :winterberry do
         # Generate an updated EPUB archive file.
         print "Generating #{File.basename(EPUBPATH)}\n"
 
+        UMPTG::EPUB::Util.create(
+                directory: EPUBDIR,
+                epub_file: EPUBPATH
+              )
+=begin
         cwd = Dir.pwd
         Dir.chdir(EPUBDIR)
         file_list = Dir.glob("*")
@@ -236,6 +242,7 @@ namespace :winterberry do
             end
         end
         Dir.chdir(cwd)
+=end
     end
 
     # Generate the epub directory structure.
