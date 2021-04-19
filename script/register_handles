@@ -15,8 +15,9 @@ options = OpenStruct.new
 options.output_dir = Dir.pwd
 options.execute = false
 options.fulcrum_host = nil
+options.press = :heb
 option_parser = OptionParser.new do |opts|
-  opts.banner = "Usage: #{File.basename(__FILE__)} [-e] [-f production|preview|staging] [-d output_dir] monograph_id [monograph_id...]"
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-e] [-f production|preview|staging] [-d output_dir] [-p ebc|heb] monograph_id [monograph_id...]"
   opts.on('-d', '--output_dir [DIRECTORY]', 'Output directory') do |output_dir|
     options.output_dir = output_dir
   end
@@ -25,6 +26,9 @@ option_parser = OptionParser.new do |opts|
   end
   opts.on('-f', '--fulcrum_host [production|preview|staging]', 'Fulcrum environment') do |fulcrum_host|
     options.fulcrum_host = fulcrum_host
+  end
+  opts.on('-p', '--press [press]', 'Press ebc|heb') do |press|
+    options.press = press.to_sym
   end
   opts.on_tail('-h', '--help', 'Print this help message') do
     puts opts
@@ -49,7 +53,7 @@ fail "Error: output directory #{output_dir} is not valid." unless File.directory
 require 'date'
 require 'fileutils'
 
-require_relative File.join(root_dir, 'lib', 'manifest')
+require_relative File.join(root_dir, 'lib', 'fulcrum')
 require_relative File.join(root_dir, 'lib', 'services')
 
 # Create the serivce for retrieving the NOID manifest.
@@ -68,22 +72,38 @@ monograph_id_list.each do |monograph_id|
     puts "Error: no manifest found for ID #{monograph_id}"
     next
   end
-  manifest = UMPTG::Manifest::Document.new(
+  manifest = UMPTG::Fulcrum::Manifest::Document.new(
                 :csv_body => csv_body
               )
   #File.write("manifest.csv", manifest.csv.to_s)
 
-  if manifest.monograph_row.nil?
+  monograph_row = manifest.monograph_row
+  if monograph_row.nil?
     puts "Error: no manifest monograph row found for ID #{monograph_id}."
     next
   end
 
-  link = manifest.monograph_row['link'].match('^[^\(]+\(\"([^\"]+)\".*') {|m| m[1] }
+  link = monograph_row['link'].match('^[^\(]+\(\"([^\"]+)\".*') {|m| m[1] }
   link.delete_prefix!('https://www.fulcrum.org')
 
-  row_list =  [
-                "#{manifest.monograph_row['noid']},#{link}"
-              ]
+  case options.press
+  when :heb
+    id_list = monograph_row["identifier(s)"]
+    unless id_list.nil?
+      id_a = id_list.split(';')
+      list = id_a.select {|id| id.strip.downcase.match?(/^heb[0-9]{5}\.[0-9]{4}\.[0-9]{3}/) }
+      series_id = list.first.strip unless list.empty?
+    else
+      puts "Missing id for ID #{monograph_id}."
+    end
+    row_list =  [
+                  "#{manifest.monograph_row['noid']},#{link},#{series_id}"
+                ]
+  else
+    row_list =  [
+                  "#{manifest.monograph_row['noid']},#{link},#{manifest.monograph_row['doi']}"
+                ]
+  end
 
   manifest.csv.each do |row|
     next if row == manifest.monograph_row

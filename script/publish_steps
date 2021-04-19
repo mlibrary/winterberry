@@ -95,6 +95,7 @@ service = UMPTG::Services::Heliotrope.new(
 
 # For each monograph ID, retrieve NOID, DOI, and BAR number
 monograph_info = {}
+monograph_noid_list = []
 monograph_date = {}
 monograph_id_list.each do |monograph_id|
   # Process monograph ID.
@@ -166,6 +167,7 @@ monograph_id_list.each do |monograph_id|
        }
 
   monograph_info[monograph_id] = minfo
+  monograph_noid_list << monograph_noid
 end
 
 # Write components file.
@@ -268,8 +270,9 @@ File.open(cmds_file, "w") do |fp|
   fp.puts "sudo -u heliotrope-production RAILS_ENV=production bundle exec rails console"
   fp.puts
   fp.puts "# Publish monographs"
+=begin
   fp.puts "%w[#{monograph_info.keys.join(' ')}].each do |isbn|"
-  fp.puts "  monograph_list = Monograph.where(isbn_numeric: [ isbn ])"
+  fp.puts "  monograph = Monograph.where(isbn_numeric: [ isbn ])"
   fp.puts "  if monograph_list.empty?"
   fp.puts "    puts \"Error: no monograph for ID \#{isbn}.\""
   fp.puts "  else"
@@ -277,6 +280,17 @@ File.open(cmds_file, "w") do |fp|
   fp.puts "    PublishJob.perform_later(monograph_list.first)"
   fp.puts "  end"
   fp.puts "end;0"
+=end
+  fp.puts "%w[#{monograph_noid_list.join(' ')}].each do |noid|"
+  fp.puts "  monograph = Monograph.find(noid)"
+  fp.puts "  if monograph.nil?"
+  fp.puts "    puts \"Error: no monograph for NOID \#{noid}.\""
+  fp.puts "  else"
+  fp.puts "    puts \"Publishing monograph \#{noid}.\""
+  fp.puts "    PublishJob.perform_later(monograph)"
+  fp.puts "  end"
+  fp.puts "end;0"
+
   fp.puts
   fp.puts "# Monograph information"
   monograph_info.each do |monograph_id,minfo|
