@@ -117,6 +117,9 @@ monograph_dir_list.each do |monograph_dir|
   end
   fm_row = fm_row_list.first
 
+  # Make sure required fields are filled in:
+  #   Title, Publisher (citation), Creator(s), Pub Year,
+  #   Pub Location, Handle, Identifier(s), ISBN(s)
   unless fm_row.nil?
     format_isbn = {}
     isbn, format = convert_isbn(fm_row['ISBN1_13'], fm_row['Pub Format'], "hardcover")
@@ -140,8 +143,9 @@ monograph_dir_list.each do |monograph_dir|
 
     #monograph_row['Handle'] = fm_row['Handle Prefix'] + fm_row['ID'][3..7] unless fm_row['Handle Prefix'].nil?
     #monograph_row['Handle'] = "http://hdl.handle.net/2027/heb." + fm_row['ID'][3..7] if fm_row['Handle Prefix'].nil?
-    monograph_row['Handle'] = "2027/heb." + fm_row['ID'][3..7] if fm_row['Handle Prefix'].nil?
-
+    #monograph_row['Handle'] = "2027/heb." + fm_row['ID'][3..7] if fm_row['Handle Prefix'].nil?
+    monograph_row['Handle'] = "2027/heb." + fm_row['ID'][3..7]
+puts "1:#{monograph_row['Handle']}"
     fm_row.each do |key,val|
       next if key.nil? or key.strip.empty?
 
@@ -163,6 +167,7 @@ monograph_dir_list.each do |monograph_dir|
       end
     end
   end
+puts "2:#{monograph_row['Handle']}"
 
   fulcrum_body = CSV.generate(
           :headers => FULCRUM_MONOGRAPH_HEADERS,

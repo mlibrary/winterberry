@@ -1,0 +1,66 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require 'optparse'
+require 'ostruct'
+require 'os'
+
+# Process the script parameters.
+options = OpenStruct.new
+options.bulleit1_dir = "/mnt/umptmm"
+options.fulcrum_dir = OS.windows? ? "s:/Information\ Management/Fulcrum" : options.bulleit1_dir
+#options.fulcrum_dir = "c:/Users/tbelc/Documents/tickets/HELIO-3729/heb_cp_test"
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-f <monograph_pdf>] <monograph_pdf> [<monograph_pdf>..]"
+  opts.on('-f', '--fulcrum_directory [DIRECTORY]', 'Fulcrum directory') do |fulcrum_dir|
+    options.fulcrum_dir = fulcrum_dir
+  end
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    puts opts
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  puts option_parser.help
+  return
+end
+
+monograph_pdf_list = ARGV
+
+cvdir = File.join("MPS", "HEB", "epub2pdf")
+heb_fulcrum_dir = File.join(options.fulcrum_dir, cvdir)
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require 'fileutils'
+require_relative File.join(root_dir, "lib", "logger")
+
+logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+monograph_pdf_list.each do |monograph_pdf|
+  monograph_pdf = File.expand_path(monograph_pdf)
+  unless File.file?(monograph_pdf)
+    logger.error("Error: invalid PDF file #{monograph_pdf}")
+    next
+  end
+
+  heb_id = File.basename(monograph_pdf, ".*")
+
+  fulcrum_dir = File.join(heb_fulcrum_dir, heb_id)
+  FileUtils.mkdir_p(fulcrum_dir)
+  unless File.directory?(fulcrum_dir)
+    logger.error("invalid fulcrum directory #{fulcrum_dir}")
+    next
+  end
+  logger.info("Copying #{File.basename(monograph_pdf)} ==> #{fulcrum_dir}")
+  STDOUT.flush
+
+  epub_file = File.join(File.dirname(monograph_pdf), heb_id + ".epub")
+  FileUtils.copy(epub_file, fulcrum_dir)
+
+  pdf_file = File.join(File.dirname(monograph_pdf), heb_id + "_copy_outline.pdf")
+  FileUtils.copy(pdf_file, fulcrum_dir)
+end
