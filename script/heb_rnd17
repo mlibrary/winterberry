@@ -145,7 +145,6 @@ monograph_dir_list.each do |monograph_dir|
     #monograph_row['Handle'] = "http://hdl.handle.net/2027/heb." + fm_row['ID'][3..7] if fm_row['Handle Prefix'].nil?
     #monograph_row['Handle'] = "2027/heb." + fm_row['ID'][3..7] if fm_row['Handle Prefix'].nil?
     monograph_row['Handle'] = "2027/heb." + fm_row['ID'][3..7]
-puts "1:#{monograph_row['Handle']}"
     fm_row.each do |key,val|
       next if key.nil? or key.strip.empty?
 
@@ -167,7 +166,6 @@ puts "1:#{monograph_row['Handle']}"
       end
     end
   end
-puts "2:#{monograph_row['Handle']}"
 
   fulcrum_body = CSV.generate(
           :headers => FULCRUM_MONOGRAPH_HEADERS,
