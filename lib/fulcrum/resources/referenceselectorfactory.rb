@@ -7,18 +7,17 @@ module UMPTG::Fulcrum::Resources
 
       unless vendor.nil?
         case vendor
-        when 'apex'
+        when :apex
           return ApexReferenceSelector.new
-        when 'newgen'
+        when :newgen
           return NewgenReferenceSelector.new
-        when 'rekihaku'
-          return RekihakuReferenceSelector.new
-        else
+        when :default
+          return SpecReferenceSelector.new
         end
       end
       
       # Default selector
-      return SpecReferenceSelector.new
+      raise "Error: invalid vendor #{vendor}"
     end
   end
 end
