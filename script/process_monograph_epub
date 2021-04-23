@@ -9,14 +9,13 @@ options = OpenStruct.new
 #options.publisher_dir = Dir.pwd
 options.publisher_dir = "s:/Information\ Management/Fulcrum/UMP"
 #options.publisher_dir = "c:/Users/tbelc/Documents/Fulcrum/UMP/"
-options.vendor = "default"
 options.fulcrum_host = nil
 options.default_actions = {
         keywords:  :disable,
         resources: :embed
         }
 option_parser = OptionParser.new do |opts|
-  opts.banner = "Usage: #{File.basename(__FILE__)} [-f production|preview|staging] [-p <publisher_dir>] [-v apex|newgen|default] [-r disable|embed|link|none|update_alt] [-k disable|link|none] <monograph_id> [<monograph_id>..]"
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-f production|preview|staging] [-p <publisher_dir>] [-r disable|embed|link|none|update_alt] [-k disable|link|none] <monograph_id> [<monograph_id>..]"
   opts.on('-f', '--fulcrum_host [production|preview|staging]', 'Fulcrum environment') do |fulcrum_host|
     options.fulcrum_host = fulcrum_host
   end
@@ -28,9 +27,6 @@ option_parser = OptionParser.new do |opts|
   end
   opts.on('-r', '--resources [disable|embed|link|none|update_alt]', 'Default resources processing action') do |action|
     options.default_actions[:resources] = action.to_sym
-  end
-  opts.on('-v', '--vendor [vendor]', 'Vendor specific markup apex|newgen|default') do |vendor|
-    options.vendor = vendor
   end
   opts.on_tail('-h', '--help', 'Print this help message') do
     puts opts
@@ -75,9 +71,6 @@ script_logger.info("Processing keywords #{options.default_actions[:keywords].to_
 script_logger.info("Processing resources #{options.default_actions[:resources].to_s}") \
       unless options.default_actions[:resources] == :disable
 
-options.vendor = 'default' if options.vendor.nil? or options.vendor.empty?
-script_logger.info("Using #{options.vendor} processor")
-
 # Create the serivce for retrieving the NOID manifest.
 service = UMPTG::Services::Heliotrope.new(
                 :fulcrum_host => options.fulcrum_host
@@ -110,7 +103,6 @@ monograph_id_list.each do |monograph_id|
               )
 
   # From the manifest, determine the ebook ISBN without dashes.
-  puts manifest.isbn
   ebook_isbn = manifest.isbn["open access"]
   ebook_isbn = manifest.isbn["ebook"] if ebook_isbn.nil?
   if ebook_isbn.nil?
@@ -156,7 +148,6 @@ monograph_id_list.each do |monograph_id|
   end
 
   monograph_loggers[monograph_id].info("*" * 10 + " #{monograph_id} " + "*" * 10)
-  monograph_loggers[monograph_id].info("Using #{options.vendor} processor")
 
   # Determine if the resources directory exists.
   resources_dir = File.join(monograph_dir, "resources")
@@ -198,7 +189,6 @@ monograph_id_list.each do |monograph_id|
         resource_metadata: manifest,
         resource_map_file: resource_map_file,
         fulcrum_css_file: fulcrum_css_file,
-        vendor: options.vendor,
         monograph_noid: monograph_noid,
         logger: monograph_loggers[monograph_id]
       )

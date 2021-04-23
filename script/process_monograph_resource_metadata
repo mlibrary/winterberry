@@ -22,7 +22,7 @@ options = OpenStruct.new
 options.publisher_dir = OS.windows? ? "s:/Information\ Management/Fulcrum/UMP" : "/mnt/umptmm/UMP"
 options.update_fmsl = true
 options.use_map = true
-options.vendor = "default"
+options.vendor = :default
 options.default_actions = {
         resources: :embed
         }
@@ -40,8 +40,8 @@ option_parser = OptionParser.new do |opts|
   opts.on('-r', '--keywords [embed|link|none|remove]', 'Default resoorces processing action') do |action|
     options.default_actions[:resources] = action.to_sym
   end
-  opts.on('-v', '--vendor [vendor]', 'Vendor specific markup apex|ewgen|default') do |vendor|
-    options.vendor = vendor
+  opts.on('-v', '--vendor [vendor]', 'Vendor specific markup apex|newgen|default') do |vendor|
+    options.vendor = vendor.to_sym
   end
   opts.on_tail('-h', '--help', 'Print this help message') do
     puts opts
@@ -82,11 +82,6 @@ script_logger.info("Processing resources #{options.default_actions[:resources].t
 blank_row_file_name = UMPTG::Fulcrum::Manifest.BLANK_ROW_FILE_NAME
 blank_row_pattern = "^\*\*\*.* intentionally blank[ ]*\*\*\*$"
 
-# Initialize EPUB markup processors, figure/image and marker.
-options.vendor = 'default' if options.vendor.nil? or options.vendor.empty?
-processors = UMPTG::Fulcrum::Metadata.vendor_processor(options.vendor.downcase)
-script_logger.info("Using #{options.vendor} processor")
-
 # Process all monograph directories specified.
 monograph_loggers = {}
 monograph_id_list.each do |monograph_id|
@@ -117,7 +112,6 @@ monograph_id_list.each do |monograph_id|
   end
   monograph_loggers[monograph_id].info("*" * 10 + " #{monograph_id} " + "*" * 10)
   monograph_loggers[monograph_id].info("*** Processing Monograph directory #{File.basename(monograph_dir)} ***")
-  monograph_loggers[monograph_id].info("Using #{options.vendor} processor")
 
   # Find the monograph resources directory.
   resources_dir = File.join(monograph_dir, "resources")
@@ -145,14 +139,37 @@ monograph_id_list.each do |monograph_id|
   resource_map_file = File.join(processing_dir, "resource_map.xml")
   resource_map_exists = File.exists?(resource_map_file) && use_map
 
-  monograph_loggers[monograph_id].info("Using existing resource map file #{File.basename(resource_map_file)}") \
-      if resource_map_exists
+  # If a resource map exists, use it. Otherwise,
+  # it should be generated and saved.
+  resource_map = UMPTG::Fulcrum::ResourceMap::Map.new
+  if resource_map_exists
+    monograph_loggers[monograph_id].info("Using existing resource map file #{File.basename(resource_map_file)}") \
+        if resource_map_exists
+    resource_map.load(:xml_path => resource_map_file)
+  else
+    monograph_loggers[monograph_id].info("Generating resource map file #{File.basename(resource_map_file)}.")
+
+    # Set the default action
+    resource_map.default_action = options.default_actions[:resources]
+
+    # Set the vendor
+    resource_map.vendors[:epub] = options.vendor
+
+    # Add the resources
+    resources = Dir.glob(File.join(resources_dir, "*"))
+    resources.each do |resource_path|
+      resource_map.add_resource(:name => File.basename(resource_path))
+    end
+  end
+  script_logger.info("Using #{resource_map.vendors[:epub]} processor")
+  monograph_loggers[monograph_id].info("Using #{resource_map.vendors[:epub]} processor")
 
   if update_fmsl or !resource_map_exists
     # Either updating the FMSL or the resource map file
     # needs to be generated.
 
-    # Reset the markup processors.
+    # Initialize EPUB markup processors, figure/image and marker.
+    processors = UMPTG::Fulcrum::Metadata.vendor_processor(resource_map.vendors[:epub])
     #processors.each_value {|p| p.reset }
 
     # Process the epub and generate the image information.
@@ -160,24 +177,6 @@ monograph_id_list.each do |monograph_id|
           epub_file: epub_file,
           entry_processors: processors
         )
-
-    # If a resource map exists, use it. Otherwise,
-    # it should be generated and saved.
-    resource_map = UMPTG::Fulcrum::ResourceMap::Map.new
-    if resource_map_exists
-      resource_map.load(:xml_path => resource_map_file)
-    else
-      monograph_loggers[monograph_id].info("Generating resource map file #{File.basename(resource_map_file)}.")
-
-      # Set the default action
-      resource_map.default_action = options.default_actions[:resources]
-
-      # Add the resources
-      resources = Dir.glob(File.join(resources_dir, "*"))
-      resources.each do |resource_path|
-        resource_map.add_resource(:name => File.basename(resource_path))
-      end
-    end
 
     action_map.each do |entry_name,proc_map|
       proc_map.each do |key,action_list|

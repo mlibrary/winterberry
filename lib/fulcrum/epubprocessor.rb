@@ -34,13 +34,11 @@ module UMPTG::Fulcrum
       #   :resource_metadata    Monograph resource metadata
       #   :resource_map_file    Monograph resource reference=>fileset mapping
       #   :fulcrum_css_file     CSS file for styling resources with Fulcrum reader
-      #   :vendor               Vendor that delivered the EPUB, to aid in processing
       #                         the references.
       default_actions = args[:default_actions]
       resource_metadata = args[:resource_metadata]
       resource_map_file = args[:resource_map_file]
       fulcrum_css_file = args[:fulcrum_css_file]
-      vendor = args[:vendor]
 
       # If processing keywords, need monograph NOID
       # for constructing URLs.
@@ -54,6 +52,7 @@ module UMPTG::Fulcrum
             :xml_path => resource_map_file,
             :default_action => default_actions[:resources]
           )
+      logger.info("Using #{resource_map.vendors[:epub]} processor")
 
       # Save the resource actions file within a new epub structure
       # for archival purposes.
@@ -64,7 +63,7 @@ module UMPTG::Fulcrum
 
       # Determine the selector for the resource references. This may be
       # vendor specific.
-      reference_selector = Resources::ReferenceSelectorFactory.select(vendor: vendor)
+      reference_selector = Resources::ReferenceSelectorFactory.select(vendor: resource_map.vendors[:epub])
 
       processors = {}
       unless default_actions[:resources].nil? or default_actions[:resources] == :disable

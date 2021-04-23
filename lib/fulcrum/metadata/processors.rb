@@ -14,31 +14,33 @@ module UMPTG::Fulcrum::Metadata
   require_relative File.join('processors', 'specmarkerprocessor')
 
 
-  @@VENDOR_PROCESSORS = [ 'apex', 'newgen', 'default' ]
+  @@VENDOR_PROCESSORS = [ :apex, :newgen, :default ]
 
   # Vendors may produce different markup for resource references.
   # Below is an association of resource/additional resource processors
   # for the default case and vendor specific processors.
   def self.vendor_processor(vendor)
     case vendor
-    when "apex"
+    when :apex
       # Apex processors
       return {
                 image: Processors::ApexFigureProcessor.new,
                 marker: Processors::ApexMarkerProcessor.new
              }
-    when "newgen"
+    when :newgen
       # Newgen processors
       return {
                 image: Processors::NewgenImageProcessor.new,
                 marker: Processors::NewgenMarkerProcessor.new
              }
+    when :default
+      # Default processors.
+      return {
+                image: Processors::SpecFigureProcessor.new,
+                marker: Processors::SpecMarkerProcessor.new
+             }
     end
 
-    # Default processors.
-    return {
-              image: Processors::SpecFigureProcessor.new,
-              marker: Processors::SpecMarkerProcessor.new
-           }
+    raise "Error: invalid vendor #{vendor.to_s}"
   end
 end

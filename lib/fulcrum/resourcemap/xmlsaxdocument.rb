@@ -4,7 +4,8 @@ module UMPTG::Fulcrum::ResourceMap
 
   class XMLSaxDocument < Nokogiri::XML::SAX::Document
 
-    attr_reader :references, :resources, :actions, :version, :default_action
+    attr_reader :references, :resources, :actions, \
+           :version, :default_action, :vendors
 
     def initialize(args = {})
       reset
@@ -27,6 +28,10 @@ module UMPTG::Fulcrum::ResourceMap
         @default_action = attrs.to_h["default"].to_sym
       when "action"
         @actions << attrs.to_h
+      when "vendors"
+        attrs.to_h.each do |format,vendor|
+          @vendors[format.to_sym] = vendor.to_sym
+        end
       end
     end
 
@@ -37,6 +42,7 @@ module UMPTG::Fulcrum::ResourceMap
       @references = {}
       @resources = {}
       @actions = []
+      @vendors = {}
     end
   end
 end

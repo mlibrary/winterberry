@@ -13,6 +13,31 @@ module UMPTG::Fulcrum::ResourceMap
     @@DEFAULT_VERSION = "1.0"
     @@DEFAULT_ACTION = :embed
 
+    @@XML_RESOURCEMAP = <<-XML_RESOURCEMAP
+<?xml version="1.0" encoding="UTF-8"?>
+<resourcemap version="%s">
+<vendors %s/>
+<references>
+%s</references>
+<resources>
+%s</resources>
+<actions default="%s">
+%s</actions>
+</resourcemap>
+    XML_RESOURCEMAP
+
+    @@XML_REFERENCE = <<-XREFERENCE
+<reference id="%s" src="%s"/>
+    XREFERENCE
+
+    @@XML_RESOURCE =  <<-XRESOURCE
+<resource id="%s" name="%s"/>
+    XRESOURCE
+
+    @@XML_ACTION =    <<-XACTION
+<action reference_id="%s" resource_id="%s" type="%s"/>
+    XACTION
+
     # Headers to use for writing CSV version.
     @@resource_map_file_headers = [ "File Name", "Resource Name", "Resource Action" ]
 
@@ -20,7 +45,7 @@ module UMPTG::Fulcrum::ResourceMap
     @@processor = XMLSaxDocument.new
 
     attr_reader :actions, :resources
-    attr_accessor :default_action
+    attr_accessor :default_action, :vendors
 
     def initialize(args = {})
       super(args)
@@ -32,7 +57,7 @@ module UMPTG::Fulcrum::ResourceMap
       # Store additional properties for each
       # mapping. These currently are not written,
       # but are necessary for searching.
-      @properties = {}
+      #@properties = {}
 
       # CSV headers, hopefully to be deprecated.
       @csv_headers = []
@@ -123,6 +148,7 @@ module UMPTG::Fulcrum::ResourceMap
       @references = {}
       @resources = {}
       @actions = []
+      @vendors = {}
       @@processor.reset
 
       markup = args[:markup] if args.has_key?(:markup)
@@ -138,6 +164,7 @@ module UMPTG::Fulcrum::ResourceMap
 
         @version = @@processor.version
         @default_action = @@processor.default_action
+        @vendors = @@processor.vendors
 
         @@processor.references.each do |id, name|
           @references[id] = add_reference(
@@ -184,37 +211,42 @@ module UMPTG::Fulcrum::ResourceMap
     end
 
     def save_xml(path)
+      reference_list = @references.collect do |id,reference|
+                sprintf(
+                    @@XML_REFERENCE,
+                    id,
+                    reference.name
+                    )
+      end
+      resource_list = @resources.collect do |id,resource|
+                sprintf(
+                    @@XML_RESOURCE,
+                    id,
+                    resource.name
+                    )
+      end
+      action_list = @actions.collect do |action|
+                sprintf(
+                    @@XML_ACTION,
+                    action.reference.id,
+                    action.resource.id,
+                    action.type
+                    )
+      end
+
+      vendors = @vendors.collect do |format,vendor|
+                "#{format.to_s}=\"#{vendor.to_s}\" "
+      end
       File.open(path, "w") do |f|
-        f.puts("<?xml version=\"1.0\" encoding=\"UTF-8\"?>")
-        f.puts("<resourcemap version=\"1.0\">")
-
-        if @references.count > 0
-          f.puts("<references>")
-          @references.each do |id,reference|
-            f.puts("<reference id=\"#{id}\" src=\"#{reference.name}\"/>")
-          end
-          f.puts("</references>")
-        end
-
-        if @resources.count > 0
-          f.puts("<resources>")
-          @resources.each do |id,resource|
-            f.puts("<resource id=\"#{id}\" name=\"#{resource.name}\"/>")
-          end
-          f.puts("</resources>")
-        end
-
-        f.puts("<actions default=\"#{@default_action.to_s}\">")
-        @actions.each do |action|
-          m = "<action reference_id=\"#{action.reference.id}\""
-          m += " resource_id=\"#{action.resource.id}\""
-          m += " type=\"#{action.type}\""
-          m += "/>"
-          f.puts(m)
-        end
-        f.puts("</actions>")
-
-        f.puts("</resourcemap>")
+        f.printf(
+          @@XML_RESOURCEMAP,
+          @@DEFAULT_VERSION,
+          vendors.join(' '),
+          reference_list.join,
+          resource_list.join,
+          @@DEFAULT_ACTION,
+          action_list.join
+          )
       end
     end
 
