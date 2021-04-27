@@ -42,7 +42,9 @@ module UMPTG::Fulcrum::ResourceMap
       @references = {}
       @resources = {}
       @actions = []
-      @vendors = {}
+      @vendors = {
+          epub: :default
+        }
     end
   end
 end
