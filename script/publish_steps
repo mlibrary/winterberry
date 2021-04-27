@@ -293,6 +293,11 @@ File.open(cmds_file, "w") do |fp|
 
   fp.puts
   fp.puts "# Monograph information"
+  fp.puts monograph_info.keys.join(' ')
+  monograph_info.each do |monograph_id,minfo|
+    mminfo = minfo.delete_if {|key,value| key == :monograph_dir}
+    fp.puts "#{monograph_id},#{mminfo.values.join(',')}"
+  end
   monograph_info.each do |monograph_id,minfo|
     mminfo = minfo.delete_if {|key,value| key == :monograph_dir}
     fp.puts "#{monograph_id},#{mminfo.values.join(',')}"
