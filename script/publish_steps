@@ -14,11 +14,11 @@ options.fulcrum_dir = OS.windows? ? "s:/Information\ Management/Fulcrum" : optio
 #options.fulcrum_dir = "c:/Users/tbelc/Documents/Fulcrum"
 options.press = :ebc
 option_parser = OptionParser.new do |opts|
-  opts.banner = "Usage: #{File.basename(__FILE__)} [-f <fulcrum_dir>] [-p press] <task_id> <monograph_id> [<monograph_id>..]"
-  opts.on('-p', '--press [press]', 'Press bar|ebc|heb') do |press|
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-d <fulcrum_dir>] [-p press] <task_id> <monograph_id> [<monograph_id>..]"
+  opts.on('-p', '--press [press]', 'Press bar|ebc|heb|ummaa') do |press|
     options.press = press.to_sym
   end
-  opts.on('-f', '--fulcrum_directory [DIRECTORY]', 'Fulcrum directory') do |fulcrum_dir|
+  opts.on('-d', '--directory [DIRECTORY]', 'Fulcrum directory') do |fulcrum_dir|
     options.fulcrum_dir = fulcrum_dir
   end
   opts.on_tail('-h', '--help', 'Print this help message') do
@@ -133,7 +133,7 @@ monograph_id_list.each do |monograph_id|
 
   series_id = ""
   case options.press
-  when :ebc
+  when :ebc, :ummaa
     series_id = monograph_row["doi"]
   else
     id_list = monograph_row["identifier(s)"]
@@ -298,10 +298,14 @@ File.open(cmds_file, "w") do |fp|
     mminfo = minfo.delete_if {|key,value| key == :monograph_dir}
     fp.puts "#{monograph_id},#{mminfo.values.join(',')}"
   end
-  monograph_info.each do |monograph_id,minfo|
-    mminfo = minfo.delete_if {|key,value| key == :monograph_dir}
-    fp.puts "#{monograph_id},#{mminfo.values.join(',')}"
-  end
+
+  fp.puts
+  fp.puts "# Publishing ticket comment"
+  fp.puts "[~mbakeryo]"
+  fp.puts "Created the components [*#{components_files.keys.join('*, *')}*] and marked the monographs public. The results can be found in the attached zip files:"
+  fp.puts
+  fp.puts
+  fp.puts "Reassigning to [~jvanderw]."
   fp.puts
   fp.puts "# Create monographs"
   fp.puts "find /mnt/umptmm/<monograph_dir>/ -maxdepth 1 -mindepth 1 -type d -print0 | sort -zn | xargs -0 -I '{}' echo sudo -u heliotrope-production RAILS_ENV=production bundle exec script/import -d '{}' -p <heb|michigan|um-pccn> -v private -q"
