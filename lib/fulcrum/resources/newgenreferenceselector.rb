@@ -14,7 +14,7 @@ module UMPTG::Fulcrum::Resources
 
     # Method select the references found within the XML tree
     def references(xml_doc)
-      return xml_doc.xpath(@@SELECTION_XPATH) + xml_doc.xpath("//comment()")
+      return super(xml_doc) + xml_doc.xpath("//comment()")
     end
   end
 end

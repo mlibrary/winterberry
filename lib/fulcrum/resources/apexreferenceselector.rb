@@ -14,11 +14,6 @@ module UMPTG::Fulcrum::Resources
   ]
   SXPATH
 
-    # Method select the references found within the XML tree
-    def references(xml_doc)
-      return xml_doc.xpath(@@SELECTION_XPATH)
-    end
-
     # Method determines whether a reference is either a
     # resource to be embed|link, or an additional resource
     # to be inserted

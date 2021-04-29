@@ -4,9 +4,11 @@ module UMPTG::Fulcrum::Resources
 
   # Class is base for resource reference selection.
   class ReferenceSelector < UMPTG::Object
+    @@SELECTION_XPATH = nil
 
     def references(xml_doc)
-      return []
+      return [] if @@SELECTION_XPATH.nil?
+      return xml_doc.xpath(@@SELECTION_XPATH)
     end
 
     def reference_type(node)
