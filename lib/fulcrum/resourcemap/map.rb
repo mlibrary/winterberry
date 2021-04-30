@@ -17,6 +17,8 @@ module UMPTG::Fulcrum::ResourceMap
 <?xml version="1.0" encoding="UTF-8"?>
 <resourcemap version="%s">
 <vendors %s/>
+<selectors>
+%s</selectors>
 <references>
 %s</references>
 <resources>
@@ -44,7 +46,7 @@ module UMPTG::Fulcrum::ResourceMap
     @@parser = nil
     @@processor = XMLSaxDocument.new
 
-    attr_reader :actions, :resources
+    attr_reader :actions, :resources, :selectors
     attr_accessor :default_action, :vendors
 
     def initialize(args = {})
@@ -149,6 +151,7 @@ module UMPTG::Fulcrum::ResourceMap
       @resources = {}
       @actions = []
       @vendors = {}
+      @selectors = {}
       @@processor.reset
 
       markup = args[:markup] if args.has_key?(:markup)
@@ -165,6 +168,7 @@ module UMPTG::Fulcrum::ResourceMap
         @version = @@processor.version
         @default_action = @@processor.default_action
         @vendors = @@processor.vendors
+        @selectors = @@processor.selectors
 
         @@processor.references.each do |id, name|
           @references[id] = add_reference(
@@ -237,11 +241,17 @@ module UMPTG::Fulcrum::ResourceMap
       vendors = @vendors.collect do |format,vendor|
                 "#{format.to_s}=\"#{vendor.to_s}\" "
       end
+
+      vendor_selectors = UMPTG::Fulcrum::Vendor.selectors(vendor: @vendors[:epub])
+      selectors = vendor_selectors.collect do |type,expr|
+                "<xpath type=\"#{type.to_s}\" expression=\"#{expr}\"/>"
+      end
       File.open(path, "w") do |f|
         f.printf(
           @@XML_RESOURCEMAP,
           @@DEFAULT_VERSION,
           vendors.join(' '),
+          selectors.join(' '),
           reference_list.join,
           resource_list.join,
           @@DEFAULT_ACTION,

@@ -61,10 +61,6 @@ module UMPTG::Fulcrum
             entry_content: File.read(resource_map_file)
           )
 
-      # Determine the selector for the resource references. This may be
-      # vendor specific.
-      reference_selector = Resources::ReferenceSelectorFactory.select(vendor: resource_map.vendors[:epub])
-
       processors = {}
       unless default_actions[:resources].nil? or default_actions[:resources] == :disable
         # Instantiate the class that will process each resource reference.
@@ -72,7 +68,6 @@ module UMPTG::Fulcrum
                     resource_map: resource_map,
                     resource_metadata: resource_metadata,
                     :default_action => default_actions[:resources],
-                    selector: reference_selector,
                     logger: logger,
                     )
         processors[:resources] = resource_processor

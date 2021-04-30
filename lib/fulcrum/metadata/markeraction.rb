@@ -10,14 +10,19 @@ module UMPTG::Fulcrum::Metadata
       rnames = []
       comment = @fragment.node.xpath(".//comment()")
       comment << fragment.node if comment.empty?
+
+      coder = HTMLEntities.new
       comment.each do |c|
+        ctext = coder.decode(c.text)
+
         # Generally, additional resource references are expected
         # to use the markup:
         #     <p class="rb|rbi"><!-- resource_file_name.ext --></p>
         # But recently, Newgen has been using the markup
         #     <!-- <insert resource_file_name.ext> -->
         # So here we check for this case.
-        r = c.text.match(/\<insert[ ]+([^\>]+)\>/)
+        #r = c.text.match(/\<insert[ ]+([^\>]+)\>/)
+        r = ctext.match(/\<insert[ ]+([^\>]+)\>/)
         if r.nil?
           # Not Newgen markup.
           rn = c.text

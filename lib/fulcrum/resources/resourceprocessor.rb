@@ -7,7 +7,6 @@ module UMPTG::Fulcrum::Resources
     #   :default_action         Default resource action, embed|link|none
     #   :resource_metadata      Monograph resource metadata
     #   :resource_map           Resource reference to fileset mapping
-    #   :selector               Class for selecting resource references
     #   :logger                 Log messages
     def initialize(args = {})
       super(args)
@@ -15,7 +14,6 @@ module UMPTG::Fulcrum::Resources
       @default_action = @properties[:default_action]
       @resource_metadata = @properties[:resource_metadata]
       @resource_map = @properties[:resource_map]
-      @selector = @properties[:selector]
       @logger = @properties[:logger]
 
       @reference_action_defs = nil
@@ -33,37 +31,25 @@ module UMPTG::Fulcrum::Resources
 
       init_reference_action_defs()
 
-      # Select the elements that contain resource references.
-      reference_container_list = @selector.references(xml_doc)
-
-      # For each container element, determine the necessary actions.
-      # A container may reference one or more resources. A reference
-      # may be a resource that should be replaced with embed|link
-      # markup or an additional resource that should be inserted.
       reference_action_list = []
-      reference_container_list.each do |refnode|
-        case @selector.reference_type(refnode)
+      @resource_map.selectors.each do |type,expr|
+        container_list = xml_doc.xpath(expr)
+        case type
         when :element
-          # Container has one or more resources to be replaced with
-          # embed|link markup.
-          list = element_reference_actions(
-                      name: name,
-                      reference_container: refnode
-                    )
+          container_list.each do |container|
+            reference_action_list += element_reference_actions(
+                       name: name,
+                       reference_container: container
+                     )
+          end
         when :marker
-          # Container has one or more additional resources to be inserted.
-          list = marker_reference_actions(
-                      name: name,
-                      reference_container: refnode
-                    )
-        else
-          # Shouldn't happen
-          next
+          container_list.each do |container|
+            reference_action_list += marker_reference_actions(
+                       name: name,
+                       reference_container: container
+                     )
+          end
         end
-
-        # Add the list of Actions for this container to
-        # the list for the entire XML content.
-        reference_action_list += list
       end
 
       # Process all the Actions for this XML content.

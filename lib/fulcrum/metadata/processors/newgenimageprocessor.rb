@@ -11,6 +11,8 @@ module UMPTG::Fulcrum::Metadata::Processors
     #   :name       Content identifier, e.g. EPUB entry name or file name.
     #   :content    Entry XML content
     def action_list(args = {})
+      name = args[:name]
+
       # Figures expected to wrapped within a <div class="figurewrap">.
       # NOTE: not handling case of <img> not wrapped within a figure
       # container as it has not been encountered to date.
