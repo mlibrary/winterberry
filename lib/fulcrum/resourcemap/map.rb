@@ -18,7 +18,8 @@ module UMPTG::Fulcrum::ResourceMap
 <resourcemap version="%s">
 <vendors %s/>
 <selectors>
-%s</selectors>
+%s
+</selectors>
 <references>
 %s</references>
 <resources>
@@ -244,14 +245,14 @@ module UMPTG::Fulcrum::ResourceMap
 
       vendor_selectors = UMPTG::Fulcrum::Vendor.selectors(vendor: @vendors[:epub])
       selectors = vendor_selectors.collect do |type,expr|
-                "<xpath type=\"#{type.to_s}\" expression=\"#{expr}\"/>"
+                "<xpath type=\"#{type.to_s}\" expression=\"#{expr.strip}\"/>"
       end
       File.open(path, "w") do |f|
         f.printf(
           @@XML_RESOURCEMAP,
           @@DEFAULT_VERSION,
           vendors.join(' '),
-          selectors.join(' '),
+          selectors.join("\n"),
           reference_list.join,
           resource_list.join,
           @@DEFAULT_ACTION,

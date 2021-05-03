@@ -27,8 +27,8 @@ options.default_actions = {
         resources: :embed
         }
 option_parser = OptionParser.new do |opts|
-  opts.banner = "Usage: #{File.basename(__FILE__)} [-map] [-nofmsl] [-p <publisher_dir>] [-v apex|newgen|default] [-r embed|link|none|remove] <monograph_id> [<monograph_id>...]"
-  opts.on('-map', '--map', 'Overwrite existing resource map file.') do |da|
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-m] [-nofmsl] [-p <publisher_dir>] [-v apex|newgen|default] [-r embed|link|none|remove] <monograph_id> [<monograph_id>...]"
+  opts.on('-m', '--map', 'Overwrite existing resource map file.') do |da|
     options.use_map = false
   end
   opts.on('-nofmsl', '--nofmsl', 'Do not update FMSL.') do |da|
