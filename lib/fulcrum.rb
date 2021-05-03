@@ -8,5 +8,4 @@ module UMPTG
   require_relative File.join('fulcrum', 'resourcemap')
   require_relative File.join('fulcrum', 'keywords')
   require_relative File.join('fulcrum', 'resources')
-  require_relative File.join('fulcrum', 'epubprocessor')
 end

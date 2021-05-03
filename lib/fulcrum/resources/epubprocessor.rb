@@ -1,4 +1,4 @@
-module UMPTG::Fulcrum
+module UMPTG::Fulcrum::Resources
 
   require 'zip'
 
@@ -48,7 +48,7 @@ module UMPTG::Fulcrum
 
       # Construct the resource reference to fileset mapping
       logger.info("Using resource map file #{File.basename(resource_map_file)}")
-      resource_map = ResourceMap::Map.new(
+      resource_map = UMPTG::Fulcrum::ResourceMap::Map.new(
             :xml_path => resource_map_file,
             :default_action => default_actions[:resources]
           )
@@ -64,7 +64,7 @@ module UMPTG::Fulcrum
       processors = {}
       unless default_actions[:resources].nil? or default_actions[:resources] == :disable
         # Instantiate the class that will process each resource reference.
-        resource_processor = Resources::ResourceProcessor.new(
+        resource_processor = ResourceProcessor.new(
                     resource_map: resource_map,
                     resource_metadata: resource_metadata,
                     :default_action => default_actions[:resources],
