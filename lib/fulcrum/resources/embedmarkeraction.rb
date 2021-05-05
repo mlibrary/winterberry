@@ -13,8 +13,8 @@ module UMPTG::Fulcrum::Resources
       unless emb_fragment.nil? or emb_container.nil?
         emb_container.add_child(emb_fragment)
 
-        reference_container.add_next_sibling(emb_container)
-        reference_container.remove
+        reference_node.add_next_sibling(emb_container)
+        reference_node.remove
 
         # Action completed.
         @status = Action.COMPLETED

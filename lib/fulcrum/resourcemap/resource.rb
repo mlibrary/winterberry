@@ -5,7 +5,6 @@ module UMPTG::Fulcrum::ResourceMap
 
     def initialize(args = {})
       name = args[:name]
-      args[:name] = name
       args[:id] = args.has_key?(:resource_id) ? args[:resource_id] : \
               ResourceMapObject.name_id(name)
 

@@ -4,6 +4,7 @@ module UMPTG::Fulcrum
   require_relative File.join('resources', 'referenceactiondef')
   require_relative File.join('resources', 'resourceprocessor')
   require_relative File.join('resources', 'action')
+  require_relative File.join('resources', 'appendmapcaptionaction')
   require_relative File.join('resources', 'embedmarkeraction')
   require_relative File.join('resources', 'linkmarkeraction')
   require_relative File.join('resources', 'noneaction')

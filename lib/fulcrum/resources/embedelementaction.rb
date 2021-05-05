@@ -4,11 +4,14 @@ module UMPTG::Fulcrum::Resources
   # XML content (image, video, audio).
   class EmbedElementAction < Action
     def process()
-      if reference_container.node_name == "p"
-        # Not sure about this. epubcheck complains about ./span/div
-        # so, attempt to convert the 'p' to 'div'.
-        # See how this goes.
-        reference_container.node_name = "div"
+      node_list = reference_node.xpath("./ancestor::*[local-name()='p'][1]")
+      unless node_list.empty?
+        if node_list.first.node_name == "p"
+          # Not sure about this. epubcheck complains about ./span/div
+          # so, attempt to convert the 'p' to 'div'.
+          # See how this goes.
+          node_list.first.node_name = "div"
+        end
       end
 
       # Retrieve the resource embed markup from the

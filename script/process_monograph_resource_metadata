@@ -78,6 +78,23 @@ script_logger.fatal("Error: invalid default resources action #{options.resources
       unless [:embed,:link,:none,:remove].find {|t| t == options.default_actions[:resources] }
 script_logger.info("Processing resources #{options.default_actions[:resources].to_s}")
 
+DEFAULT_ELEMENT_SELECTOR_PATTERN = <<-ELEMENT_SELECTOR_PATTERN
+//*[local-name()='img' and @src='%s']
+ELEMENT_SELECTOR_PATTERN
+DEFAULT_ELEMENT_LINK_SELECTOR_PATTERN = <<-LINK_SELECTOR_PATTERN
+//*[local-name()='img' and @src='%s']/ancestor::*[local-name()='figure' or (local-name()='p' and @class='fig')][last()]//*[local-name()='figcaption' or @class='figcap' or @class='figh']
+LINK_SELECTOR_PATTERN
+DEFAULT_ELEMENT_MAP_SELECTOR_PATTERN = <<-MAP_SELECTOR_PATTERN
+//*[local-name()='img' and @src='%s']/ancestor::*[local-name()='figure']
+MAP_SELECTOR_PATTERN
+DEFAULT_ELEMENT_MAP_CAPTION_SELECTOR_PATTERN = <<-MAP_CAPTION_SELECTOR_PATTERN
+//*[local-name()='img' and @src='%s']/ancestor::*[local-name()='figure']//*[local-name()='figcaption' or @class='figcap' or @class='figh']
+MAP_CAPTION_SELECTOR_PATTERN
+
+DEFAULT_MARKER_SELECTOR_PATTERN = <<-MARKER_SELECTOR_PATTERN
+//*[local-name()='p' and (@class='rb' or @class='rbi') and comment()[. ='%s']]
+MARKER_SELECTOR_PATTERN
+
 #blank_row_file_name = "***row left intentionally blank***"
 blank_row_file_name = UMPTG::Fulcrum::Manifest.BLANK_ROW_FILE_NAME
 blank_row_pattern = "^\*\*\*.* intentionally blank[ ]*\*\*\*$"
@@ -115,8 +132,26 @@ monograph_id_list.each do |monograph_id|
 
   # Find the monograph resources directory.
   resources_dir = File.join(monograph_dir, "resources")
-  if !File.directory?(resources_dir)
+  unless File.directory?(resources_dir)
     monograph_loggers[monograph_id].error("No resources directory found for monograph #{monograph_dir}.")
+    next
+  end
+
+  # Find the monograph source FMSL.
+  fmsl_file_list = Dir.glob(File.join(resources_dir, "*.csv"))
+  if fmsl_file_list.count == 0
+    monograph_loggers[monograph_id].error("No FMSL found for monograph #{monograph_dir}.")
+    next
+  end
+  fmsl_file = fmsl_file_list.first
+  monograph_loggers[monograph_id].warn("Multiple FMSLs for monograph #{monograph_dir}. Using #{File.basename(fmsl_file)}.") \
+        if fmsl_file_list.count > 1
+  monograph_loggers[monograph_id].info("Using FMSL #{File.basename(fmsl_file)}.") if fmsl_file_list.count == 1
+
+  # Read the monograph source FMSL.
+  fmsl_csv = CSVFile.read(csv_path:  fmsl_file)
+  if fmsl_csv.nil?
+    monograph_loggers[monograph_id].error("Reading FMSL #{File.basename(fmsl_file)}.")
     next
   end
 
@@ -143,8 +178,7 @@ monograph_id_list.each do |monograph_id|
   # it should be generated and saved.
   resource_map = UMPTG::Fulcrum::ResourceMap::Map.new
   if resource_map_exists
-    monograph_loggers[monograph_id].info("Using existing resource map file #{File.basename(resource_map_file)}") \
-        if resource_map_exists
+    monograph_loggers[monograph_id].info("Using existing resource map file #{File.basename(resource_map_file)}")
     resource_map.load(:xml_path => resource_map_file)
   else
     monograph_loggers[monograph_id].info("Generating resource map file #{File.basename(resource_map_file)}.")
@@ -186,6 +220,7 @@ monograph_id_list.each do |monograph_id|
             node = object.node
             node_map = object.map
             reference_name = node_map['resource_name'].strip
+            action_type = resource_map.reference_action_type(reference_name)
 
             resource = resource_map.reference_resource(reference_name)
             if resource.nil?
@@ -194,41 +229,66 @@ monograph_id_list.each do |monograph_id|
               monograph_loggers[monograph_id].info("#{object.name}: mapping reference \"#{reference_name}\" to resource \"#{resource.name}\".")
               node_map["caption"] = node_map["caption"].text unless node_map["caption"].nil?
               resource.resource_properties = node_map
+
+              fmsl_row = fmsl_csv.find {|row| row['File Name'] == resource.name }
+              resource_type = fmsl_row['Resource Type'] unless fmsl_row.nil?
+            end
+
+            atype = action_type == :default ? resource_map.default_action : action_type
+            case key
+            when :element
+              case atype
+              when :link
+                reference_selector = sprintf(DEFAULT_ELEMENT_LINK_SELECTOR_PATTERN, reference_name).strip
+              when :embed
+                case resource_type
+                when "image"
+                  reference_selector = sprintf(DEFAULT_ELEMENT_SELECTOR_PATTERN, reference_name).strip
+                when "interactive map"
+                  reference_selector = sprintf(DEFAULT_ELEMENT_MAP_SELECTOR_PATTERN, reference_name).strip
+                end
+              else
+                reference_selector = sprintf(DEFAULT_ELEMENT_SELECTOR_PATTERN, reference_name).strip
+              end
+            when :marker
+              reference_selector = sprintf(DEFAULT_MARKER_SELECTOR_PATTERN, reference_name).strip
             end
 
             resource_map.add(
-                  :reference_name => reference_name,
-                  :resource => resource,
-                  :type => "default"
+                  reference_name: reference_name,
+                  resource: resource,
+                  type: action_type,
+                  element_type: key,
+                  reference_entry: entry_name,
+                  reference_selector: reference_selector
                 )
+            if atype == :embed and resource_type == "interactive map"
+              ref_id = (reference_name + "_caption").gsub(/[\/\\\.]/, '_')
+              reference_selector = sprintf(DEFAULT_ELEMENT_MAP_CAPTION_SELECTOR_PATTERN, reference_name).strip
+              resource_map.add(
+                    reference_id: ref_id,
+                    reference_name: reference_name,
+                    resource: resource,
+                    type: :append_map_caption,
+                    element_type: key,
+                    reference_entry: entry_name,
+                    reference_selector: reference_selector
+                  )
+            end
           end
         end
       end
     end
+resource_map.references.each do |reference|
+  #puts reference
+end
 
     # Save the resource map XML file.
-    resource_map.save(resource_map_file) unless resource_map_exists
+    #resource_map.save(resource_map_file) unless resource_map_exists
+    resource_map.save(resource_map_file)
 
     if update_fmsl
       # Update the FMSL.
-
-      # Find the monograph source FMSL.
-      fmsl_file_list = Dir.glob(File.join(resources_dir, "*.csv"))
-      if fmsl_file_list.count == 0
-        monograph_loggers[monograph_id].error("No FMSL found for monograph #{monograph_dir}.")
-        next
-      end
-      fmsl_file = fmsl_file_list.first
-      monograph_loggers[monograph_id].warn("Multiple FMSLs for monograph #{monograph_dir}. Using #{File.basename(fmsl_file)}.") \
-            if fmsl_file_list.count > 1
-      monograph_loggers[monograph_id].info("Using FMSL #{File.basename(fmsl_file)}.") if fmsl_file_list.count == 1
-
-      # Read the monograph source FMSL.
-      fmsl_csv = CSVFile.read(:csv_path => fmsl_file)
-      if fmsl_csv.nil?
-        monograph_loggers[monograph_id].error("Reading FMSL #{File.basename(fmsl_file)}.")
-        next
-      end
 
       # Update the alt text and caption information in the FMSL.
       fmsl_csv.each do |fmsl_row|

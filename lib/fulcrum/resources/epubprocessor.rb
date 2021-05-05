@@ -73,6 +73,20 @@ module UMPTG::Fulcrum::Resources
         processors[:resources] = resource_processor
       end
 
+      action_map = {}
+      epub.spine.each do |entry|
+        action_map[entry.name] = {
+              xml_doc: nil,
+              resources: []
+            }
+      end
+
+      action_list = processors[:resources].actions(epub: epub, type: :element)
+      action_list.each do |action|
+        action_map[action.name][:xml_doc] = action.reference_node.document
+        action_map[action.name][:resources] << action
+      end
+=begin
       unless default_actions[:keywords].nil? or default_actions[:keywords] == :disable
         # Instantiate the class that will process each keyword reference.
         keyword_processor = Keywords::KeywordProcessor.new(
@@ -90,6 +104,7 @@ module UMPTG::Fulcrum::Resources
             entry_processors: processors,
             pass_xml_doc: true
           )
+=end
 
       # Provide the directory path for adding the CSS stylesheet link.
       # Possible option? Sometimes CSS files are found in a

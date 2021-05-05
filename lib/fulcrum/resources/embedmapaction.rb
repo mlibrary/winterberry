@@ -5,7 +5,8 @@ module UMPTG::Fulcrum::Resources
   class EmbedMapAction < Action
     def process()
       # Locate the <figure> within the XML content.
-      figure_node = reference_container
+      #figure_node = reference_container
+      figure_node = reference_node
       loop do
         if figure_node.nil?
           @status = Action.FAILED
@@ -48,7 +49,7 @@ module UMPTG::Fulcrum::Resources
       figure_node['data-resource-type'] = 'interactive-map'
       figure_node['data-href'] = data_href
       figure_node['data-title'] = data_title
-
+=begin
       # Determine if the <figure> contains a caption. If so, append
       # a note concerning the Fulcrum edition.
       caption = Action.find_caption(figure_node)
@@ -62,6 +63,7 @@ module UMPTG::Fulcrum::Resources
           cp.add_child(fragment)
         end
       end
+=end
 
       # Action completed.
       @status = Action.COMPLETED

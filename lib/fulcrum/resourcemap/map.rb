@@ -15,8 +15,7 @@ module UMPTG::Fulcrum::ResourceMap
 
     @@XML_RESOURCEMAP = <<-XML_RESOURCEMAP
 <?xml version="1.0" encoding="UTF-8"?>
-<resourcemap version="%s">
-<vendors %s/>
+<resourcemap version="%s" %s>
 <selectors>
 %s
 </selectors>
@@ -38,7 +37,7 @@ module UMPTG::Fulcrum::ResourceMap
     XRESOURCE
 
     @@XML_ACTION =    <<-XACTION
-<action reference_id="%s" resource_id="%s" type="%s"/>
+<action reference_id="%s" resource_id="%s" type="%s" element_type="%s" reference_entry="%s" reference_selector="%s"/>
     XACTION
 
     # Headers to use for writing CSV version.
@@ -47,7 +46,7 @@ module UMPTG::Fulcrum::ResourceMap
     @@parser = nil
     @@processor = XMLSaxDocument.new
 
-    attr_reader :actions, :resources, :selectors
+    attr_reader :actions, :resources, :selectors, :references
     attr_accessor :default_action, :vendors
 
     def initialize(args = {})
@@ -70,7 +69,6 @@ module UMPTG::Fulcrum::ResourceMap
       name = args[:name]
       id = args[:id]
       id = ResourceMapObject.name_id(name) if id.nil?
-
       reference = @references[id]
       if reference.nil?
         reference = Reference.new(
@@ -106,23 +104,40 @@ module UMPTG::Fulcrum::ResourceMap
       reference_name = args[:reference_name]
       resource = args[:resource]
       type = args[:type]
+      element_type = args[:element_type]
+      reference_entry = args[:reference_entry]
+      reference_selector = args[:reference_selector]
 
       reference = add_reference(
             :id => reference_id,
             :name => reference_name
           )
-
-      unless resource.nil?
+      if resource.nil?
+        action = Action.new(
+                reference: reference,
+                resource: nil,
+                type: :none,
+                element_type: element_type,
+                reference_entry: reference_entry,
+                reference_selector: reference_selector
+              )
+      else
         action = @actions.find {|a| a.reference.id == reference.id and a.resource.id == resource.id }
         if action.nil?
           action = Action.new(
-                  :reference => reference,
-                  :resource => resource,
-                  :type => type.to_sym
+                  reference: reference,
+                  resource: resource,
+                  type: type.to_sym,
+                  element_type: element_type,
+                  reference_entry: reference_entry,
+                  reference_selector: reference_selector
                 )
           @actions << action
         else
-          action.type = type
+          action.type = type.to_sym
+          action.element_type = element_type
+          action.reference_entry = reference_entry
+          action.reference_selector = reference_selector
         end
       end
     end
@@ -144,6 +159,12 @@ module UMPTG::Fulcrum::ResourceMap
         return r.values.first unless r.nil?
       end
       return action.resource unless action.nil?
+    end
+
+    def reference_action_type(reference)
+      action = @actions.find {|a| a.reference.name == reference }
+      return :default if action.nil?
+      return action.type
     end
 
     # Load an XML resource map file.
@@ -189,18 +210,21 @@ module UMPTG::Fulcrum::ResourceMap
           ref_id = action_node["reference_id"]
           res_id = action_node["resource_id"]
           resource = add_resource(
-                  :id => res_id,
-                  :name => @@processor.resources[res_id]
+                  id: res_id,
+                  name: @@processor.resources[res_id]
                 )
 
           raise "Error: no reference for id #{ref_id}" \
                 unless @@processor.references.key?(ref_id)
           add(
-              :reference_id => ref_id,
-              :reference_name => @@processor.references[ref_id],
-              :resource_id => res_id,
-              :resource =>  resource,
-              :type => action_node["type"].nil? ? "default" : action_node["type"]
+              reference_id: ref_id,
+              reference_name: @@processor.references[ref_id],
+              resource_id: res_id,
+              resource:  resource,
+              type: action_node["type"].nil? ? "default" : action_node["type"],
+              element_type: action_node["element_type"],
+              reference_entry: action_node["reference_entry"],
+              reference_selector: action_node["reference_selector"]
             )
         end
       end
@@ -235,12 +259,15 @@ module UMPTG::Fulcrum::ResourceMap
                     @@XML_ACTION,
                     action.reference.id,
                     action.resource.id,
-                    action.type
+                    action.type,
+                    action.element_type,
+                    action.reference_entry,
+                    action.reference_selector
                     )
       end
 
       vendors = @vendors.collect do |format,vendor|
-                "#{format.to_s}=\"#{vendor.to_s}\" "
+                "#{format.to_s}_vendor=\"#{vendor.to_s}\" "
       end
 
       vendor_selectors = UMPTG::Fulcrum::Vendor.selectors(vendor: @vendors[:epub])

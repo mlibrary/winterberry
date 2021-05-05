@@ -24,19 +24,19 @@ module UMPTG::Fulcrum::Metadata
     when :apex
       # Apex processors
       return {
-                image: Processors::ApexFigureProcessor.new,
+                element: Processors::ApexFigureProcessor.new,
                 marker: Processors::ApexMarkerProcessor.new
              }
     when :newgen
       # Newgen processors
       return {
-                image: Processors::NewgenImageProcessor.new,
+                element: Processors::NewgenImageProcessor.new,
                 marker: Processors::NewgenMarkerProcessor.new
              }
     when :default
       # Default processors.
       return {
-                image: Processors::SpecFigureProcessor.new,
+                element: Processors::SpecFigureProcessor.new,
                 marker: Processors::SpecMarkerProcessor.new
              }
     end
