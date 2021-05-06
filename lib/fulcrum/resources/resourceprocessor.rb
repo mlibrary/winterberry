@@ -198,6 +198,8 @@ module UMPTG::Fulcrum::Resources
             reference_action = EmbedMarkerAction.new(args)
           when :link
             reference_action = LinkMarkerAction.new(args)
+          when :remove
+            reference_action = RemoveElementAction.new(args)
           when :none
             reference_action = NoneAction.new(args)
           else
