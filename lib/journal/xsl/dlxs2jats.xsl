@@ -492,6 +492,10 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
 
     <xsl:template match="P[@TYPE='title' or @TYPE='author' or @TYPE='author-notes']"/>
 
+    <xsl:template match="FIGURE[not(exists(@REND)) or @REND!='author']/P">
+        <xsl:apply-templates/>
+    </xsl:template>
+
     <xsl:template match="P">
         <xsl:element name="p">
             <xsl:choose>
@@ -594,17 +598,45 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
                 </xsl:when>
                 <xsl:otherwise>
                     <xsl:if test="exists(*[local-name()='HEAD' or local-name()='P'])">
-                        <xsl:variable name="content">
-                            <xsl:for-each select="*[local-name()='HEAD' or local-name()='P']">
-                                <xsl:apply-templates select="node()"/>
-                                <xsl:text> </xsl:text>
-                            </xsl:for-each>
-                        </xsl:variable>
-                        <xsl:element name="caption">
-                            <xsl:element name="title">
-                                <xsl:value-of select="normalize-space($content)"/>
-                            </xsl:element>
-                        </xsl:element>
+                        <xsl:choose>
+                            <xsl:when test="matches(lower-case(normalize-space(.)),'^(fig|figure|figures|table|tables)[ ]+[a-zA-Z0-9\-\.:]+ ')">
+                                <xsl:variable name="children" select="*[1]/child::node()"/>
+                                <xsl:analyze-string select="$children[1]" regex="^([^ ]+[ ]+[a-zA-Z0-9\.\-:]+)">
+                                    <xsl:matching-substring>
+                                        <xsl:element name="label">
+                                            <xsl:value-of select="regex-group(1)"/>
+                                        </xsl:element>
+                                    </xsl:matching-substring>
+                                </xsl:analyze-string>
+                                <xsl:element name="caption">
+                                    <xsl:element name="title">
+                                        <xsl:analyze-string select="$children[1]" regex="^[^ ]+[ ]+[a-zA-Z0-9\.\-:]+(.*)">
+                                            <xsl:matching-substring>
+                                                <xsl:variable name="ncontent" select="normalize-space(regex-group(1))"/>
+                                                <xsl:if test="$ncontent!=''">
+                                                    <xsl:value-of select="$ncontent"/>
+                                                </xsl:if>
+                                            </xsl:matching-substring>
+                                        </xsl:analyze-string>
+                                        <xsl:apply-templates select="$children[position()>1]"/>
+                                    </xsl:element>
+                                </xsl:element>
+                            </xsl:when>
+                            <xsl:otherwise>
+                                <xsl:element name="caption">
+                                    <xsl:choose>
+                                        <xsl:when test="exists(HEAD)">
+                                            <xsl:apply-templates/>
+                                        </xsl:when>
+                                        <xsl:otherwise>
+                                            <xsl:element name="title">
+                                                <xsl:apply-templates/>
+                                            </xsl:element>
+                                        </xsl:otherwise>
+                                    </xsl:choose>
+                                </xsl:element>
+                            </xsl:otherwise>
+                        </xsl:choose>
                     </xsl:if>
                 </xsl:otherwise>
             </xsl:choose>
