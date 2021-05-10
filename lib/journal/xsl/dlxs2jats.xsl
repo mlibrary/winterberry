@@ -233,12 +233,26 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
                         <xsl:apply-templates select="$abstractDiv"/>
                     </xsl:element>
                 </xsl:if>
-                <xsl:if test="not(empty($keywordDiv))">
+                <xsl:for-each select="$keywordDiv">
                     <xsl:element name="kwd-group">
                         <xsl:attribute name="kwd-group-type" select="'author'"/>
-                        <xsl:apply-templates select="$keywordDiv"/>
+                        <xsl:variable name="kwdList" select="tokenize(substring(normalize-space(.),10),',')"/>
+                        <xsl:choose>
+                            <xsl:when test="count($kwdList)>0">
+                                <xsl:for-each select="$kwdList">
+                                    <xsl:element name="kwd">
+                                        <xsl:value-of select="normalize-space(.)"/>
+                                    </xsl:element>
+                                </xsl:for-each>
+                            </xsl:when>
+                            <xsl:otherwise>
+                                <xsl:element name="kwd">
+                                    <xsl:value-of select="normalize-space(.)"/>
+                                </xsl:element>
+                            </xsl:otherwise>
+                        </xsl:choose>
                     </xsl:element>
-                </xsl:if>
+                </xsl:for-each>
             </xsl:element>
         </xsl:element>
     </xsl:template>
@@ -492,10 +506,6 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
 
     <xsl:template match="P[@TYPE='title' or @TYPE='author' or @TYPE='author-notes']"/>
 
-    <xsl:template match="FIGURE[not(exists(@REND)) or @REND!='author']/P">
-        <xsl:apply-templates/>
-    </xsl:template>
-
     <xsl:template match="P">
         <xsl:element name="p">
             <xsl:choose>
@@ -608,19 +618,30 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
                                         </xsl:element>
                                     </xsl:matching-substring>
                                 </xsl:analyze-string>
-                                <xsl:element name="caption">
-                                    <xsl:element name="title">
-                                        <xsl:analyze-string select="$children[1]" regex="^[^ ]+[ ]+[a-zA-Z0-9\.\-:]+(.*)">
-                                            <xsl:matching-substring>
-                                                <xsl:variable name="ncontent" select="normalize-space(regex-group(1))"/>
-                                                <xsl:if test="$ncontent!=''">
-                                                    <xsl:value-of select="$ncontent"/>
+                                <xsl:variable name="title">
+                                    <xsl:analyze-string select="$children[1]" regex="^[^ ]+[ ]+[a-zA-Z0-9\.\-:]+(.*)">
+                                        <xsl:matching-substring>
+                                            <xsl:value-of select="normalize-space(regex-group(1))"/>
+                                        </xsl:matching-substring>
+                                        <xsl:non-matching-substring>
+                                            <xsl:message>title non match</xsl:message>
+                                        </xsl:non-matching-substring>
+                                    </xsl:analyze-string>
+                                </xsl:variable>
+                                <xsl:if test="count(*) > 1 or count($children) > 1 or $title!=''">
+                                    <xsl:element name="caption">
+                                        <xsl:if test="count(HEAD)>1 or count($children) > 1 or $title!=''">
+                                            <xsl:element name="title">
+                                                <xsl:if test="$title!=''">
+                                                    <xsl:value-of select="$title"/>
                                                 </xsl:if>
-                                            </xsl:matching-substring>
-                                        </xsl:analyze-string>
-                                        <xsl:apply-templates select="$children[position()>1]"/>
+                                                <xsl:apply-templates select="$children[position()>1]"/>
+                                                <xsl:apply-templates select="*[position()>1 and local-name()='HEAD']"/>
+                                            </xsl:element>
+                                        </xsl:if>
+                                        <xsl:apply-templates select="*[position()>1 and local-name()!='HEAD']"/>
                                     </xsl:element>
-                                </xsl:element>
+                                </xsl:if>
                             </xsl:when>
                             <xsl:otherwise>
                                 <xsl:element name="caption">
@@ -1095,10 +1116,57 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
         <xsl:param name="node"/>
 
         <xsl:element name="table-wrap">
-            <xsl:if test="count($node/HEAD) > 0">
-                <xsl:element name="caption">
-                    <xsl:apply-templates select="$node/HEAD"/>
-                </xsl:element>
+            <xsl:if test="exists($node/HEAD)">
+                <xsl:choose>
+                    <xsl:when test="matches(lower-case(normalize-space($node/*[1])),'^(fig|figure|figures|table|tables)[ ]+[a-zA-Z0-9\-\.:]+ ')">
+                        <xsl:variable name="children" select="$node/*[1]/child::node()"/>
+                        <xsl:analyze-string select="$children[1]" regex="^([^ ]+[ ]+[a-zA-Z0-9\.\-:]+)">
+                            <xsl:matching-substring>
+                                <xsl:element name="label">
+                                    <xsl:value-of select="regex-group(1)"/>
+                                </xsl:element>
+                            </xsl:matching-substring>
+                        </xsl:analyze-string>
+                        <xsl:variable name="title">
+                            <xsl:analyze-string select="$children[1]" regex="^[^ ]+[ ]+[a-zA-Z0-9\.\-:]+(.*)">
+                                <xsl:matching-substring>
+                                    <xsl:value-of select="normalize-space(regex-group(1))"/>
+                                </xsl:matching-substring>
+                                <xsl:non-matching-substring>
+                                    <xsl:message>title non match</xsl:message>
+                                </xsl:non-matching-substring>
+                            </xsl:analyze-string>
+                        </xsl:variable>
+                        <xsl:if test="count($node/*) > 1 or count($children) > 1 or $title!=''">
+                            <xsl:element name="caption">
+                                <xsl:if test="count($node/HEAD)>1 or count($children) > 1 or $title!=''">
+                                    <xsl:element name="title">
+                                        <xsl:if test="$title!=''">
+                                            <xsl:value-of select="$title"/>
+                                        </xsl:if>
+                                        <xsl:apply-templates select="$children[position()>1]"/>
+                                        <xsl:apply-templates select="$node/*[position()>1 and local-name()='HEAD']/*"/>
+                                    </xsl:element>
+                                </xsl:if>
+                                <xsl:apply-templates select="$node/*[position()>1 and local-name()!='HEAD' and local-name()!='ROW']"/>
+                            </xsl:element>
+                        </xsl:if>
+                    </xsl:when>
+                    <xsl:otherwise>
+                        <xsl:element name="caption">
+                            <xsl:choose>
+                                <xsl:when test="exists($node/HEAD)">
+                                    <xsl:apply-templates select="$node/HEAD"/>
+                                </xsl:when>
+                                <xsl:otherwise>
+                                    <xsl:element name="title">
+                                        <xsl:apply-templates select="$node/*[local-name()!='ROW']"/>
+                                    </xsl:element>
+                                </xsl:otherwise>
+                            </xsl:choose>
+                        </xsl:element>
+                    </xsl:otherwise>
+                </xsl:choose>
             </xsl:if>
             <xsl:element name="table">
                 <xsl:apply-templates select="$node/@*[name()!='REND']"/>
