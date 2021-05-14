@@ -2,8 +2,6 @@ module UMPTG
   require_relative 'fragment'
   require_relative 'epub'
 
-  require_relative File.join('review', 'reviewobject')
-  #require_relative File.join('review', 'reviewprocessor')
   require_relative File.join('review', 'action')
   require_relative File.join('review', 'figureaction')
   require_relative File.join('review', 'imgaction')
