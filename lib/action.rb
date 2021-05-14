@@ -22,7 +22,7 @@ module UMPTG
     end
 
     def to_s
-      return "#{@status}: #{self.class}"
+      return "#{@status}: #{self.class},#{@message}"
     end
 
     def self.COMPLETED

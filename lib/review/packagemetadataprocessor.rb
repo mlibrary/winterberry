@@ -1,22 +1,24 @@
 module UMPTG::Review
-  class PackageMetadataProcessor < ReviewProcessor
+  class PackageMetadataProcessor < EntryProcessor
     @@children = [ 'dc:title', 'dc:creator', 'dc:language', 'dc:rights', 'dc:publisher', 'dc:identifier' ]
 
-    def process(args = {})
-      args[:children] = @@children
-      fragment_selector = UMPTG::Fragment::ContainerSelector.new
-      fragment_selector.containers = [ 'metadata' ]
-      args[:selector] = fragment_selector
+    def initialize(args = {})
+      args[:containers] = [ 'metadata' ]
+      super(args)
+    end
 
-      fragments = super(args)
-
-      fragments.each do |fragment|
-        fragment.has_elements.each do |elem_name, exists|
-            fragment.review_msg_list << "Metadata INFO:  contains <#{elem_name}>." if exists
-            fragment.review_msg_list << "Metadata INFO:  contains no <#{elem_name}>." unless exists
-        end
-      end
-      return fragments
+    #
+    #
+    # Arguments:
+    #   :name       Content identifier, e.g. EPUB entry name or file name.
+    #   :fragment   XML fragment for Marker to process.
+    def new_action(args = {})
+      action = UMPTG::Review::PackageMetadataAction.new(
+          name: args[:name],
+          fragment: args[:fragment],
+          children: @@children
+          )
+      return action
     end
   end
 end

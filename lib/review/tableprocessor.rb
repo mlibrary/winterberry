@@ -1,23 +1,24 @@
 module UMPTG::Review
-  class TableProcessor < ReviewProcessor
+  class TableProcessor < EntryProcessor
     @@children = [ 'caption', 'colgroup', 'thead', 'tbody', 'tfoot' ]
 
-    def process(args = {})
-      args[:children] = @@children
+    def initialize(args = {})
+      args[:containers] = [ 'table' ]
+      super(args)
+    end
 
-      selector = UMPTG::Fragment::ContainerSelector.new
-      selector.containers = [ 'table' ]
-      args[:selector] = selector
-
-      fragments = super(args)
-
-      fragments.each do |fragment|
-        fragment.has_elements.each do |key, exists|
-          fragment.review_msg_list << "Table INFO:     has <#{key}>" if exists
-          fragment.review_msg_list << "Table Warning:  has no <#{key}>" unless exists
-        end
-      end
-      return fragments
+    #
+    #
+    # Arguments:
+    #   :name       Content identifier, e.g. EPUB entry name or file name.
+    #   :fragment   XML fragment for Marker to process.
+    def new_action(args = {})
+      action = UMPTG::Review::TableAction.new(
+          name: args[:name],
+          fragment: args[:fragment],
+          children: @@children
+          )
+      return action
     end
   end
 end

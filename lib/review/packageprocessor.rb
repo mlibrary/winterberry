@@ -1,59 +1,45 @@
 module UMPTG::Review
-  class PackageProcessor < ReviewProcessor
+  class PackageProcessor < EntryProcessor
     @@children = [ 'metadata' ]
 
-    def process(args = {})
-      args[:children] = @@children
-      fragment_selector = UMPTG::Fragment::ContainerSelector.new
-      fragment_selector.containers = [ 'package' ]
-      args[:selector] = fragment_selector
+    def initialize(args = {})
+      args[:containers] = [ 'package' ]
+      super(args)
+    end
 
-      fragments = super(args)
+    def action_list(args = {})
+      action_list = super(args)
 
       metadata_processor = PackageMetadataProcessor.new
       manifest_processor = PackageManifestProcessor.new
-
-      fragments.each do |fragment|
-        pck_version = fragment.node["version"]
-        case
-        when pck_version.nil?
-          fragment.review_msg_list << "Package Warning:  EPUB version not specified."
-        when pck_version[0] == '3'
-          fragment.review_msg_list << "Package INFO:     EPUB version is 3.x."
-        else
-          fragment.review_msg_list << "Package Warning:  EPUB version is #{pck_version}."
-        end
-
-        fragment.has_elements.each do |elem_name, exists|
-            fragment.review_msg_list << "Package INFO:  contains <#{elem_name}>." if exists
-            fragment.review_msg_list << "Package INFO:  contains no <#{elem_name}>." unless exists
-        end
-
-        fragment_selector.containers = [ 'metadata' ]
-        meta_fragments = metadata_processor.process(
+      metadata_action_list = []
+      manifest_action_list = []
+      action_list.each do |action|
+        metadata_action_list = metadata_processor.action_list(
                   :name => args[:name],
-                  :content => fragment.node.to_xml,
-                  :selector => fragment_selector
+                  :content => action.fragment.node.to_xml
               )
-        meta_fragments.each do |meta_frag|
-          meta_frag.review_msg_list.each do |msg|
-            fragment.review_msg_list << "Package " + msg
-          end
-        end
 
-        fragment_selector.containers = [ 'manifest' ]
-        manifest_fragments = manifest_processor.process(
+        manifest_action_list = manifest_processor.action_list(
                   :name => args[:name],
-                  :content => fragment.node.to_xml,
-                  :selector => fragment_selector
+                  :content => action.fragment.node.to_xml
               )
-        manifest_fragments.each do |man_frag|
-          man_frag.review_msg_list.each do |msg|
-            fragment.review_msg_list << "Package " + msg
-          end
-        end
       end
-      return fragments
+      return action_list + metadata_action_list + manifest_action_list
+    end
+
+    #
+    #
+    # Arguments:
+    #   :name       Content identifier, e.g. EPUB entry name or file name.
+    #   :fragment   XML fragment for Marker to process.
+    def new_action(args = {})
+      action = UMPTG::Review::PackageAction.new(
+          name: args[:name],
+          fragment: args[:fragment],
+          children: @@children
+          )
+      return action
     end
   end
 end

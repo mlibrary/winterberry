@@ -11,12 +11,12 @@ require 'ostruct'
 options = OpenStruct.new
 options.publisher_dir = Dir.pwd
 options.reviews = {
-        :package => true,
-        :figure => true,
-        :image => false,
-        :link => false,
-        :list => false,
-        :table => true
+        package: true,
+        figure: true,
+        image: true,
+        link: false,
+        list: true,
+        table: true
     }
 option_parser = OptionParser.new do |opts|
   opts.banner = "Usage: #{File.basename(__FILE__)} [-k] [-l] epub_file [epub_file...]"
@@ -39,38 +39,65 @@ end
 
 epub_file_list = ARGV
 
+require 'logger'
+
+script_logger = Logger.new(STDOUT)
+script_logger.formatter = proc do |severity, datetime, progname, msg|
+  "#{severity}: #{msg}\n"
+end
+
 # Determine the root directory of the code base.
 script_dir = File.expand_path(File.dirname(__FILE__))
 root_dir = File.dirname(script_dir)
 
 require_relative File.join(root_dir, "lib", "review")
-require_relative File.join(root_dir, "lib", "epubprocessor")
+require_relative File.join(root_dir, "lib", "epub")
 
-review_processors = {
-        :figure => UMPTG::Review::FigureProcessor.new,
-        :image => UMPTG::Review::ImgProcessor.new,
-        :link => UMPTG::Review::LinkProcessor.new,
-        :list => UMPTG::Review::ListProcessor.new,
-        :package => UMPTG::Review::PackageProcessor.new,
-        :table => UMPTG::Review::TableProcessor.new
-    }
-processors = []
-options.reviews.each do |name,flag|
-  processors << review_processors[name] if flag
-end
+review_processors = {}
+review_processors[:figure] = UMPTG::Review::FigureProcessor.new if options.reviews[:figure]
+review_processors[:image] = UMPTG::Review::ImgProcessor.new if options.reviews[:image]
+review_processors[:link] = UMPTG::Review::LinkProcessor.new if options.reviews[:link]
+review_processors[:list] = UMPTG::Review::ListProcessor.new if options.reviews[:list]
+review_processors[:table] = UMPTG::Review::TableProcessor.new if options.reviews[:table]
 
 epub_file_list.each do |epub_file|
+  epub_file = File.expand_path(epub_file)
+  unless File.exists?(epub_file)
+    puts "Error: invalid EPUB file path #{epub_file}."
+    next
+  end
+  puts "Processing #{File.basename(epub_file)}"
+
+  epub = UMPTG::EPUB::Archive.new(epub_file: epub_file)
+
+  # Process the EPUB package file
+  if options.reviews[:package]
+    opf_entry = epub.opf
+    processor = UMPTG::Review::PackageProcessor.new
+    opf_action_list = processor.action_list(
+                name: opf_entry.name,
+                content: opf_entry.content,
+                logger: script_logger
+                )
+    script_logger.info(opf_entry.name)
+    opf_action_list.each do |action|
+      script_logger.info(action)
+    end
+  end
 
   # Process the epub and generate the image information.
-  item_fragments = UMPTG::EpubProcessor.process(
-        :epub_file => epub_file,
-        :processors => processors
+  action_map = UMPTG::EPUB::Processor.process(
+        epub_file: epub_file,
+        entry_processors: review_processors,
+        logger: script_logger
       )
-  item_fragments.each do |name, fragments|
-    puts name
-    fragments.each do |fragment|
-      fragment.review_msg_list.each do |msg|
-        puts "\t#{msg}"
+  action_map.each do |entry_name,proc_map|
+    script_logger.info(entry_name)
+    proc_map.each do |key,action_list|
+      next if action_list.nil?
+      action_list.each do |action|
+        next if action.review_msg_list.empty?
+        script_logger.info(action)
       end
     end
   end

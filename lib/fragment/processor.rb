@@ -8,8 +8,8 @@
 
     def process(args = {})
       selector = args[:selector]
-      select = Selector.new if select.nil?
       #raise "Error: no selection processor specified." if selector.nil?
+      selector = Selector.new if selector.nil?
 
       # Content may be provided via a name to a file
       # or text.

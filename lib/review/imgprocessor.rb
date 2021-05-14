@@ -1,24 +1,22 @@
 module UMPTG::Review
-  class ImgProcessor < ReviewProcessor
-    def process(args = {})
-      selector = UMPTG::Fragment::ContainerSelector.new
-      selector.containers = [ 'img' ]
-      args[:selector] = selector
+  class ImgProcessor < EntryProcessor
 
-      fragments = super(args)
-
-      fragments.each do |fragment|
-        ImgProcessor.review(fragment)
-      end
-      return fragments
+    def initialize(args = {})
+      args[:containers] = [ 'img' ]
+      super(args)
     end
 
-    def self.review(fragment)
-      src = fragment.map['src']
-      alt = fragment.map['alt']
-
-      fragment.review_msg_list << "Image INFO:    #{src} has alt text" unless alt.nil? or alt.empty?
-      fragment.review_msg_list << "Image Warning: #{src} no alt text" if alt.nil? or alt.empty?
+    #
+    #
+    # Arguments:
+    #   :name       Content identifier, e.g. EPUB entry name or file name.
+    #   :fragment   XML fragment for Marker to process.
+    def new_action(args = {})
+      action = UMPTG::Review::ImgAction.new(
+          name: args[:name],
+          fragment: args[:fragment]
+          )
+      return action
     end
   end
 end

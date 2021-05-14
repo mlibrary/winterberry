@@ -1,33 +1,21 @@
 module UMPTG::Review
-  class LinkProcessor < ReviewProcessor
-    def process(args = {})
-      selector = UMPTG::Fragment::ContainerSelector.new
-      selector.containers = [ 'a' ]
-      args[:selector] = selector
+  class LinkProcessor < EntryProcessor
+    def initialize(args = {})
+      args[:containers] = [ 'a' ]
+      super(args)
+    end
 
-      fragments = super(args)
-
-      ctr = 0
-      fragments.each do |fragment|
-        ctr += 1
-        frag_map = fragment.map
-        id = frag_map['id']
-        target = frag_map['target']
-        title = frag_map['title']
-        href = frag_map['href']
-        content = fragment.node.text
-
-        label = ""
-        label = "(@id=\"#{id}\")" unless id.nil? or id.empty?
-        label = "(@href=\"#{href}\")" if (id.nil? or id.empty?) and !(href.nil? or href.empty?)
-        label = "(@target=\"#{target}\")" if (id.nil? or id.empty?) and (href.nil? or href.empty?) and !(target.nil? or target.empty?)
-
-        fragment.review_msg_list << "Link \##{ctr} #{label} INFO:    has title attribute" unless title.nil? or title.empty?
-        fragment.review_msg_list << "Link \##{ctr} #{label} Warning:    has no title attribute" if title.nil? or title.empty?
-        fragment.review_msg_list << "Link \##{ctr} #{label} INFO:    has content" unless content.nil? or content.empty?
-        fragment.review_msg_list << "Link \##{ctr} #{label} Warning:    has no content" if content.nil? or content.empty?
-      end
-      return fragments
+    #
+    #
+    # Arguments:
+    #   :name       Content identifier, e.g. EPUB entry name or file name.
+    #   :fragment   XML fragment for Marker to process.
+    def new_action(args = {})
+      action = UMPTG::Review::LinkAction.new(
+          name: args[:name],
+          fragment: args[:fragment]
+          )
+      return action
     end
   end
 end

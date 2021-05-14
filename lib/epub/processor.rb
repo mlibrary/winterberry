@@ -17,7 +17,10 @@ module UMPTG::EPUB
 
       logger.fatal("Error: missing :entry_processors parameter.") unless args.key?(:entry_processors)
       entry_processors = args[:entry_processors]
-      logger.fatal("Error: no entry_processors specified.") if entry_processors.nil? or entry_processors.empty?
+      if entry_processors.nil? or entry_processors.empty?
+        logger.fatal("Error: no entry_processors specified.")
+        raise "No entry_processors specified."
+      end
 
       # Parameter indicates whether content should be provided as
       # string or as a XML doc.
