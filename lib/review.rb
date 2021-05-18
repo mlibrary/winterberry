@@ -1,4 +1,5 @@
 module UMPTG
+  require_relative 'message'
   require_relative 'fragment'
   require_relative 'epub'
 

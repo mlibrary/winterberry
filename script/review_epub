@@ -81,7 +81,18 @@ epub_file_list.each do |epub_file|
                 )
     script_logger.info(opf_entry.name)
     opf_action_list.each do |action|
-      script_logger.info(action)
+      action.review_msg_list.each do |msg|
+        case msg.level
+        when UMPTG::Message.INFO
+          script_logger.info(msg.text)
+        when UMPTG::Message.WARNING
+          script_logger.warn(msg.text)
+        when UMPTG::Message.ERROR
+          script_logger.error(msg.text)
+        when UMPTG::Message.FATAL
+          script_logger.fatal(msg.text)
+        end
+      end
     end
   end
 
@@ -96,8 +107,18 @@ epub_file_list.each do |epub_file|
     proc_map.each do |key,action_list|
       next if action_list.nil?
       action_list.each do |action|
-        next if action.review_msg_list.empty?
-        script_logger.info(action)
+        action.review_msg_list.each do |msg|
+          case msg.level
+          when UMPTG::Message.INFO
+            script_logger.info(msg.text)
+          when UMPTG::Message.WARNING
+            script_logger.warn(msg.text)
+          when UMPTG::Message.ERROR
+            script_logger.error(msg.text)
+          when UMPTG::Message.FATAL
+            script_logger.fatal(msg.text)
+          end
+        end
       end
     end
   end

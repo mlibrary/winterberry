@@ -8,13 +8,12 @@ module UMPTG::Review
       src = @fragment.node['src']
       alt = @fragment.node['alt']
 
-      msg = "Image INFO:    #{src} has alt text" unless alt.nil? or alt.empty?
-      msg = "Image Warning: #{src} no alt text" if alt.nil? or alt.empty?
-      @review_msg_list << msg
+      add_info_msg("Image:     #{src} has alt text") unless alt.nil? or alt.empty?
+      add_warning_msg("Image:  #{src} no alt text") if alt.nil? or alt.empty?
+      #@review_msg_list << msg
 
       # Attach the list XML fragment objects processed to this
       # Action and set it status COMPLETED.
-      #@object_list = olist
       @status = Action.COMPLETED
     end
   end

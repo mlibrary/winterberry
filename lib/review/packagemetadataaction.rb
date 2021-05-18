@@ -6,8 +6,8 @@ module UMPTG::Review
       super(args)
 
       @has_elements.each do |elem_name, exists|
-          @review_msg_list << "Metadata INFO:  contains <#{elem_name}>." if exists
-          @review_msg_list << "Metadata INFO:  contains no <#{elem_name}>." unless exists
+          add_info_msg("Metadata:  contains <#{elem_name}>.") if exists
+          add_info_msg("Metadata:  contains no <#{elem_name}>.") unless exists
       end
       @status = Action.COMPLETED
     end

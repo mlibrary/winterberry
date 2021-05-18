@@ -9,6 +9,7 @@ module UMPTG::Fulcrum::Metadata
   local-name()='img'
   or local-name()='figcaption'
   or @class='figcap'
+  or @class='figcap1'
   or @class='figh'
   or @class='image_caption'
   ]

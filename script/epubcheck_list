@@ -36,7 +36,7 @@ epub_path_list.each do |epub_path|
   puts "Checking #{File.basename(epub_path)}"
   STDOUT.flush
 
-  log_file = File.join(File.dirname(epub_path), File.basename(epub_path, ".*") + "_log.xml")
+  log_file = File.join(File.dirname(epub_path), File.basename(epub_path, ".*") + "_epubcheck.xml")
   EpubCheck.check_file(
       :epubpath => epub_path,
       :logfile => log_file

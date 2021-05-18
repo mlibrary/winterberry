@@ -13,13 +13,12 @@ module UMPTG::Review
           caption_elem = elem_name if caption_elem.empty?
         end
       end
-      msg = "Figure INFO:           has caption (#{caption_elem})" unless caption_elem.empty?
-      msg = "Figure Warning:        has no caption" if caption_elem.empty?
-      @review_msg_list << msg
+      add_info_msg("Figure:           has caption (#{caption_elem})") unless caption_elem.empty?
+      add_warning_msg("Figure:        has no caption") if caption_elem.empty?
+      #@review_msg_list << msg
 
       # Attach the list XML fragment objects processed to this
       # Action and set it status COMPLETED.
-      #@object_list = olist
       @status = Action.COMPLETED
     end
 

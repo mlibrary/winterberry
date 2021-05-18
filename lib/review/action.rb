@@ -54,6 +54,44 @@ module UMPTG::Review
       return @review_msg_list.join("\n")
     end
 
+    def add_msg(args = {})
+      raise "Missing :level parameter" unless args.key?(:level)
+      raise "Missing :text parameter" unless args.key?(:text)
+
+      @review_msg_list << UMPTG::Message.new(
+                level: args[:level],
+                text: args[:text]
+              )
+    end
+
+    def add_info_msg(txt = "")
+      add_msg(
+          level: UMPTG::Message.INFO,
+          text: txt
+      )
+    end
+
+    def add_warning_msg(txt = "")
+      add_msg(
+          level: UMPTG::Message.WARNING,
+          text: txt
+      )
+    end
+
+    def add_error_msg(txt = "")
+      add_msg(
+          level: UMPTG::Message.ERROR,
+          text: txt
+      )
+    end
+
+    def add_fatal_msg(txt = "")
+      add_msg(
+          level: UMPTG::Message.FATAL,
+          text: txt
+      )
+    end
+
     def self.element_xpath(elements = [])
       xpath = elements.collect do |e|
         e.index(":").nil? ? "local-name()=\"#{e}\"" : "name()=\"#{e}\""
