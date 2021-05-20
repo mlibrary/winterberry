@@ -90,6 +90,7 @@ GEM
       multipart-post (>= 1.2, < 3)
     faraday_middleware (1.0.0)
       faraday (~> 1.0)
+    ffi (1.13.1)
     ffi (1.13.1-x64-mingw32)
     geom2d (0.3.1)
     globalid (0.4.2)
@@ -113,17 +114,24 @@ GEM
     marcel (0.3.3)
       mimemagic (~> 0.3.2)
     method_source (1.0.0)
-    mimemagic (0.3.5)
+    mimemagic (0.3.10)
+      nokogiri (~> 1)
+      rake
     mini_mime (1.0.2)
     minitest (5.14.1)
+    msgpack (1.3.3)
     msgpack (1.3.3-x64-mingw32)
     multipart-post (2.1.1)
     nio4r (2.5.2)
-    nokogiri (1.11.0.rc2-x64-mingw32)
+    nokogiri (1.11.4-x64-mingw32)
+      racc (~> 1.4)
+    nokogiri (1.11.4-x86_64-linux)
+      racc (~> 1.4)
     os (1.1.1)
     parslet (2.0.0)
     public_suffix (4.0.5)
     puma (3.12.6)
+    racc (1.5.2)
     rack (2.2.3)
     rack-test (1.1.0)
       rack (>= 1.0, < 3)
@@ -208,6 +216,7 @@ GEM
 
 PLATFORMS
   x64-mingw32
+  x86_64-linux
 
 DEPENDENCIES
   actionview (>= 5.2.4.2)
