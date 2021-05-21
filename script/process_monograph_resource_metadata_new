@@ -1,0 +1,375 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Script operates on a monograph directory found the Fulcrum
+# shared drive.
+#
+# It generates a resource map file (if one doesn't exist) and
+# if the -nofmsl option is not specified and a monograph epub/FMSL
+# exist, then it will update the existing resource FMSL
+# properties with values found in the epub.
+# If the -map option is specified, then the resource map
+# is generated even if one exists. Otherwise, if one
+# exists, then it is used.
+
+require 'optparse'
+require 'ostruct'
+require 'os'
+
+# Process the script parameters.
+options = OpenStruct.new
+#options.publisher_dir = Dir.pwd
+options.publisher_dir = OS.windows? ? "s:/Information\ Management/Fulcrum/UMP" : "/mnt/umptmm/UMP"
+options.update_fmsl = true
+options.use_map = true
+options.vendor = :default
+options.default_actions = {
+        resources: :embed
+        }
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-m] [-nofmsl] [-p <publisher_dir>] [-v apex|newgen|default] [-r embed|link|none|remove] <monograph_id> [<monograph_id>...]"
+  opts.on('-m', '--map', 'Overwrite existing resource map file.') do |da|
+    options.use_map = false
+  end
+  opts.on('-nofmsl', '--nofmsl', 'Do not update FMSL.') do |da|
+    options.update_fmsl = false
+  end
+  opts.on('-p', '--publisher_directory [DIRECTORY]', 'Publisher site directory') do |publisher_dir|
+    options.publisher_dir = publisher_dir
+  end
+  opts.on('-r', '--keywords [embed|link|none|remove]', 'Default resoorces processing action') do |action|
+    options.default_actions[:resources] = action.to_sym
+  end
+  opts.on('-v', '--vendor [vendor]', 'Vendor specific markup apex|newgen|default') do |vendor|
+    options.vendor = vendor.to_sym
+  end
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    puts opts
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  puts option_parser.help
+  return
+end
+
+# Process the command line parameters.
+monograph_id_list = ARGV
+update_fmsl = options.update_fmsl
+use_map = options.use_map
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require 'fileutils'
+require 'logger'
+
+require_relative File.join(root_dir, "lib", "csvfile")
+require_relative File.join(root_dir, "lib", "fulcrum_new")
+
+script_logger = Logger.new(STDOUT)
+script_logger.formatter = proc do |severity, datetime, progname, msg|
+  "#{severity}: #{msg}\n"
+end
+
+script_logger.fatal("Error: invalid default resources action #{options.resources_default_action}.") \
+      unless [:embed,:link,:none,:remove].find {|t| t == options.default_actions[:resources] }
+script_logger.info("Processing resources #{options.default_actions[:resources].to_s}")
+
+DEFAULT_ELEMENT_SELECTOR_PATTERN = <<-ELEMENT_SELECTOR_PATTERN
+//*[local-name()='img' and @src='%s']
+ELEMENT_SELECTOR_PATTERN
+DEFAULT_ELEMENT_LINK_SELECTOR_PATTERN = <<-LINK_SELECTOR_PATTERN
+//*[local-name()='img' and @src='%s']/ancestor::*[local-name()='figure' or (local-name()='p' and @class='fig')][last()]//*[local-name()='figcaption' or @class='figcap' or @class='figh']
+LINK_SELECTOR_PATTERN
+DEFAULT_ELEMENT_MAP_SELECTOR_PATTERN = <<-MAP_SELECTOR_PATTERN
+//*[local-name()='img' and @src='%s']/ancestor::*[local-name()='figure']
+MAP_SELECTOR_PATTERN
+DEFAULT_ELEMENT_MAP_CAPTION_SELECTOR_PATTERN = <<-MAP_CAPTION_SELECTOR_PATTERN
+//*[local-name()='img' and @src='%s']/ancestor::*[local-name()='figure']//*[local-name()='figcaption' or @class='figcap' or @class='figh']
+MAP_CAPTION_SELECTOR_PATTERN
+
+DEFAULT_MARKER_SELECTOR_PATTERN = <<-MARKER_SELECTOR_PATTERN
+//*[local-name()='p' and (@class='rb' or @class='rbi') and comment()[. ='%s']]
+MARKER_SELECTOR_PATTERN
+
+#blank_row_file_name = "***row left intentionally blank***"
+blank_row_file_name = UMPTG::Fulcrum::Manifest.BLANK_ROW_FILE_NAME
+blank_row_pattern = "^\*\*\*.* intentionally blank[ ]*\*\*\*$"
+
+# Process all monograph directories specified.
+monograph_loggers = {}
+monograph_id_list.each do |monograph_id|
+  # Determine the monograph directory
+  monograph_dir_list = Dir.glob(File.join(options.publisher_dir, monograph_id + "*"))
+  dlist = []
+  monograph_dir_list.each do |d|
+    dlist << d if File.directory?(d)
+  end
+  if dlist.empty?
+    script_logger.error("The monograph directory for ID #{monograph_id} was not found.")
+    next
+  end
+  script_logger.warn("Found multiple monograph directories for ID #{monograph_id}.") if dlist.count > 1
+  monograph_dir = dlist.first
+  script_logger.info("Using monograph directory #{File.basename(monograph_dir)} for ID #{monograph_id}")
+
+  # Find the monograph processing directory and insure that it exists.
+  processing_dir = File.join(monograph_dir, "resource_processing")
+  FileUtils.mkdir_p processing_dir
+
+  # Log the processing into a file for this monograph.
+  monograph_log_file = File.join(processing_dir, File.basename(__FILE__) + ".log")
+  monograph_log = File.open(monograph_log_file, File::WRONLY | File::TRUNC | File::CREAT)
+  monograph_loggers[monograph_id] = Logger.new(monograph_log)
+  monograph_loggers[monograph_id].formatter = proc do |severity, datetime, progname, msg|
+    "#{severity}: #{msg}\n"
+  end
+  monograph_loggers[monograph_id].info("*" * 10 + " #{monograph_id} " + "*" * 10)
+  monograph_loggers[monograph_id].info("*** Processing Monograph directory #{File.basename(monograph_dir)} ***")
+
+  # Find the monograph resources directory.
+  resources_dir = File.join(monograph_dir, "resources")
+  unless File.directory?(resources_dir)
+    monograph_loggers[monograph_id].error("No resources directory found for monograph #{monograph_dir}.")
+    next
+  end
+
+  # Find the monograph source FMSL.
+  fmsl_file_list = Dir.glob(File.join(resources_dir, "*.csv"))
+  if fmsl_file_list.count == 0
+    monograph_loggers[monograph_id].error("No FMSL found for monograph #{monograph_dir}.")
+    next
+  end
+  fmsl_file = fmsl_file_list.first
+  monograph_loggers[monograph_id].warn("Multiple FMSLs for monograph #{monograph_dir}. Using #{File.basename(fmsl_file)}.") \
+        if fmsl_file_list.count > 1
+  monograph_loggers[monograph_id].info("Using FMSL #{File.basename(fmsl_file)}.") if fmsl_file_list.count == 1
+
+  # Read the monograph source FMSL.
+  fmsl_csv = CSVFile.read(csv_path:  fmsl_file)
+  if fmsl_csv.nil?
+    monograph_loggers[monograph_id].error("Reading FMSL #{File.basename(fmsl_file)}.")
+    next
+  end
+
+  # Find the EPUB.
+  epub_file_list = Dir.glob(File.join(monograph_dir, "*.epub"))
+  if epub_file_list.count == 0
+    monograph_loggers[monograph_id].error("No EPUB found for monograph #{monograph_dir}.")
+    next
+  end
+  epub_file = epub_file_list.first
+  monograph_loggers[monograph_id].warn("Multiple EPUBs for monograph #{monograph_dir}. Using #{File.basename(epub_file)}.") \
+        if epub_file_list.count > 1
+  monograph_loggers[monograph_id].info("Using EPUB #{File.basename(epub_file)}.") if epub_file_list.count == 1
+
+  # Find the monograph processing directory.
+  processing_dir = File.join(monograph_dir, "resource_processing")
+
+  # Determine if the resource map file exists. If not,
+  # then one needs to be generated.
+  resource_map_file = File.join(processing_dir, "resource_map.xml")
+  resource_map_exists = File.exists?(resource_map_file) && use_map
+
+  # If a resource map exists, use it. Otherwise,
+  # it should be generated and saved.
+  resource_map = UMPTG::Fulcrum::ResourceMap::Map.new
+  if resource_map_exists
+    monograph_loggers[monograph_id].info("Using existing resource map file #{File.basename(resource_map_file)}")
+    resource_map.load(:xml_path => resource_map_file)
+  else
+    monograph_loggers[monograph_id].info("Generating resource map file #{File.basename(resource_map_file)}.")
+
+    # Set the default action
+    resource_map.default_action = options.default_actions[:resources]
+
+    # Set the vendor
+    resource_map.vendors[:epub] = options.vendor
+
+    # Add the resources
+    resources = Dir.glob(File.join(resources_dir, "*"))
+    resources.each do |resource_path|
+      resource_map.add_resource(:name => File.basename(resource_path))
+    end
+  end
+  script_logger.info("Using #{resource_map.vendors[:epub]} processor")
+  monograph_loggers[monograph_id].info("Using #{resource_map.vendors[:epub]} processor")
+
+  if update_fmsl or !resource_map_exists
+    # Either updating the FMSL or the resource map file
+    # needs to be generated.
+
+    # Initialize EPUB markup processors, figure/image and marker.
+    processors = UMPTG::Fulcrum::Metadata.vendor_processor(resource_map.vendors[:epub])
+    #processors.each_value {|p| p.reset }
+
+    # Process the epub and generate the image information.
+    action_map = UMPTG::EPUB::Processor.process(
+          epub_file: epub_file,
+          entry_processors: processors,
+          pass_xml_doc: true
+        )
+
+    action_map.each do |entry_name,proc_map|
+      proc_map.each do |key,action_list|
+        next if action_list.nil?
+        action_list.each do |action|
+          action.object_list.each do |object|
+            node = object.node
+            node_map = object.map
+            reference_name = node_map['resource_name'].strip
+            action_type = resource_map.reference_action_type(reference_name)
+
+            resource = resource_map.reference_resource(reference_name)
+            if resource.nil?
+              monograph_loggers[monograph_id].warn("#{object.name}: no resource found for reference \"#{reference_name}\".")
+            else
+              monograph_loggers[monograph_id].info("#{object.name}: mapping reference \"#{reference_name}\" to resource \"#{resource.name}\".")
+              node_map["caption"] = node_map["caption"].text unless node_map["caption"].nil?
+              resource.resource_properties = node_map
+
+              fmsl_row = fmsl_csv.find {|row| row['File Name'] == resource.name }
+              resource_type = fmsl_row['Resource Type'] unless fmsl_row.nil?
+            end
+
+            atype = action_type == :default ? resource_map.default_action : action_type
+            case key
+            when :element
+              case atype
+              when :link
+                reference_selector = sprintf(DEFAULT_ELEMENT_LINK_SELECTOR_PATTERN, reference_name).strip
+              when :embed
+                case resource_type
+                when "image"
+                  reference_selector = sprintf(DEFAULT_ELEMENT_SELECTOR_PATTERN, reference_name).strip
+                when "interactive map"
+                  reference_selector = sprintf(DEFAULT_ELEMENT_MAP_SELECTOR_PATTERN, reference_name).strip
+                end
+              else
+                reference_selector = sprintf(DEFAULT_ELEMENT_SELECTOR_PATTERN, reference_name).strip
+              end
+            when :marker
+              reference_selector = sprintf(DEFAULT_MARKER_SELECTOR_PATTERN, reference_name).strip
+            end
+
+            resource_map.add(
+                  reference_name: reference_name,
+                  resource: resource,
+                  type: action_type,
+                  element_type: key,
+                  reference_entry: entry_name,
+                  reference_selector: reference_selector
+                )
+            if atype == :embed and resource_type == "interactive map"
+              ref_id = (reference_name + "_caption").gsub(/[\/\\\.]/, '_')
+              reference_selector = sprintf(DEFAULT_ELEMENT_MAP_CAPTION_SELECTOR_PATTERN, reference_name).strip
+              resource_map.add(
+                    reference_id: ref_id,
+                    reference_name: reference_name,
+                    resource: resource,
+                    type: :append_map_caption,
+                    element_type: key,
+                    reference_entry: entry_name,
+                    reference_selector: reference_selector
+                  )
+            end
+          end
+        end
+      end
+    end
+
+    # Save the resource map XML file.
+    #resource_map.save(resource_map_file) unless resource_map_exists
+    resource_map.save(resource_map_file)
+
+    if update_fmsl
+      # Update the FMSL.
+
+      # Update the alt text and caption information in the FMSL.
+      fmsl_csv.each do |fmsl_row|
+        resource_name = fmsl_row['File Name']
+        if resource_name.nil? or resource_name.empty?
+          ext_resource_url = fmsl_row['External Resource URL']
+          monograph_loggers[monograph_id].error("Empty resource name and external resource URL") \
+              if ext_resource_url.nil? or ext_resource_url.empty?
+          next
+        end
+
+        resource_row = resource_map.resource_properties(resource_name)
+        if resource_row.nil?
+          monograph_loggers[monograph_id].warn("No alt text/caption found for resource \"#{resource_name}\".")
+          next
+        end
+
+        alt = fmsl_row["Alternative Text"]
+        caption = fmsl_row["Caption"]
+        epub_alt = resource_row["alt"]
+        epub_caption = resource_row["caption"]
+
+        monograph_loggers[monograph_id].info("FMSL alt text matches EPUB alt text for resource \"#{resource_name}\"") \
+            unless alt.nil? or alt != epub_alt
+        monograph_loggers[monograph_id].warn("No alt text found within EPUB for resource \"#{resource_name}\".") \
+            if epub_alt.nil? or epub_alt.empty?
+        monograph_loggers[monograph_id].warn("Overwriting FMSL alt text with EPUB alt text for resource \"#{resource_name}\"") \
+            if !(alt.nil? or alt.empty?) and !(epub_alt.nil? or epub_alt.empty?) and alt != epub_alt
+            #unless (alt.nil? or alt.empty?) and !(epub_alt.nil? or epub_alt.empty?)
+        monograph_loggers[monograph_id].info("Updating FMSL alt text with EPUB alt text for resource \"#{resource_name}\"") \
+            if (alt.nil? or alt.empty?) and !(epub_alt.nil? or epub_alt.empty?)
+        fmsl_row["Alternative Text"] = epub_alt unless epub_alt.nil? or epub_alt.empty?
+
+        monograph_loggers[monograph_id].info("FMSL caption matches EPUB caption for resource \"#{resource_name}\"") \
+            unless caption.nil? or caption != epub_caption
+        monograph_loggers[monograph_id].warn("No caption found within EPUB for resource \"#{resource_name}\".") \
+            if epub_caption.nil? or epub_caption.empty?
+        monograph_loggers[monograph_id].warn("Overwriting FMSL caption with EPUB caption for resource \"#{resource_name}\"") \
+            if !(caption.nil? or caption.empty?) and !(epub_caption.nil? or epub_caption.empty?) and caption != epub_caption
+        monograph_loggers[monograph_id].info("Updating FMSL caption with EPUB caption for resource \"#{resource_name}\"") \
+            if (caption.nil? or caption.empty?) and !(epub_caption.nil? or epub_caption.empty?)
+        fmsl_row["Caption"] = epub_caption unless epub_caption.nil? or epub_caption.empty?
+      end
+
+      # Look for the dreaded blank second line.
+      blank_row = fmsl_csv[0]
+      #need_blank_row = blank_row['File Name'].downcase != blank_row_file_name
+      need_blank_row = blank_row['File Name'].downcase.match?(blank_row_pattern)
+
+      new_fmsl_headers = fmsl_csv.headers
+      new_fmsl_headers << "Caption" unless new_fmsl_headers.include?("Caption")
+      new_fmsl_headers << "Alternative Text" unless new_fmsl_headers.include?("Alternative Text")
+
+      # Save the updated FMSL in the resource processing directory.
+      new_fmsl_file = File.join(processing_dir, File.basename(fmsl_file))
+      CSV.open(
+              new_fmsl_file,
+              "w",
+              :write_headers=> true,
+              :headers => new_fmsl_headers
+            ) do |csv|
+        new_row = {}
+        if need_blank_row
+          # Make sure the blank row exists, otherwise
+          # first resource will not be loaded by
+          # the importer.
+          monograph_loggers[monograph_id].info("No blank row found. Inserting one.")
+          new_row['File Name'] = blank_row_file_name
+          csv << new_row
+        end
+
+        fmsl_csv.each do |fmsl_row|
+          new_row = {}
+          fmsl_row.each do |key,value|
+            new_row[key] = value.force_encoding("UTF-8") if value != nil
+          end
+          csv << new_row
+        end
+      end
+    end
+  end
+end
+
+monograph_loggers.each do |monograph_id, logger|
+  logger.close
+end
