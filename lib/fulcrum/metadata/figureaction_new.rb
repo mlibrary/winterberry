@@ -9,6 +9,8 @@ module UMPTG::Fulcrum::Metadata
   local-name()='img'
   or local-name()='figcaption'
   or @class='figcap'
+  or @class='figCap'
+  or @class='figCaption'
   or @class='figcap1'
   or @class='figh'
   or @class='image_caption'
@@ -17,13 +19,16 @@ module UMPTG::Fulcrum::Metadata
   @@SELECTION_XPATH2 = <<-SXPATH2
   ./ancestor::*[local-name()='figure'][1]
   SXPATH2
+  @@SELECTION_XPATH3 = <<-SXPATH3
+  ./ancestor::*[local-name()='div' and @class='figurewrap'][1]
+  SXPATH3
 
     def process(args = {})
       ref_node = @properties[:reference_node]
 
       # Determine whether the image has a caption.
       # First locate the figure container, vendor specific.
-      container_node_list = ref_node.xpath(@@SELECTION_XPATH2)
+      container_node_list = ref_node.xpath(@@SELECTION_XPATH3)
       if container_node_list.empty?
         # Process <img> fragment.
         olist = Action.process_image(ref_node, name: @properties[:name])
