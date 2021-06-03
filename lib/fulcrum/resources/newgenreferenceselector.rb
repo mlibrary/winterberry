@@ -6,15 +6,13 @@ module UMPTG::Fulcrum::Resources
   # to embed|link with content delivered by vendor Newgen
   class NewgenReferenceSelector < ReferenceSelector
 
-  @@SELECTION_XPATH = <<-SXPATH
-  //*[
-  local-name()='div' and @class='figurewrap'
-  ]
+  @@NEWGEN_SELECTION_XPATH = <<-SXPATH
+  //*[local-name()='div' and @class='figurewrap']
   SXPATH
 
     # Method select the references found within the XML tree
     def references(xml_doc)
-      return super(xml_doc) + xml_doc.xpath("//comment()")
+      return super(xml_doc, @@NEWGEN_SELECTION_XPATH) + xml_doc.xpath("//comment()")
     end
   end
 end

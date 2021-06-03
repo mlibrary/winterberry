@@ -19,7 +19,7 @@ module UMPTG::Fulcrum::Metadata::Processors
 
       alist = super(args)
       alist.each do |action|
-        action.process(name: name)
+        action.process(name: args[:name])
       end
       return alist
     end
