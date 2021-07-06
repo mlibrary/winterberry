@@ -245,6 +245,8 @@ module UMPTG::Fulcrum::Resources
 
           # Use resource name to find manifest row. If there is no
           # NOID specified, then this is an invalid row.
+          # NOTE: replace any spaces in the name with an '_'.
+          resource_name = resource_name.gsub(/[ ]+/, '_')
           fileset_row = @resource_metadata.fileset(resource_name)
           if fileset_row['noid'].empty?
             @logger.error("No fileset row for resource #{resource_name}")
