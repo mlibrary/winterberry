@@ -1,0 +1,138 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# HELIO-3901. Script to repair ANS EPUBs.
+
+require 'optparse'
+require 'ostruct'
+require 'os'
+
+# Process the script parameters.
+options = OpenStruct.new
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} <epub_file> [<epub_file>...]"
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    puts opts
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  puts option_parser.help
+  return
+end
+
+# Process the command line parameters.
+epub_file_list = ARGV
+
+require 'logger'
+script_logger = Logger.new(STDOUT)
+script_logger.formatter = proc do |severity, datetime, progname, msg|
+  "#{severity}: #{msg}\n"
+end
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, 'lib', 'epub')
+require_relative File.join(root_dir, 'lib', 'remediation')
+
+processors = {
+          default: UMPTG::Remediation::DefaultProcessor.new
+      }
+
+epub_file_list.each do |epub_file|
+  epub_file = File.expand_path(epub_file)
+  unless File.file?(epub_file)
+    script_logger.fatal("Invalid EPUB \"#{epub_file}\".")
+    next
+  end
+  script_logger.info("Using EPUB \"#{epub_file}\".")
+
+  epub = UMPTG::EPUB::Archive.new(epub_file: epub_file)
+
+  # Process the epub. Returned is a hash table where each
+  # item key is an EPUB entry name and the item value is
+  # a list of processing actions.
+  action_map = UMPTG::EPUB::Processor.process(
+        epub: epub,
+        entry_processors: processors,
+        pass_xml_doc: true
+      )
+  action_map.each do |entry_name, proc_map|
+    script_logger.info("#{entry_name}")
+
+    xml_doc = proc_map[:xml_doc]
+    update_entry = false
+    proc_map.each do |key,action_list|
+      next if key == :xml_doc
+
+      action_list.each do |action|
+        case action.status
+        when UMPTG::Action.COMPLETED
+          update_entry = true
+          script_logger.info(action.to_s)
+        else
+          script_logger.warn(action.to_s)
+        end
+      end
+    end
+
+    # Update the entry in the EPUB. Replace old entry with
+    # the new one.
+    if update_entry
+      epub.add(entry_name: entry_name, entry_content: UMPTG::XMLUtil.doc_to_xml(xml_doc))
+    end
+  end
+
+  # Fix toc.ncx
+  toc_entry = epub.entry("OEBPS/toc.ncx")
+  toc_doc = UMPTG::XMLUtil.parse(xml_content: toc_entry.content)
+  n_list = toc_doc.xpath("//*[local-name()='navPoint']/*[local-name()='content']")
+
+  update_entry = false
+  n_list.each do |n|
+    src = n['src'].strip
+    mdata = src.match(/([^#]*)#(.*)/)
+    unless mdata.nil?
+      if mdata[2].to_i > 0
+        newSrc = "#{mdata[1]}\##{File.basename(mdata[1],'.*')}_#{mdata[2]}"
+        script_logger.info("#{src}==>#{newSrc}")
+        n['src'] = newSrc
+        update_entry = true
+      end
+    end
+  end
+  if update_entry
+    epub.add(entry_name: toc_entry.name, entry_content: UMPTG::XMLUtil.doc_to_xml(toc_doc))
+  end
+
+  # Fix toc.xhtml
+  toc_entry = epub.entry("OEBPS/toc.xhtml")
+  toc_doc = UMPTG::XMLUtil.parse(xml_content: toc_entry.content)
+  n_list = toc_doc.xpath("//*[local-name()='a']")
+
+  update_entry = false
+  n_list.each do |n|
+    href = n['href'].strip
+    mdata = href.match(/([^#]*)#(.*)/)
+    unless mdata.nil?
+      if mdata[2].to_i > 0
+        newHref = "#{mdata[1]}\##{File.basename(mdata[1],'.*')}_#{mdata[2]}"
+        script_logger.info("#{href}==>#{newHref}")
+        n['href'] = newHref
+        update_entry = true
+      end
+    end
+  end
+  if update_entry
+    epub.add(entry_name: toc_entry.name, entry_content: UMPTG::XMLUtil.doc_to_xml(toc_doc))
+  end
+
+  fixed_epub_file = File.join(File.dirname(epub_file), File.basename(epub_file, ".*") + "_fixed.epub")
+  script_logger.info("Saving #{fixed_epub_file}")
+  epub.save(
+        epub_file: fixed_epub_file
+      )
+end
