@@ -1,0 +1,96 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# HELIO-3909. Script to remove reference to covers in EPUBs.
+
+require 'optparse'
+require 'ostruct'
+require 'os'
+
+# Process the script parameters.
+options = OpenStruct.new
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} <epub_file> [<epub_file>...]"
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    puts opts
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  puts option_parser.help
+  return
+end
+
+# Process the command line parameters.
+epub_file_list = ARGV
+
+require 'logger'
+script_logger = Logger.new(STDOUT)
+script_logger.formatter = proc do |severity, datetime, progname, msg|
+  "#{severity}: #{msg}\n"
+end
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, 'lib', 'epub')
+
+epub_file_list.each do |epub_file|
+  epub_file = File.expand_path(epub_file)
+  unless File.file?(epub_file)
+    script_logger.fatal("Invalid EPUB \"#{epub_file}\".")
+    next
+  end
+  script_logger.info("Using EPUB \"#{epub_file}\".")
+
+  epub = UMPTG::EPUB::Archive.new(epub_file: epub_file)
+
+  opf_entry = epub.opf
+  opf_doc = UMPTG::XMLUtil.parse(xml_content: opf_entry.content)
+
+=begin
+  node_list = opf_doc.xpath("//*[local-name()='metadata']/*[local-name()='meta' and @name='cover']")
+  if node_list.empty?
+    script_logger.warn("Unable to find cover metadata.")
+    next
+  end
+  cover_name = node_list.first["content"]
+  script_logger.info("Found cover metadata \"#{cover_name}\".")
+=end
+
+  node_list = opf_doc.xpath("//*[local-name()='spine']/*[local-name()='itemref' and @idref='cover']")
+  if node_list.empty?
+    script_logger.warn("Unable to find cover spine reference.")
+  else
+    node_list.first.unlink
+    script_logger.info("Removed cover spine reference.")
+    epub.add(entry_name: opf_entry.name, entry_content: UMPTG::XMLUtil.doc_to_xml(opf_doc))
+  end
+
+  toc_entry = epub.entry("OEBPS/toc_flow.xhtml")
+  if toc_entry.nil?
+    script_logger.warn("Unable to find TOC entry.")
+  else
+    script_logger.info("Found TOC entry.")
+    toc_doc = UMPTG::XMLUtil.parse(xml_content: toc_entry.content)
+    node_list = toc_doc.xpath("//*[local-name()='li']/*[local-name()='a']/*[local-name()='h3']")
+    if node_list.empty?
+      script_logger.warn("Unable to find H3 within TOC entries.")
+    else
+      node_list.each do |node|
+        text = Nokogiri::XML::Text.new(node.content, node.document)
+        node.replace(text)
+      end
+      script_logger.info("Removed H3 within TOC entries.")
+      epub.add(entry_name: toc_entry.name, entry_content: UMPTG::XMLUtil.doc_to_xml(toc_doc))
+    end
+  end
+
+  fixed_epub_file = File.join(File.dirname(epub_file), File.basename(epub_file, ".*") + "_nocover.epub")
+  script_logger.info("Saving #{fixed_epub_file}")
+  epub.save(
+        epub_file: fixed_epub_file
+      )
+end
