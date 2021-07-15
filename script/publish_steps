@@ -186,7 +186,10 @@ else
   component_product = {}
   monograph_info.each do |monograph_id,minfo|
     pub_year = minfo[:monograph_pub_date].year
-    if pub_year < 2020
+
+    if options.press == :ebc and pub_year <= 2011
+      perd = "2011pre"
+    elsif options.press == :bar and pub_year < 2020
       perd = "pre"
     else
       perd = pub_year.to_s
@@ -269,7 +272,7 @@ File.open(cmds_file, "w") do |fp|
   fp.puts "# Rails console"
   fp.puts "sudo -u heliotrope-production RAILS_ENV=production bundle exec rails console"
   fp.puts
-  fp.puts "# Publish monographs"
+  fp.puts "# Publish monographs (bulleit-1)"
 =begin
   fp.puts "%w[#{monograph_info.keys.join(' ')}].each do |isbn|"
   fp.puts "  monograph = Monograph.where(isbn_numeric: [ isbn ])"
