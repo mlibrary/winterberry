@@ -333,6 +333,7 @@
     <xs:element name="animated_gif" type="type_fileset_resource"/>
     <xs:element name="audio" type="type_fileset_resource"/>
     <xs:element name="chart" type="type_fileset_resource"/>
+    <xs:element name="code" type="type_fileset_resource"/>
     <xs:element name="dataset" type="type_fileset_resource"/>
     <xs:element name="image" type="type_fileset_resource"/>
     <xs:element name="interactive_map" type="type_fileset_resource"/>
@@ -831,6 +832,7 @@
             <xs:element ref="animated_gif"/>
             <xs:element ref="audio"/>
             <xs:element ref="chart"/>
+            <xs:element ref="code"/>
             <xs:element ref="dataset"/>
             <xs:element ref="image"/>
             <xs:element ref="interactive_map"/>
