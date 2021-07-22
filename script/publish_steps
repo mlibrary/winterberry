@@ -15,7 +15,7 @@ options.fulcrum_dir = OS.windows? ? "s:/Information\ Management/Fulcrum" : optio
 options.press = :ebc
 option_parser = OptionParser.new do |opts|
   opts.banner = "Usage: #{File.basename(__FILE__)} [-d <fulcrum_dir>] [-p press] <task_id> <monograph_id> [<monograph_id>..]"
-  opts.on('-p', '--press [press]', 'Press bar|ebc|heb|ummaa') do |press|
+  opts.on('-p', '--press [press]', 'Press amherst|bar|ebc|heb|ummaa') do |press|
     options.press = press.to_sym
   end
   opts.on('-d', '--directory [DIRECTORY]', 'Fulcrum directory') do |fulcrum_dir|
@@ -55,6 +55,7 @@ end
 
 # Verify press, either UM Press or MPS services.
 press_dir = {
+        amherst: "MPS",
         bar:   "MPS",
         ebc:   "UMP",
         heb:   "MPS",
@@ -133,7 +134,7 @@ monograph_id_list.each do |monograph_id|
 
   series_id = ""
   case options.press
-  when :ebc, :ummaa
+  when :amherst, :ebc, :ummaa
     series_id = monograph_row["doi"]
   else
     id_list = monograph_row["identifier(s)"]

@@ -4,6 +4,8 @@ module UMPTG::Fulcrum::Resources
   # It contains the type of action (embed|link) and the Fulcrum
   # metadata for the resource.
   class ReferenceActionDef < UMPTG::Object
+    attr_reader :resource_metadata
+
     def initialize(args = {})
       super(args)
 
