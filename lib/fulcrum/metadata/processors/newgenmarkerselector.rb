@@ -13,7 +13,7 @@ module UMPTG::Fulcrum::Metadata::Processors
       #     <p class="rb|rbi"><!-- resource_file_name.ext --></p>
       # But recently, Newgen has been using the markup
       #     <!-- <insert resource_file_name.ext> -->
-      return content.match?(/\<insert[ ]+([^\>]+)\>/)
+      return content.match?(/insert[ ]+([^\>]+)/)
     end
   end
 end

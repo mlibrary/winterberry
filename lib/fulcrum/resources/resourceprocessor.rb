@@ -171,7 +171,7 @@ module UMPTG::Fulcrum::Resources
         # But recently, Newgen has been using the markup
         #     <!-- <insert resource_file_name.ext> -->
         # So here we check for this case.
-        r = path.match(/\<insert[ ]+([^\>]+)\>/)
+        r = path.match(/insert[ ]+([^\>]+)/)
         unless r.nil?
           # Appears to be Newgen markup.
           path = r[1]

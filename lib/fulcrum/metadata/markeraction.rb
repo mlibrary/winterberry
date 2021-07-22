@@ -17,7 +17,7 @@ module UMPTG::Fulcrum::Metadata
         # But recently, Newgen has been using the markup
         #     <!-- <insert resource_file_name.ext> -->
         # So here we check for this case.
-        r = c.text.match(/\<insert[ ]+([^\>]+)\>/)
+        r = c.text.match(/insert[ ]+([^\>]+)/)
         if r.nil?
           # Not Newgen markup.
           rn = c.text
