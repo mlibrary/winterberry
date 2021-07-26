@@ -132,6 +132,17 @@ module UMPTG::Review
       # Normalize figure caption, if possible. Figure may contain
       # multiple images. Match captions to images.
       unless container_list.empty?
+        # Normalize image parent, as it may be a <p>
+        # and needs to be a <div> so markup may be inserted.
+        img_container_list = reference_node.xpath("./ancestor::*[local-name()='p']")
+        img_container_list.each do |node|
+          action_list << NormalizeImageContainerAction.new(
+                   name: name,
+                   reference_node: reference_node,
+                   action_node: node
+               )
+        end
+
         container_node = container_list.first
 
         img_caption_list = container_node.xpath(@@IMGCAPTION_XPATH)

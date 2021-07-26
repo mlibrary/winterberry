@@ -19,7 +19,7 @@ module UMPTG::Review
     # resource to be embed|link, or an additional resource
     # to be inserted
     def reference_type(node)
-      if node.comment? or (node.key?("class") and (node['class'].downcase == 'rb' or node['class'].downcase = 'rbi'))
+      if node.comment? or (node.key?("class") and (node['class'].downcase == 'rb' or node['class'].downcase == 'rbi'))
         return :marker
       end
       return :element
