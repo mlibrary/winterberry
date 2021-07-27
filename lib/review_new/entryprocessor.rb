@@ -7,8 +7,12 @@ module UMPTG::Review
     def initialize(args = {})
       super(args)
 
-      @selector = @properties[:selector]
       @logger = @properties[:logger]
+
+      @selector = @properties[:selector]
+      if @selector.nil?
+        @selector = ElementSelector.new(args)
+      end
     end
 
     # Select the XML fragments to process and create Actions for each fragment.
@@ -51,7 +55,9 @@ module UMPTG::Review
     #   :name       Content identifier, e.g. EPUB entry name or file name.
     #   :fragment   XML fragment to process.
     def new_action(args = {})
-      return UMPTG::Action.new(args)
+      return [
+            Action.new(args)
+          ]
     end
   end
 end

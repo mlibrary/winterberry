@@ -11,13 +11,13 @@ require 'ostruct'
 options = OpenStruct.new
 options.publisher_dir = Dir.pwd
 options.reviews = {
-        package: false,
+        package: true,
         figure: false,
         image: true,
         link: false,
         list: false,
-        resources: true,
-        table: false
+        resources: false,
+        table: true
     }
 option_parser = OptionParser.new do |opts|
   opts.banner = "Usage: #{File.basename(__FILE__)} [-k] [-l] epub_file [epub_file...]"
@@ -55,8 +55,9 @@ require_relative File.join(root_dir, "lib", "review_new")
 require_relative File.join(root_dir, "lib", "epub")
 
 review_processors = {}
-#review_processors[:package] = UMPTG::Review::PackageProcessor.new if options.reviews[:package]
+review_processors[:package] = UMPTG::Review::PackageProcessor.new if options.reviews[:package]
 review_processors[:resources] = UMPTG::Review::ResourceProcessor.new if options.reviews[:resources]
+review_processors[:table] = UMPTG::Review::TableProcessor.new if options.reviews[:table]
 
 epub_file_list.each do |epub_file|
   epub_file = File.expand_path(epub_file)
@@ -73,6 +74,7 @@ epub_file_list.each do |epub_file|
   action_map = UMPTG::EPUB::Processor.process(
         epub: epub,
         entry_processors: review_processors,
+        process_opf: options.reviews[:package],
         pass_xml_doc: true,
         logger: script_logger
       )

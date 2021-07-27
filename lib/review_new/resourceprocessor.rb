@@ -3,11 +3,22 @@ module UMPTG::Review
   # Class processes each resource reference found within XML content.
   class ResourceProcessor < EntryProcessor
 
+    RESOURCE_REFERENCE_XPATH = <<-SXPATH
+    //*[
+    local-name()='img'
+    or @class='rb'
+    or @class='rbi'
+    or comment()[starts-with(translate(normalize-space(.),'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz'),'insert ')]
+    ]
+    SXPATH
+
     # Processing parameters:
     #   :selector               Class for selecting resource references
     #   :logger                 Log messages
     def initialize(args = {})
-      args[:selector] = ResourceReferenceSelector.new
+      args[:selector] = ElementSelector.new(
+              selection_xpath: RESOURCE_REFERENCE_XPATH
+            )
       super(args)
     end
 

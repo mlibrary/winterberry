@@ -4,11 +4,14 @@ module UMPTG::Review
 
   # Class is base for resource reference selection.
   class ElementSelector < UMPTG::Object
-    @@SELECTION_XPATH = nil
+    def initialize(args = {})
+      super(args)
+      @xpath = @properties[:selection_xpath]
+      raise "Error: no xpath expression specified." if @xpath.nil?
+    end
 
-    def references(xml_doc, xpath = @@SELECTION_XPATH)
-      return [] if xpath.nil?
-      return xml_doc.xpath(xpath)
+    def references(xml_doc)
+      return xml_doc.xpath(@xpath)
     end
 
     def reference_type(node)
