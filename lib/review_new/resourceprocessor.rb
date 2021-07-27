@@ -1,73 +1,28 @@
 module UMPTG::Review
 
   # Class processes each resource reference found within XML content.
-  class ResourceProcessor < UMPTG::EPUB::EntryProcessor
-
-    @@reference_selector = nil
+  class ResourceProcessor < EntryProcessor
 
     # Processing parameters:
-    #   :default_action         Default resource action, embed|link|none
-    #   :resource_metadata      Monograph resource metadata
-    #   :resource_map           Resource reference to fileset mapping
     #   :selector               Class for selecting resource references
     #   :logger                 Log messages
     def initialize(args = {})
+      args[:selector] = ResourceReferenceSelector.new
       super(args)
-
-      @default_action = @properties[:default_action]
-      @resource_metadata = @properties[:resource_metadata]
-      @resource_map = @properties[:resource_map]
-      @selector = @properties[:selector]
-      @logger = @properties[:logger]
-
-      @reference_action_defs = nil
     end
 
-    # Method generates and processes a list of actions
-    # for the specified XML content.
-    #
-    # Parameters:
-    #   :name         Identifier associated with XML content
-    #   :xml_doc      XML content document.
-    def action_list(args = {})
-      name = args[:name]
-      xml_doc = args[:xml_doc]
-
-      @@reference_selector = ResourceReferenceSelector.new if @@reference_selector.nil?
-      reference_list = @@reference_selector.references(xml_doc)
-
-      # For each reference element, determine the necessary actions.
-      reference_action_list = []
-      reference_list.each do |refnode|
-        case @@reference_selector.reference_type(refnode)
-        when :element
-          list = ResourceProcessor.image_reference_actions(
-                  name: name,
-                  reference_node: refnode
-                )
-        when :marker
-          list = [
-                NormalizeMarkerAction.new(
-                      name: name,
-                      reference_node: refnode
-                    )
-              ]
-        else
-          # Shouldn't happen
-          next
-        end
-
-        reference_action_list += list
+    def new_action(args = {})
+      case @selector.reference_type(args[:reference_node])
+      when :element
+        list = ResourceProcessor.image_reference_actions(args)
+      when :marker
+        list = [
+              NormalizeMarkerAction.new(args)
+            ]
+      else
+        list = super(args)
       end
-
-      # Process all the Actions for this XML content.
-      reference_action_list.each do |action|
-        action.process()
-      end
-
-      # Return the list of Actions which contains the status
-      # for each.
-      return reference_action_list
+      return list
     end
 
     private

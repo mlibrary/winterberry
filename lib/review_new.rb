@@ -10,6 +10,7 @@ module UMPTG
   require_relative File.join('review_new', 'normalizemarkeraction')
   require_relative File.join('review_new', 'elementselector')
   require_relative File.join('review_new', 'resourcereferenceselector')
+  require_relative File.join('review_new', 'entryprocessor')
   require_relative File.join('review_new', 'resourceprocessor')
 
 end
