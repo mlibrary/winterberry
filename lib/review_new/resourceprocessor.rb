@@ -64,6 +64,8 @@ module UMPTG::Review
       name = args[:name]
       reference_node = args[:reference_node]
 
+      resource_path = reference_node.key?('src') ? reference_node['src'] : "unspecified"
+
       action_list = []
       action_list << ImageAction.new(
                  name: args[:name],
@@ -79,7 +81,7 @@ module UMPTG::Review
                    name: name,
                    reference_node: reference_node
                )
-          action_list.last.add_warning_msg("Image:  #{reference_node['src']} unable to determine container")
+          action_list.last.add_warning_msg("image: \"#{resource_path}\" unable to determine container")
         else
           action_list << NormalizeFigureAction.new(
                    name: name,
@@ -92,7 +94,7 @@ module UMPTG::Review
                  name: name,
                  reference_node: reference_node
              )
-        action_list.last.add_info_msg("Image:  #{reference_node['src']} has figure as parent")
+        action_list.last.add_info_msg("image: \"#{resource_path}\" has figure as parent")
       end
 
       # Normalize figure caption, if possible. Figure may contain
@@ -140,13 +142,13 @@ module UMPTG::Review
                    name: name,
                    reference_node: reference_node
                )
-          action_list.last.add_warning_msg("Image:  #{reference_node['src']} unable to determine caption")
+          action_list.last.add_warning_msg("image: \"#{resource_path}\" unable to determine caption")
         elsif caption_node.name == 'figcaption'
           action_list << Action.new(
                    name: name,
                    reference_node: reference_node
                )
-          action_list.last.add_info_msg("Image:  #{reference_node['src']} has a figure caption.")
+          action_list.last.add_info_msg("image: \"#{resource_path}\" has a figure caption.")
         else
           action_list << NormalizeFigureCaptionAction.new(
                    name: name,

@@ -15,7 +15,8 @@ module UMPTG::Review
     end
 
     def reference_type(node)
-      return node.comment? ? :marker : :element
+      return :marker if node.comment? or (node.name == 'p' and (node['class'] == 'rb' or node['class'] == 'rbi'))
+      return :element
     end
   end
 end

@@ -33,7 +33,7 @@ module UMPTG::Review
         fragment = Nokogiri::XML.fragment(markup)
 
         reference_node.add_previous_sibling(fragment)
-        add_info_msg("Marker: #{path} converted marker.")
+        add_info_msg("marker: \"#{path}\" converted marker.")
       end
       reference_node.remove
       

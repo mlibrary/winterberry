@@ -16,7 +16,7 @@ options.reviews = {
         image: true,
         link: false,
         list: false,
-        resources: false,
+        resources: true,
         table: true
     }
 option_parser = OptionParser.new do |opts|
@@ -55,6 +55,8 @@ require_relative File.join(root_dir, "lib", "review_new")
 require_relative File.join(root_dir, "lib", "epub")
 
 review_processors = {}
+review_processors[:link] = UMPTG::Review::LinkProcessor.new if options.reviews[:link]
+review_processors[:list] = UMPTG::Review::ListProcessor.new if options.reviews[:list]
 review_processors[:package] = UMPTG::Review::PackageProcessor.new if options.reviews[:package]
 review_processors[:resources] = UMPTG::Review::ResourceProcessor.new if options.reviews[:resources]
 review_processors[:table] = UMPTG::Review::TableProcessor.new if options.reviews[:table]

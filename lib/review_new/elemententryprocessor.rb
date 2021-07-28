@@ -1,13 +1,26 @@
 module UMPTG::Review
   class ElementEntryProcessor < EntryProcessor
-
-    METADATA_ELEMENTS = [ 'dc:title', 'dc:creator', 'dc:language', 'dc:rights', 'dc:publisher', 'dc:identifier' ]
+    attr_reader :container_xpath, :child_xpath
 
     def initialize(args = {})
       super(args)
 
-      @elements = @properties[:selection_elements]
-      raise "Error: no elements specified" if @elements.nil?
+      @container_elements = @properties[:container_elements]
+      raise "Error: no container elements specified" if @container_elements.nil?
+
+      @child_elements = @properties[:child_elements]
+
+      @container_xpath = "//*[" +
+             @container_elements.collect {|x| "local-name()='#{x}'"}.join(' or ') + \
+         "]"
+
+      if @child_elements.empty?
+        @child_xpath = nil
+      else
+        @child_xpath = ".//*[" + \
+                    @child_elements.collect {|x| "local-name()='#{x}'"}.join(' or ') + \
+                "]"
+      end
     end
 
     def action_list(args = {})
@@ -15,47 +28,49 @@ module UMPTG::Review
       xml_doc = args[:xml_doc]
 
       reference_action_list = []
-      unless @selector.nil? or xml_doc.nil?
+      unless xml_doc.nil?
+        container_list = xml_doc.xpath(@container_xpath)
+        unless container_list.empty?
+          container_list.each_with_index do |container_node,ndx|
+            container_name = container_node.namespace.prefix ?
+                "#{container_node.namespace.prefix}:#{container_node.name}" : container_node.name
 
-        reference_list = @selector.references(xml_doc)
+            child_list = container_node.xpath(@child_xpath)
+            unless child_list.empty?
+              element_exist = @selection_elements.to_h {|x| [x,nil]}
+              child_list.each do |child_node|
+                element_name = child_node.namespace.prefix ?
+                    "#{child_node.namespace.prefix}:#{child_node.name}" : child_node.name
+                element_exist[element_name] = child_node
+              end
 
-        # For each reference element, determine the necessary actions.
-        element_exist = @elements.to_h {|x| [x,nil]}
-        reference_list.each do |refnode|
-          element_name = refnode.namespace.prefix ?
-              "#{refnode.namespace.prefix}:#{refnode.name}" : refnode.name
-          element_exist[element_name] = refnode
-        end
-
-        element_exist.each do |e,n|
-          list = new_action(
-                    name: name,
-                    reference_node: n
-                  )
-          if n.nil?
-            list.first.add_warning_msg("Element #{e} not found.")
-          else
-            list.first.add_info_msg("Element #{e} found.")
+              container_id = container_node.key?("id") ? "\"#{container_node['id']}\"" : "\##{ndx+1}"
+              element_exist.each do |e,n|
+                list = new_action(
+                          name: name,
+                          reference_node: n,
+                          container_node: container_node
+                        )
+                if n.nil?
+                  list.first.add_warning_msg("#{container_name} #{container_id}: element #{e} not found.")
+                else
+                  list.first.add_info_msg("#{container_name} #{container_id}: element #{e} found.")
+                end
+                reference_action_list += list
+              end
+            end
           end
-          reference_action_list += list
-        end
 
-        # Process all the Actions for this XML content.
-        reference_action_list.each do |action|
-          action.process()
+          # Process all the Actions for this XML content.
+          reference_action_list.each do |action|
+            action.process()
+          end
         end
       end
 
       # Return the list of Actions which contains the status
       # for each.
       return reference_action_list
-    end
-
-    #
-    #
-    # Arguments:
-    def new_action(args = {})
-      return super(args)
     end
   end
 end

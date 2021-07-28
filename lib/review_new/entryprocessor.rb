@@ -1,18 +1,13 @@
 module UMPTG::Review
 
   class EntryProcessor < UMPTG::EPUB::EntryProcessor
-  
-    @@fragment_processor = nil
 
     def initialize(args = {})
       super(args)
 
       @logger = @properties[:logger]
-
       @selector = @properties[:selector]
-      if @selector.nil?
-        @selector = ElementSelector.new(args)
-      end
+      #@selector = ElementSelector.new(args) if @selector.nil?
     end
 
     # Select the XML fragments to process and create Actions for each fragment.
