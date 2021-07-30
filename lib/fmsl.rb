@@ -10,7 +10,8 @@ module UMPTG
             "primary_creator(s)" => "Creator(s)",
             "externally_hosted_resource" => "External Resource URL",
             "exclusive_to_the_fulcrum_platform" => "Exclusive to Fulcrum",
-            "persistent_id" => "DOI"
+            "persistent_id" => "DOI",
+            "legacy_id" => "Identifier(s)"
         }
 
     def self.load(args = {})

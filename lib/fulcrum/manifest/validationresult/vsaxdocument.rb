@@ -21,7 +21,7 @@ module UMPTG::Fulcrum::Manifest::ValidationResult
         n.parent = nil
       when name == 'resource_type'
         @in_resources = true
-      when UMPTG::Manifest::Validation::CollectionSchema.resource?(name)
+      when UMPTG::Fulcrum::Manifest::Validation::CollectionSchema.resource?(name)
         n  = VRNode.new(args)
         @current_resource = n
         n.parent = @current_monograph

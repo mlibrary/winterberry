@@ -74,6 +74,57 @@ fmsl_file_list.each do |fmsl_file|
   fmsl_body = UMPTG::FMSL.load(:fmsl_file => fmsl_file)
   manifest_csv = UMPTG::FMSL.to_manifest(:fmsl_body => fmsl_body)
 
+  # Fix the HELIO-1869 CSV file.
+  manifest_csv.each do |row|
+    row.each do |key,val|
+      next if val.nil? or val.empty?
+      row[key] = val.strip
+    end
+
+    file_name = row['File Name']
+    pattern = File.join(File.dirname(fmsl_file), File.basename(file_name, ".*") + ".*")
+    list = Dir.glob(pattern)
+    if list.empty?
+      puts "File #{file_name} not found."
+      next
+    end
+    row['File Name'] = File.basename(list.first)
+    row['Content Type'] = File.extname(list.first)[1..-1].upcase
+
+    caption = row['Caption']
+    next if caption.nil? or caption.empty?
+
+    mtch = caption.strip.match(/^([^ ]+)[ ]+([0-9]+)[ ]*,[ ]*([^ ]+)[ ]+([0-9]+)([a-z])$/)
+    if mtch.nil?
+      mtch = caption.strip.match(/^([^ ]+)[ ]+([0-9]+)[ ]*,[ ]*([^ ]+)[ ]+(.+)$/)
+    end
+    case
+    when mtch.nil?
+      puts "caption:#{caption}"
+      next
+    when mtch.length == 5
+      pge = mtch[3].downcase == 'fol.' ? "Folio" : mtch[3]
+      title = "#{mtch[1]} #{mtch[2]}, #{mtch[3]} #{mtch[4]}"
+    when mtch.length == 6
+      side = mtch[5].downcase == 'r' ? "recto" : "verso"
+      pge = mtch[3].downcase == 'fol.' ? "Folio" : mtch[3]
+      title = "#{mtch[1]} #{mtch[2]}, #{pge} #{mtch[4]} #{side}"
+    else
+      puts "caption:#{caption},length:#{mtch.length}"
+      next
+    end
+
+    #puts "caption:#{caption},title:#{title}"
+    row['Title'] = title
+    row['Caption'] = title
+    row['Alternative Text'] = title
+
+    holder = row['Copyright Holder']
+    if holder.nil? or holder.empty?
+      row['Copyright Holder'] = row['Credit Line']
+    end
+  end
+
   # Convert the Fulcrum metadata CSV to an XML representation.
   manifest_name = File.join(File.basename(fmsl_file, ".*") + "_fulcrum")
   manifest = UMPTG::Fulcrum::Manifest::Document.new(
@@ -117,6 +168,7 @@ fmsl_file_list.each do |fmsl_file|
   # Validate the XML representation to determine any metadata field issues.
   # the the Fulcrum metadata.
   error_list = UMPTG::Fulcrum::Manifest::Validation::CollectionSchema.validate(:xml_markup => collection.xml_markup)
+  #error_list = []
   puts "Error count: #{error_count + error_list.count}"
 
   # Display any resource existence issues.

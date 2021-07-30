@@ -158,7 +158,7 @@ module UMPTG::Fulcrum::Manifest::Validation
           monograph_id = noid
         end
       end
-      puts "monograph_id:#{monograph_id}"
+      #puts "monograph_id:#{monograph_id}"
       #monograph_id = monograph_row == nil ? manifest.name : monograph_row["noid"]
       #monograph_id = @name
 
