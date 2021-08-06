@@ -1,0 +1,56 @@
+#!/usr/bin/env ruby
+# encoding: utf-8
+
+require 'optparse'
+require 'ostruct'
+
+# Process the script parameters.
+options = OpenStruct.new
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)}  <csv_file> [<csv_file>...]"
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    puts opts
+    exit(0)
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  puts option_parser.help
+  exit(0)
+end
+
+csv_file_list = ARGV
+
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require 'csv'
+
+csv_file_list.each do |csv_file|
+  csv_file = File.expand_path(csv_file)
+  unless File.exist?(csv_file)
+    puts "Error: CSV \"#{File.basename(csv_file)}\" does not exist."
+    next
+  end
+  puts "Using CSV file \"#{File.basename(csv_file)}\""
+
+  icsv = CSV.parse(File.read(csv_file), {:headers => true, :encoding => 'ISO-8859-1'})
+
+  new_csv_file = File.join(File.dirname(csv_file), File.basename(csv_file, ".*") + "_handle.csv")
+  CSV.open(
+          new_csv_file,
+          "w",
+          :write_headers=> false,
+          :headers => [ "ACLS ID", "Fulcrum Handle" ]
+        ) do |csv|
+    icsv.each do |row|
+      next if row['Content Type'].nil? or row['Content Type'].downcase != 'tif'
+      csv << [
+                row['Identifier(s)'].split(';').last.strip,
+                "https://hdl.handle.net/2027/fulcrum.#{row['NOID'].strip}"
+              ]
+    end
+  end
+end
