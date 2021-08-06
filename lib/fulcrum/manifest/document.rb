@@ -1,5 +1,6 @@
 module UMPTG::Fulcrum::Manifest
-  @@BLANK_ROW_FILE_NAME = "***row left intentionally blank***"
+  #@@BLANK_ROW_FILE_NAME = "***row left intentionally blank***"
+  @@BLANK_ROW_FILE_NAME = "*** row intentionally left blank ***"
 
   @@MONOGRAPH_FILE_NAME = '://:MONOGRAPH://:'
 
