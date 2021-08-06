@@ -78,6 +78,41 @@ fmsl_file_list.each do |fmsl_file|
   fmsl_body = UMPTG::FMSL.load(:fmsl_file => fmsl_file)
   manifest_csv = UMPTG::FMSL.to_manifest(:fmsl_body => fmsl_body)
 
+=begin
+  # Fix the HELIO-1869 CSV file.
+  fmsl_dir_list = Dir.entries(File.dirname(fmsl_file))
+  manifest_csv.each do |row|
+    row.each do |key,val|
+      next if val.nil? or val.empty?
+      row[key] = val.strip
+    end
+
+    file_name = row['File Name']
+    list = fmsl_dir_list.select {|e| e.start_with?(File.basename(file_name, ".*") + ".") }
+    if list.empty?
+      puts "File #{file_name} not found."
+      next
+    end
+    puts "Multiple choices for #{file_name}. Using first found." if list.count > 1
+    new_file_name = File.basename(list.first)
+    row['File Name'] = new_file_name
+    row['Content Type'] = File.extname(new_file_name)[1..-1].upcase
+
+    holder = row['Copyright Holder']
+    if holder.nil? or holder.empty?
+      row['Copyright Holder'] = row['Credit Line']
+    end
+
+    #https://quod.lib.umich.edu/a/aclsic/x-heb90021.0162/heb90021.0162.tif
+    ident_list = [
+        #"https://quod.lib.umich.edu/a/aclsic/x-" + File.basename(new_file_name, ".*") + "/" + File.basename(new_file_name),
+        "https://quod.lib.umich.edu/a/aclsic/x-" + File.basename(new_file_name, ".*")[0..12] + "/" + File.basename(new_file_name),
+        row['Identifier(s)']
+    ]
+    row['Identifier(s)'] = ident_list.join(';')
+  end
+=end
+
   # Convert the Fulcrum metadata CSV to an XML representation.
   manifest_name = File.join(File.basename(fmsl_file, ".*") + "_fulcrum")
   manifest = UMPTG::Fulcrum::Manifest::Document.new(
