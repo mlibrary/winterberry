@@ -1,6 +1,17 @@
 module UMPTG::Review
 
   class ImageAction < Action
+    def initialize(args = {})
+      super(args)
+
+      resource_path = reference_node['src']
+      if resource_path.nil? or resource_path.strip.empty?
+        raise "Error: #{reference_node.name} with no @src value."
+      else
+        @properties[:xpath] = sprintf("//*[local-name()='#{reference_node.name}' and @src='#{resource_path}']")
+      end
+    end
+
     def process(args = {})
       super(args)
 

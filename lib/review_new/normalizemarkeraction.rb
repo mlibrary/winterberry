@@ -29,7 +29,7 @@ module UMPTG::Review
           path = r[1]
         end
 
-        markup = "<figure class=\"enhanced-media-display\" data-embed-filename=\"#{path}\"/>"
+        markup = "<figure class=\"enhanced-media-display\" data-fulcrum-embed-filename=\"#{path}\"/>"
         fragment = Nokogiri::XML.fragment(markup)
 
         reference_node.add_previous_sibling(fragment)
