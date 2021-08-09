@@ -159,12 +159,19 @@ monograph_id_list.each do |monograph_id|
     pub_date = Date.strptime(pub_date_str, '%Y')
   end
 
+  unless monograph_row['open_access?'].nil? or monograph_row['open_access?'].downcase == 'no'
+    open_access = "open_access"
+  else
+    open_access = ""
+  end
+
   minfo = {
        monograph_dir: monograph_dir,
        monograph_noid: monograph_noid,
        monograph_doi: monograph_row["doi"],
        monograph_series: series_id,
-       monograph_pub_date: pub_date
+       monograph_pub_date: pub_date,
+       monograph_open_access: open_access
        }
 
   monograph_info[monograph_id] = minfo
@@ -223,6 +230,20 @@ else
     else
       component_product[product] = [minfo]
     end
+
+    unless minfo[:monograph_open_access].empty?
+      case options.press
+      when :ebc, :ummaa
+        product = "ebc_open"
+      else
+        raise "Found open access for press #{options.press}"
+      end
+      if component_product.key?(product)
+        component_product[product] << minfo
+      else
+        component_product[product] = [minfo]
+      end
+    end
   end
 
   component_product.each do |product,minfo_list|
@@ -274,17 +295,6 @@ File.open(cmds_file, "w") do |fp|
   fp.puts "sudo -u heliotrope-production RAILS_ENV=production bundle exec rails console"
   fp.puts
   fp.puts "# Publish monographs (bulleit-1)"
-=begin
-  fp.puts "%w[#{monograph_info.keys.join(' ')}].each do |isbn|"
-  fp.puts "  monograph = Monograph.where(isbn_numeric: [ isbn ])"
-  fp.puts "  if monograph_list.empty?"
-  fp.puts "    puts \"Error: no monograph for ID \#{isbn}.\""
-  fp.puts "  else"
-  fp.puts "    puts \"Publishing monograph \#{isbn}.\""
-  fp.puts "    PublishJob.perform_later(monograph_list.first)"
-  fp.puts "  end"
-  fp.puts "end;0"
-=end
   fp.puts "%w[#{monograph_noid_list.join(' ')}].each do |noid|"
   fp.puts "  monograph = Monograph.find(noid)"
   fp.puts "  if monograph.nil?"
@@ -306,7 +316,7 @@ File.open(cmds_file, "w") do |fp|
   fp.puts
   fp.puts "# Publishing ticket comment"
   fp.puts "[~mbakeryo]"
-  fp.puts "Created the components [*#{components_files.keys.join('*, *')}*] and marked the monographs public. The results can be found in the attached zip files:"
+  fp.puts "Created the components *#{components_files.keys.join('*, *')}* and marked the monographs public. The results can be found in the attached zip files:"
   fp.puts
   fp.puts
   fp.puts "Reassigning to [~jvanderw]."
