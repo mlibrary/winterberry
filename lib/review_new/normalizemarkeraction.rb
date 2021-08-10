@@ -10,7 +10,7 @@ module UMPTG::Review
       # a XML comment, but not always the case.
       # NOTE: either display warning if no comment,
       # or just use the node content?
-      node_list = reference_node.xpath(".//comment()")
+      #node_list = reference_node.xpath(".//comment()")
       node_list = [ reference_node ] if node_list.nil? or node_list.empty?
       reference_action_list = []
       node_list.each do |node|
@@ -29,12 +29,22 @@ module UMPTG::Review
           path = r[1]
         end
 
-        markup = "<figure class=\"enhanced-media-display\" data-fulcrum-embed-filename=\"#{path}\"/>"
+        markup = "<figure class=\"enhanced-media-display\" data-embed-filename=\"#{path}\"/>"
+        #markup = "<figure class=\"enhanced-media-display\" data-fulcrum-embed-filename=\"#{path}\"/>"
         fragment = Nokogiri::XML.fragment(markup)
 
         reference_node.add_previous_sibling(fragment)
         add_info_msg("marker: \"#{path}\" converted marker.")
       end
+
+      if reference_node.parent.name == "p"
+        # If parent of comment is a para then adding a figure
+        # within the p will fail EPUBcheck. Try switching
+        # p to a div.
+        add_info_msg("Switching marker parent from #{reference_node.parent.name} to div.")
+        reference_node.parent.name = "div"
+      end
+
       reference_node.remove
       
       @status = Action.COMPLETED

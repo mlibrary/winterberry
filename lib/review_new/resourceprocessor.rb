@@ -8,7 +8,9 @@ module UMPTG::Review
     local-name()='img'
     or @class='rb'
     or @class='rbi'
-    or comment()[starts-with(translate(normalize-space(.),'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz'),'insert ')]
+    ]|
+    //comment()[
+    starts-with(translate(normalize-space(.),'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz'),'insert ')
     ]
     SXPATH
 

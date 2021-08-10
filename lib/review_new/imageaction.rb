@@ -4,11 +4,10 @@ module UMPTG::Review
     def initialize(args = {})
       super(args)
 
-      resource_path = reference_node['src']
-      if resource_path.nil? or resource_path.strip.empty?
-        raise "Error: #{reference_node.name} with no @src value."
+      if reference_node.key?("src")
+        @properties[:xpath] = sprintf("//*[local-name()='#{reference_node.name}' and @src='#{reference_node['src']}']")
       else
-        @properties[:xpath] = sprintf("//*[local-name()='#{reference_node.name}' and @src='#{resource_path}']")
+        raise "Error: #{reference_node.name} with no @src value."
       end
     end
 
