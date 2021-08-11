@@ -1,6 +1,6 @@
 module UMPTG::Review
 
-  class NormalizeMarkerAction < Action
+  class NormalizeMarkerAction < NormalizeAction
 
     def process(args = {})
       super(args)
@@ -29,8 +29,8 @@ module UMPTG::Review
           path = r[1]
         end
 
-        markup = "<figure class=\"enhanced-media-display\" data-embed-filename=\"#{path}\"/>"
-        #markup = "<figure class=\"enhanced-media-display\" data-fulcrum-embed-filename=\"#{path}\"/>"
+        #markup = "<figure class=\"enhanced-media-display\" data-embed-filename=\"#{path}\"/>"
+        markup = "<figure class=\"enhanced-media-display\" data-fulcrum-embed-filename=\"#{path}\"/>"
         fragment = Nokogiri::XML.fragment(markup)
 
         reference_node.add_previous_sibling(fragment)
@@ -47,7 +47,7 @@ module UMPTG::Review
 
       reference_node.remove
       
-      @status = Action.COMPLETED
+      @status = NormalizeAction.NORMALIZED
     end
   end
 end

@@ -1,6 +1,6 @@
 module UMPTG::Review
 
-  class NormalizeFigureAction < Action
+  class NormalizeFigureAction < NormalizeAction
 
     def process(args = {})
       super(args)
@@ -10,7 +10,7 @@ module UMPTG::Review
       @action_node.name = "figure"
       add_info_msg("image: \"#{@reference_node['src']}\" converted figure container from #{node_name} to #{@action_node.name}.")
 
-      @status = Action.COMPLETED
+      @status = NormalizeAction.NORMALIZED
     end
   end
 end

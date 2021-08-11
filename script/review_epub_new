@@ -86,7 +86,7 @@ epub_file_list.each do |epub_file|
     proc_map.each do |key,action_list|
       next if action_list.nil?
       action_list.each do |action|
-        if action.status == UMPTG::Action.COMPLETED
+        if action.status == UMPTG::Review::NormalizeAction.NORMALIZED
           update_entry = true
         end
         action.review_msg_list.each do |msg|
