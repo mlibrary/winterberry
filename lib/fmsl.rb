@@ -7,9 +7,12 @@ module UMPTG
     @@FMSL_2_FULCRUM_HEADERS = {
             "allow_high_res_display?" => "Allow Fullscreen Display?",
             "rights_granted_creative_commons" => "CC License",
+            "rights_granted_-_creative" => "CC License",
             "primary_creator(s)" => "Creator(s)",
+            "primary_creator" => "Creator(s)",
             "externally_hosted_resource" => "External Resource URL",
             "exclusive_to_the_fulcrum_platform" => "Exclusive to Fulcrum",
+            "exclusive_to_the_fulcrum" => "Exclusive to Fulcrum",
             "persistent_id" => "DOI",
             "legacy_id" => "Identifier(s)"
         }
