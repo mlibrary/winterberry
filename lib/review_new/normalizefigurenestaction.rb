@@ -19,7 +19,7 @@ module UMPTG::Review
         nested_node.add_child(caption_node)
         nested_node.add_child(reference_container_node)
       end
-      add_info_msg("#{@reference_node.name}: \"#{@reference_node['src']}\": nest #{nested_node.name} #{caption_location} #{caption_node.name}.")
+      add_info_msg("#{@reference_node.name}: \"#{@resource_path}\": nest #{nested_node.name} #{caption_location} #{caption_node.name}.")
 
       @status = NormalizeAction.NORMALIZED
     end

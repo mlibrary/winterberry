@@ -1,13 +1,14 @@
 module UMPTG::Review
 
   class EntryProcessor < UMPTG::EPUB::EntryProcessor
+    attr_accessor :normalize
 
     def initialize(args = {})
       super(args)
 
       @logger = @properties[:logger]
       @selector = @properties[:selector]
-      #@selector = ElementSelector.new(args) if @selector.nil?
+      @normalize = @properties.key?(:normalize) ? @properties[:normalize] : false
     end
 
     # Select the XML fragments to process and create Actions for each fragment.
@@ -33,9 +34,11 @@ module UMPTG::Review
                   )
         end
 
-        # Process all the Actions for this XML content.
-        reference_action_list.each do |action|
-          action.process()
+        if @invoke_actions
+          # Process all the Actions for this XML content.
+          reference_action_list.each do |action|
+            action.process()
+          end
         end
       end
 

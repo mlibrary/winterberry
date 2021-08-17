@@ -7,7 +7,7 @@ module UMPTG::Review
 
       node_name = @action_node.name
       @action_node.name = "figcaption"
-      add_info_msg("image: \"#{@reference_node['src']}\" converted figure caption from #{node_name} to #{@action_node.name}.")
+      add_info_msg("image: \"#{@resource_path}\" converted figure caption from #{node_name} to #{@action_node.name}.")
 
       @status = NormalizeAction.NORMALIZED
     end

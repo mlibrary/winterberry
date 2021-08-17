@@ -29,9 +29,7 @@ module UMPTG::Review
       when :element
         list = ResourceProcessor.image_reference_actions(args)
       when :marker
-        list = [
-              NormalizeMarkerAction.new(args)
-            ]
+        list = ResourceProcessor.marker_reference_actions(args)
       else
         list = super(args)
       end
@@ -51,6 +49,13 @@ module UMPTG::Review
     (local-name()='div' and @class='figurewrap')
     ][1]
     DXPATH
+
+    @@FIGUREDIV_XPATH = <<-FDXPATH
+    ./ancestor::*[
+    local-name()='figure'
+    or (local-name()='div' and @class='figurewrap')
+    ][1]
+    FDXPATH
 
     @@IMGCAPTION_XPATH = <<-ICXPATH
     .//*[
@@ -77,16 +82,20 @@ module UMPTG::Review
     ]
     IXPATH
 
+
     def self.image_reference_actions(args = {})
       name = args[:name]
       reference_node = args[:reference_node]
 
       resource_path = reference_node.key?('src') ? reference_node['src'] : "unspecified"
+      xpath_base = "//*[local-name()='img' and @src='#{resource_path}']"
 
       action_list = []
       action_list << ImageAction.new(
                  name: args[:name],
-                 reference_node: reference_node
+                 reference_node: reference_node,
+                 resource_path: resource_path,
+                 info_message: "image: \"#{resource_path}\" found."
              )
 
       # Normalize figure container, if possible.
@@ -103,6 +112,8 @@ module UMPTG::Review
           action_list << NormalizeFigureAction.new(
                    name: name,
                    reference_node: reference_node,
+                   resource_path: resource_path,
+                   xpath: xpath_base + "/" + @@DIV_PATH,
                    action_node: container_list.first
                )
         end
@@ -122,6 +133,8 @@ module UMPTG::Review
           action_list << NormalizeImageContainerAction.new(
                    name: name,
                    reference_node: reference_node,
+                   resource_path: resource_path,
+                   xpath: xpath_base + "/ancestor::*[local-name()='p']",
                    action_node: node,
                    warning_message: "image: \"#{resource_path}\" has #{node.name} as parent."
                )
@@ -190,6 +203,8 @@ module UMPTG::Review
               action_list << NormalizeFigureNestAction.new(
                        name: name,
                        reference_node: reference_node,
+                       resource_path: resource_path,
+                       xpath: xpath_base,
                        caption_node: caption_node,
                        caption_location: caption_location,
                        reference_container_node: img_container_list.first
@@ -203,66 +218,53 @@ module UMPTG::Review
           action_list << NormalizeFigureCaptionAction.new(
                    name: name,
                    reference_node: reference_node,
+                   resource_path: resource_path,
+                   xpath: xpath_base.strip + "/" + @@FIGUREDIV_XPATH.strip + @@CAPTION_XPATH.strip,
                    action_node: caption_node
                )
         end
-
-=begin
-        img_caption_list = container_node.xpath(@@IMGCAPTION_XPATH)
-        raise "container image caption list is empty" if img_caption_list.empty?
-
-        caption_node = nil
-        if img_caption_list.first.name == 'img'
-          # Assume caption after image.
-          img_found = false
-          img_caption_list.each do |node|
-            next unless img_found or reference_node == node
-            img_found = true
-            unless node.name == 'img'
-              caption_node = node
-              break
-            end
-          end
-        else
-          # Assume caption before image.
-          img_found = false
-          img_caption_list.each do |node|
-            caption_node = node unless node.name == 'img'
-            break if reference_node == node
-          end
-        end
-
-        if caption_node.nil?
-          action_list << Action.new(
-                   name: name,
-                   reference_node: reference_node,
-                   warning_message: "image: \"#{resource_path}\" unable to determine caption."
-               )
-        elsif caption_node.name == 'figcaption'
-          action_list << Action.new(
-                   name: name,
-                   reference_node: reference_node,
-                   info_message: "image: \"#{resource_path}\" has a figure caption."
-               )
-        else
-          action_list << Action.new(
-                   name: name,
-                   reference_node: reference_node,
-                   warning_message: "image: \"#{resource_path}\" has #{caption_node.name} for a figure caption."
-               )
-=end
-=begin
-          action_list << NormalizeFigureCaptionAction.new(
-                   name: name,
-                   reference_node: reference_node,
-                   action_node: caption_node
-               )
-=end
-=begin
-        end
-=end
       end
 
+      return action_list
+    end
+
+    def self.marker_reference_actions(args = {})
+      name = args[:name]
+      reference_node = args[:reference_node]
+
+      # Return the nodes that reference resources.
+      # For marker callouts, this should be within
+      # a XML comment, but not always the case.
+      #node_list = reference_node.xpath(".//comment()")
+      node_list = [ reference_node ] if node_list.nil? or node_list.empty?
+      action_list = []
+      node_list.each do |node|
+        resource_path = node.text.strip
+
+        #path = path.match(/insert[ ]+([^\>]+)/)[1]
+        # Generally, additional resource references are expected
+        # to use the markup:
+        #     <p class="rb|rbi"><!-- resource_file_name.ext --></p>
+        # But recently, Newgen has been using the markup
+        #     <!-- <insert resource_file_name.ext> -->
+        # So here we check for this case.
+        r = resource_path.match(/insert[ ]+([^\>]+)/)
+        unless r.nil?
+          # Appears to be Newgen markup.
+          resource_path = r[1]
+        end
+
+        xpath = "//*[(@class='rb' or @class='rbi') and contains(normalize-space(.),'#{resource_path}')]|//comment()[starts-with(translate(normalize-space(.),'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz'),'insert ') and contains(normalize-space(.),'#{resource_path}')]"
+        #node_list = reference_node.document.xpath(xpath)
+        #puts "resource:#{resource_path},#{reference_node},#{node_list.count}"
+        action_list << NormalizeMarkerAction.new(
+                   name: name,
+                   reference_node: reference_node,
+                   resource_path: resource_path,
+                   xpath: xpath,
+                   info_message: "marker: \"#{resource_path}\" found."
+                )
+      end
       return action_list
     end
   end
