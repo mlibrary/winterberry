@@ -34,6 +34,13 @@ module UMPTG::Review
           container_list.each_with_index do |container_node,ndx|
             container_name = container_node.namespace.prefix ?
                 "#{container_node.namespace.prefix}:#{container_node.name}" : container_node.name
+            container_id = container_node.key?("id") ? "\"#{container_node['id']}\"" : "\##{ndx+1}"
+
+            reference_action_list += new_action(
+                      name: name,
+                      reference_node: container_node,
+                      info_message: "#{container_name} #{container_id} found."
+                    )
 
             child_list = container_node.xpath(@child_xpath)
             unless child_list.empty?
@@ -44,7 +51,6 @@ module UMPTG::Review
                 element_exist[element_name] = child_node
               end
 
-              container_id = container_node.key?("id") ? "\"#{container_node['id']}\"" : "\##{ndx+1}"
               element_exist.each do |e,n|
                 list = new_action(
                           name: name,
@@ -59,11 +65,6 @@ module UMPTG::Review
                 reference_action_list += list
               end
             end
-          end
-
-          # Process all the Actions for this XML content.
-          reference_action_list.each do |action|
-            action.process()
           end
         end
       end

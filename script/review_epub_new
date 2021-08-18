@@ -136,7 +136,7 @@ epub_file_list.each do |epub_file|
           resource_map.add(
                 name: entry_name,
                 reference_name: action.resource_path,
-                resource: nil,
+                resource: resource_map.reference_resource(action.resource_path),
                 resource_path: action.resource_path,
                 xpath: action.xpath,
                 type: action.class.to_s.split('::').last
@@ -148,13 +148,22 @@ epub_file_list.each do |epub_file|
     # Save the resource map XML file.
     script_logger.info("Saving resource map \"#{File.basename(resource_map_file)}")
     resource_map.save(resource_map_file)
-  end
 
-  action_map.each do |entry_name,proc_map|
-    proc_map.each do |key,action_list|
-      next if action_list.nil? or (options.normalize.key?(key) and options.normalize[key] == false)
-      action_list.each do |action|
-        action.process
+=begin
+    resource_map = UMPTG::Fulcrum::ResourceMap::Map.new
+    resource_map.load(xml_path: resource_map_file)
+
+    resource_map.actions.each do |action|
+    end
+=end
+  else
+    action_map.each do |entry_name,proc_map|
+      proc_map.each do |key,action_list|
+        next if action_list.nil?
+        action_list.each do |action|
+          next if action.class.superclass.to_s == "UMPTG::Review::NormalizeAction" and options.normalize.key?(key) and options.normalize[key] == false
+          action.process
+        end
       end
     end
   end
@@ -183,6 +192,7 @@ epub_file_list.each do |epub_file|
       end
     end
     if update_entry
+      epub_log.info("Updating entry #{entry_name}")
       xml_doc = proc_map[:xml_doc]
       epub.add(entry_name: entry_name, entry_content: UMPTG::XMLUtil.doc_to_xml(xml_doc))
       epub_modified = true
@@ -190,10 +200,11 @@ epub_file_list.each do |epub_file|
   end
   if epub_modified
     epub_normalized_file = File.join(File.dirname(epub_file), File.basename(epub_file, ".*") + "_normal.epub")
+    epub_log.info("Saving normalized EPUB \"#{File.basename(epub_normalized_file)}.")
+    script_logger.info("Saving normalized EPUB \"#{File.basename(epub_normalized_file)}.")
     epub.save(epub_file: epub_normalized_file)
   end
 end
-
 epub_loggers.each do |logger|
   logger.close
 end

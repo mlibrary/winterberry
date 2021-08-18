@@ -33,13 +33,6 @@ module UMPTG::Review
                     reference_node: refnode
                   )
         end
-
-        if @invoke_actions
-          # Process all the Actions for this XML content.
-          reference_action_list.each do |action|
-            action.process()
-          end
-        end
       end
 
       # Return the list of Actions which contains the status

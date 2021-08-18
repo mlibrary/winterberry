@@ -112,11 +112,10 @@ module UMPTG::Fulcrum::ResourceMap
             :name => reference_name
           )
 
-      resource = add_resource(
-              name: File.basename(resource_path)
-          )
-
       if resource.nil?
+        resource = add_resource(
+                name: File.basename(resource_path)
+            )
         action = Action.new(
                 name: name,
                 reference: reference,
