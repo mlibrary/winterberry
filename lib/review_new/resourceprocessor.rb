@@ -106,7 +106,7 @@ module UMPTG::Review
           action_list << Action.new(
                    name: name,
                    reference_node: reference_node,
-                   warning_message: "image: \"#{resource_path}\" unable to determine container."
+                   warning_message: "image: \"#{resource_path}\" unable to determine container element."
                )
         else
           action_list << NormalizeFigureAction.new(
@@ -121,7 +121,7 @@ module UMPTG::Review
         action_list << Action.new(
                  name: name,
                  reference_node: reference_node,
-                 info_message: "image: \"#{resource_path}\" has #{container_list.first.name} as container."
+                 info_message: "image: \"#{resource_path}\" has #{container_list.first.name} as container element."
              )
       end
 
@@ -136,7 +136,7 @@ module UMPTG::Review
                    resource_path: resource_path,
                    xpath: xpath_base + "/ancestor::*[local-name()='p']",
                    action_node: node,
-                   warning_message: "image: \"#{resource_path}\" has #{node.name} as parent."
+                   warning_message: "image: \"#{resource_path}\" has #{node.name} as container element for image element. Recommended is either no container element use div element."
                )
         end
 
@@ -152,7 +152,7 @@ module UMPTG::Review
           action_list << Action.new(
                    name: name,
                    reference_node: reference_node,
-                   warning_message: "image: \"#{resource_path}\" unable to determine caption."
+                   warning_message: "image: \"#{resource_path}\" unable to determine caption element."
                )
         when caption_list.count == 1
           # One caption found.
@@ -160,7 +160,7 @@ module UMPTG::Review
           action_list << Action.new(
                    name: name,
                    reference_node: reference_node,
-                   info_message: "image: \"#{resource_path}\" has #{caption_node.name} as caption."
+                   info_message: "image: \"#{resource_path}\" has #{caption_node.name} as caption element. Recommended element is figcaption."
                )
         else
           # Multiple captions found.
@@ -187,14 +187,14 @@ module UMPTG::Review
               action_list << Action.new(
                        name: name,
                        reference_node: reference_node,
-                       warning_message: "image: \"#{resource_path}\" unable to determine caption from multiple."
+                       warning_message: "image: \"#{resource_path}\" unable to determine caption element from multiple."
                    )
             else
               # Found caption.
               action_list << Action.new(
                        name: name,
                        reference_node: reference_node,
-                       info_message: "image: \"#{resource_path}\" has #{caption_node.name} as caption."
+                       info_message: "image: \"#{resource_path}\" has #{caption_node.name} as caption element. Recommended element is figcaption."
                    )
             end
 
@@ -232,38 +232,51 @@ module UMPTG::Review
       name = args[:name]
       reference_node = args[:reference_node]
 
-      # Return the nodes that reference resources.
-      # For marker callouts, this should be within
-      # a XML comment, but not always the case.
-      #node_list = reference_node.xpath(".//comment()")
-      node_list = [ reference_node ] if node_list.nil? or node_list.empty?
       action_list = []
-      node_list.each do |node|
-        resource_path = node.text.strip
+      if reference_node.name == "div" and reference_node.key?("data-fulcrum-embed-filename") and !reference_node["data-fulcrum-embed-filename"].empty?
+        action_list << Action.new(
+                 name: name,
+                 reference_node: node,
+                 info_message: "marker: \"#{resource_path}\" has markup #{reference_node.to_xhtml}."
+             )
+      else
+        # Return the nodes that reference resources.
+        # For marker callouts, this should be within
+        # a XML comment, but not always the case.
+        #node_list = reference_node.xpath(".//comment()")
+        node_list = [ reference_node ] if node_list.nil? or node_list.empty?
+        node_list.each do |node|
+          resource_path = node.text.strip
 
-        #path = path.match(/insert[ ]+([^\>]+)/)[1]
-        # Generally, additional resource references are expected
-        # to use the markup:
-        #     <p class="rb|rbi"><!-- resource_file_name.ext --></p>
-        # But recently, Newgen has been using the markup
-        #     <!-- <insert resource_file_name.ext> -->
-        # So here we check for this case.
-        r = resource_path.match(/insert[ ]+([^\>]+)/)
-        unless r.nil?
-          # Appears to be Newgen markup.
-          resource_path = r[1]
-        end
+          #path = path.match(/insert[ ]+([^\>]+)/)[1]
+          # Generally, additional resource references are expected
+          # to use the markup:
+          #     <p class="rb|rbi"><!-- resource_file_name.ext --></p>
+          # But recently, Newgen has been using the markup
+          #     <!-- <insert resource_file_name.ext> -->
+          # So here we check for this case.
+          r = resource_path.match(/insert[ ]+([^\>]+)/)
+          unless r.nil?
+            # Appears to be Newgen markup.
+            resource_path = r[1]
+          end
 
-        xpath = "//*[(@class='rb' or @class='rbi') and contains(normalize-space(.),'#{resource_path}')]|//comment()[starts-with(translate(normalize-space(.),'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz'),'insert ') and contains(normalize-space(.),'#{resource_path}')]"
-        #node_list = reference_node.document.xpath(xpath)
-        #puts "resource:#{resource_path},#{reference_node},#{node_list.count}"
-        action_list << NormalizeMarkerAction.new(
+          action_list << Action.new(
                    name: name,
-                   reference_node: reference_node,
-                   resource_path: resource_path,
-                   xpath: xpath,
-                   info_message: "marker: \"#{resource_path}\" found."
-                )
+                   reference_node: node,
+                   warning_message: "marker: \"#{resource_path}\" has #{node.name} as marker element. Recommended markup is <div data-fulcrum-embed-filename=\"#{resource_path}\"]."
+               )
+
+          xpath = "//*[(@class='rb' or @class='rbi') and contains(normalize-space(.),'#{resource_path}')]|//comment()[starts-with(translate(normalize-space(.),'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz'),'insert ') and contains(normalize-space(.),'#{resource_path}')]"
+          #node_list = reference_node.document.xpath(xpath)
+          #puts "resource:#{resource_path},#{reference_node},#{node_list.count}"
+          action_list << NormalizeMarkerAction.new(
+                     name: name,
+                     reference_node: reference_node,
+                     resource_path: resource_path,
+                     xpath: xpath
+                  )
+        end
       end
       return action_list
     end

@@ -16,7 +16,6 @@ module UMPTG::Review
     # Arguments:
     #   :name       Content identifier, e.g. EPUB entry name or file name.
     #   :content    Entry XML content
-    #   :selector   Class that select elements/comments within the XML content
     def action_list(args = {})
       name = args[:name]
       xml_doc = args[:xml_doc]
