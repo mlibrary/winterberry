@@ -168,6 +168,12 @@ epub_file_list.each do |epub_file|
     end
   end
 
+  issue_cnt = {
+        UMPTG::Message.INFO => 0,
+        UMPTG::Message.WARNING => 0,
+        UMPTG::Message.ERROR => 0,
+        UMPTG::Message.FATAL => 0
+  }
   action_map.each do |entry_name,proc_map|
     epub_log.info(entry_name)
     update_entry = false
@@ -188,6 +194,7 @@ epub_file_list.each do |epub_file|
           when UMPTG::Message.FATAL
             epub_log.fatal(msg.text)
           end
+          issue_cnt[msg.level] += 1
         end
       end
     end
@@ -198,6 +205,22 @@ epub_file_list.each do |epub_file|
       epub_modified = true
     end
   end
+
+  case
+  when issue_cnt[UMPTG::Message.FATAL] > 0
+    script_logger.fatal("Fatal:#{issue_cnt[UMPTG::Message.FATAL]}  Error:#{issue_cnt[UMPTG::Message.ERROR]}  Warning:#{issue_cnt[UMPTG::Message.WARNING]}")
+    epub_log.fatal("Fatal:#{issue_cnt[UMPTG::Message.FATAL]}  Error:#{issue_cnt[UMPTG::Message.ERROR]}  Warning:#{issue_cnt[UMPTG::Message.WARNING]}")
+  when issue_cnt[UMPTG::Message.ERROR] > 0
+    script_logger.error("Error:#{issue_cnt[UMPTG::Message.ERROR]}  Warning:#{issue_cnt[UMPTG::Message.WARNING]}")
+    epub_log.error("Error:#{issue_cnt[UMPTG::Message.ERROR]}  Warning:#{issue_cnt[UMPTG::Message.WARNING]}")
+  when issue_cnt[UMPTG::Message.WARNING] > 0
+    script_logger.warn("Warning:#{issue_cnt[UMPTG::Message.WARNING]}")
+    epub_log.warn("Warning:#{issue_cnt[UMPTG::Message.WARNING]}")
+  else
+    script_logger.info("Error: 0")
+    epub_log.info("Error: 0")
+  end
+
   if epub_modified
     epub_normalized_file = File.join(File.dirname(epub_file), File.basename(epub_file, ".*") + "_normal.epub")
     epub_log.info("Saving normalized EPUB \"#{File.basename(epub_normalized_file)}.")
