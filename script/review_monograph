@@ -1,0 +1,139 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Script operates on a monograph directory found the Fulcrum
+# shared drive.
+#
+# Review specified monograph for Fulcrum compliance
+
+require 'optparse'
+require 'ostruct'
+require 'os'
+
+# Process the script parameters.
+options = OpenStruct.new
+options.publisher_dir = OS.windows? ? "s:/Information\ Management/Fulcrum/UMP" : "/mnt/umptmm/UMP"
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-d <publisher_dir>] [-n] [-v apex|newgen|default] <monograph_id> [<monograph_id>...]"
+  opts.on('-d', '--publisher_directory [DIRECTORY]', 'Publisher site directory') do |publisher_dir|
+    options.publisher_dir = publisher_dir
+  end
+  opts.on('-n', '--normalize', 'Normalize EPUB') do |normalize|
+    options.normalize = true
+  end
+  opts.on('-v', '--vendor [vendor]', 'Vendor specific markup apex|newgen|default') do |vendor|
+    options.vendor = vendor.to_sym
+  end
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    puts opts
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  puts option_parser.help
+  return
+end
+
+# Process the command line parameters.
+monograph_id_list = ARGV
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require 'fileutils'
+require 'logger'
+
+require_relative File.join(root_dir, "lib", "csvfile")
+require_relative File.join(root_dir, "lib", "fulcrum")
+require_relative File.join(root_dir, "lib", "review_new")
+
+script_logger = Logger.new(STDOUT)
+script_logger.formatter = proc do |severity, datetime, progname, msg|
+  "#{severity}: #{msg}\n"
+end
+
+monograph_id_list.each do |monograph_id|
+  script_logger.info("*" * 10 + " #{monograph_id} " + "*" * 10)
+
+  # Determine the monograph directory
+  monograph_dir_list = Dir.glob(File.join(options.publisher_dir, monograph_id + "*"))
+  dlist = []
+  monograph_dir_list.each do |d|
+    dlist << d if File.directory?(d)
+  end
+  if dlist.empty?
+    script_logger.error("The monograph directory for ID #{monograph_id} was not found.")
+    next
+  end
+  script_logger.warn("Found multiple monograph directories for ID #{monograph_id}.") if dlist.count > 1
+  monograph_dir = dlist.first
+  script_logger.info("Using monograph directory #{File.basename(monograph_dir)} for ID #{monograph_id}")
+
+  # Find the monograph processing directory and insure that it exists.
+  review_dir = File.join(monograph_dir, File.basename(__FILE__))
+  FileUtils.mkdir_p review_dir
+
+  # Log the processing into a file for this monograph.
+  monograph_log_file = File.join(review_dir, File.basename(__FILE__) + ".log")
+  monograph_log = File.open(monograph_log_file, File::WRONLY | File::TRUNC | File::CREAT)
+  monograph_logger = Logger.new(monograph_log)
+  monograph_logger.formatter = proc do |severity, datetime, progname, msg|
+    "#{severity}: #{msg}\n"
+  end
+  monograph_logger.info("*" * 10 + " #{monograph_id} " + "*" * 10)
+  monograph_logger.info("*** Processing Monograph directory #{File.basename(monograph_dir)} ***")
+
+  # Find the EPUB.
+  epub_file_list = Dir.glob(File.join(monograph_dir, "*.epub"))
+  if epub_file_list.count == 0
+    monograph_logger.error("No EPUB found for monograph #{monograph_dir}.")
+    next
+  end
+  epub_file = epub_file_list.first
+  script_logger.info("Reviewing EPUB \"#{File.basename(epub_file)}\".")
+
+  monograph_logger.warn("Multiple EPUBs for monograph #{monograph_dir}. Using #{File.basename(epub_file)}.") \
+        if epub_file_list.count > 1
+  monograph_logger.info("Using EPUB #{File.basename(epub_file)}.") if epub_file_list.count == 1
+
+  # Process the epub and generate the image information.
+  epub_reviewer = UMPTG::Review::EPUBReviewer.new(
+        epub_file: epub_file,
+        logger: monograph_logger
+      )
+  epub_reviewer.review(
+        normalize: options.normalize,
+        review_options: {
+            package: true,
+            link: false,
+            list: false,
+            resources: true,
+            table: true
+          }
+      )
+
+  # Find the monograph resources directory.
+  resources_dir = File.join(monograph_dir, "resources")
+  if !File.directory?(resources_dir)
+    monograph_logger.error("No resources directory found for monograph #{monograph_dir}.")
+    next
+  end
+
+  epub_reviewer.resource_path_list.each do |entry_name,path_list|
+    path_list.each do |path|
+      resource_file_list = Dir.glob(File.join(resources_dir, File.basename(path, ".*") + ".*"))
+      case
+      when resource_file_list.count == 1
+        monograph_logger.info("#{entry_name}: resource file found for reference \"#{File.basename(path)}\".") \
+      when resource_file_list.count > 1
+        monograph_logger.warn("#{entry_name}: found mulitple resource files for reference \"#{File.basename(path)}\".") \
+      else
+        monograph_logger.error("#{entry_name}: resource file not found for reference \"#{File.basename(path)}\".") \
+      end
+    end
+  end
+
+  monograph_logger.close
+end

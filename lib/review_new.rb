@@ -18,5 +18,6 @@ module UMPTG
   require_relative File.join('review_new', 'packageprocessor')
   require_relative File.join('review_new', 'resourceprocessor')
   require_relative File.join('review_new', 'tableprocessor')
+  require_relative File.join('review_new', 'epubreviewer')
 
 end

@@ -14,6 +14,8 @@ module UMPTG::Review
     ]
     SXPATH
 
+    attr_reader :resource_path_list
+
     # Processing parameters:
     #   :selector               Class for selecting resource references
     #   :logger                 Log messages
@@ -22,14 +24,16 @@ module UMPTG::Review
               selection_xpath: RESOURCE_REFERENCE_XPATH
             )
       super(args)
+
+      @resource_path_list = {}
     end
 
     def new_action(args = {})
       case @selector.reference_type(args[:reference_node])
       when :element
-        list = ResourceProcessor.image_reference_actions(args)
+        list = image_reference_actions(args)
       when :marker
-        list = ResourceProcessor.marker_reference_actions(args)
+        list = marker_reference_actions(args)
       else
         list = super(args)
       end
@@ -83,20 +87,27 @@ module UMPTG::Review
     IXPATH
 
 
-    def self.image_reference_actions(args = {})
+    def image_reference_actions(args = {})
       name = args[:name]
       reference_node = args[:reference_node]
 
       resource_path = reference_node.key?('src') ? reference_node['src'] : "unspecified"
+      if @resource_path_list[name].nil?
+        @resource_path_list[name] = [ resource_path ]
+      else
+        @resource_path_list[name] << resource_path
+      end
+
       xpath_base = "//*[local-name()='img' and @src='#{resource_path}']"
 
       action_list = []
+
       action_list << ImageAction.new(
-                 name: args[:name],
+                 name: name,
                  reference_node: reference_node,
-                 resource_path: resource_path,
-                 info_message: "image: \"#{resource_path}\" found."
+                 resource_path: resource_path
              )
+      ResourceProcessor.add_filename_spaces_msg(action_list.last, resource_path)
 
       # Normalize figure container, if possible.
       container_list = reference_node.xpath(@@FIGURE_XPATH)
@@ -228,22 +239,34 @@ module UMPTG::Review
       return action_list
     end
 
-    def self.marker_reference_actions(args = {})
+    def marker_reference_actions(args = {})
       name = args[:name]
       reference_node = args[:reference_node]
 
       action_list = []
-      if reference_node.name == "div" and reference_node.key?("data-fulcrum-embed-filename") and !reference_node["data-fulcrum-embed-filename"].empty?
+      if reference_node.key?("data-fulcrum-embed-filename") and !reference_node["data-fulcrum-embed-filename"].empty?
+        resource_path = reference_node["data-fulcrum-embed-filename"]
+        if @resource_path_list[name].nil?
+          @resource_path_list[name] = [ resource_path ]
+        else
+          @resource_path_list[name] << resource_path
+        end
+
         action_list << Action.new(
                  name: name,
-                 reference_node: node,
-                 info_message: "marker: \"#{resource_path}\" has markup #{reference_node.to_xhtml}."
+                 reference_node: node
              )
+        if reference_node.name == "figure"
+          action_list.last.add_info_msg("marker: \"#{resource_path}\" has markup #{reference_node.to_xhtml}.")
+        else
+          action_list.last.add_warning_msg("marker: \"#{resource_path}\" has markup #{reference_node.to_xhtml}.")
+        end
+        ResourceProcessor.add_filename_spaces_msg(action_list.last, resource_path, false)
       else
         # Return the nodes that reference resources.
         # For marker callouts, this should be within
         # a XML comment, but not always the case.
-        #node_list = reference_node.xpath(".//comment()")
+        node_list = reference_node.xpath(".//comment()")
         node_list = [ reference_node ] if node_list.nil? or node_list.empty?
         node_list.each do |node|
           resource_path = node.text.strip
@@ -260,12 +283,18 @@ module UMPTG::Review
             # Appears to be Newgen markup.
             resource_path = r[1]
           end
+          if @resource_path_list[name].nil?
+            @resource_path_list[name] = [ resource_path ]
+          else
+            @resource_path_list[name] << resource_path
+          end
 
           action_list << Action.new(
                    name: name,
                    reference_node: node,
-                   warning_message: "marker: \"#{resource_path}\" has #{node.name} as marker element. Recommended markup is <div data-fulcrum-embed-filename=\"#{resource_path}\"]."
+                   warning_message: "marker: \"#{resource_path}\" found and has #{node.name} as marker element. Recommended markup is <figure data-fulcrum-embed-filename=\"#{resource_path}\"]."
                )
+          ResourceProcessor.add_filename_spaces_msg(action_list.last, resource_path, false)
 
           xpath = "//*[(@class='rb' or @class='rbi') and contains(normalize-space(.),'#{resource_path}')]|//comment()[starts-with(translate(normalize-space(.),'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz'),'insert ') and contains(normalize-space(.),'#{resource_path}')]"
           #node_list = reference_node.document.xpath(xpath)
@@ -279,6 +308,16 @@ module UMPTG::Review
         end
       end
       return action_list
+    end
+
+    def self.add_filename_spaces_msg(action, resource_path, is_image = true)
+      # Flag this reference if the file name contains spaces.
+      type_txt = is_image ? "image" : "marker"
+      if File.basename(resource_path).match?(/[ ]+/)
+        action.add_warning_msg("#{type_txt}: \"#{resource_path}\" found and the name contains spaces.")
+      else
+        action.add_info_msg("#{type_txt}: \"#{resource_path}\" found.")
+      end
     end
   end
 end

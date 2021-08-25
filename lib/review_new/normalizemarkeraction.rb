@@ -9,13 +9,14 @@ module UMPTG::Review
       # Recommendation is that resource file names should not contain
       # spaces. But it may be awhile before authors and vendors
       # will implement this.
-      rp = @resource_path.gsub(/[ ]+/,'_')
+      #rp = @resource_path.gsub(/[ ]+/,'_')
+      rp = @resource_path
       markup = "<figure class=\"enhanced-media-display\" data-fulcrum-embed-filename=\"#{rp}\"/>"
       fragment = Nokogiri::XML.fragment(markup)
 
       reference_node.add_previous_sibling(fragment)
-      add_info_msg("marker: \"#{@resource_path}\" converted marker.") if rp == @resource_path
-      add_info_msg("marker: \"#{@resource_path}\" => \"#{rp}\" converted marker.") unless rp == @resource_path
+      add_info_msg("marker: converted marker \"#{@resource_path}\".") if rp == @resource_path
+      add_info_msg("marker: converted marker, path converted \"#{@resource_path}\" to \"#{rp}\".") unless rp == @resource_path
 
       if reference_node.parent.name == "p"
         # If parent of comment is a para then adding a figure

@@ -22,6 +22,8 @@ module UMPTG::EPUB
         raise "No entry_processors specified."
       end
 
+      logger.info("Processing EPUB file #{File.basename(epub.epub_file)}")
+
       # Parameter indicates whether content should be provided as
       # string or as a XML doc.
       pass_xml_doc = args.key?(:pass_xml_doc) and args[:pass_xml_doc]
