@@ -10,8 +10,26 @@ module UMPTG::Fulcrum::Manifest
       super(args)
 
       @name = @properties[:name]
-      csv_body = @properties[:csv_body]
-      fail "Error: manifest is empty" if csv_body.nil? or csv_body.empty?
+
+      case
+      when @properties.key?(:csv_body)
+        csv_body = @properties[:csv_body]
+      when @properties.key?(:csv_file)
+        csv_file = @properties[:csv_file]
+        raise "Error: invalid CSV file path #{csv_file}" \
+              if csv_file.nil? or csv_file.strip.empty? or !File.exists?(csv_file)
+        csv_body = File.read(csv_file)
+      when @properties.key?(:monograph_id)
+        service = UMPTG::Services::Heliotrope.new(
+                        :fulcrum_host => @properties[:fulcrum_host]
+                      )
+        csv_body = service.monograph_export(identifier: @properties[:monograph_id])
+      else
+        # No content specified
+        csv_body = nil
+      end
+
+      raise "Error: manifest is empty" if csv_body.nil? or csv_body.strip.empty?
 
       begin
         @csv = CSV.parse(

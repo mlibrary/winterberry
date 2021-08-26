@@ -13,32 +13,26 @@ module UMPTG::Services
 
     @@DOI_PREFIX = "https://doi.org/"
 
-    def self.FULCRUM_API
-      @@FULCRUM_API
-    end
+    #
+    # Configuration
+    #
+    def initialize(options = {})
+      fulcrum_host = options[:fulcrum_host] || "production"
 
-    def self.FULCRUM_TOKEN
-      @@FULCRUM_TOKEN
-    end
+      case fulcrum_host
+      when "production"
+        @base = options[:base] || ENV['TURNSOLE_HELIOTROPE_API'] || @@FULCRUM_API
+        @token = options[:token] || ENV['TURNSOLE_HELIOTROPE_TOKEN'] || @@FULCRUM_TOKEN
+      when "preview"
+        @base = options[:base] || ENV['TURNSOLE_HELIOTROPE_API'] || @@PREVIEW_API
+        @token = options[:token] || ENV['TURNSOLE_HELIOTROPE_TOKEN'] || @@PREVIEW_TOKEN
+      when "staging"
+      else
+        raise "Error: invalid host \"#{fulcrum_host}\"."
+      end
 
-    def self.PREVIEW_API
-      @@PREVIEW_API
-    end
-
-    def self.PREVIEW_TOKEN
-      @@PREVIEW_TOKEN
-    end
-
-    def self.STAGING_API
-      @@STAGING_API
-    end
-
-    def self.STAGING_TOKEN
-      @@STAGING_TOKEN
-    end
-
-    def self.DOI_PREFIX
-      @@DOI_PREFIX
+      @open_timeout = options[:open_timeout] || 60 # seconds, 1 minute, opening a connection
+      @timeout = options[:timeout] || 600          # seconds, 10 minutes, waiting for response
     end
 
     #
@@ -85,26 +79,32 @@ module UMPTG::Services
       return response.body
     end
 
-    #
-    # Configuration
-    #
-    def initialize(options = {})
-      fulcrum_host = options[:fulcrum_host] || "production"
+    def self.FULCRUM_API
+      @@FULCRUM_API
+    end
 
-      case fulcrum_host
-      when "production"
-        @base = options[:base] || ENV['TURNSOLE_HELIOTROPE_API'] || @@FULCRUM_API
-        @token = options[:token] || ENV['TURNSOLE_HELIOTROPE_TOKEN'] || @@FULCRUM_TOKEN
-      when "preview"
-        @base = options[:base] || ENV['TURNSOLE_HELIOTROPE_API'] || @@PREVIEW_API
-        @token = options[:token] || ENV['TURNSOLE_HELIOTROPE_TOKEN'] || @@PREVIEW_TOKEN
-      when "staging"
-      else
-        raise "Error: invalid host \"#{fulcrum_host}\"."
-      end
+    def self.FULCRUM_TOKEN
+      @@FULCRUM_TOKEN
+    end
 
-      @open_timeout = options[:open_timeout] || 60 # seconds, 1 minute, opening a connection
-      @timeout = options[:timeout] || 600          # seconds, 10 minutes, waiting for response
+    def self.PREVIEW_API
+      @@PREVIEW_API
+    end
+
+    def self.PREVIEW_TOKEN
+      @@PREVIEW_TOKEN
+    end
+
+    def self.STAGING_API
+      @@STAGING_API
+    end
+
+    def self.STAGING_TOKEN
+      @@STAGING_TOKEN
+    end
+
+    def self.DOI_PREFIX
+      @@DOI_PREFIX
     end
 
     private

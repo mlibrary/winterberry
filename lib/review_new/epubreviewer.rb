@@ -9,7 +9,7 @@ module UMPTG::Review
           table: TableProcessor.new
         }
 
-    attr_reader :epub, :review_logger, :action_map
+    attr_reader :epub, :epub_modified, :review_logger, :action_map
 
     def initialize(args = {})
       # Determine the EPUB to use.
@@ -37,6 +37,7 @@ module UMPTG::Review
       end
 
       @action_map = {}
+      @epub_modified = false
     end
 
     def review(args = {})
@@ -71,7 +72,7 @@ module UMPTG::Review
             UMPTG::Message.FATAL => 0
       }
 
-      epub_modified = false
+      @epub_modified = false
       @action_map.each do |entry_name,proc_map|
         @review_logger.info(entry_name)
 
@@ -101,15 +102,16 @@ module UMPTG::Review
           @review_logger.info("Updating entry #{entry_name}")
           xml_doc = proc_map[:xml_doc]
           @epub.add(entry_name: entry_name, entry_content: UMPTG::XMLUtil.doc_to_xml(xml_doc))
-          epub_modified = true
+          @epub_modified = true
         end
       end
-
+=begin
       if epub_modified
         epub_normalized_file = File.join(File.dirname(@epub.epub_file), File.basename(@epub.epub_file, ".*") + "_normal.epub")
         @review_logger.info("Saving normalized EPUB \"#{File.basename(epub_normalized_file)}.")
         @epub.save(epub_file: epub_normalized_file)
       end
+=end
 
       case
       when issue_cnt[UMPTG::Message.FATAL] > 0
