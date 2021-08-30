@@ -6,7 +6,7 @@ module UMPTG::Fulcrum
     @@DEFAULT_PUBLISHER_DIR = OS.windows? ? "s:/Information\ Management/Fulcrum" : "/mnt/umptmm"
     @@DEFAULT_PUBLISHER = "UMP"
 
-    attr_reader :epub_file, :manifest, :monograph_dir, :monograph_id,\
+    attr_reader :epub_file, :isbn, :manifest, :monograph_dir, :monograph_id,\
           :publisher_dir, :resources_dir, :review_dir
 
     def initialize(args = {})
@@ -34,7 +34,7 @@ module UMPTG::Fulcrum
           if @manifest.nil?
             # Find the ebook source folder. Look for a directory
             # using the monograph id.
-            monograph_dir_list = Dir.glob(File.join(@publisher_dir, @monograph_id))
+            monograph_dir_list = Dir.glob(File.join(@publisher_dir, @publisher, "#{@monograph_id}_*"))
           else
             # From the manifest, determine the ebook ISBN without dashes.
             ebook_isbn = manifest.isbn["open access"]
@@ -42,8 +42,9 @@ module UMPTG::Fulcrum
 
             unless ebook_isbn.nil? or ebook_isbn.strip.empty?
               ebook_isbn = ebook_isbn.strip.gsub('-', '')
-              monograph_dir_list = Dir.glob(File.join(@publisher_dir, "#{ebook_isbn}_*"))
+              monograph_dir_list = Dir.glob(File.join(@publisher_dir, @publisher, "#{ebook_isbn}_*"))
             end
+            @isbn = ebook_isbn
           end
           @monograph_dir = monograph_dir_list.empty? ? nil : monograph_dir_list.first
         end
@@ -53,7 +54,8 @@ module UMPTG::Fulcrum
 
       unless @monograph_dir.nil?
         # Determine if the resources directory exists.
-        @resources_dir = File.join(@monograph_dir, "resources")
+        resources_dir_list = Dir.glob(File.join(@monograph_dir, "[Rr]esources"))
+        @resources_dir = resources_dir_list.empty? ? File.join(@monograph_dir, "Resources") : resources_dir_list.first
 
         # Find the epub file name and determine whether it exists.
         epub_row = @manifest.representative_row(kind: "epub")

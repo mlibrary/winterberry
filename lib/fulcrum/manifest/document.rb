@@ -68,6 +68,7 @@ module UMPTG::Fulcrum::Manifest
 
       return {
                 "noid" => "",
+                "file_name" => "",
                 "resource_name" => "",
                 "link" => "",
                 "embed_code" => ""
