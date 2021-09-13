@@ -511,6 +511,10 @@
         <xsl:attribute name="{concat('xml:',lower-case(local-name()))}" select="."/>
     </xsl:template>
 
+    <xsl:template match="NOTE/@TYPE">
+        <xsl:attribute name="type" select="."/>
+    </xsl:template>
+
     <xsl:template match="@TYPE">
         <xsl:attribute name="style" select="."/>
     </xsl:template>
