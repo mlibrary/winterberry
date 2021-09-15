@@ -176,8 +176,9 @@ module UMPTG::RTF
     #
     # @api private
     def parse_control(src, current_pos = 0)
-      if src[current_pos] == "~"
-        ctrl = "~".to_sym
+      ch = src[current_pos]
+      if ch == "~" or ch == "-"
+        ctrl = ch.to_sym
         val = nil
         return [ctrl, val, current_pos]
       end
