@@ -3,7 +3,8 @@ module UMPTG::Fulcrum
 
   class Monograph < UMPTG::Object
 
-    @@DEFAULT_PUBLISHER_DIR = OS.windows? ? "s:/Information\ Management/Fulcrum" : "/mnt/umptmm"
+    #@@DEFAULT_PUBLISHER_DIR = OS.windows? ? "s:/Information\ Management/Fulcrum" : "/mnt/umptmm"
+    @@DEFAULT_PUBLISHER_DIR = "s:/Information\ Management/Fulcrum"
     @@DEFAULT_PUBLISHER = "UMP"
 
     attr_reader :epub_file, :isbn, :manifest, :monograph_dir, :monograph_id,\
