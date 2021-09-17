@@ -41,12 +41,12 @@ rtf_file_list.each do |rtf_file|
     next
   end
 
-  html_file = File.join(File.dirname(rtf_file), File.basename(rtf_file, ".*") + ".html")
+  html_file = File.join(File.dirname(rtf_file), File.basename(rtf_file, ".*") + ".xhtml")
   script_logger.info("#{File.basename(rtf_file)} ==> #{File.basename(html_file)}")
 
   html_markup = UMPTG::RTF::Processor.process(
-          :rtf_content => File.open(rtf_file).read,
-          :rtf_listener => rtf_listener
+          rtf_content: File.open(rtf_file).read,
+          rtf_listener: rtf_listener
         )
   File.write(html_file, html_markup)
 end

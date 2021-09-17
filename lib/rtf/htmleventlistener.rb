@@ -19,7 +19,7 @@ module UMPTG::RTF
 
       append_markup("<?xml version=\"1.0\" encoding=\"UTF-8\"?>")
       append_markup("<html xmlns=\"http://www.w3.org/1999/xhtml\">")
-      append_markup("<head></head>")
+      append_markup("<head><title>title</title></head>")
       append_markup("<body>")
     end
 
