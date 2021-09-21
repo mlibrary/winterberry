@@ -106,7 +106,8 @@ module UMPTG::RTF
           break if group == 0
           current_pos += 1
         when ';' then
-          ssname = style_name.join.gsub(/[ ]+/, '_')
+          #ssname = style_name.join.gsub(/[ ]+/, '_')
+          ssname = style_name.join
           puts "Style #{style_type} #{style_id} #{ssname}" if @@DEBUG_OUTPUT or true
           @doc.add_style(
                     :style_id => style_id,
