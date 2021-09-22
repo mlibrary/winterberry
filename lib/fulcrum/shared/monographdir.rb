@@ -1,23 +1,17 @@
-module UMPTG::Fulcrum
-  require "fileutils"
-
-  class Monograph < UMPTG::Object
-
-    #@@DEFAULT_PUBLISHER_DIR = OS.windows? ? "s:/Information\ Management/Fulcrum" : "/mnt/umptmm"
-    @@DEFAULT_PUBLISHER_DIR = "s:/Information\ Management/Fulcrum"
-    @@DEFAULT_PUBLISHER = "UMP"
+module UMPTG::Fulcrum::Shared
+  class MonographDir < UMPTG::Object
 
     attr_reader :epub_file, :isbn, :manifest, :monograph_dir, :monograph_id,\
-          :publisher_dir, :resources_dir, :review_dir
+          :publisher, :publisher_dir, :resources_dir
 
     def initialize(args = {})
       super(args)
 
       @publisher = @properties.key?(:publisher) ? \
-                 @properties[:publisher] : Monograph.DEFAULT_PUBLISHER
+                 @properties[:publisher] : UMPTG::Fulcrum::Shared.DEFAULT_PUBLISHER
 
       @publisher_dir = @properties.key?(:publisher_dir) ? \
-                @properties[:publisher_dir] : File.join(Monograph.DEFAULT_PUBLISHER_DIR, @publisher)
+                @properties[:publisher_dir] : File.join(UMPTG::Fulcrum::Shared.DEFAULT_DIR, @publisher)
 
       case
       when @properties.key?(:monograph_dir)
@@ -63,14 +57,6 @@ module UMPTG::Fulcrum
         epub_file_name = epub_row['file_name']
         @epub_file = File.join(@monograph_dir, epub_file_name)
       end
-    end
-
-    def self.DEFAULT_PUBLISHER
-      return @@DEFAULT_PUBLISHER
-    end
-
-    def self.DEFAULT_PUBLISHER_DIR
-      return @@DEFAULT_PUBLISHER_DIR
     end
   end
 end

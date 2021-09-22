@@ -14,11 +14,18 @@ require 'os'
 script_dir = File.expand_path(File.dirname(__FILE__))
 root_dir = File.dirname(script_dir)
 
+require_relative File.join(root_dir, "lib", "mlogger")
+
+script_logger = UMPTG::MLogger.create(logger_fp: STDOUT)
+script_logger.formatter = proc do |severity, datetime, progname, msg|
+  "#{severity}: #{msg}\n"
+end
+
 require_relative File.join(root_dir, "lib", "fulcrum")
 
 # Process the script parameters.
 options = OpenStruct.new
-options.publisher_dir = UMPTG::Fulcrum::Monograph.DEFAULT_PUBLISHER_DIR
+options.publisher_dir = UMPTG::Fulcrum::Shared.DEFAULT_DIR
 options.normalize = false
 option_parser = OptionParser.new do |opts|
   opts.banner = "Usage: #{File.basename(__FILE__)} [-d <publisher_dir>] [-f production|preview|staging] [-n] <monograph_id> [<monograph_id>...]"
@@ -32,117 +39,43 @@ option_parser = OptionParser.new do |opts|
     options.normalize = true
   end
   opts.on_tail('-h', '--help', 'Print this help message') do
-    puts opts
+    script_logger.info(opts)
     exit 0
   end
 end
 option_parser.parse!(ARGV)
 if ARGV.count < 1
-  puts option_parser.help
+  script_logger.info(option_parser.help)
   return
 end
 
 # Process the command line parameters.
 monograph_id_list = ARGV
 
-# Determine the root directory of the code base.
-script_dir = File.expand_path(File.dirname(__FILE__))
-root_dir = File.dirname(script_dir)
-
 require 'fileutils'
 
 require_relative File.join(root_dir, "lib", "review_new")
 
-script_logger = UMPTG::MLogger.create(logger_fp: STDOUT)
-script_logger.formatter = proc do |severity, datetime, progname, msg|
-  "#{severity}: #{msg}\n"
-end
-
 monograph_id_list.each do |monograph_id|
   script_logger.info("*" * 10 + " #{monograph_id} " + "*" * 10)
 
-  monograph = UMPTG::Fulcrum::Monograph.new(
+  monograph_dir = UMPTG::Fulcrum::Shared::MonographDir.new(
               publisher_dir: options.publisher_dir,
               fulcrum_host: options.fulcrum_host,
               monograph_id: monograph_id
           )
-  unless Dir.exists?(monograph.monograph_dir)
-    script_logger.error("invalid monograph directory #{monograph.monograph_dir}.")
+  unless Dir.exists?(monograph_dir.monograph_dir)
+    script_logger.error("invalid monograph directory #{monograph_dir.monograph_dir}.")
     next
   end
 
-  review_dir = File.join(monograph.monograph_dir, "review")
-  FileUtils.mkdir_p review_dir
+  reviewer = UMPTG::Fulcrum::Shared::MonographDirReviewer.new(
+              monograph_dir: monograph_dir
+          )
 
-  monograph_logger = UMPTG::MLogger.create(
-              logger_file: File.join(review_dir, monograph_id + "_review.log")
-           )
+  reviewer.review(
+              normalize_epub: options.normalize,
+              review_resources: true
+          )
 
-  epub_file = monograph.epub_file
-  if epub_file.nil?
-    monograph_logger.error("no EPUB file for id #{monograph_id}")
-    next
-  end
-
-  # Process the epub and generate the image information.
-  epub_reviewer = UMPTG::Review::EPUBReviewer.new(
-        epub_file: epub_file,
-        logger: monograph_logger
-      )
-  epub_reviewer.review(
-        normalize: options.normalize,
-        review_options: {
-            package: true,
-            link: false,
-            list: false,
-            resources: true,
-            table: true
-          }
-      )
-
-  if epub_reviewer.epub_modified
-    epub_normalized_file = File.join(review_dir, File.basename(epub_file, ".*") + "_normal.epub")
-    monograph_logger.info("Saving normalized EPUB \"#{File.basename(epub_normalized_file)}.")
-    epub_reviewer.epub.save(epub_file: epub_normalized_file)
-  end
-
-  unless Dir.exists?(monograph.resources_dir)
-    monograph_logger.warn("no resources directory for id #{monograph_id}")
-    next
-  end
-
-  resources_manifest = nil
-  csv_path = File.join(monograph.resources_dir, "manifest.csv")
-  unless File.exists?(csv_path)
-    csv_path_list = Dir.glob(File.join(monograph.resources_dir, monograph.isbn + "*.csv"))
-    if csv_path_list.empty?
-      monograph_logger.warn("no resources CSV for id #{monograph_id}.")
-    else
-      monograph_logger.warn("multiple resources CSV found for id #{monograph_id}") \
-          if csv_path_list.count > 1
-      csv_path = csv_path_list.first
-      monograph_logger.info("using resources directory CSV #{File.basename(csv_path)}.")
-    end
-  end
-  resources_manifest = UMPTG::Fulcrum::Manifest::Document.new(csv_file: csv_path)
-
-  epub_reviewer.resource_path_list.each do |entry_name,path_list|
-    path_list.each do |path|
-      resource_name = ""
-      unless monograph.manifest.nil?
-        fileset = monograph.manifest.fileset(path)
-        if fileset["file_name"].empty? and !resources_manifest.nil?
-          fileset = resources_manifest.fileset(File.basename(path))
-        end
-        resource_name = fileset["file_name"]
-      end
-      if resource_name.strip.empty?
-        monograph_logger.warn("#{entry_name}: resource file not found for reference \"#{File.basename(path)}\".")
-      else
-        monograph_logger.info("#{entry_name}: resource file found for reference \"#{File.basename(path)}\".")
-      end
-    end
-  end
-
-  monograph_logger.close
 end
