@@ -74,6 +74,13 @@ module UMPTG::Fulcrum::Manifest
     end
   end
 
+  def self.blank_row_name?(row_name)
+    return false if row_name.nil?
+
+    rname = row_name.downcase.strip
+    return rname.strip.match?(/^\*\*\*[ ]*row[ ]+/)
+  end
+
   def self.BLANK_ROW_FILE_NAME
     return @@BLANK_ROW_FILE_NAME
   end

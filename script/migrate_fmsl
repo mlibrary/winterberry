@@ -13,6 +13,14 @@
 # - Generate an XML representation of the Fulcrum metadta
 #   and save it in a file.
 
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
 require 'optparse'
 require 'ostruct'
 
@@ -37,21 +45,17 @@ option_parser = OptionParser.new do |opts|
     options.output_xml = true
   end
   opts.on_tail('-h', '--help', 'Print this help message') do
-    puts opts
+    script_logger.info(opts)
     exit 0
   end
 end
 option_parser.parse!(ARGV)
 if ARGV.count < 1
-  puts option_parser.help
+  script_logger.info(option_parser.help)
   return
 end
 
 fmsl_file_list = ARGV
-
-# Determine the root directory of the code base.
-script_dir = File.expand_path(File.dirname(__FILE__))
-root_dir = File.dirname(script_dir)
 
 require 'csv'
 
@@ -65,13 +69,13 @@ fmsl_file_list.each do |fmsl_file|
   # Determine file existence.
   fmsl_file = File.expand_path(fmsl_file)
   if !File.file?(fmsl_file)
-    puts "Error: invalid FMSL file #{fmsl_file}"
+    script_logger.error("invalid FMSL file #{fmsl_file}")
     next
   end
   if options.output_csv
-    puts "Migrating FMSL #{File.basename(fmsl_file)}"
+    script_logger.info("migrating FMSL #{File.basename(fmsl_file)}")
   else
-    puts "Validating FMSL #{File.basename(fmsl_file)}" unless options.output_csv
+    script_logger.info("validating FMSL #{File.basename(fmsl_file)}") unless options.output_csv
   end
 
   # Load the FMSL and migrate it to a Fulcrum metadata CSV.
@@ -101,19 +105,24 @@ fmsl_file_list.each do |fmsl_file|
   unless options.skip_resources_check
     manifest_csv.each do |row|
       next unless row['External Resource URL'].nil?
+
       resource_name = row['File Name']
-      next if resource_name == UMPTG::Fulcrum::Manifest.BLANK_ROW_FILE_NAME
+      if resource_name.nil? or resource_name.strip.empty?
+        script_logger.warn("found row with no \"File Name\" value.")
+        next
+      end
+      next if UMPTG::Fulcrum::Manifest.blank_row_name?(resource_name)
 
       # Determine if the resource file exists and is not 0 size.
       resource_file = File.join(File.dirname(fmsl_file), resource_name)
       if File.file?(resource_file)
         if File.size(resource_file) == 0
           error_count += 1
-          resource_errors[resource_name] = [ "Error: resource file is 0 size." ]
+          resource_errors[resource_name] = [ "resource file is 0 size." ]
         end
       else
         error_count += 1
-        resource_errors[resource_name] = [ "Error: resource file does not exist." ]
+        resource_errors[resource_name] = [ "resource file does not exist." ]
       end
     end
   end
@@ -122,29 +131,41 @@ fmsl_file_list.each do |fmsl_file|
   # the the Fulcrum metadata.
   error_list = UMPTG::Fulcrum::Manifest::Validation::CollectionSchema.validate(:xml_markup => collection.xml_markup)
   #error_list = []
-  puts "Error count: #{error_count + error_list.count}"
+  script_logger.info("Error count: #{error_count + error_list.count}")
 
   # Display any resource existence issues.
   if error_count > 0
     resource_errors.each do |key,val|
-      puts "#{key}: #{val.first}"
+      script_logger.error("#{key}: #{val.first}")
     end
   end
 
   # Display Fulcrum metadata field issues.
   if error_list.count > 0
     vtree = UMPTG::Fulcrum::Manifest::ValidationResult::VTreeBuilder.build(collection.xml_markup)
-    puts "vtree is nil" if vtree.nil?
+    script_logger.warn("vtree is nil") if vtree.nil?
 
     # Organize any issues within a list associated with the resource.
     error_list.each do |error|
       unless options.include_notes
         level = error.error? ? "error" : error.warning? ? "warning" : error.fatal? ? "fatal" : "none"
-        puts "error line: #{error.line}" unless
         property = vtree.property(error.line) unless vtree.nil?
-        puts "\t#{property}" unless property.nil?
-        puts "\t#{property.resource_name}" unless property.nil?
-        puts "\t#{error}"
+        err_msg_list = [ "line: #{error.line}" ]
+        err_msg_list << "\t#{property}" unless property.nil?
+        err_msg_list << "\t#{property.resource_name}" unless property.nil?
+        err_msg_list << "\t#{error}"
+        err_msg = err_msg_list.join("\n")
+
+        case
+        when error.error?
+          script_logger.error(err_msg)
+        when error.warning?
+          script_logger.warn(err_msg)
+        when error.fatal?
+          script_logger.fatal(err_msg)
+        else
+          script_logger.info(err_msg)
+        end
       end
 
       resource_name = property.resource_name unless property.nil?
@@ -185,6 +206,6 @@ fmsl_file_list.each do |fmsl_file|
         csv << r
       end
     end
-    puts "Saved CSV file #{fulcrum_file}."
+    script_logger.info("Saved CSV file #{fulcrum_file}.")
   end
 end
