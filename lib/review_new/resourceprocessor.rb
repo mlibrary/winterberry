@@ -137,21 +137,29 @@ module UMPTG::Review
       end
 
       unless container_list.empty?
-        # Normalize image parent, as it may be a <p>
-        # and needs to be a <div> so markup may be inserted.
-        img_container_list = reference_node.xpath("./ancestor::*[local-name()='p']")
-        img_container_list.each do |node|
-          action_list << NormalizeImageContainerAction.new(
-                   name: name,
-                   reference_node: reference_node,
-                   resource_path: resource_path,
-                   xpath: xpath_base + "/ancestor::*[local-name()='p']",
-                   action_node: node,
-                   warning_message: "image: \"#{resource_path}\" has #{node.name} as container element for image element. Recommended is either no container element use div element."
-               )
-        end
-
         container_node = container_list.first
+        img_container_list = reference_node.xpath("./ancestor::*[local-name()='p' or local-name()='div']")
+
+        # Determine how many img elements are within container.
+        # If 1 then normalize the container. Otherwise, let
+        # nest action handle this case.
+        container_img_list = container_node.xpath(".//*[local-name()='img']")
+
+        if container_img_list.count == 1
+          # Normalize image parent, as it may be a <p>
+          # and needs to be a <div> so markup may be inserted.
+          img_container_list.each do |node|
+            action_list << NormalizeImageContainerAction.new(
+                     name: name,
+                     reference_node: reference_node,
+                     resource_path: resource_path,
+                     xpath: xpath_base + "/ancestor::*[local-name()='p' or local-name()='div']",
+                     action_node: node,
+                     #warning_message: "image: \"#{resource_path}\" has #{node.name} as container element for image element. Recommended is either no container element or use div element."
+                     warning_message: "image: \"#{resource_path}\" has #{node.name} as container element for image element. Recommended is either no container element."
+                 )
+          end
+        end
 
         # Normalize figure caption, if possible. Figure may contain
         # multiple images. Match captions to images.
