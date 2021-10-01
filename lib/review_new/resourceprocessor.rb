@@ -50,14 +50,14 @@ module UMPTG::Review
 
     @@DIV_XPATH = <<-DXPATH
     ./ancestor::*[
-    (local-name()='div' and @class='figurewrap')
+    ((local-name()='p' or local-name()='div') and translate(@class,'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz')='figurewrap')
     ][1]
     DXPATH
 
     @@FIGUREDIV_XPATH = <<-FDXPATH
     ./ancestor::*[
     local-name()='figure'
-    or (local-name()='div' and @class='figurewrap')
+    or ((local-name()='p' or local-name()='div') and translate(@class,'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz')='figurewrap')
     ][1]
     FDXPATH
 
@@ -124,7 +124,7 @@ module UMPTG::Review
                    name: name,
                    reference_node: reference_node,
                    resource_path: resource_path,
-                   xpath: xpath_base + "/" + @@DIV_PATH,
+                   xpath: xpath_base + "/" + @@DIV_XPATH,
                    action_node: container_list.first
                )
         end
@@ -138,7 +138,8 @@ module UMPTG::Review
 
       unless container_list.empty?
         container_node = container_list.first
-        img_container_list = reference_node.xpath("./ancestor::*[local-name()='p' or local-name()='div']")
+        #img_container_list = reference_node.xpath("./ancestor::*[local-name()='p' or local-name()='div']")
+        img_container_list = container_node.xpath("./descendant::*[.//*[local-name()='#{reference_node.name}' and @src='#{resource_path}']//ancestor::*[local-name()='p' or local-name()='div']]")
 
         # Determine how many img elements are within container.
         # If 1 then normalize the container. Otherwise, let
@@ -156,7 +157,7 @@ module UMPTG::Review
                      xpath: xpath_base + "/ancestor::*[local-name()='p' or local-name()='div']",
                      action_node: node,
                      #warning_message: "image: \"#{resource_path}\" has #{node.name} as container element for image element. Recommended is either no container element or use div element."
-                     warning_message: "image: \"#{resource_path}\" has #{node.name} as container element for image element. Recommended is either no container element."
+                     warning_message: "image: \"#{resource_path}\" has #{node.name} as container element for image element. Recommended is no container element."
                  )
           end
         end

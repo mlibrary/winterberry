@@ -87,7 +87,8 @@ epub_file_list.each do |epub_file|
   epub_log = epub_reviewer.review_logger
 
   epub_reviewer.review(
-        review_options: options.reviews
+        review_options: options.reviews,
+        normalize: options.normalize[:resources]
       )
   action_map = epub_reviewer.action_map
 
@@ -137,6 +138,7 @@ epub_file_list.each do |epub_file|
     end
 =end
   else
+=begin
     action_map.each do |entry_name,proc_map|
       proc_map.each do |key,action_list|
         next if action_list.nil?
@@ -146,15 +148,16 @@ epub_file_list.each do |epub_file|
         end
       end
     end
+=end
   end
 
+=begin
   issue_cnt = {
         UMPTG::Message.INFO => 0,
         UMPTG::Message.WARNING => 0,
         UMPTG::Message.ERROR => 0,
         UMPTG::Message.FATAL => 0
   }
-
   epub_modified = false
   action_map.each do |entry_name,proc_map|
     epub_log.info(entry_name)
@@ -202,8 +205,8 @@ epub_file_list.each do |epub_file|
     script_logger.info("Error: 0")
     epub_log.info("Error: 0")
   end
-
-  if epub_modified
+=end
+  if epub_reviewer.epub_modified
     epub_normalized_file = File.join(File.dirname(epub_file), File.basename(epub_file, ".*") + "_normal.epub")
     epub_log.info("Saving normalized EPUB \"#{File.basename(epub_normalized_file)}.")
     script_logger.info("Saving normalized EPUB \"#{File.basename(epub_normalized_file)}.")
