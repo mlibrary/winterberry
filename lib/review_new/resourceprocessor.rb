@@ -139,12 +139,16 @@ module UMPTG::Review
       unless container_list.empty?
         container_node = container_list.first
         #img_container_list = reference_node.xpath("./ancestor::*[local-name()='p' or local-name()='div']")
+        xxx = "./descendant::*[.//*[local-name()='#{reference_node.name}' and @src='#{resource_path}']//ancestor::*[local-name()='p' or local-name()='div']]"
+        #puts "xxx:#{xxx}"
         img_container_list = container_node.xpath("./descendant::*[.//*[local-name()='#{reference_node.name}' and @src='#{resource_path}']//ancestor::*[local-name()='p' or local-name()='div']]")
+        action_list.last.add_info_msg("img_container_list:#{img_container_list.count}")
 
         # Determine how many img elements are within container.
         # If 1 then normalize the container. Otherwise, let
         # nest action handle this case.
         container_img_list = container_node.xpath(".//*[local-name()='img']")
+        action_list.last.add_info_msg("container_img_list:#{container_img_list.count}")
 
         if container_img_list.count == 1
           # Normalize image parent, as it may be a <p>
