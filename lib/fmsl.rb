@@ -57,7 +57,7 @@ module UMPTG
           unless file_name.nil?
             next if file_name.strip.downcase.start_with?('"this should be') \
                  or file_name.strip.downcase.start_with?('this should be')
-            next if file_name.start_with?(UMPTG::Fulcrum::Manifest.BLANK_ROW_FILE_NAME)
+            next if UMPTG::Fulcrum::Manifest.blank_row_name?(file_name)
           end
 
           unless row['Fulcrum'].nil? or row['Fulcrum'].downcase == 'yes'

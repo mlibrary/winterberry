@@ -26,14 +26,18 @@ require 'ostruct'
 
 # Process the script parameters.
 options = OpenStruct.new
+options.fulcrum_headers_only = false
 options.output_csv = false
 options.output_xml = false
 options.skip_resources_check = false
 options.include_notes = false
 option_parser = OptionParser.new do |opts|
-  opts.banner = "Usage: #{File.basename(__FILE__)} [-c] [-n] [-r] [-x] fmsl_file [fmsl_file...]"
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-c] [-f] [-n] [-r] [-x] fmsl_file [fmsl_file...]"
   opts.on('-c', '--csv', 'Save CSV file') do |output_csv|
     options.output_csv = true
+  end
+  opts.on('-f', '--fulcrum_headers', 'Include Fulcrum headers only') do |f|
+    options.fulcrum_headers_only = true
   end
   opts.on('-n', '--notes', 'Include Validation Notes column in CSV') do |include_notes|
     options.include_notes = true
@@ -79,8 +83,8 @@ fmsl_file_list.each do |fmsl_file|
   end
 
   # Load the FMSL and migrate it to a Fulcrum metadata CSV.
-  fmsl_body = UMPTG::FMSL.load(:fmsl_file => fmsl_file)
-  manifest_csv = UMPTG::FMSL.to_manifest(:fmsl_body => fmsl_body)
+  fmsl_body = UMPTG::FMSL.load(fmsl_file: fmsl_file)
+  manifest_csv = UMPTG::FMSL.to_manifest(fmsl_body: fmsl_body)
 
   # Convert the Fulcrum metadata CSV to an XML representation.
   manifest_name = File.join(File.basename(fmsl_file, ".*") + "_fulcrum")
@@ -130,7 +134,6 @@ fmsl_file_list.each do |fmsl_file|
   # Validate the XML representation to determine any metadata field issues.
   # the the Fulcrum metadata.
   error_list = UMPTG::Fulcrum::Manifest::Validation::CollectionSchema.validate(:xml_markup => collection.xml_markup)
-  #error_list = []
   script_logger.info("Error count: #{error_count + error_list.count}")
 
   # Display any resource existence issues.
@@ -181,9 +184,11 @@ fmsl_file_list.each do |fmsl_file|
 
   # If requested, save the Fulcrum manifest file.
   if options.output_csv
-    fulcrum_headers = options.include_notes ? \
-              [ NOTES_COLUMN ] + manifest_csv.headers : \
+    fheaders = options.fulcrum_headers_only ? \
+              UMPTG::Fulcrum::Manifest::Validation::CollectionSchema.HEADERS : \
               manifest_csv.headers
+    fulcrum_headers = options.include_notes ? \
+              [ NOTES_COLUMN ] + fheaders : fheaders
     fulcrum_file = File.join(File.dirname(fmsl_file), manifest_name + ".csv")
     CSV.open(
             fulcrum_file,
