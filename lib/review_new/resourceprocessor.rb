@@ -91,161 +91,162 @@ module UMPTG::Review
       name = args[:name]
       reference_node = args[:reference_node]
 
-      resource_path = reference_node.key?('src') ? reference_node['src'] : "unspecified"
-      if @resource_path_list[name].nil?
-        @resource_path_list[name] = [ resource_path ]
-      else
-        @resource_path_list[name] << resource_path
-      end
+      resource_path = reference_node.key?('src') ? reference_node['src'] : ""
 
-      xpath_base = "//*[local-name()='img' and @src='#{resource_path}']"
-
-      action_list = []
-
-      action_list << ImageAction.new(
+      action_list = [
+            ImageAction.new(
                  name: name,
                  reference_node: reference_node,
                  resource_path: resource_path
              )
-      ResourceProcessor.add_filename_spaces_msg(action_list.last, resource_path)
+           ]
 
-      # Normalize figure container, if possible.
-      container_list = reference_node.xpath(@@FIGURE_XPATH)
-      if container_list.empty?
-        container_list = reference_node.xpath(@@DIV_XPATH)
-        if container_list.empty?
-          action_list << Action.new(
-                   name: name,
-                   reference_node: reference_node,
-                   warning_message: "image: \"#{resource_path}\" unable to determine container element."
-               )
+      unless resource_path.strip.empty?
+        if @resource_path_list[name].nil?
+          @resource_path_list[name] = [ resource_path ]
         else
-          action_list << NormalizeFigureAction.new(
-                   name: name,
-                   reference_node: reference_node,
-                   resource_path: resource_path,
-                   xpath: xpath_base + "/" + @@DIV_XPATH,
-                   action_node: container_list.first
-               )
+          @resource_path_list[name] << resource_path
         end
-      else
-        action_list << Action.new(
-                 name: name,
-                 reference_node: reference_node,
-                 info_message: "image: \"#{resource_path}\" has #{container_list.first.name} as container element."
-             )
-      end
 
-      unless container_list.empty?
-        container_node = container_list.first
-        #img_container_list = reference_node.xpath("./ancestor::*[local-name()='p' or local-name()='div']")
-        xxx = "./descendant::*[.//*[local-name()='#{reference_node.name}' and @src='#{resource_path}']//ancestor::*[local-name()='p' or local-name()='div']]"
-        #puts "xxx:#{xxx}"
-        img_container_list = container_node.xpath("./descendant::*[.//*[local-name()='#{reference_node.name}' and @src='#{resource_path}']//ancestor::*[local-name()='p' or local-name()='div']]")
-        action_list.last.add_info_msg("img_container_list:#{img_container_list.count}")
+        xpath_base = "//*[local-name()='img' and @src='#{resource_path}']"
+        ResourceProcessor.add_filename_spaces_msg(action_list.last, resource_path)
 
-        # Determine how many img elements are within container.
-        # If 1 then normalize the container. Otherwise, let
-        # nest action handle this case.
-        container_img_list = container_node.xpath(".//*[local-name()='img']")
-        action_list.last.add_info_msg("container_img_list:#{container_img_list.count}")
-
-        if container_img_list.count == 1
-          # Normalize image parent, as it may be a <p>
-          # and needs to be a <div> so markup may be inserted.
-          img_container_list.each do |node|
-            action_list << NormalizeImageContainerAction.new(
+        # Normalize figure container, if possible.
+        container_list = reference_node.xpath(@@FIGURE_XPATH)
+        if container_list.empty?
+          container_list = reference_node.xpath(@@DIV_XPATH)
+          if container_list.empty?
+            action_list << Action.new(
+                     name: name,
+                     reference_node: reference_node,
+                     warning_message: "image: \"#{resource_path}\" unable to determine container element."
+                 )
+          else
+            action_list << NormalizeFigureAction.new(
                      name: name,
                      reference_node: reference_node,
                      resource_path: resource_path,
-                     xpath: xpath_base + "/ancestor::*[local-name()='p' or local-name()='div']",
-                     action_node: node,
-                     #warning_message: "image: \"#{resource_path}\" has #{node.name} as container element for image element. Recommended is either no container element or use div element."
-                     warning_message: "image: \"#{resource_path}\" has #{node.name} as container element for image element. Recommended is no container element."
+                     xpath: xpath_base + "/" + @@DIV_XPATH,
+                     action_node: container_list.first
                  )
           end
+        else
+          action_list << Action.new(
+                   name: name,
+                   reference_node: reference_node,
+                   info_message: "image: \"#{resource_path}\" has #{container_list.first.name} as container element."
+               )
         end
 
-        # Normalize figure caption, if possible. Figure may contain
-        # multiple images. Match captions to images.
-        caption_node = nil
-        caption_list = container_node.xpath(@@CAPTION_XPATH)
-        case
-        when caption_list.empty?
-          # No caption found.
-          action_list << Action.new(
-                   name: name,
-                   reference_node: reference_node,
-                   warning_message: "image: \"#{resource_path}\" unable to determine caption element."
-               )
-        when caption_list.count == 1
-          # One caption found.
-          caption_node = caption_list.first
-          action_list << Action.new(
-                   name: name,
-                   reference_node: reference_node,
-                   info_message: "image: \"#{resource_path}\" has #{caption_node.name} as caption element. Recommended element is figcaption."
-               )
-        else
-          # Multiple captions found.
-          # Determine if the number of images equals number
-          # of captions. If not, report an error.
-          # If so, then wrap the image and its caption
-          # within a nested <figure>.
-          img_list = container_node.xpath(@@IMG_XPATH)
-          if caption_list.count == img_list.count
-            # Counts match.
-            container_caption_list = container_node.xpath(@@IMGCAPTION_XPATH)
-            if container_caption_list.first.name == 'img'
-              # Assume caption after image.
-              caption_node = reference_node.xpath("./following::*[local-name()='p'][1]").first
-              caption_location = :caption_after
-            else
-              # Assume caption before image.
-              caption_node = reference_node.xpath("./preceding::*[local-name()='p'][1]").first
-              caption_location = :caption_before
-            end
+        unless container_list.empty?
+          container_node = container_list.first
+          #img_container_list = reference_node.xpath("./ancestor::*[local-name()='p' or local-name()='div']")
+          img_container_list = container_node.xpath("./descendant::*[.//*[local-name()='#{reference_node.name}' and @src='#{resource_path}']//ancestor::*[local-name()='p' or local-name()='div']]")
+          action_list.last.add_info_msg("img_container_list:#{img_container_list.count}")
 
-            if caption_node.nil?
-              # No caption found.
-              action_list << Action.new(
-                       name: name,
-                       reference_node: reference_node,
-                       warning_message: "image: \"#{resource_path}\" unable to determine caption element from multiple."
-                   )
-            else
-              # Found caption.
-              action_list << Action.new(
-                       name: name,
-                       reference_node: reference_node,
-                       info_message: "image: \"#{resource_path}\" has #{caption_node.name} as caption element. Recommended element is figcaption."
-                   )
-            end
+          # Determine how many img elements are within container.
+          # If 1 then normalize the container. Otherwise, let
+          # nest action handle this case.
+          container_img_list = container_node.xpath(".//*[local-name()='img']")
+          action_list.last.add_info_msg("container_img_list:#{container_img_list.count}")
 
-            unless caption_node.nil? or img_container_list.empty?
-              # Normalize by wrapping <figure> around image and caption
-              action_list << NormalizeFigureNestAction.new(
+          if container_img_list.count == 1
+            # Normalize image parent, as it may be a <p>
+            # and needs to be a <div> so markup may be inserted.
+            img_container_list.each do |node|
+              action_list << NormalizeImageContainerAction.new(
                        name: name,
                        reference_node: reference_node,
                        resource_path: resource_path,
-                       xpath: xpath_base,
-                       caption_node: caption_node,
-                       caption_location: caption_location,
-                       reference_container_node: img_container_list.first
+                       xpath: xpath_base + "/ancestor::*[local-name()='p' or local-name()='div']",
+                       action_node: node,
+                       #warning_message: "image: \"#{resource_path}\" has #{node.name} as container element for image element. Recommended is either no container element or use div element."
+                       warning_message: "image: \"#{resource_path}\" has #{node.name} as container element for image element. Recommended is no container element."
                    )
             end
           end
-        end
 
-        unless caption_node.nil? or  caption_node.name == 'figcaption'
-          # Caption not a <figcaption>, normalize.
-          action_list << NormalizeFigureCaptionAction.new(
-                   name: name,
-                   reference_node: reference_node,
-                   resource_path: resource_path,
-                   xpath: xpath_base.strip + "/" + @@FIGUREDIV_XPATH.strip + @@CAPTION_XPATH.strip,
-                   action_node: caption_node
-               )
+          # Normalize figure caption, if possible. Figure may contain
+          # multiple images. Match captions to images.
+          caption_node = nil
+          caption_list = container_node.xpath(@@CAPTION_XPATH)
+          case
+          when caption_list.empty?
+            # No caption found.
+            action_list << Action.new(
+                     name: name,
+                     reference_node: reference_node,
+                     warning_message: "image: \"#{resource_path}\" unable to determine caption element."
+                 )
+          when caption_list.count == 1
+            # One caption found.
+            caption_node = caption_list.first
+            action_list << Action.new(
+                     name: name,
+                     reference_node: reference_node,
+                     info_message: "image: \"#{resource_path}\" has #{caption_node.name} as caption element. Recommended element is figcaption."
+                 )
+          else
+            # Multiple captions found.
+            # Determine if the number of images equals number
+            # of captions. If not, report an error.
+            # If so, then wrap the image and its caption
+            # within a nested <figure>.
+            img_list = container_node.xpath(@@IMG_XPATH)
+            if caption_list.count == img_list.count
+              # Counts match.
+              container_caption_list = container_node.xpath(@@IMGCAPTION_XPATH)
+              if container_caption_list.first.name == 'img'
+                # Assume caption after image.
+                caption_node = reference_node.xpath("./following::*[local-name()='p'][1]").first
+                caption_location = :caption_after
+              else
+                # Assume caption before image.
+                caption_node = reference_node.xpath("./preceding::*[local-name()='p'][1]").first
+                caption_location = :caption_before
+              end
+
+              if caption_node.nil?
+                # No caption found.
+                action_list << Action.new(
+                         name: name,
+                         reference_node: reference_node,
+                         warning_message: "image: \"#{resource_path}\" unable to determine caption element from multiple."
+                     )
+              else
+                # Found caption.
+                action_list << Action.new(
+                         name: name,
+                         reference_node: reference_node,
+                         info_message: "image: \"#{resource_path}\" has #{caption_node.name} as caption element. Recommended element is figcaption."
+                     )
+              end
+
+              unless caption_node.nil? or img_container_list.empty?
+                # Normalize by wrapping <figure> around image and caption
+                action_list << NormalizeFigureNestAction.new(
+                         name: name,
+                         reference_node: reference_node,
+                         resource_path: resource_path,
+                         xpath: xpath_base,
+                         caption_node: caption_node,
+                         caption_location: caption_location,
+                         reference_container_node: img_container_list.first
+                     )
+              end
+            end
+          end
+
+          unless caption_node.nil? or  caption_node.name == 'figcaption'
+            # Caption not a <figcaption>, normalize.
+            action_list << NormalizeFigureCaptionAction.new(
+                     name: name,
+                     reference_node: reference_node,
+                     resource_path: resource_path,
+                     xpath: xpath_base.strip + "/" + @@FIGUREDIV_XPATH.strip + @@CAPTION_XPATH.strip,
+                     action_node: caption_node
+                 )
+          end
         end
       end
 
