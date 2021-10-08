@@ -11,7 +11,7 @@ module UMPTG::Review
       super(args)
 
       rpath = @resource_path
-      if rpath.nil? or rpath.strip.empty
+      if rpath.nil? or rpath.strip.empty?
         rpath = "(not specified)"
         add_error_msg("image: \"\" has no src path")
       else
