@@ -63,6 +63,7 @@ gem 'bundler'
 
 # Adds support CSV files
 gem 'csv'
+gem 'xsv'
 
 gem 'os', '~> 1.1', '>= 1.1.1'
 

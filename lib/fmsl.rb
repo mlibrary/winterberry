@@ -1,5 +1,6 @@
 module UMPTG
   require 'csv'
+  require 'xsv'
 
   require_relative File.join('fulcrum', 'manifest')
 
@@ -20,10 +21,23 @@ module UMPTG
     def self.load(args = {})
       fmsl_file = args[:fmsl_file]
 
+      if File.extname(fmsl_file) == ".xlsx"
+        x = Xsv::Workbook.open(fmsl_file)
+        sheet = x.sheets_by_name("Project Data").first
+        fmsl_body_list = []
+        sheet.each do |row|
+          next if row[0].nil?
+          fmsl_body_list << CSV.generate_line(row)
+        end
+      else
+        fmsl_body_list = File.open(fmsl_file).readlines
+      end
+
       # Normalize the FMSL into Fulcrum metadata.
       # Remove line that have either an empty "File Name"
       # or "File Name" == 0
-      fmsl_body = File.open(fmsl_file).readlines.delete_if { |line|
+      fmsl_body = fmsl_body_list.delete_if { |line|
+      #fmsl_body = File.open(fmsl_file).readlines.delete_if { |line|
         line.strip.empty? \
           or line.strip.start_with?('0,') \
           or line.strip.downcase.start_with?('"in any columns') \
