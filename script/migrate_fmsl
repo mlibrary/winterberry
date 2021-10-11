@@ -150,9 +150,10 @@ fmsl_file_list.each do |fmsl_file|
 
     # Organize any issues within a list associated with the resource.
     error_list.each do |error|
+      property = vtree.property(error.line) unless vtree.nil?
+      
       unless options.include_notes
         level = error.error? ? "error" : error.warning? ? "warning" : error.fatal? ? "fatal" : "none"
-        property = vtree.property(error.line) unless vtree.nil?
         err_msg_list = [ "line: #{error.line}" ]
         err_msg_list << "\t#{property}" unless property.nil?
         err_msg_list << "\t#{property.resource_name}" unless property.nil?
