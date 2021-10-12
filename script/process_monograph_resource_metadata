@@ -78,10 +78,6 @@ script_logger.fatal("Error: invalid default resources action #{options.resources
       unless [:embed,:link,:none,:remove].find {|t| t == options.default_actions[:resources] }
 script_logger.info("Processing resources #{options.default_actions[:resources].to_s}")
 
-#blank_row_file_name = "***row left intentionally blank***"
-blank_row_file_name = UMPTG::Fulcrum::Manifest.BLANK_ROW_FILE_NAME
-blank_row_pattern = "^\*\*\*.* intentionally blank[ ]*\*\*\*$"
-
 # Process all monograph directories specified.
 monograph_loggers = {}
 monograph_id_list.each do |monograph_id|
@@ -275,8 +271,7 @@ monograph_id_list.each do |monograph_id|
 
       # Look for the dreaded blank second line.
       blank_row = fmsl_csv[0]
-      #need_blank_row = blank_row['File Name'].downcase != blank_row_file_name
-      need_blank_row = blank_row['File Name'].downcase.match?(blank_row_pattern)
+      has_blank_row = UMPTG::Fulcrum::Manifest.blank_row_name?(blank_row['File Name'])
 
       new_fmsl_headers = fmsl_csv.headers
       new_fmsl_headers << "Caption" unless new_fmsl_headers.include?("Caption")
@@ -291,12 +286,12 @@ monograph_id_list.each do |monograph_id|
               :headers => new_fmsl_headers
             ) do |csv|
         new_row = {}
-        if need_blank_row
+        unless has_blank_row
           # Make sure the blank row exists, otherwise
           # first resource will not be loaded by
           # the importer.
           monograph_loggers[monograph_id].info("No blank row found. Inserting one.")
-          new_row['File Name'] = blank_row_file_name
+          new_row['File Name'] = UMPTG::Fulcrum::Manifest.BLANK_ROW_FILE_NAME
           csv << new_row
         end
 
