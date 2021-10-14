@@ -43,10 +43,24 @@ epub_file_list.each do |epub_file|
     script_logger.error("invalid EPUB file path #{epub_file}.")
     next
   end
-  script_logger.info("processing #{File.basename(epub_file)}")
+  script_logger.info("processing #{epub_file}")
   STDOUT.flush
 
   epub = UMPTG::EPUB::Archive.new(epub_file: epub_file)
+
+  # Check OPF to determine if the EPUB is fixed layout.
+  # Skip if not.
+  opf_doc = epub.opf_doc()
+  rendition_layout_list = opf_doc.xpath("//*[local-name()='metadata']/*[local-name()='meta' and @property='rendition:layout']")
+  if rendition_layout_list.empty?
+    script_logger.warn("skipping, unable to determine EPUB rendition layout.")
+    next
+  end
+  unless rendition_layout_list.first.text.downcase == "pre-paginated"
+    script_logger.warn("skipping, EPUB rendition layout is \"#{rendition_layout_list.first.text}\".")
+    next
+  end
+  script_logger.info("EPUB rendition layout is \"#{rendition_layout_list.first.text}\".")
 
   # Process the epub and generate the image information.
   action_map = UMPTG::EPUB::Processor.process(
