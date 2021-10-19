@@ -133,8 +133,12 @@ module UMPTG::Fulcrum::Manifest::Validation
         when content_type == :representative
           elem = row["representative_kind"].downcase
         when content_type == :resource
-          elem = CollectionSchema.normalize(row["resource_type"]) unless row['resource_type'].nil?
-          elem = "no_type" if row['resource_type'].nil?
+          unless row["external_resource_url"].nil? or row["external_resource_url"].empty?
+            elem = "external_resource"
+          else
+            elem = CollectionSchema.normalize(row["resource_type"]) unless row['resource_type'].nil?
+            elem = "no_type" if row['resource_type'].nil?
+          end
         else
           elem = "metadata"
         end
