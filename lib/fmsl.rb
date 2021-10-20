@@ -14,6 +14,7 @@ module UMPTG
             "externally_hosted_resource" => "External Resource URL",
             "exclusive_to_the_fulcrum_platform" => "Exclusive to Fulcrum",
             "exclusive_to_the_fulcrum" => "Exclusive to Fulcrum",
+            "exclusive_to_fulcrum?" => "Exclusive to Fulcrum",
             "persistent_id" => "DOI",
             "legacy_id" => "Identifier(s)"
         }
