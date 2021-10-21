@@ -7,9 +7,11 @@ module UMPTG::Review
 
       cap_list = @properties[:cap_list]
       nested_node = cap_list.first.document.create_element("figcaption")
+      add_info_msg("image: created figcaption.")
       cap_list.first.add_previous_sibling(nested_node)
       cap_list.each do |node|
         nested_node.add_child(node)
+        add_info_msg("image: wrapped \"#{node.name} within a figcaption.")
       end
 =begin
       node_name = @action_node.name

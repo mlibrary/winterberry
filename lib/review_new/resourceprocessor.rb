@@ -32,6 +32,8 @@ module UMPTG::Review
       name = args[:name]
       xml_doc = args[:xml_doc]
 
+      @resource_path_list[name] = []
+
       reference_action_list = []
       unless @selector.nil? or xml_doc.nil?
 
@@ -82,6 +84,9 @@ module UMPTG::Review
             end
 
             resource_path = reference_node["src"]
+
+            @resource_path_list[name] << resource_path
+
             img_container = img_obj[:container]
 
             reference_action_list << ImageAction.new(
@@ -147,8 +152,13 @@ module UMPTG::Review
                   if node.name == "img"
                     sfig_obj[:img_list] << img_container
                   else
-                    sfig_obj[:cap_list] << node
-                    state = :cap
+                    unless node.name == "figcaption"
+                      cap_parent_list = node.xpath("./ancestor::*[local-name()='figcaption']")
+                      if cap_parent_list.empty?
+                        sfig_obj[:cap_list] << node
+                        state = :cap
+                      end
+                    end
                   end
                 when :cap
                   if node.name == "img"
@@ -159,7 +169,12 @@ module UMPTG::Review
                     sfig_list << sfig_obj
                     state = :img
                   else
-                    sfig_obj[:cap_list] << node
+                    unless node.name == "figcaption"
+                      cap_parent_list = node.xpath("./ancestor::*[local-name()='figcaption']")
+                      if cap_parent_list.empty?
+                        sfig_obj[:cap_list] << node
+                      end
+                    end
                   end
                 end
               end
@@ -256,6 +271,7 @@ module UMPTG::Review
     local-name()='img'
     or local-name()='figcaption'
     or translate(@class,'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz')='figh'
+    or translate(@class,'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz')='fign'
     or translate(@class,'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz')='image_caption'
     or translate(@class,'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz')='figattrib'
     or translate(@class,'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz')='figpara'
@@ -314,11 +330,7 @@ module UMPTG::Review
            ]
 
       unless resource_path.strip.empty?
-        if @resource_path_list[name].nil?
-          @resource_path_list[name] = [ resource_path ]
-        else
-          @resource_path_list[name] << resource_path
-        end
+        @resource_path_list[name] << resource_path
 
         xpath_base = "//*[local-name()='img' and @src='#{resource_path}']"
         ResourceProcessor.add_filename_spaces_msg(action_list.last, resource_path)
@@ -422,11 +434,7 @@ module UMPTG::Review
       action_list = []
       if rnode.key?("data-fulcrum-embed-filename") and !rnode["data-fulcrum-embed-filename"].empty?
         resource_path = rnode["data-fulcrum-embed-filename"]
-        if @resource_path_list[name].nil?
-          @resource_path_list[name] = [ resource_path ]
-        else
-          @resource_path_list[name] << resource_path
-        end
+        @resource_path_list[name] << resource_path
 
         action_list << Action.new(
                  name: name,
@@ -459,11 +467,8 @@ module UMPTG::Review
             # Appears to be Newgen markup.
             resource_path = r[1]
           end
-          if @resource_path_list[name].nil?
-            @resource_path_list[name] = [ resource_path ]
-          else
-            @resource_path_list[name] << resource_path
-          end
+
+          @resource_path_list[name] << resource_path
 
           action_list << Action.new(
                    name: name,

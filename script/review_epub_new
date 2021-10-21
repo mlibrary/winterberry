@@ -26,7 +26,7 @@ options.normalize = {
         resources: false
     }
 option_parser = OptionParser.new do |opts|
-  opts.banner = "Usage: #{File.basename(__FILE__)} [-k] [-l] [-m] [-r] epub_file [epub_file...]"
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-k] [-l] [-m] [-n] [-r] epub_file [epub_file...]"
   opts.on('-k', '--link', 'Review links.') do |da|
     options.reviews[:link] = true
   end
@@ -158,7 +158,6 @@ epub_file_list.each do |epub_file|
         UMPTG::Message.ERROR => 0,
         UMPTG::Message.FATAL => 0
   }
-  epub_modified = false
   action_map.each do |entry_name,proc_map|
     epub_log.info(entry_name)
     update_entry = false
@@ -187,7 +186,6 @@ epub_file_list.each do |epub_file|
       epub_log.info("Updating entry #{entry_name}")
       xml_doc = proc_map[:xml_doc]
       epub.add(entry_name: entry_name, entry_content: UMPTG::XMLUtil.doc_to_xml(xml_doc))
-      epub_modified = true
     end
   end
 

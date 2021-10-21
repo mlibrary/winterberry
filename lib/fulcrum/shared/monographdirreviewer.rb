@@ -28,7 +28,7 @@ module UMPTG::Fulcrum::Shared
 
       epub_file = @monograph_dir.epub_file
       if epub_file.nil?
-        @review_logger.error("no EPUB file for id #{monograph_id}")
+        @review_logger.error("no EPUB file for id #{@monograph_dir.monograph_id}")
         return
       end
 
@@ -50,7 +50,7 @@ module UMPTG::Fulcrum::Shared
           )
 
       if epub_reviewer.epub_modified
-        epub_normalized_file = File.join(@review_dir, File.basename(epub_file, ".*") + "_normal.epub")
+        epub_normalized_file = File.join(@review_dir, File.basename(epub_file, ".*") + "_normalized.epub")
         @review_logger.info("Saving normalized EPUB \"#{File.basename(epub_normalized_file)}.")
         epub_reviewer.epub.save(epub_file: epub_normalized_file)
       end
@@ -59,7 +59,7 @@ module UMPTG::Fulcrum::Shared
         @review_logger.info("*** Review monograph resources ***")
 
         unless Dir.exists?(@monograph_dir.resources_dir)
-          @review_logger.warn("no resources directory for id #{monograph_id}")
+          @review_logger.warn("no resources directory for id #{@monograph_dir.monograph_id}")
           return
         end
 
@@ -68,9 +68,10 @@ module UMPTG::Fulcrum::Shared
         unless File.exists?(csv_path)
           csv_path_list = Dir.glob(File.join(@monograph_dir.resources_dir, @monograph_dir.isbn + "*.csv"))
           if csv_path_list.empty?
-            @review_logger.warn("no resources CSV for id #{monograph_id}.")
+            @review_logger.warn("no resources CSV for id #{@monograph_dir.monograph_id}.")
+            return
           else
-            @review_logger.warn("multiple resources CSV found for id #{monograph_id}") \
+            @review_logger.warn("multiple resources CSV found for id #{@monograph_dir.monograph_id}") \
                 if csv_path_list.count > 1
             csv_path = csv_path_list.first
             @review_logger.info("using resources directory CSV #{File.basename(csv_path)}.")

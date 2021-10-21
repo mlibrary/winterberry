@@ -123,6 +123,10 @@ module UMPTG::Review
       else
         @review_logger.info("Error: 0")
       end
+
+      unless epub_modified or !normalize
+        @review_logger.info("Normalization not necessary.")
+      end
     end
 
     def resource_path_list()
