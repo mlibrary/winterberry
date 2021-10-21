@@ -14,6 +14,7 @@ module UMPTG
             "externally_hosted_resource" => "External Resource URL",
             "exclusive_to_the_fulcrum_platform" => "Exclusive to Fulcrum",
             "exclusive_to_the_fulcrum" => "Exclusive to Fulcrum",
+            "exclusive_to_fulcrum?" => "Exclusive to Fulcrum",
             "persistent_id" => "DOI",
             "legacy_id" => "Identifier(s)"
         }
@@ -39,7 +40,7 @@ module UMPTG
       fmsl_body = fmsl_body_list.delete_if { |line|
       #fmsl_body = File.open(fmsl_file).readlines.delete_if { |line|
         line.strip.empty? \
-          or line.strip.start_with?(',') \
+          or line.strip.start_with?(',,,') \
           or line.strip.start_with?('0,') \
           or line.strip.downcase.start_with?('"in any columns') \
           or line.strip.downcase.start_with?('in any columns') \

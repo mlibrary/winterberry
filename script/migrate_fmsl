@@ -106,7 +106,9 @@ fmsl_file_list.each do |fmsl_file|
   resource_errors = {}
 
   # Check to see if resource files specified exists.
-  unless options.skip_resources_check
+  if options.skip_resources_check
+    script_logger.info("No resources check performed.")
+  else
     manifest_csv.each do |row|
       next unless row['External Resource URL'].nil?
 
@@ -129,6 +131,7 @@ fmsl_file_list.each do |fmsl_file|
         resource_errors[resource_name] = [ "resource file does not exist." ]
       end
     end
+    script_logger.info("No resources errors found.") if error_count == 0
   end
 
   # Validate the XML representation to determine any metadata field issues.
