@@ -108,7 +108,7 @@ module UMPTG::Review
                        info_message: "image: \"#{resource_path}\" has element #{figure_container.name} as figure container."
                    )
             else !container_normalized
-              reference_action_list << NormalizeFigureAction.new(
+              reference_action_list << NormalizeFigureContainerAction.new(
                        name: name,
                        reference_node: reference_node,
                        resource_path: resource_path,

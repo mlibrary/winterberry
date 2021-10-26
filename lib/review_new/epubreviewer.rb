@@ -43,6 +43,9 @@ module UMPTG::Review
     def review(args = {})
       review_options = args[:review_options]
       normalize = args.key?(:normalize) ? args[:normalize] : false
+      normalize_caption_class = args.key?(:normalize_caption_class) ? args[:normalize_caption_class] : false
+
+      @review_logger.info("Normalize caption classes:#{normalize_caption_class}")
 
       review_processors = @@REVIEW_PROCESSORS.select {|key,proc| review_options[key] == true }
 
@@ -60,7 +63,9 @@ module UMPTG::Review
           next if action_list.nil?
           action_list.each do |action|
             next if action.class.superclass.to_s == "UMPTG::Review::NormalizeAction" and normalize == false
-            action.process
+            action.process(
+                    normalize_caption_class: normalize_caption_class
+                  )
           end
         end
       end

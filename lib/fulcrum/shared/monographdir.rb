@@ -1,7 +1,7 @@
 module UMPTG::Fulcrum::Shared
   class MonographDir < UMPTG::Object
 
-    attr_reader :epub_file, :isbn, :manifest, :monograph_dir, :monograph_id,\
+    attr_reader :archived_epub_file, :epub_file, :isbn, :manifest, :monograph_dir, :monograph_id,\
           :publisher, :publisher_dir, :resources_dir
 
     def initialize(args = {})
@@ -56,6 +56,10 @@ module UMPTG::Fulcrum::Shared
         epub_row = @manifest.representative_row(kind: "epub")
         epub_file_name = epub_row['file_name']
         @epub_file = File.join(@monograph_dir, epub_file_name)
+
+        archive_dir = File.join(@monograph_dir, "archive")
+        archived_epub_list = Dir.glob(File.join(archive_dir, "*.epub"))
+        @archived_epub_file = archived_epub_list.last
       end
     end
   end

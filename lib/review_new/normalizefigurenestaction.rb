@@ -1,6 +1,6 @@
 module UMPTG::Review
 
-  class NormalizeFigureNestAction < NormalizeAction
+  class NormalizeFigureNestAction < NormalizeFigureAction
 
     def process(args = {})
       super(args)
@@ -17,6 +17,7 @@ module UMPTG::Review
 
       props = @properties.clone
       props[:nested_node] = nested_node
+      props[:normalize_caption_class] = args[:normalize_caption_class]
 
       case caption_location
       when :caption_after
@@ -26,38 +27,13 @@ module UMPTG::Review
         normalize_captions(props)
         normalize_images(props)
       end
-
-
-=begin
-      nested_node = reference_container_node.document.create_element("figure")
-      reference_container_node.add_previous_sibling(nested_node)
-      case caption_location
-      when :caption_after
-        reference_container_node.children.each do |c|
-          nested_node.add_child(c)
-        end
-        #nested_node.add_child(reference_container_node)
-        #nested_node.add_child(reference_node)
-        nested_node.add_child(caption_node)
-      when :caption_before
-        nested_node.add_child(caption_node)
-        reference_container_node.children.each do |c|
-          nested_node.add_child(c)
-        end
-        #nested_node.add_child(reference_container_node)
-        #nested_node.add_child(reference_node)
-      end
-      reference_container_node.remove
-
-      add_info_msg("#{@reference_node.name}: \"#{@resource_path}\": nest #{nested_node.name} #{caption_location} #{caption_node.name}.")
-=end
 
       @status = NormalizeAction.NORMALIZED
     end
 
     def normalize_images(args = {})
-      figure_container = @properties[:figure_container]
-      caption_location = @properties[:caption_location]
+      figure_container = args[:figure_container]
+      caption_location = args[:caption_location]
       sfig_obj = args[:sfig_obj]
       nested_node = args[:nested_node]
 
@@ -68,14 +44,17 @@ module UMPTG::Review
     end
 
     def normalize_captions(args = {})
-      figure_container = @properties[:figure_container]
-      caption_location = @properties[:caption_location]
+      figure_container = args[:figure_container]
+      caption_location = args[:caption_location]
       sfig_obj = args[:sfig_obj]
       nested_node = args[:nested_node]
 
       cap_container = nested_node.document.create_element("figcaption")
       nested_node.add_child(cap_container)
       sfig_obj[:cap_list].each do |node|
+        args[:caption_node] = node
+        NormalizeFigureAction.normalize_caption_class(args)
+
         cap_container.add_child(node)
         add_info_msg("#{figure_container.name}: nest #{nested_node.name} #{caption_location} #{node.name}.")
       end

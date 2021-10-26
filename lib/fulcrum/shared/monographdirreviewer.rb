@@ -19,14 +19,15 @@ module UMPTG::Fulcrum::Shared
                   logger_file: File.join(review_dir, @monograph_dir.monograph_id + "_review.log")
                )
 
-      @epub_reviewer = nil
     end
 
     def review(args = {})
       normalize_epub = args.key?(:normalize_epub) ? args[:normalize_epub] : false
+      normalize_caption_class = args.key?(:normalize_caption_class) ? args[:normalize_caption_class] : false
       review_resources = args.key?(:review_resources) ? args[:review_resources] : true
 
-      epub_file = @monograph_dir.epub_file
+      #epub_file = @monograph_dir.epub_file
+      epub_file = @monograph_dir.archived_epub_file
       if epub_file.nil?
         @review_logger.error("no EPUB file for id #{@monograph_dir.monograph_id}")
         return
@@ -40,6 +41,7 @@ module UMPTG::Fulcrum::Shared
           )
       epub_reviewer.review(
             normalize: normalize_epub,
+            normalize_caption_class: normalize_caption_class,
             review_options: {
                 package: true,
                 link: false,
@@ -51,6 +53,7 @@ module UMPTG::Fulcrum::Shared
 
       if epub_reviewer.epub_modified
         epub_normalized_file = File.join(@review_dir, File.basename(epub_file, ".*") + "_normalized.epub")
+        #epub_normalized_file = File.join(@review_dir, @monograph_dir.monograph_id + ".epub")
         @review_logger.info("Saving normalized EPUB \"#{File.basename(epub_normalized_file)}.")
         epub_reviewer.epub.save(epub_file: epub_normalized_file)
       end

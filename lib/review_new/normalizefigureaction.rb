@@ -1,16 +1,16 @@
 module UMPTG::Review
 
   class NormalizeFigureAction < NormalizeAction
+    def self.normalize_caption_class(args = {})
+      node = args[:caption_node]
+      normalize_caption_class = args[:normalize_caption_class]
 
-    def process(args = {})
-      super(args)
-
-      node_name = @action_node.name
-
-      @action_node.name = "figure"
-      add_info_msg("image: \"#{@resource_path}\" converted figure container from #{node_name} to #{@action_node.name}.")
-
-      @status = NormalizeAction.NORMALIZED
+      if normalize_caption_class
+        rm_list = node.classes.select {|c| (" figcap figcap1 figh figh1 fign figatr ").include?(" #{c.downcase} ")}
+        rm_list.each {|c| node.remove_class(c)}
+      end
+      return node
     end
   end
 end
+

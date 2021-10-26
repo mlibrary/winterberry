@@ -12,7 +12,7 @@ module UMPTG::Review
       #rp = @resource_path.gsub(/[ ]+/,'_')
       rp = @resource_path
       #markup = "<figure class=\"enhanced-media-display\" data-fulcrum-embed-filename=\"#{rp}\"/>"
-      markup = "<figure style=\"display:none\" data-fulcrum-embed-filename=\"#{rp}\"/>"
+      markup = "<figure style=\"display:none\" data-fulcrum-embed-filename=\"#{rp}\"><figcaption/></figure>"
       fragment = Nokogiri::XML.fragment(markup)
 
       reference_node.add_previous_sibling(fragment)
