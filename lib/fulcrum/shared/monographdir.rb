@@ -12,7 +12,6 @@ module UMPTG::Fulcrum::Shared
 
       @publisher_dir = @properties.key?(:publisher_dir) ? \
                 @properties[:publisher_dir] : File.join(UMPTG::Fulcrum::Shared.DEFAULT_DIR, @publisher)
-
       case
       when @properties.key?(:monograph_dir)
         @monograph_dir = File.expand_path(@properties[:monograph_dir], @publisher_dir)
@@ -37,7 +36,8 @@ module UMPTG::Fulcrum::Shared
 
             unless ebook_isbn.nil? or ebook_isbn.strip.empty?
               ebook_isbn = ebook_isbn.strip.gsub('-', '')
-              monograph_dir_list = Dir.glob(File.join(@publisher_dir, @publisher, "#{ebook_isbn}_*"))
+              #monograph_dir_list = Dir.glob(File.join(@publisher_dir, @publisher, "#{ebook_isbn}_*"))
+              monograph_dir_list = Dir.glob(File.join(@publisher_dir, "#{ebook_isbn}_*"))
             end
             @isbn = ebook_isbn
           end

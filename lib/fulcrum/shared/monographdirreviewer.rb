@@ -82,6 +82,7 @@ module UMPTG::Fulcrum::Shared
         end
         resources_manifest = UMPTG::Fulcrum::Manifest::Document.new(csv_file: csv_path)
 
+        @review_logger.info("Number of resource references: #{epub_reviewer.resource_path_list.count}")
         epub_reviewer.resource_path_list.each do |entry_name,path_list|
           path_list.each do |path|
             resource_name = ""

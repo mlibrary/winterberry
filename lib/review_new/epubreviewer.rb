@@ -45,6 +45,7 @@ module UMPTG::Review
       normalize = args.key?(:normalize) ? args[:normalize] : false
       normalize_caption_class = args.key?(:normalize_caption_class) ? args[:normalize_caption_class] : false
 
+      @review_logger.info("Normalize EPUB:#{normalize}")
       @review_logger.info("Normalize caption classes:#{normalize_caption_class}")
 
       review_processors = @@REVIEW_PROCESSORS.select {|key,proc| review_options[key] == true }
@@ -62,7 +63,11 @@ module UMPTG::Review
         proc_map.each do |key,action_list|
           next if action_list.nil?
           action_list.each do |action|
-            next if action.class.superclass.to_s == "UMPTG::Review::NormalizeAction" and normalize == false
+            #next if action.class.superclass.to_s == "UMPTG::Review::NormalizeAction" and normalize == false
+            next if normalize == false and ( \
+                action.class.superclass.to_s == "UMPTG::Review::NormalizeAction" or \
+                action.class.superclass.to_s == "UMPTG::Review::NormalizeFigureAction"
+              )
             action.process(
                     normalize_caption_class: normalize_caption_class
                   )

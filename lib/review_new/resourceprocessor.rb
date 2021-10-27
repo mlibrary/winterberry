@@ -113,7 +113,8 @@ module UMPTG::Review
                        reference_node: reference_node,
                        resource_path: resource_path,
                        #xpath: xpath_base + "/" + @@DIV_XPATH,
-                       action_node: figure_container
+                       action_node: figure_container,
+                       warning_message: "image: \"#{resource_path}\" figure container element should be normalized."
                    )
               figure_obj[:container_normalized] = true
             end
@@ -190,7 +191,8 @@ module UMPTG::Review
                              #resource_path: resource_path,
                              #xpath: xpath_base.strip + "/" + @@FIGUREDIV_XPATH.strip + @@CAPTION_XPATH.strip,
                              #action_node: node,
-                             cap_list: sfig_obj[:cap_list]
+                             cap_list: sfig_obj[:cap_list],
+                             warning_message: "image: figure caption should be normalized."
                          )
                   end
                 end
@@ -202,7 +204,8 @@ module UMPTG::Review
                            #resource_path: resource_path,
                            figure_container: figure_container,
                            caption_location: caption_location,
-                           sfig_obj: sfig_obj
+                           sfig_obj: sfig_obj,
+                           warning_message: "image: figure container element should be normalized via nesting."
                        )
                 end
               end
@@ -213,10 +216,10 @@ module UMPTG::Review
                   reference_action_list << NormalizeImageContainerAction.new(
                            name: name,
                            reference_node: node,
-                           resource_path: node["src"],
                            #xpath: xpath_base + "/" + @@DIV_XPATH,
-                           action_node: node
-                       )
+                           action_node: node,
+                           warning_message: "image: container element should be normalized."
+                        )
                 end
               end
             end
