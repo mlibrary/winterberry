@@ -244,7 +244,7 @@ module UMPTG::Fulcrum::ResourceMap
           vendors.join(' '),
           reference_list.join,
           resource_list.join,
-          @@DEFAULT_ACTION,
+          @default_action,
           action_list.join
           )
       end

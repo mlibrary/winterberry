@@ -237,6 +237,10 @@ module UMPTG::Fulcrum
       return epub
     end
 
+    def self.valid_action?(action)
+      return @@DEFAULT_ACTIONS[:resources].include?(action)
+    end
+
     def self.DEFAULT_ACTIONS
       return @@DEFAULT_ACTIONS
     end

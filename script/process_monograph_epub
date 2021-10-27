@@ -62,9 +62,9 @@ script_logger.formatter = proc do |severity, datetime, progname, msg|
   "#{severity}: #{msg}\n"
 end
 
-script_logger.fatal("Error: invalid default keywords action #{options.keywords_default_action}.") \
+script_logger.fatal("Error: invalid default keywords action #{options.options.default_actions[:keywords]}.") \
       unless UMPTG::Fulcrum::EPUBProcessor.DEFAULT_ACTIONS[:keywords].find {|t| t == options.default_actions[:keywords] }
-script_logger.fatal("Error: invalid default resources action #{options.resources_default_action}.") \
+script_logger.fatal("Error: invalid default resources action #{options.default_actions[:resources]}.") \
       unless UMPTG::Fulcrum::EPUBProcessor.DEFAULT_ACTIONS[:resources].find {|t| t == options.default_actions[:resources] }
 script_logger.info("Processing keywords #{options.default_actions[:keywords].to_s}") \
       unless options.default_actions[:keywords] == :disable
