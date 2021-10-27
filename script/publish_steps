@@ -61,6 +61,11 @@ press_dir = {
         heb:   "MPS",
         ummaa: "UMMAA"
         }
+sub_dir = {
+        amherst: "Amherst",
+        bar:   "BAR",
+        heb:   "HEB",
+        }
 unless press_dir.key?(options.press)
   script_logger.fatal("invalid press #{options.press}")
   exit 1
@@ -77,7 +82,10 @@ bulleit1_publish_dir = File.join(options.bulleit1_dir, "PTG", "PublishingSteps",
                            press_dir[options.press])
 
 # Determine the Fulcrum monograph directory
-monograph_dept_dir = File.join(fulcrum_dir, press_dir[options.press])
+sd_dir = sub_dir.key?(options.press) ? \
+    File.join(press_dir[options.press], sub_dir[options.press]) : \
+    press_dir[options.press]
+monograph_dept_dir = File.join(fulcrum_dir, sd_dir)
 unless File.directory?(monograph_dept_dir)
   script_logger.fatal("monograph directory #{monograph_dept_dir} does not exist.")
   exit 1
@@ -233,7 +241,7 @@ else
 
     unless minfo[:monograph_open_access].empty?
       case options.press
-      when :ebc, :ummaa
+      when :ebc, :ummaa, :amherst
         product = "ebc_open"
       else
         raise "Found open access for press #{options.press}"
@@ -272,7 +280,7 @@ File.open(cmds_file, "w") do |fp|
 
       bulleit1_monograph_dir = File.join(
                   options.bulleit1_dir,
-                  press_dir[options.press],
+                  sd_dir,
                   File.basename(monograph_dir)
                 )
       if resources_dir_list.empty?
