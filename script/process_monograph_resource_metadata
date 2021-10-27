@@ -27,15 +27,15 @@ options.default_actions = {
         resources: :embed
         }
 option_parser = OptionParser.new do |opts|
-  opts.banner = "Usage: #{File.basename(__FILE__)} [-map] [-nofmsl] [-p <publisher_dir>] [-v apex|newgen|default] [-r embed|link|none|remove] <monograph_id> [<monograph_id>...]"
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-map] [-nofmsl] [-d <publisher_dir>] [-v apex|newgen|default] [-r embed|link|none|remove] <monograph_id> [<monograph_id>...]"
+  opts.on('-d', '--publisher_directory [DIRECTORY]', 'Publisher site directory') do |publisher_dir|
+    options.publisher_dir = publisher_dir
+  end
   opts.on('-map', '--map', 'Overwrite existing resource map file.') do |da|
     options.use_map = false
   end
   opts.on('-nofmsl', '--nofmsl', 'Do not update FMSL.') do |da|
     options.update_fmsl = false
-  end
-  opts.on('-p', '--publisher_directory [DIRECTORY]', 'Publisher site directory') do |publisher_dir|
-    options.publisher_dir = publisher_dir
   end
   opts.on('-r', '--keywords [embed|link|none|remove]', 'Default resoorces processing action') do |action|
     options.default_actions[:resources] = action.to_sym

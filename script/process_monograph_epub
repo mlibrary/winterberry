@@ -15,15 +15,15 @@ options.default_actions = {
         resources: :embed
         }
 option_parser = OptionParser.new do |opts|
-  opts.banner = "Usage: #{File.basename(__FILE__)} [-f production|preview|staging] [-p <publisher_dir>] [-r disable|embed|link|none|update_alt] [-k disable|link|none] <monograph_id> [<monograph_id>..]"
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-f production|preview|staging] [-d <publisher_dir>] [-r disable|embed|link|none|update_alt] [-k disable|link|none] <monograph_id> [<monograph_id>..]"
+  opts.on('-d', '--publisher_directory [DIRECTORY]', 'Publisher site directory') do |publisher_dir|
+    options.publisher_dir = publisher_dir
+  end
   opts.on('-f', '--fulcrum_host [production|preview|staging]', 'Fulcrum environment') do |fulcrum_host|
     options.fulcrum_host = fulcrum_host
   end
   opts.on('-k', '--keywords [disable|link|none]', 'Default keywords processing action') do |action|
     options.default_actions[:keywords] = action.to_sym
-  end
-  opts.on('-p', '--publisher_directory [DIRECTORY]', 'Publisher site directory') do |publisher_dir|
-    options.publisher_dir = publisher_dir
   end
   opts.on('-r', '--resources [disable|embed|link|none|update_alt]', 'Default resources processing action') do |action|
     options.default_actions[:resources] = action.to_sym
