@@ -86,6 +86,19 @@ fmsl_file_list.each do |fmsl_file|
   fmsl_body = UMPTG::FMSL.load(fmsl_file: fmsl_file)
   manifest_csv = UMPTG::FMSL.to_manifest(fmsl_body: fmsl_body)
 
+  # Make sure there no duplicate columns.
+  unless manifest_csv.headers.count == manifest_csv.headers.uniq.count
+    # Tried Array#difference, but didn't work. ?
+    sorted = manifest_csv.headers.sort
+    df = []
+    sorted.each_index do |ndx|
+      next if ndx == 0
+      df << sorted[ndx] if sorted[ndx] == sorted[ndx-1]
+    end
+    script_logger.error("FMSL #{File.basename(fmsl_file)} has duplicate columns #{df}.")
+    next
+  end
+
   # Convert the Fulcrum metadata CSV to an XML representation.
   manifest_name = File.join(File.basename(fmsl_file, ".*") + "_fulcrum")
   manifest = UMPTG::Fulcrum::Manifest::Document.new(
@@ -106,7 +119,9 @@ fmsl_file_list.each do |fmsl_file|
   resource_errors = {}
 
   # Check to see if resource files specified exists.
-  unless options.skip_resources_check
+  if options.skip_resources_check
+    script_logger.info("No resources check performed.")
+  else
     manifest_csv.each do |row|
       next unless row['External Resource URL'].nil?
 
@@ -129,6 +144,7 @@ fmsl_file_list.each do |fmsl_file|
         resource_errors[resource_name] = [ "resource file does not exist." ]
       end
     end
+    script_logger.info("No resources errors found.") if error_count == 0
   end
 
   # Validate the XML representation to determine any metadata field issues.
