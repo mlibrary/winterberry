@@ -8,6 +8,8 @@ module UMPTG::Review
     def initialize(args = {})
       super(args)
 
+      @normalize = true
+
       @resource_path = @properties[:resource_path]
       @xpath = @properties[:xpath]
     end

@@ -63,14 +63,11 @@ module UMPTG::Review
         proc_map.each do |key,action_list|
           next if action_list.nil?
           action_list.each do |action|
-            #next if action.class.superclass.to_s == "UMPTG::Review::NormalizeAction" and normalize == false
-            next if normalize == false and ( \
-                action.class.superclass.to_s == "UMPTG::Review::NormalizeAction" or \
-                action.class.superclass.to_s == "UMPTG::Review::NormalizeFigureAction"
-              )
-            action.process(
-                    normalize_caption_class: normalize_caption_class
-                  )
+            if normalize or action.normalize == false
+              action.process(
+                      normalize_caption_class: normalize_caption_class
+                    )
+            end
           end
         end
       end

@@ -1,7 +1,7 @@
 module UMPTG::Review
 
   class Action < UMPTG::Action
-    attr_reader :name, :reference_node, :review_msg_list
+    attr_reader :name, :normalize, :reference_node, :review_msg_list
 
     def initialize(args = {})
       super(args)
@@ -9,6 +9,8 @@ module UMPTG::Review
       @name = @properties[:name]
       @reference_node = @properties[:reference_node]
       @action_node = @properties[:action_node]
+
+      @normalize = false
 
       @review_msg_list = []
 
