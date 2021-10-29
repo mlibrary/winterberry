@@ -1,4 +1,9 @@
-module UMPTG::Fulcrum::Shared
+module UMPTG::Fulcrum
+
+  #@@DEFAULT_PUBLISHER_DIR = OS.windows? ? "s:/Information\ Management/Fulcrum" : "/mnt/umptmm"
+  @@DEFAULT_DIR = "s:/Information\ Management/Fulcrum"
+  @@DEFAULT_PUBLISHER = "UMP"
+
   class MonographDir < UMPTG::Object
 
     attr_reader :archived_epub_file, :epub_file, :isbn, :manifest, :monograph_dir, :monograph_id,\
@@ -8,10 +13,10 @@ module UMPTG::Fulcrum::Shared
       super(args)
 
       @publisher = @properties.key?(:publisher) ? \
-                 @properties[:publisher] : UMPTG::Fulcrum::Shared.DEFAULT_PUBLISHER
+                 @properties[:publisher] : UMPTG::Fulcrum.DEFAULT_PUBLISHER
 
       @publisher_dir = @properties.key?(:publisher_dir) ? \
-                @properties[:publisher_dir] : File.join(UMPTG::Fulcrum::Shared.DEFAULT_DIR, @publisher)
+                @properties[:publisher_dir] : File.join(UMPTG::Fulcrum.DEFAULT_DIR, @publisher)
       case
       when @properties.key?(:monograph_dir)
         @monograph_dir = File.expand_path(@properties[:monograph_dir], @publisher_dir)
@@ -62,5 +67,13 @@ module UMPTG::Fulcrum::Shared
         @archived_epub_file = archived_epub_list.last
       end
     end
+  end
+
+  def self.DEFAULT_PUBLISHER
+    return @@DEFAULT_PUBLISHER
+  end
+
+  def self.DEFAULT_DIR
+    return @@DEFAULT_DIR
   end
 end

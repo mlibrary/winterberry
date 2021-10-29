@@ -1,4 +1,5 @@
-module UMPTG::Fulcrum::Shared
+module UMPTG::Review
+
   require 'fileutils'
 
   class MonographDirReviewer < UMPTG::Object
