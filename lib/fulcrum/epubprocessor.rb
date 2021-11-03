@@ -138,12 +138,20 @@ module UMPTG::Fulcrum
 
             # If resources were embedded, then we need to set the
             # remote-resource property in the OPF file.
+            update_opf = action_list.index { |action|
+                        action.status == UMPTG::Action.COMPLETED and \
+                          (
+                            action.reference_action_def.action_str == :embed or \
+                            action.reference_action_def.action_str == :link
+                          )
+                        }
             has_remote_resources = action_list.index { |action|
                         action.status == UMPTG::Action.COMPLETED and action.reference_action_def.action_str == :embed
-            }
-            if has_remote_resources
-              update_opf = true
-              remote_resources_list << entry_name
+                        }
+            if update_opf
+              if has_remote_resources
+                remote_resources_list << entry_name
+              end
 
               # Add the CSS stylesheet link that manages the Fulcrum resource display.
               level = File.dirname(entry_name).split(File::SEPARATOR).count

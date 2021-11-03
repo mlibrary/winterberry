@@ -19,6 +19,7 @@ module UMPTG::Fulcrum::Resources
       # If a caption is found, then append the link markup to the caption.
       # Otherwise, add the caption as last child to the container.
       container = reference_node.node_name == 'p' ? reference_node.parent : reference_node
+      container = reference_container
       caption = Action.find_caption(container)
       if caption == nil or caption.count == 0
         container.add_child(link_fragment)
