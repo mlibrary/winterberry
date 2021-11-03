@@ -38,8 +38,12 @@ module UMPTG::Fulcrum::Manifest::Validation
             }
 
       csv_headers = manifest.csv.headers
-      if !csv_headers.nil?
+      unless csv_headers.nil?
         csv_headers.each do |field_name|
+          if field_name.nil? or field_name.empty?
+            puts "Warning: found empty field name"
+            next
+          end
           puts "Error: unknown field name \"#{field_name}\"." unless CollectionSchema.header?(field_name)
         end
       end
@@ -62,6 +66,7 @@ module UMPTG::Fulcrum::Manifest::Validation
 
         collection_list = []
         row.each do |field_name, field_value|
+          next if field_name.nil? or field_name.empty?
           next if field_name == "file_name" or field_name == 'noid'
           next if field_name == "representative_kind" or field_name == "resource_type"
 
