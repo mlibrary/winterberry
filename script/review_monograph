@@ -25,7 +25,7 @@ require_relative File.join(root_dir, "lib", "fulcrum")
 
 # Process the script parameters.
 options = OpenStruct.new
-options.publisher_dir = UMPTG::Fulcrum.DEFAULT_DIR
+options.publisher_dir = File.join(UMPTG::Fulcrum.DEFAULT_DIR, UMPTG::Fulcrum.DEFAULT_PUBLISHER)
 options.normalize = false
 options.normalize_caption_class = false
 option_parser = OptionParser.new do |opts|

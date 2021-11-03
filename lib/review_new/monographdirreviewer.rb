@@ -27,8 +27,8 @@ module UMPTG::Review
       normalize_caption_class = args.key?(:normalize_caption_class) ? args[:normalize_caption_class] : false
       review_resources = args.key?(:review_resources) ? args[:review_resources] : true
 
-      #epub_file = @monograph_dir.epub_file
       epub_file = @monograph_dir.archived_epub_file
+      epub_file = @monograph_dir.epub_file if epub_file.nil? or epub_file.empty?
       if epub_file.nil?
         @review_logger.error("no EPUB file for id #{@monograph_dir.monograph_id}")
         return

@@ -36,8 +36,8 @@ module UMPTG::Fulcrum
             monograph_dir_list = Dir.glob(File.join(@publisher_dir, @publisher, "#{@monograph_id}_*"))
           else
             # From the manifest, determine the ebook ISBN without dashes.
-            ebook_isbn = manifest.isbn["open access"]
-            ebook_isbn = manifest.isbn["ebook"] if ebook_isbn.nil?
+            ebook_isbn = @manifest.isbn["open access"]
+            ebook_isbn = @manifest.isbn["ebook"] if ebook_isbn.nil?
 
             unless ebook_isbn.nil? or ebook_isbn.strip.empty?
               ebook_isbn = ebook_isbn.strip.gsub('-', '')
@@ -61,7 +61,6 @@ module UMPTG::Fulcrum
         epub_row = @manifest.representative_row(kind: "epub")
         epub_file_name = epub_row['file_name']
         @epub_file = File.join(@monograph_dir, epub_file_name)
-
         archive_dir = File.join(@monograph_dir, "archive")
         archived_epub_list = Dir.glob(File.join(archive_dir, "*.epub"))
         @archived_epub_file = archived_epub_list.last
