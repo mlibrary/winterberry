@@ -1,6 +1,7 @@
 module UMPTG
-  require_relative 'message'
-  require_relative 'epub'
+  require_relative('mlogger')
+  require_relative('message')
+  require_relative('epub')
 
   require_relative File.join('review_new', 'action')
   require_relative File.join('review_new', 'monographdirreviewer')
@@ -12,6 +13,11 @@ module UMPTG
   require_relative File.join('review_new', 'normalizefigurenestaction')
   require_relative File.join('review_new', 'normalizeimagecontaineraction')
   require_relative File.join('review_new', 'normalizemarkeraction')
+  require_relative File.join('review_new', 'removeattributeaction')
+  require_relative File.join('review_new', 'removeelementaction')
+  require_relative File.join('review_new', 'renameelementaction')
+  require_relative File.join('review_new', 'removeelementmediaaction')
+  require_relative File.join('review_new', 'removemarkermediaaction')
   require_relative File.join('review_new', 'elementselector')
   require_relative File.join('review_new', 'entryprocessor')
   require_relative File.join('review_new', 'elemententryprocessor')
@@ -20,6 +26,10 @@ module UMPTG
   require_relative File.join('review_new', 'packageprocessor')
   require_relative File.join('review_new', 'resourceprocessor')
   require_relative File.join('review_new', 'tableprocessor')
+  require_relative File.join('review_new', 'resourcesextractmediadisplayprocessor')
+  require_relative File.join('review_new', 'packageextractmediadisplayprocessor')
+  require_relative File.join('review_new', 'epubprocessor')
+  require_relative File.join('review_new', 'epubextractor')
   require_relative File.join('review_new', 'epubreviewer')
 
 end
