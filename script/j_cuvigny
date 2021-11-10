@@ -1,0 +1,157 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Script to fix errors in 9781954731011_Cuvigny EPUB.
+# Attribute values in a/@id should be a/@href.
+
+require 'optparse'
+require 'ostruct'
+require 'os'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+require_relative File.join(root_dir, "lib", "fulcrum")
+
+# Process the script parameters.
+options = OpenStruct.new
+options.publisher_dir = File.join(UMPTG::Fulcrum.DEFAULT_DIR, UMPTG::Fulcrum.DEFAULT_PUBLISHER)
+options.normalize = false
+options.normalize_caption_class = false
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-d <publisher_dir>] [-f production|preview|staging] <monograph_id> [<monograph_id>...]"
+  opts.on('-d', '--publisher_directory [DIRECTORY]', 'Publisher site directory') do |publisher_dir|
+    options.publisher_dir = publisher_dir
+  end
+  opts.on('-f', '--fulcrum_host [production|preview|staging]', 'Fulcrum environment') do |fulcrum_host|
+    options.fulcrum_host = fulcrum_host
+  end
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    script_logger.info(opts)
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  script_logger.info(option_parser.help)
+  return
+end
+
+# Process the command line parameters.
+monograph_id_list = ARGV
+
+class FixAction < UMPTG::Action
+  def process(args = {})
+    super(args)
+
+    name = @properties[:name]
+    reference_node = @properties[:reference_node]
+
+    id_value = reference_node["id"]
+    reference_node["href"] = id_value
+    reference_node.remove_attribute("id")
+
+    add_info_msg("#{name}:href=#{reference_node['href']}")
+    @status = UMPTG::Action.COMPLETED
+  end
+end
+
+class FixProcessor < UMPTG::EPUB::EntryProcessor
+    def action_list(args = {})
+      name = args[:name]
+      xml_doc = args[:xml_doc]
+
+      alist = []
+      node_list = xml_doc.xpath("//*[local-name()='a' and starts-with(@id, '73_Plates')]")
+      node_list.each do |node|
+        alist << FixAction.new(
+                name: name,
+                reference_node: node
+              )
+      end
+      return alist
+    end
+end
+
+processors = {
+        fix: FixProcessor.new
+      }
+
+monograph_id_list.each do |monograph_id|
+  script_logger.info("*" * 10 + " #{monograph_id} " + "*" * 10)
+
+  monograph_dir = UMPTG::Fulcrum::MonographDir.new(
+              publisher_dir: options.publisher_dir,
+              fulcrum_host: options.fulcrum_host,
+              monograph_id: monograph_id
+          )
+  unless Dir.exists?(monograph_dir.monograph_dir)
+    script_logger.error("invalid monograph directory #{monograph_dir.monograph_dir}.")
+    next
+  end
+
+  # Process the epub and generate the image information.
+  script_logger.info("epub_file:#{monograph_dir.epub_file}")
+  epub = UMPTG::EPUB::Archive.new(epub_file: monograph_dir.epub_file)
+  action_map = UMPTG::EPUB::Processor.process(
+        epub: epub,
+        entry_processors: processors,
+        pass_xml_doc: true,
+        logger: script_logger
+      )
+
+  action_map.each do |entry_name,proc_map|
+    proc_map.each do |key,action_list|
+      next if action_list.nil?
+      action_list.each do |action|
+        action.process()
+      end
+    end
+  end
+
+  epub_modified = false
+  action_map.each do |entry_name,proc_map|
+    script_logger.info("Reporting #{entry_name}")
+
+    update_entry = false
+    proc_map.each do |key,action_list|
+      next if action_list.nil?
+      action_list.each do |action|
+        if action.status == UMPTG::Action.COMPLETED
+          update_entry = true
+        end
+        action.messages.each do |msg|
+          case msg.level
+          when UMPTG::Message.INFO
+            script_logger.info(msg.text)
+          when UMPTG::Message.WARNING
+            script_logger.warn(msg.text)
+          when UMPTG::Message.ERROR
+            script_logger.error(msg.text)
+          when UMPTG::Message.FATAL
+            script_logger.fatal(msg.text)
+          end
+        end
+      end
+    end
+    if update_entry
+      script_logger.info("Updating entry #{entry_name}")
+      xml_doc = proc_map[:xml_doc]
+      epub.add(entry_name: entry_name, entry_content: UMPTG::XMLUtil.doc_to_xml(xml_doc))
+      epub_modified = true
+    end
+  end
+  if epub_modified
+    new_epub_file = File.join(
+              File.dirname(monograph_dir.epub_file),
+              File.basename(monograph_dir.epub_file, ".*") + "_fixed.epub"
+            )
+    script_logger.info("Saving EPUB #{File.basename(new_epub_file)}")
+    epub.save(epub_file: new_epub_file)
+  end
+end
