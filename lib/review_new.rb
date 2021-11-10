@@ -1,5 +1,5 @@
 module UMPTG
-  require_relative('mlogger')
+  require_relative('logger')
   require_relative('message')
   require_relative('epub')
 

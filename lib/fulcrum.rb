@@ -1,6 +1,6 @@
 module UMPTG
   require_relative 'epub'
-  require_relative 'mlogger'
+  require_relative 'logger'
   require_relative 'services'
   require_relative 'xmlutil'
 

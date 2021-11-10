@@ -14,12 +14,9 @@ require 'os'
 script_dir = File.expand_path(File.dirname(__FILE__))
 root_dir = File.dirname(script_dir)
 
-require_relative File.join(root_dir, "lib", "mlogger")
+require_relative File.join(root_dir, "lib", "logger")
 
 script_logger = UMPTG::MLogger.create(logger_fp: STDOUT)
-script_logger.formatter = proc do |severity, datetime, progname, msg|
-  "#{severity}: #{msg}\n"
-end
 
 require_relative File.join(root_dir, "lib", "fulcrum")
 
