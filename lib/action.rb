@@ -1,5 +1,6 @@
 module UMPTG
   require_relative 'object'
+  require_relative 'message'
 
   class Action < Object
     @@PENDING = "Pending"
@@ -7,12 +8,13 @@ module UMPTG
     @@FAILED = "Failed"
     @@NO_ACTION = "No action"
 
-    attr_reader :status, :message
+    attr_reader :status, :message, :messages
 
     def initialize(args = {})
       super(args)
 
       @status = Action.PENDING
+      @messages = []
       @message = ""
     end
 
@@ -22,11 +24,50 @@ module UMPTG
     end
 
     def to_s
-      if @message.empty?
+      if @messages.empty?
         return "#{@status}: #{self.class}"
       else
-        return "#{@status}: #{self.class},#{@message}"
+        m = @messages.join("\n")
+        return "#{@status}: #{self.class},#{m}"
       end
+    end
+
+    def add_msg(args = {})
+      raise "Missing :level parameter" unless args.key?(:level)
+      raise "Missing :text parameter" unless args.key?(:text)
+
+      @messages << UMPTG::Message.new(
+                level: args[:level],
+                text: args[:text]
+              )
+    end
+
+    def add_info_msg(txt = "")
+      add_msg(
+          level: UMPTG::Message.INFO,
+          text: txt
+      )
+    end
+
+    def add_warning_msg(txt = "")
+      add_msg(
+          level: UMPTG::Message.WARNING,
+          text: txt
+      )
+    end
+
+    def add_error_msg(txt = "")
+      add_msg(
+          level: UMPTG::Message.ERROR,
+          text: txt
+      )
+    end
+
+    def add_fatal_msg(txt = "")
+      add_msg(
+          level: UMPTG::Message.FATAL,
+          text: txt
+      )
     end
 
     def self.COMPLETED

@@ -90,7 +90,7 @@ module UMPTG::Review
             if action.status == UMPTG::Review::NormalizeAction.NORMALIZED
               update_entry = true
             end
-            action.review_msg_list.each do |msg|
+            action.messages.each do |msg|
               case msg.level
               when UMPTG::Message.INFO
                 @review_logger.info(msg.text)

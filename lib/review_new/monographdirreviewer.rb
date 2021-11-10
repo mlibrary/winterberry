@@ -16,7 +16,7 @@ module UMPTG::Review
 
       FileUtils.mkdir_p review_dir
 
-      @review_logger = UMPTG::MLogger.create(
+      @review_logger = UMPTG::Logger.create(
                   logger_file: File.join(review_dir, @monograph_dir.monograph_id + "_review.log")
                )
 
