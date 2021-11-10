@@ -57,6 +57,21 @@ module UMPTG::Fulcrum::Manifest
              }
     end
 
+    def filesets()
+      return @csv.select {|row|
+          (
+            row['representative_kind'].nil? \
+            or row['representative_kind'].empty?
+          ) \
+          and \
+          !(\
+              row['resource_type'].nil? \
+              or row['resource_type'].empty? \
+              or row['resource_type'].downcase.start_with?("translation missing:")
+           )
+        }
+    end
+
     private
 
     def parse_isbns(isbns_property)
