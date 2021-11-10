@@ -19,13 +19,13 @@ module UMPTG::Review
       case
       when @properties.key?(:logger_file)
         logger_file = @properties[:logger_file]
-        @logger = UMPTG::MLogger.create(
+        @logger = UMPTG::Logger.create(
                           logger_fp: File.open(logger_file, File::WRONLY | File::TRUNC | File::CREAT)
                       )
       when @properties.key?(:logger)
         @logger = @properties[:logger]
       else
-        @logger = UMPTG::MLogger.new(
+        @logger = UMPTG::Logger.create(
                           logger_fp: STDOUT
                      )
       end

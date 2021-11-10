@@ -64,15 +64,11 @@ script_dir = File.expand_path(File.dirname(__FILE__))
 root_dir = File.dirname(script_dir)
 
 require 'fileutils'
-require 'logger'
 
 require_relative File.join(root_dir, "lib", "csvfile")
 require_relative File.join(root_dir, "lib", "fulcrum")
 
-script_logger = Logger.new(STDOUT)
-script_logger.formatter = proc do |severity, datetime, progname, msg|
-  "#{severity}: #{msg}\n"
-end
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
 
 script_logger.fatal("Error: invalid default resources action #{options.default_actions[:resources]}.") \
       unless UMPTG::Fulcrum::EPUBProcessor.valid_action?(options.default_actions[:resources])
@@ -171,7 +167,8 @@ monograph_id_list.each do |monograph_id|
     # Process the epub and generate the image information.
     action_map = UMPTG::EPUB::Processor.process(
           epub_file: epub_file,
-          entry_processors: processors
+          entry_processors: processors,
+          logger: monograph_loggers[monograph_id]
         )
 
     action_map.each do |entry_name,proc_map|
@@ -193,9 +190,10 @@ monograph_id_list.each do |monograph_id|
             end
 
             resource_map.add(
-                  :reference_name => reference_name,
-                  :resource => resource,
-                  :type => "default"
+                  reference_name: reference_name,
+                  resource: resource,
+                  resource_path: resource.nil? ? "" : resource.name,
+                  type: "default"
                 )
           end
         end

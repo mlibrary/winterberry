@@ -35,7 +35,7 @@ module UMPTG::Fulcrum::ResourceMap
     XRESOURCE
 
     @@XML_ACTION =    <<-XACTION
-<action reference_id="%s" resource_id="%s" type="%s" entry="%s" xpath="%s"/>
+<action reference_id="%s" resource_id="%s" type="%s"%s%s/>
     XACTION
 
     # Headers to use for writing CSV version.
@@ -113,16 +113,18 @@ module UMPTG::Fulcrum::ResourceMap
           )
 
       if resource.nil?
-        resource = add_resource(
-                name: File.basename(resource_path)
-            )
-        action = Action.new(
-                name: name,
-                reference: reference,
-                resource: resource,
-                type: type.to_sym,
-                xpath: xpath
+        unless resource_path.nil? or resource_path.empty?
+          resource = add_resource(
+                  name: File.basename(resource_path)
               )
+          action = Action.new(
+                  name: name,
+                  reference: reference,
+                  resource: resource,
+                  type: type.to_sym,
+                  xpath: xpath
+                )
+        end
       else
         action = @actions.find {|a| a.reference.id == reference.id and a.resource.id == resource.id }
         if action.nil?
@@ -242,13 +244,24 @@ module UMPTG::Fulcrum::ResourceMap
                     )
       end
       action_list = @actions.collect do |action|
+                if action.name.nil? or action.name.empty?
+                  name_str = ""
+                else
+                  name_str = " entry=\"#{action.name}\""
+                end
+                if action.xpath.nil? or action.xpath.empty?
+                  xpath_str = ""
+                else
+                  xpath_str = " xpath=\"#{action.xpath}\""
+                end
+
                 sprintf(
                     @@XML_ACTION,
                     action.reference.id,
                     action.resource.id,
                     action.type,
-                    action.name,
-                    action.xpath
+                    name_str,
+                    xpath_str
                     )
       end
 

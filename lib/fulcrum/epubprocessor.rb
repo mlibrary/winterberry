@@ -93,7 +93,8 @@ module UMPTG::Fulcrum
       action_map = UMPTG::EPUB::Processor.process(
             epub: epub,
             entry_processors: processors,
-            pass_xml_doc: true
+            pass_xml_doc: true,
+            logger: logger
           )
 
       # Provide the directory path for adding the CSS stylesheet link.

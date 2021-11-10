@@ -162,19 +162,23 @@ module UMPTG::Fulcrum::Resources
       node_list = [ reference_container ] if node_list.nil? or node_list.empty?
       reference_action_list = []
       node_list.each do |node|
-        path = node.text.strip
+        if node.name == "figure" and node.key?("data-fulcrum-embed-filename")
+          path = node["data-fulcrum-embed-filename"]
+        else
+          path = node.text.strip
 
-        #path = path.match(/insert[ ]+([^\>]+)/)[1]
-        # Generally, additional resource references are expected
-        # to use the markup:
-        #     <p class="rb|rbi"><!-- resource_file_name.ext --></p>
-        # But recently, Newgen has been using the markup
-        #     <!-- <insert resource_file_name.ext> -->
-        # So here we check for this case.
-        r = path.match(/insert[ ]+([^\>]+)/)
-        unless r.nil?
-          # Appears to be Newgen markup.
-          path = r[1]
+          #path = path.match(/insert[ ]+([^\>]+)/)[1]
+          # Generally, additional resource references are expected
+          # to use the markup:
+          #     <p class="rb|rbi"><!-- resource_file_name.ext --></p>
+          # But recently, Newgen has been using the markup
+          #     <!-- <insert resource_file_name.ext> -->
+          # So here we check for this case.
+          r = path.match(/insert[ ]+([^\>]+)/)
+          unless r.nil?
+            # Appears to be Newgen markup.
+            path = r[1]
+          end
         end
 
         # Determine the assigned action for this reference

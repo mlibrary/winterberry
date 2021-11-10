@@ -4,6 +4,14 @@
 require 'optparse'
 require 'ostruct'
 
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, 'lib', 'logger')
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
 # Process the script parameters.
 options = OpenStruct.new
 #options.publisher_dir = Dir.pwd
@@ -41,25 +49,14 @@ end
 
 monograph_id_list = ARGV
 
-# Determine the root directory of the code base.
-script_dir = File.expand_path(File.dirname(__FILE__))
-root_dir = File.dirname(script_dir)
+require_relative File.join(root_dir, 'lib', 'fulcrum')
+require_relative File.join(root_dir, 'lib', 'services')
 
 # Verify existence of the source/project root directories.
 publisher_dir = File.expand_path(options.publisher_dir)
 if !File.exists?(publisher_dir)
   puts "Error: source directory #{publisher_dir} does not exist."
   exit
-end
-
-require 'logger'
-
-require_relative File.join(root_dir, 'lib', 'fulcrum')
-require_relative File.join(root_dir, 'lib', 'services')
-
-script_logger = Logger.new(STDOUT)
-script_logger.formatter = proc do |severity, datetime, progname, msg|
-  "#{severity}: #{msg}\n"
 end
 
 script_logger.fatal("Error: invalid default keywords action #{options.options.default_actions[:keywords]}.") \

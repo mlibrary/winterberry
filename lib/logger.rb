@@ -1,7 +1,7 @@
 module UMPTG
   require 'logger'
 
-  class MLogger
+  class Logger
     def self.create(args = {})
       case
       when args.key?(:logger_file)
