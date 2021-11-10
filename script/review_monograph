@@ -1,0 +1,83 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Script operates on a monograph directory found the Fulcrum
+# shared drive.
+#
+# Review specified monograph for Fulcrum compliance
+
+require 'optparse'
+require 'ostruct'
+require 'os'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::MLogger.create(logger_fp: STDOUT)
+
+require_relative File.join(root_dir, "lib", "fulcrum")
+
+# Process the script parameters.
+options = OpenStruct.new
+options.publisher_dir = File.join(UMPTG::Fulcrum.DEFAULT_DIR, UMPTG::Fulcrum.DEFAULT_PUBLISHER)
+options.normalize = false
+options.normalize_caption_class = false
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-d <publisher_dir>] [-f production|preview|staging] [-n] [-c] <monograph_id> [<monograph_id>...]"
+  opts.on('-c', '--normalize_caption_class', 'Normalize caption class attribute') do |normalize|
+    options.normalize_caption_class = true
+  end
+  opts.on('-d', '--publisher_directory [DIRECTORY]', 'Publisher site directory') do |publisher_dir|
+    options.publisher_dir = publisher_dir
+  end
+  opts.on('-f', '--fulcrum_host [production|preview|staging]', 'Fulcrum environment') do |fulcrum_host|
+    options.fulcrum_host = fulcrum_host
+  end
+  opts.on('-n', '--normalize', 'Normalize EPUB') do |normalize|
+    options.normalize = true
+  end
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    script_logger.info(opts)
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  script_logger.info(option_parser.help)
+  return
+end
+
+# Process the command line parameters.
+monograph_id_list = ARGV
+
+require 'fileutils'
+
+require_relative File.join(root_dir, "lib", "review_new")
+
+monograph_id_list.each do |monograph_id|
+  script_logger.info("*" * 10 + " #{monograph_id} " + "*" * 10)
+
+  monograph_dir = UMPTG::Fulcrum::MonographDir.new(
+              publisher_dir: options.publisher_dir,
+              fulcrum_host: options.fulcrum_host,
+              monograph_id: monograph_id
+          )
+  unless Dir.exists?(monograph_dir.monograph_dir)
+    script_logger.error("invalid monograph directory #{monograph_dir.monograph_dir}.")
+    next
+  end
+
+  reviewer = UMPTG::Review::MonographDirReviewer.new(
+              monograph_dir: monograph_dir
+          )
+
+  reviewer.review(
+              normalize_epub: options.normalize,
+              normalize_caption_class: options.normalize_caption_class,
+              review_resources: true
+          )
+
+end

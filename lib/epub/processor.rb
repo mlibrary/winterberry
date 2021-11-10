@@ -22,14 +22,15 @@ module UMPTG::EPUB
         raise "No entry_processors specified."
       end
 
+      logger.info("Processing EPUB file #{File.basename(epub.epub_file)}")
+
       # Parameter indicates whether content should be provided as
       # string or as a XML doc.
       pass_xml_doc = args.key?(:pass_xml_doc) and args[:pass_xml_doc]
 
       epub_actions = {}
-      epub.spine.each do |entry|
-        epub_actions[entry.name] = {}
-
+      if entry_processors.key?(:package)
+        entry = epub.opf
         if pass_xml_doc
           content = nil
           xml_doc = UMPTG::XMLUtil.parse(xml_content: entry.content)
@@ -37,9 +38,30 @@ module UMPTG::EPUB
           content = entry.content
           xml_doc = nil
         end
-        epub_actions[entry.name][:xml_doc] = xml_doc
+        epub_actions[entry.name] = { xml_doc: xml_doc }
+
+        entry_proc_actions = entry_processors[:package].action_list(
+                    name: entry.name,
+                    content: content,
+                    logger: logger,
+                    xml_doc: xml_doc
+                    )
+        epub_actions[entry.name][:package] = entry_proc_actions
+      end
+
+      epub.spine.each do |entry|
+        if pass_xml_doc
+          content = nil
+          xml_doc = UMPTG::XMLUtil.parse(xml_content: entry.content)
+        else
+          content = entry.content
+          xml_doc = nil
+        end
+        epub_actions[entry.name] = { xml_doc: xml_doc }
 
         entry_processors.each do |key,processor|
+          next if key == :package
+
           entry_proc_actions = processor.action_list(
                       name: entry.name,
                       content: content,

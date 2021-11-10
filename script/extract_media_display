@@ -1,0 +1,74 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Script performs a specified set of markup reviews for one
+# or more specified EPUBs.
+
+require 'optparse'
+require 'ostruct'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+# Process the script parameters.
+options = OpenStruct.new
+options.publisher_dir = Dir.pwd
+options.extractors = {
+        package: true,
+        resources: true
+    }
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} epub_file [epub_file...]"
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    puts opts
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  puts option_parser.help
+  return
+end
+
+epub_file_list = ARGV
+
+require_relative File.join(root_dir, "lib", "review_new")
+require_relative File.join(root_dir, "lib", "epub")
+
+epub_file_list.each do |epub_file|
+  epub_file = File.expand_path(epub_file)
+  unless File.exists?(epub_file)
+    puts "Error: invalid EPUB file path #{epub_file}."
+    next
+  end
+  script_logger.info("Extracting #{File.basename(epub_file)}")
+
+  # Log the processing into a file for this monograph.
+  epub_log_file = File.join(File.dirname(epub_file), File.basename(epub_file, ".*") + "_extract.log")
+
+  # Process the epub and generate the image information.
+  epub_extractor = UMPTG::Review::EPUBExtractor.new(
+        epub_file: epub_file,
+        logger_file: epub_log_file
+      )
+  epub = epub_extractor.epub
+  epub_log = epub_extractor.logger
+
+  epub_extractor.extract(
+        extract_options: options.extractors,
+      )
+
+  if epub_extractor.epub_modified
+    new_epub_file = File.join(File.dirname(epub_file), File.basename(epub_file, ".*") + "_extracted.epub")
+    epub_log.info("Saving extracted EPUB \"#{File.basename(new_epub_file)}.")
+    script_logger.info("Saving extracted EPUB \"#{File.basename(new_epub_file)}.")
+    epub.save(epub_file: new_epub_file)
+  end
+
+  epub_log.close
+end

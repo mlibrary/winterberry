@@ -1,0 +1,220 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Script performs a specified set of markup reviews for one
+# or more specified EPUBs.
+
+require 'optparse'
+require 'ostruct'
+
+# Process the script parameters.
+options = OpenStruct.new
+options.publisher_dir = Dir.pwd
+options.reviews = {
+        package: true,
+        link: false,
+        list: false,
+        resources: true,
+        table: true
+    }
+options.vendor = :default
+options.default_actions = {
+        resources: :embed
+    }
+options.generate_map = false
+options.normalize = {
+        resources: false
+    }
+options.normalize_caption_class = false
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-k] [-l] [-m] [-n] [-r] [-c] epub_file [epub_file...]"
+  opts.on('-c', '--normalize_caption_class', 'Normalize caption class attribute') do |normalize|
+    options.normalize_caption_class = true
+  end
+  opts.on('-k', '--link', 'Review links.') do |da|
+    options.reviews[:link] = true
+  end
+  opts.on('-l', '--list', 'Review lists.') do |da|
+    options.reviews[:list] = true
+  end
+  opts.on('-m', '--resource_map', 'Generate resource map') do |da|
+    options.generate_map = true
+  end
+  opts.on('-n', '--normalize', 'Normalize actions') do |da|
+    options.normalize[:resources] = true
+  end
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    puts opts
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  puts option_parser.help
+  return
+end
+
+epub_file_list = ARGV
+
+require 'logger'
+
+script_logger = Logger.new(STDOUT)
+script_logger.formatter = proc do |severity, datetime, progname, msg|
+  "#{severity}: #{msg}\n"
+end
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "review_new")
+require_relative File.join(root_dir, "lib", "epub")
+require_relative File.join(root_dir, "lib", "fulcrum")
+
+epub_file_list.each do |epub_file|
+  epub_file = File.expand_path(epub_file)
+  unless File.exists?(epub_file)
+    puts "Error: invalid EPUB file path #{epub_file}."
+    next
+  end
+  script_logger.info("Reviewing #{File.basename(epub_file)}")
+
+  # Log the processing into a file for this monograph.
+  epub_log_file = File.join(File.dirname(epub_file), File.basename(epub_file, ".*") + "_review.log")
+
+  # Process the epub and generate the image information.
+  epub_reviewer = UMPTG::Review::EPUBReviewer.new(
+        epub_file: epub_file,
+        logger_file: epub_log_file
+      )
+  epub = epub_reviewer.epub
+  epub_log = epub_reviewer.review_logger
+
+  epub_reviewer.review(
+        review_options: options.reviews,
+        normalize: options.normalize[:resources],
+        normalize_caption_class: normalize_caption_class,
+      )
+  action_map = epub_reviewer.action_map
+
+  if options.generate_map
+    resource_map_file = File.join(File.dirname(epub_file), File.basename(epub_file, ".*") + "_map.xml")
+    resource_map = UMPTG::Fulcrum::ResourceMap::Map.new
+    script_logger.info("Generating resource map file #{File.basename(resource_map_file)}.")
+
+    # Set the default action
+    resource_map.default_action = options.default_actions[:resources]
+
+    # Set the vendor
+    resource_map.vendors[:epub] = options.vendor
+
+    action_map.each do |entry_name,proc_map|
+      proc_map.each do |key,action_list|
+        next if action_list.nil?
+        action_list.each do |action|
+          next unless action.class.superclass.to_s == "UMPTG::Review::NormalizeAction"
+
+          #node_list = action.reference_node.document.xpath(action.xpath)
+
+          #script_logger.info("#{action.name}:#{action.reference_node.name},#{action.class.to_s.split('::').last},#{action.resource_path},#{node_list.count}") \
+          #    if node_list.count != 1
+
+          resource_map.add(
+                name: entry_name,
+                reference_name: action.resource_path,
+                resource: resource_map.reference_resource(action.resource_path),
+                resource_path: action.resource_path,
+                xpath: action.xpath,
+                type: action.class.to_s.split('::').last
+              )
+        end
+      end
+    end
+
+    # Save the resource map XML file.
+    script_logger.info("Saving resource map \"#{File.basename(resource_map_file)}")
+    resource_map.save(resource_map_file)
+
+=begin
+    resource_map = UMPTG::Fulcrum::ResourceMap::Map.new
+    resource_map.load(xml_path: resource_map_file)
+
+    resource_map.actions.each do |action|
+    end
+=end
+  else
+=begin
+    action_map.each do |entry_name,proc_map|
+      proc_map.each do |key,action_list|
+        next if action_list.nil?
+        action_list.each do |action|
+          next if action.class.superclass.to_s == "UMPTG::Review::NormalizeAction" and options.normalize.key?(key) and options.normalize[key] == false
+          action.process
+        end
+      end
+    end
+=end
+  end
+
+=begin
+  issue_cnt = {
+        UMPTG::Message.INFO => 0,
+        UMPTG::Message.WARNING => 0,
+        UMPTG::Message.ERROR => 0,
+        UMPTG::Message.FATAL => 0
+  }
+  action_map.each do |entry_name,proc_map|
+    epub_log.info(entry_name)
+    update_entry = false
+    proc_map.each do |key,action_list|
+      next if action_list.nil?
+      action_list.each do |action|
+        if action.status == UMPTG::Review::NormalizeAction.NORMALIZED
+          update_entry = true
+        end
+        action.review_msg_list.each do |msg|
+          case msg.level
+          when UMPTG::Message.INFO
+            epub_log.info(msg.text)
+          when UMPTG::Message.WARNING
+            epub_log.warn(msg.text)
+          when UMPTG::Message.ERROR
+            epub_log.error(msg.text)
+          when UMPTG::Message.FATAL
+            epub_log.fatal(msg.text)
+          end
+          issue_cnt[msg.level] += 1
+        end
+      end
+    end
+    if update_entry
+      epub_log.info("Updating entry #{entry_name}")
+      xml_doc = proc_map[:xml_doc]
+      epub.add(entry_name: entry_name, entry_content: UMPTG::XMLUtil.doc_to_xml(xml_doc))
+    end
+  end
+
+  case
+  when issue_cnt[UMPTG::Message.FATAL] > 0
+    script_logger.fatal("Fatal:#{issue_cnt[UMPTG::Message.FATAL]}  Error:#{issue_cnt[UMPTG::Message.ERROR]}  Warning:#{issue_cnt[UMPTG::Message.WARNING]}")
+    epub_log.fatal("Fatal:#{issue_cnt[UMPTG::Message.FATAL]}  Error:#{issue_cnt[UMPTG::Message.ERROR]}  Warning:#{issue_cnt[UMPTG::Message.WARNING]}")
+  when issue_cnt[UMPTG::Message.ERROR] > 0
+    script_logger.error("Error:#{issue_cnt[UMPTG::Message.ERROR]}  Warning:#{issue_cnt[UMPTG::Message.WARNING]}")
+    epub_log.error("Error:#{issue_cnt[UMPTG::Message.ERROR]}  Warning:#{issue_cnt[UMPTG::Message.WARNING]}")
+  when issue_cnt[UMPTG::Message.WARNING] > 0
+    script_logger.warn("Warning:#{issue_cnt[UMPTG::Message.WARNING]}")
+    epub_log.warn("Warning:#{issue_cnt[UMPTG::Message.WARNING]}")
+  else
+    script_logger.info("Error: 0")
+    epub_log.info("Error: 0")
+  end
+=end
+  if epub_reviewer.epub_modified
+    epub_normalized_file = File.join(File.dirname(epub_file), File.basename(epub_file, ".*") + "_normal.epub")
+    epub_log.info("Saving normalized EPUB \"#{File.basename(epub_normalized_file)}.")
+    script_logger.info("Saving normalized EPUB \"#{File.basename(epub_normalized_file)}.")
+    epub.save(epub_file: epub_normalized_file)
+  end
+
+  epub_log.close
+end

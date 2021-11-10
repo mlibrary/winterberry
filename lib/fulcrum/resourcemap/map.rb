@@ -35,7 +35,7 @@ module UMPTG::Fulcrum::ResourceMap
     XRESOURCE
 
     @@XML_ACTION =    <<-XACTION
-<action reference_id="%s" resource_id="%s" type="%s"/>
+<action reference_id="%s" resource_id="%s" type="%s" entry="%s" xpath="%s"/>
     XACTION
 
     # Headers to use for writing CSV version.
@@ -99,9 +99,12 @@ module UMPTG::Fulcrum::ResourceMap
 
     # Add a new map entry, reference => resource.
     def add(args = {})
+      name = args[:name]
       reference_id = args[:reference_id]
       reference_name = args[:reference_name]
       resource = args[:resource]
+      resource_path = args[:resource_path]
+      xpath = args[:xpath]
       type = args[:type]
 
       reference = add_reference(
@@ -109,13 +112,26 @@ module UMPTG::Fulcrum::ResourceMap
             :name => reference_name
           )
 
-      unless resource.nil?
+      if resource.nil?
+        resource = add_resource(
+                name: File.basename(resource_path)
+            )
+        action = Action.new(
+                name: name,
+                reference: reference,
+                resource: resource,
+                type: type.to_sym,
+                xpath: xpath
+              )
+      else
         action = @actions.find {|a| a.reference.id == reference.id and a.resource.id == resource.id }
         if action.nil?
           action = Action.new(
-                  :reference => reference,
-                  :resource => resource,
-                  :type => type.to_sym
+                name: name,
+                reference: reference,
+                resource: resource,
+                type: type.to_sym,
+                xpath: xpath
                 )
           @actions << action
         else
@@ -230,7 +246,9 @@ module UMPTG::Fulcrum::ResourceMap
                     @@XML_ACTION,
                     action.reference.id,
                     action.resource.id,
-                    action.type
+                    action.type,
+                    action.name,
+                    action.xpath
                     )
       end
 
