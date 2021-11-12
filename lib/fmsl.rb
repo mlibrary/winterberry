@@ -80,9 +80,8 @@ module UMPTG
             if row['File Name'].nil?
               puts "Skipping row (no file name), Fulcrum != 'yes'"
             else
-              puts "Skipping #{row['File Name']}, Fulcrum != 'yes'" unless row['File Name'].nil?
+              puts "Skipping #{row['File Name']}, Fulcrum != 'yes'"
             end
-            next
           end
 
           fulcrum_row = {}
