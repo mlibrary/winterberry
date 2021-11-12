@@ -224,6 +224,7 @@ module UMPTG::Fulcrum
           epub.add(entry_name: dest_css_file, entry_content: File.read(fulcrum_css_file))
         end
 
+=begin
         # Add remote resources to the OPF file.
         logger.info("Adding remote resources to OPF file #{File.basename(epub.opf_name)}")
         remote_resources_list.each do |path|
@@ -237,6 +238,7 @@ module UMPTG::Fulcrum
             end
           end
         end
+=end
 
         # Update the OPF file in the EPUB.
         epub.add(entry_name: epub.opf_name, entry_content: UMPTG::XMLUtil.doc_to_xml(opf_doc))
