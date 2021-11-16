@@ -25,6 +25,7 @@ module UMPTG::Review
     def review(args = {})
       normalize_epub = args.key?(:normalize_epub) ? args[:normalize_epub] : false
       normalize_caption_class = args.key?(:normalize_caption_class) ? args[:normalize_caption_class] : false
+      update_css = args.key?(:update_css) ? args[:update_css] : false
       review_resources = args.key?(:review_resources) ? args[:review_resources] : true
 
       epub_file = @monograph_dir.archived_epub_file
@@ -43,6 +44,7 @@ module UMPTG::Review
       epub_reviewer.review(
             normalize: normalize_epub,
             normalize_caption_class: normalize_caption_class,
+            update_css: update_css,
             review_options: {
                 package: true,
                 link: false,
