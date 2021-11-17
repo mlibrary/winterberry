@@ -44,7 +44,7 @@ service = UMPTG::Services::Heliotrope.new(
                 :fulcrum_host => options.fulcrum_host
               )
 
-headers = [ "ISBN", "Monograph Link" ]
+headers = [ "ISBN", "Monograph Link", "Pub Year" ]
 csv_file = File.join(Dir.pwd, File.basename(__FILE__) + ".csv")
 CSV.open(
         csv_file,
@@ -79,7 +79,9 @@ CSV.open(
       else
         noid = monograph_row["noid"]
         title = monograph_row["title"]
+        pub_year = monograph_row["pub_year"]
         csv_row["Monograph Link"] = "=HYPERLINK(\"https://www.fulcrum.org/concern/monographs/#{noid}\",\"#{title}\")"
+        csv_row["Pub Year"] = "#{pub_year}"
       end
     end
     csv << csv_row
