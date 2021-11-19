@@ -28,6 +28,8 @@ module UMPTG::EPUB
       # string or as a XML doc.
       pass_xml_doc = args.key?(:pass_xml_doc) and args[:pass_xml_doc]
 
+      entry_processors.each {|key,processor| processor.reset() }
+
       epub_actions = {}
       if entry_processors.key?(:package)
         entry = epub.opf

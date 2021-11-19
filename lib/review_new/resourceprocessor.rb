@@ -25,6 +25,7 @@ module UMPTG::Review
             )
       super(args)
 
+      reset()
       @resource_path_list = {}
     end
 
@@ -248,6 +249,11 @@ module UMPTG::Review
       return list
     end
 
+    def reset()
+      super()
+      @resource_path_list = {}
+    end
+
     private
 
     @@FIGURE_XPATH = <<-FXPATH
@@ -274,6 +280,7 @@ module UMPTG::Review
     local-name()='img'
     or local-name()='figcaption'
     or translate(@class,'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz')='figh'
+    or translate(@class,'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz')='figh1'
     or translate(@class,'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz')='fign'
     or translate(@class,'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz')='image_caption'
     or translate(@class,'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz')='figattrib'
