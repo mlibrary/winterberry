@@ -12,8 +12,8 @@ ROOTDIR=ENV['HEBROOTDIR'] || ""
 # the last component of the HEB directory
 # is the ID.
 HEBID=File.basename(HEBDIR)
-HEBPRFX=HEBID[0..7]
-#HEBPRFX=HEBID
+#HEBPRFX=HEBID[0..7]
+HEBPRFX=HEBID
 #OS=ENV['OS']
 
 # Determine process paths relative to this file.
@@ -37,8 +37,9 @@ SRCFIXEPUBIMGS=File.join(SRCFIXEPUBDIR, HEBID, "OEBPS", "images")
 LAYOUT=ENV['LAYOUT']
 TARGETLAYOUTROOT=File.join(TARGETHEB, "layouts", LAYOUT)
 
-#SRCDLXSPATH=srcdlxspath
-#ORGSRCDLXSPATH=File.join(File.dirname(srcdlxspath),"#{HEBID}_dlxs_org.xml")
+srcdlxspath = File.join(ROOTDIR, LAYOUT, "dlxs", "#{HEBID}_dlxs.xml")
+SRCDLXSPATH=srcdlxspath
+ORGSRCDLXSPATH=File.join(File.dirname(srcdlxspath), File.basename(srcdlxspath, ".*") + "_org.xml")
 
 # Set paths for the XSLT, image utilities, and epubcheck jars
 XSLTJAR=File.join(TARGETLIB, "jars", "hebxslt-jar-with-dependencies.jar")

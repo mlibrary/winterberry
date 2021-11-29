@@ -539,9 +539,11 @@
         <xsl:param name="metadataName"/>
         <xsl:param name="metadataValue"/>
 
-        <xsl:element name="{$metadataName}" namespace="{$PURL_DC_URL}">
-            <xsl:value-of select="mlibxsl:strip_punctuation($metadataValue)"/>
-        </xsl:element>
+        <xsl:if test="string-length(normalize-space($metadataValue)) > 0">
+            <xsl:element name="{$metadataName}" namespace="{$PURL_DC_URL}">
+                <xsl:value-of select="mlibxsl:strip_punctuation($metadataValue)"/>
+            </xsl:element>
+        </xsl:if>
     </xsl:template>
 
     <xsl:template name="generateTermsMetadata">

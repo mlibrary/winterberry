@@ -458,11 +458,13 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
 
     <xsl:template match="DIV1|DIV2|DIV3|DIV4">
         <xsl:choose>
-            <xsl:when test="lower-case(./HEAD)='abstract' or exists(./P[@TYPE='author'])">
-                <!-- This should be the abtract and should have
-                    been processed by the HEADER. Skip. -->
+            <!--
+            <xsl:when test="lower-case(./HEAD[1])='abstract' or exists(./P[@TYPE='author'])">
+                 This should be the abtract and should have
+                    been processed by the HEADER. Skip.
                 <xsl:message>Skip <xsl:value-of select="local-name(.)"/></xsl:message>
             </xsl:when>
+            -->
             <xsl:when test="@TYPE='notes'">
                 <xsl:element name="notes">
                     <xsl:apply-templates select="./*[local-name()!='HEAD']"/>
@@ -476,9 +478,11 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
                     <xsl:apply-templates select="./*"/>
                 </xsl:element>
             </xsl:when>
+            <!--
             <xsl:when test="not(exists(./HEAD))">
                 <xsl:apply-templates select="./*"/>
             </xsl:when>
+            -->
             <xsl:otherwise>
                 <xsl:call-template name="add-section">
                     <xsl:with-param name="divNode" select="."/>
@@ -504,7 +508,9 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
         <xsl:element name="title"/>
     </xsl:template>
 
+    <!--
     <xsl:template match="P[@TYPE='title' or @TYPE='author' or @TYPE='author-notes']"/>
+    -->
 
     <xsl:template match="P">
         <xsl:element name="p">
@@ -534,6 +540,12 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
             <xsl:attribute name="ref-type" select="'fn'"/>
             <xsl:apply-templates select="@*[name()!='TARGET' and name()!='N']|node()"/>
             <xsl:value-of select="lower-case(@N)"/>
+        </xsl:element>
+    </xsl:template>
+
+    <xsl:template match="FIGURE/REF[@TYPE='alttext']">
+        <xsl:element name="alt-text">
+            <xsl:value-of select="./text()"/>
         </xsl:element>
     </xsl:template>
 
@@ -607,7 +619,7 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
                     </xsl:if>
                 </xsl:when>
                 <xsl:otherwise>
-                    <xsl:if test="exists(*[local-name()='HEAD' or local-name()='P'])">
+                    <xsl:if test="exists(*[local-name()='HEAD' or local-name()='P' or local-name()='REF'])">
                         <xsl:choose>
                             <xsl:when test="matches(lower-case(normalize-space(.)),'^(fig|figure|figures|table|tables)[ ]+[a-zA-Z0-9\-\.:]+ ')">
                                 <xsl:variable name="children" select="*[1]/child::node()"/>
@@ -635,27 +647,29 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
                                                 <xsl:if test="$title!=''">
                                                     <xsl:value-of select="$title"/>
                                                 </xsl:if>
-                                                <xsl:apply-templates select="$children[position()>1]"/>
-                                                <xsl:apply-templates select="*[position()>1 and local-name()='HEAD']"/>
+                                                <xsl:apply-templates select="$children[position()>1 and (local-name()!='REF' or @TYPE1='alttext')]"/>
+                                                <xsl:apply-templates select="*[position()>1 and local-name()='HEAD' and (local-name()!='REF' or @TYPE!='alttext')]"/>
                                             </xsl:element>
                                         </xsl:if>
-                                        <xsl:apply-templates select="*[position()>1 and local-name()!='HEAD']"/>
+                                        <xsl:apply-templates select="*[position()>1 and local-name()!='HEAD' and (local-name()!='REF' or @TYPE!='alttext')]"/>
                                     </xsl:element>
+                                    <xsl:apply-templates select="*[position()>1 and local-name()='REF' and @TYPE='alttext']"/>
                                 </xsl:if>
                             </xsl:when>
                             <xsl:otherwise>
                                 <xsl:element name="caption">
                                     <xsl:choose>
-                                        <xsl:when test="exists(HEAD)">
-                                            <xsl:apply-templates/>
+                                        <xsl:when test="exists(HEAD) or exists(P)">
+                                            <xsl:apply-templates select="*[local-name()!='REF' or @TYPE!='alttext']"/>
                                         </xsl:when>
                                         <xsl:otherwise>
                                             <xsl:element name="title">
-                                                <xsl:apply-templates/>
+                                                <xsl:apply-templates select="*[local-name()!='REF' or @TYPE!='alttext']"/>
                                             </xsl:element>
                                         </xsl:otherwise>
                                     </xsl:choose>
                                 </xsl:element>
+                                <xsl:apply-templates select="*[local-name()='REF' and @TYPE='alttext']"/>
                             </xsl:otherwise>
                         </xsl:choose>
                     </xsl:if>
@@ -998,7 +1012,7 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
 
     <xsl:template match="FRONT|LB|MILESTONE"/>
 
-    <xsl:template match="TD/@TYPE"/>
+    <xsl:template match="TD/@TYPE|FIGURE/@TYPE"/>
 
     <xsl:template match="NOTE1/@ID">
         <xsl:attribute name="{lower-case(local-name())}" select="lower-case(.)"/>
@@ -1025,15 +1039,20 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
         <xsl:param name="divNode"/>
 
         <xsl:element name="sec">
+            <xsl:apply-templates select="@*"/>
             <xsl:choose>
-                <xsl:when test="exists($divNode/*[local-name()='HEAD'])">
-                    <xsl:apply-templates select="$divNode/*[local-name()='HEAD']"/>
+                <xsl:when test="exists($divNode/*[local-name()='HEAD' or (local-name()='P' and @TYPE='title')])">
+                    <xsl:element name="title">
+                        <xsl:for-each select="$divNode/*[local-name()='HEAD' or (local-name()='P' and @TYPE='title')]">
+                            <xsl:apply-templates select="./node()"/>
+                        </xsl:for-each>
+                    </xsl:element>
                 </xsl:when>
                 <xsl:otherwise>
                     <xsl:element name="title"/>
                 </xsl:otherwise>
             </xsl:choose>
-            <xsl:apply-templates select="$divNode/*[local-name()!='HEAD']"/>
+            <xsl:apply-templates select="$divNode/*[not(local-name()='HEAD' or (local-name()='P' and @TYPE='title'))]"/>
         </xsl:element>
     </xsl:template>
 

@@ -298,11 +298,13 @@
                </xsl:choose>
            </xsl:if>
            -->
-            <xsl:element name="item" namespace="{$IDPF_URL}">
-                <xsl:attribute name="id" select="'cover-image'"/>
-                <xsl:attribute name="media-type" select="$coverImageRow/html:td[@class='mime-type']"/>
-                <xsl:attribute name="href" select="concat('images',$FILE_SEPARATOR,$coverImageRow/html:td[@class='asset'])"/>
-            </xsl:element>
+            <xsl:if test="exists($coverImageRow/html:td)">
+                <xsl:element name="item" namespace="{$IDPF_URL}">
+                    <xsl:attribute name="id" select="'cover-image'"/>
+                    <xsl:attribute name="media-type" select="$coverImageRow/html:td[@class='mime-type']"/>
+                    <xsl:attribute name="href" select="concat('images',$FILE_SEPARATOR,$coverImageRow/html:td[@class='asset'])"/>
+                </xsl:element>
+            </xsl:if>
             <xsl:for-each select="$otherCoverRows">
                 <xsl:element name="item" namespace="{$IDPF_URL}">
                     <xsl:attribute name="id" select="concat('cover',position(),'-image')"/>
@@ -335,7 +337,7 @@
             <xsl:for-each select="$assetsTable/html:tr">
                 <xsl:if test="./html:td[@class='cover-image']='no' and ./html:td[@class='inclusion']='yes'">
                     <xsl:element name="item" namespace="{$IDPF_URL}">
-                        <xsl:attribute name="id" select="./html:td[@class='asset']"/>
+                        <xsl:attribute name="id" select="concat('asset',./html:td[@class='asset'])"/>
                         <xsl:attribute name="href" select="concat('images',$FILE_SEPARATOR,./html:td[@class='asset'])"/>
                         <xsl:attribute name="media-type" select="./html:td[@class='mime-type']"/>
                     </xsl:element>
@@ -343,11 +345,13 @@
             </xsl:for-each>
 
             <!-- HTML documents -->
-            <xsl:element name="item" namespace="{$IDPF_URL}">
-                <xsl:attribute name="id" select="'cover'"/>
-                <xsl:attribute name="href" select="concat('xhtml',$FILE_SEPARATOR,'cover.xhtml')"/>
-                <xsl:attribute name="media-type" select="'application/xhtml+xml'"/>
-            </xsl:element>
+            <xsl:if test="exists($coverImageRow/html:td)">
+                <xsl:element name="item" namespace="{$IDPF_URL}">
+                    <xsl:attribute name="id" select="'cover'"/>
+                    <xsl:attribute name="href" select="concat('xhtml',$FILE_SEPARATOR,'cover.xhtml')"/>
+                    <xsl:attribute name="media-type" select="'application/xhtml+xml'"/>
+                </xsl:element>
+            </xsl:if>
             <xsl:for-each select="$textList">
                 <xsl:variable name="textElem" select="."/>
                 <xsl:variable name="divList" select="./tei:div"/>
@@ -391,9 +395,11 @@
         </xsl:element>
 
         <xsl:element name="spine" namespace="{$IDPF_URL}">
-            <xsl:element name="itemref" namespace="{$IDPF_URL}">
-                <xsl:attribute name="idref" select="'cover'"/>
-            </xsl:element>
+            <xsl:if test="exists($coverImageRow/html:td)">
+                <xsl:element name="itemref" namespace="{$IDPF_URL}">
+                    <xsl:attribute name="idref" select="'cover'"/>
+                </xsl:element>
+            </xsl:if>
             <!-- Uncomment if the toc should be added to book.
                 Question would be proper location within spine.
             <xsl:element name="itemref" namespace="{$IDPF_URL}">
@@ -425,33 +431,35 @@
         </xsl:element>
 
         <!-- Cover page document -->
-        <xsl:variable name="path" select="concat($epubXHTMLDir,'cover.xhtml')"/>
-        <xsl:result-document href="{$path}" method="xml">
-            <xsl:element name="html" namespace="{$HTML_URL}">
-                <xsl:namespace name="epub" select="$OPS_URL"/>
+        <xsl:if test="exists($coverImageRow/html:td)">
+            <xsl:variable name="path" select="concat($epubXHTMLDir,'cover.xhtml')"/>
+            <xsl:result-document href="{$path}" method="xml">
+                <xsl:element name="html" namespace="{$HTML_URL}">
+                    <xsl:namespace name="epub" select="$OPS_URL"/>
 
-                <xsl:call-template name="generateHtmlHead">
-                    <xsl:with-param name="divType" select="'cover'"/>
-                    <xsl:with-param name="title" select="$dc-title-list[1]"/>
-                </xsl:call-template>
-                <xsl:element name="body" namespace="{$HTML_URL}">
-                    <xsl:attribute name="class" select="'svg_cover'"/>
+                    <xsl:call-template name="generateHtmlHead">
+                        <xsl:with-param name="divType" select="'cover'"/>
+                        <xsl:with-param name="title" select="$dc-title-list[1]"/>
+                    </xsl:call-template>
+                    <xsl:element name="body" namespace="{$HTML_URL}">
+                        <xsl:attribute name="class" select="'svg_cover'"/>
 
-                    <xsl:element name="section" namespace="{$HTML_URL}">
-                        <xsl:attribute name="id" select="'cover'"/>
-                        <xsl:attribute name="class" select="'text-center'"/>
-                        <xsl:attribute name="epub:type" select="'cover'"/>
+                        <xsl:element name="section" namespace="{$HTML_URL}">
+                            <xsl:attribute name="id" select="'cover'"/>
+                            <xsl:attribute name="class" select="'text-center'"/>
+                            <xsl:attribute name="epub:type" select="'cover'"/>
 
-                        <xsl:element name="img" namespace="{$HTML_URL}">
-                            <xsl:attribute name="src" select="concat('..',$FILE_SEPARATOR,'images',$FILE_SEPARATOR,$coverImageRow/html:td[@class='asset'])"/>
-                            <xsl:attribute name="class" select="'cover-image'"/>
-                            <xsl:attribute name="alt" select="concat('Cover image for book ', $dc-title-list[1])"/>
-                            <xsl:attribute name="role" select="'doc-cover'"/>
+                            <xsl:element name="img" namespace="{$HTML_URL}">
+                                <xsl:attribute name="src" select="concat('..',$FILE_SEPARATOR,'images',$FILE_SEPARATOR,$coverImageRow/html:td[@class='asset'])"/>
+                                <xsl:attribute name="class" select="'cover-image'"/>
+                                <xsl:attribute name="alt" select="concat('Cover image for book ', $dc-title-list[1])"/>
+                                <xsl:attribute name="role" select="'doc-cover'"/>
+                            </xsl:element>
                         </xsl:element>
                     </xsl:element>
                 </xsl:element>
-            </xsl:element>
-        </xsl:result-document>
+            </xsl:result-document>
+        </xsl:if>
 
         <!-- Division documents -->
         <xsl:for-each select="$textList">
@@ -539,7 +547,9 @@
         </xsl:element>
         -->
         <xsl:element name="section" namespace="{$HTML_URL}">
-            <xsl:attribute name="id" select="mlibxsl:generateHtmlId(.)"/>
+            <xsl:if test="exists(@id)">
+                <xsl:attribute name="id" select="mlibxsl:generateHtmlId(.)"/>
+            </xsl:if>
 
             <xsl:if test="exists(@type)">
                 <xsl:variable name="epubType" select="mlibxsl:mapDivType2Value('type2epubtype',@type)"/>
@@ -616,7 +626,10 @@
     </xsl:template>
 
     <xsl:template match="tei:head" mode="toc">
+        <!--
         <xsl:value-of select="./*[local-name() !='bibl' or @type != 'para']"/>
+        -->
+        <xsl:value-of select="."/>
     </xsl:template>
 
     <xsl:template match="tei:head[@rend='toc']" mode="toc">
@@ -854,10 +867,17 @@
                         -->
                         <xsl:element name="span" namespace="{$HTML_URL}">
                             <xsl:attribute name="class" select="'footnote_number'"/>
-                            <xsl:element name="a" namespace="{$HTML_URL}">
-                                <xsl:attribute name="href" select="$noteRef"/>
-                                <xsl:value-of select="../@n"/>
-                            </xsl:element>
+                            <xsl:choose>
+                                <xsl:when test="$noteRef='xxxxx'">
+                                    <xsl:value-of select="../@n"/>
+                                </xsl:when>
+                                <xsl:otherwise>
+                                    <xsl:element name="a" namespace="{$HTML_URL}">
+                                        <xsl:attribute name="href" select="$noteRef"/>
+                                        <xsl:value-of select="../@n"/>
+                                    </xsl:element>
+                                </xsl:otherwise>
+                            </xsl:choose>
                             <xsl:value-of select="'. '"/>
                         </xsl:element>
                     </xsl:if>
@@ -875,10 +895,17 @@
                         -->
                         <xsl:element name="span" namespace="{$HTML_URL}">
                             <xsl:attribute name="class" select="'footnote_number'"/>
-                            <xsl:element name="a" namespace="{$HTML_URL}">
-                                <xsl:attribute name="href" select="$noteRef"/>
-                                <xsl:value-of select="../@n"/>
-                            </xsl:element>
+                            <xsl:choose>
+                                <xsl:when test="$noteRef='xxxxx'">
+                                    <xsl:value-of select="../@n"/>
+                                </xsl:when>
+                                <xsl:otherwise>
+                                    <xsl:element name="a" namespace="{$HTML_URL}">
+                                        <xsl:attribute name="href" select="$noteRef"/>
+                                        <xsl:value-of select="../@n"/>
+                                    </xsl:element>
+                                </xsl:otherwise>
+                            </xsl:choose>
                             <xsl:value-of select="'. '"/>
                         </xsl:element>
                     </xsl:if>
@@ -1261,7 +1288,7 @@
         </xsl:element>
     </xsl:template>
 
-    <xsl:template match="tei:hi[@rend='und' or @rend='underline']">
+    <xsl:template match="tei:hi[@rend='u' or @rend='und' or @rend='underline']">
 
         <xsl:element name="u" namespace="{$HTML_URL}">
             <xsl:apply-templates/>
@@ -1684,7 +1711,6 @@
 
         <xsl:variable name="lgRefPath" select="concat($figure/@dlxs:entity,'-lg')"/>
         <xsl:variable name="refPath" select="$figure/@dlxs:entity"/>
-
         <xsl:variable name="lgAsset" select="mlibxsl:genAssetReference($lgRefPath)"/>
         <xsl:variable name="asset" as="element()*">
             <xsl:choose>
@@ -1731,7 +1757,6 @@
                         </xsl:otherwise>
                     </xsl:choose>
                 </xsl:variable>
-
                 <xsl:element name="figure" namespace="{$HTML_URL}">
                     <xsl:if test="exists(@xml:id)">
                         <xsl:attribute name="id" select="@xml:id"/>
@@ -1775,6 +1800,7 @@
                     <xsl:apply-templates/>
 
                     <xsl:if test="$href != ''">
+                        <!--
                         <xsl:element name="span" namespace="{$HTML_URL}">
                             <xsl:attribute name="class" select="'figcaption'"/>
                             <xsl:element name="a" namespace="{$HTML_URL}">
@@ -1783,6 +1809,7 @@
                                 <xsl:value-of select="'View Asset'"/>
                             </xsl:element>
                         </xsl:element>
+                        -->
                     </xsl:if>
                 </xsl:element>
             </xsl:otherwise>
@@ -1963,11 +1990,13 @@
         <xsl:variable name="entryList" select="$itemList[exists(./tei:head/tei:bibl[@type!='para'])]"/>
         <xsl:variable name="entryList" select="$itemList[(not(exists(@dlxs:status)) or @dlxs:status != 'toc-nodisplay') and exists(./tei:head/tei:bibl[@type!='para'])]"/>
         -->
+        <!--
         <xsl:variable name="entryList" select="$itemList[(not(exists(@dlxs:status)) or @dlxs:status != 'toc-nodisplay') and exists(./tei:head[@rend='toc'])]"/>
-
+        -->
+        <xsl:variable name="entryList" select="$itemList[@dlxs:level='1' and (not(exists(@dlxs:status)) or @dlxs:status != 'toc-nodisplay') and exists(./tei:head)]"/>
         <xsl:if test="$init='yes' or count($entryList) > 0">
             <xsl:element name="ol" namespace="{$HTML_URL}">
-                <xsl:if test="$init='yes'">
+                <xsl:if test="$init='yes' and exists($coverImageRow/html:td)">
                     <xsl:variable name="ref" select="'cover.xhtml'"/>
                     <xsl:variable name="href" select="concat('xhtml',$FILE_SEPARATOR,$ref)"/>
 
@@ -1978,7 +2007,10 @@
                         </xsl:element>
                     </xsl:element>
                 </xsl:if>
+                <!--
                 <xsl:for-each-group select="$entryList" group-by="./tei:head[@rend='toc']">
+                -->
+                <xsl:for-each-group select="$entryList" group-by="./tei:head">
 
                     <xsl:variable name="ref" select="mlibxsl:genReference(.)"/>
                     <xsl:variable name="href" select="concat('xhtml',$FILE_SEPARATOR,$ref)"/>
@@ -1991,7 +2023,10 @@
                         -->
                         <xsl:element name="a" namespace="{$HTML_URL}">
                             <xsl:attribute name="href" select="$href"/>
+                            <!--
                             <xsl:for-each select="./tei:head[@rend='toc']">
+                            -->
+                            <xsl:for-each select="./tei:head">
                                 <xsl:if test="string-length(normalize-space(string())) > 0">
                                     <xsl:if test="position() > 1">
                                         <xsl:text> </xsl:text>
@@ -2280,11 +2315,17 @@
         -->
 
         <xsl:choose>
+            <xsl:when test="empty($parentId) and empty($divId)">
+                <xsl:sequence select="concat(mlibxsl:genDivName($divNode),'.xhtml')"/>
+            </xsl:when>
+            <xsl:when test="not(empty($parentId)) and not(empty($divId))">
+                <xsl:sequence select="concat($parentId,'.xhtml#',$divId)"/>
+            </xsl:when>
             <xsl:when test="empty($parentId)">
                 <xsl:sequence select="concat($divId,'.xhtml')"/>
             </xsl:when>
             <xsl:otherwise>
-                <xsl:sequence select="concat($parentId,'.xhtml#',$divId)"/>
+                <xsl:sequence select="concat($parentId,'.xhtml')"/>
             </xsl:otherwise>
         </xsl:choose>
         <xsl:sequence select="()"/>
@@ -2381,8 +2422,11 @@
                     <xsl:value-of select="replace(normalize-space($div/@dlxs:node),'[.:]','_')"/>
                 </xsl:when>
                 -->
-                <xsl:otherwise>
+                <xsl:when test="exists($div/@type)">
                     <xsl:value-of select="$div/@type"/>
+                </xsl:when>
+                <xsl:otherwise>
+                    <xsl:value-of select="concat(local-name($div/..),count($div/preceding-sibling::*)+1)"/>
                 </xsl:otherwise>
             </xsl:choose>
         </xsl:variable>
