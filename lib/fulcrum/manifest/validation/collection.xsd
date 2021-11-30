@@ -520,9 +520,8 @@
     </xs:complexType>
     <xs:complexType name="type_allow_download_after_expiration">
         <xs:choice>
-            <xs:element ref="none"/>
-            <xs:element ref="high_res"/>
-            <xs:element ref="low_res"/>
+            <xs:element ref="yes"/>
+            <xs:element ref="no"/>
             <xs:element ref="not_hosted_on_the_platform"/>
             <xs:element ref="permission_does_not_expire"/>
         </xs:choice>
@@ -1082,10 +1081,12 @@
             <xs:extension base="type_string_nonnull"/>
         </xs:simpleContent>
     </xs:complexType>
+    <!-- Not sure if this should be restricted to 200 characters.
+        Setting it to a high number. -->
     <xs:complexType name="type_string_title">
         <xs:simpleContent>
             <xs:restriction base="type_string">
-                <xs:maxLength value="200"/>
+                <xs:maxLength value="500"/>
             </xs:restriction>
         </xs:simpleContent>
     </xs:complexType>
