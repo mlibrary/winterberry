@@ -25,7 +25,7 @@ option_parser.parse!(ARGV)
 
 # Journal directory exists?
 journal_dir = File.expand_path(options.journal_dir)
-if !File.directory?(journal_dir)
+unless File.directory?(journal_dir)
   puts "Error: journal directory not found \"#{journal_dir}."
   exit 1
 end
@@ -33,7 +33,7 @@ end
 # Journal directory valid?
 dlxs_dir = File.join(journal_dir, "dlxs")
 resources_dir = File.join(journal_dir, "resources")
-if !File.directory?(dlxs_dir) or !File.directory?(resources_dir)
+unless File.directory?(dlxs_dir) and File.directory?(resources_dir)
   puts "Error: journal directory invalid \"#{File.basename(journal_dir)}."
   exit 1
 end
