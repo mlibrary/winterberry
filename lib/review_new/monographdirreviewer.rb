@@ -85,8 +85,10 @@ module UMPTG::Review
         end
         resources_manifest = UMPTG::Fulcrum::Manifest::Document.new(csv_file: csv_path)
 
-        @review_logger.info("Number of resource references: #{epub_reviewer.resource_path_list.count}")
+        total_references = 0
         epub_reviewer.resource_path_list.each do |entry_name,path_list|
+          @review_logger.info("#{entry_name}: number of resource references: #{path_list.count}")
+          total_references += path_list.count
           path_list.each do |path|
             resource_name = ""
             unless @monograph_dir.manifest.nil?
@@ -103,6 +105,7 @@ module UMPTG::Review
             end
           end
         end
+        @review_logger.info("total number of resource references: #{total_references}")
       end
     end
   end
