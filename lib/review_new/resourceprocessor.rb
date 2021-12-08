@@ -8,6 +8,7 @@ module UMPTG::Review
     local-name()='img'
     or @class='rb'
     or @class='rbi'
+    or (local-name()='figure' and normalize-space(@data-fulcrum-embed-filename)!='')
     ]|
     //comment()[
     starts-with(translate(normalize-space(.),'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz'),'insert ')
@@ -42,6 +43,16 @@ module UMPTG::Review
 
         figure_list = []
         reference_list.each do |reference_node|
+          if reference_node.name == "figure"
+            figure_obj = {
+                  container: reference_node,
+                  img_list: [ ],
+                  container_normalized: true
+                  }
+            figure_list << figure_obj
+            next
+          end
+
           figure_container_list = reference_node.xpath(@@FIGUREDIV_XPATH)
           if figure_container_list.empty?
             figure_container = nil
@@ -71,6 +82,10 @@ module UMPTG::Review
         figure_list.each do |figure_obj|
           figure_container = figure_obj[:container]
           container_normalized = figure_obj[:container_normalized]
+
+          unless figure_container.nil? or !figure_container.key?("data-fulcrum-embed-filename")
+            @resource_path_list[name] << figure_container["data-fulcrum-embed-filename"]
+          end
 
           figure_obj[:img_list].each do |img_obj|
             reference_node = img_obj[:reference_node]
@@ -124,13 +139,22 @@ module UMPTG::Review
           unless figure_container.nil?
             container_child_list = figure_container.xpath(@@IMGCAPTION_XPATH)
             if container_child_list.empty?
-              # Probably a figure that contains a marker.
-              # Give warning, but shouldn't be an issue.
-              reference_action_list << Action.new(
-                       name: name,
-                       reference_node: figure_container,
-                       warning_message: "image: has element #{figure_container.name} as figure container and is empty."
-                   )
+              if figure_container.key?("data-fulcrum-embed-filename")
+                # Found an additional resource.
+                resource_path = figure_container["data-fulcrum-embed-filename"]
+                reference_action_list << Action.new(
+                         name: name,
+                         reference_node: figure_container,
+                         info_message: "image: \"#{resource_path}\" has element #{figure_container.name} as figure container and @data-fulcrum-embed-filename set."
+                     )
+              else
+                # Give warning, but shouldn't be an issue.
+                reference_action_list << Action.new(
+                         name: name,
+                         reference_node: figure_container,
+                         warning_message: "image: has element #{figure_container.name} as figure container and is empty."
+                     )
+              end
             else
               caption_location = container_child_list.first.name == "img" ? :caption_after : :caption_before
               sfig_obj = {

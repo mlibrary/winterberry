@@ -46,10 +46,6 @@ module UMPTG::Review
                       )
           end
         end
-
-        reference_action_list.each do |action|
-          action.process()
-        end
       end
 
       # Return the list of Actions which contains the status

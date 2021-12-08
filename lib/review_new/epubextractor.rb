@@ -59,7 +59,7 @@ module UMPTG::Review
           next if action_list.nil?
           action_list.each do |action|
             update_entry = true
-            action.review_msg_list.each do |msg|
+            action.messages.each do |msg|
               case msg.level
               when UMPTG::Message.INFO
                 @logger.info(msg.text)

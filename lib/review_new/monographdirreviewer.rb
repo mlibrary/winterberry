@@ -99,9 +99,9 @@ module UMPTG::Review
               resource_name = fileset["file_name"]
             end
             if resource_name.strip.empty?
-              @review_logger.warn("#{entry_name}: resource file not found for reference \"#{File.basename(path)}\".")
+              @review_logger.warn("resource file not found for reference \"#{File.basename(path)}\".")
             else
-              @review_logger.info("#{entry_name}: resource file found for reference \"#{File.basename(path)}\".")
+              @review_logger.info("resource file #{resource_name} found for reference \"#{File.basename(path)}\".")
             end
           end
         end
