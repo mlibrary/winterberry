@@ -10,10 +10,10 @@ module UMPTG::Review
       caption_location = @properties[:caption_location]
       #reference_container_node = @properties[:reference_container_node]
       figure_container = @properties[:figure_container]
-      sfig_obj = @properties[:sfig_obj]
+      figure_obj = @properties[:figure_obj]
 
       nested_node = figure_container.document.create_element("figure")
-      sfig_obj[:img_list].first.add_previous_sibling(nested_node)
+      figure_obj.img_list.first.container_node.add_previous_sibling(nested_node)
 
       props = @properties.clone
       props[:nested_node] = nested_node
@@ -34,24 +34,24 @@ module UMPTG::Review
     def normalize_images(args = {})
       figure_container = args[:figure_container]
       caption_location = args[:caption_location]
-      sfig_obj = args[:sfig_obj]
+      figure_obj = @properties[:figure_obj]
       nested_node = args[:nested_node]
 
-      sfig_obj[:img_list].each do |node|
-        nested_node.add_child(node)
-        add_info_msg("#{figure_container.name}: nest #{nested_node.name} #{caption_location} #{node.name}.")
+      figure_obj.img_list.each do |img_obj|
+        nested_node.add_child(img_obj.container_node)
+        add_info_msg("#{figure_container.name}: nest #{nested_node.name} #{caption_location} #{img_obj.container_node.name}.")
       end
     end
 
     def normalize_captions(args = {})
       figure_container = args[:figure_container]
       caption_location = args[:caption_location]
-      sfig_obj = args[:sfig_obj]
+      figure_obj = @properties[:figure_obj]
       nested_node = args[:nested_node]
 
       cap_container = nested_node.document.create_element("figcaption")
       nested_node.add_child(cap_container)
-      sfig_obj[:cap_list].each do |node|
+      figure_obj.caption_list.each do |node|
         args[:caption_node] = node
         NormalizeFigureAction.normalize_caption_class(args)
 

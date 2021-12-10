@@ -4,6 +4,8 @@ module UMPTG
   require_relative('epub')
 
   require_relative File.join('review_new', 'action')
+  require_relative File.join('review_new', 'figure')
+  require_relative File.join('review_new', 'image')
   require_relative File.join('review_new', 'monographdirreviewer')
   require_relative File.join('review_new', 'imageaction')
   require_relative File.join('review_new', 'normalizeaction')

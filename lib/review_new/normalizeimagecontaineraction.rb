@@ -16,7 +16,8 @@ module UMPTG::Review
       add_info_msg("image: \"#{@resource_path}\" nested image container #{node_name} within #{nested_node.name}.")
 =end
 
-      @status = NormalizeAction.NORMALIZED
+      #@status = NormalizeAction.NORMALIZED
+      @status = Action.NO_ACTION
     end
   end
 end
