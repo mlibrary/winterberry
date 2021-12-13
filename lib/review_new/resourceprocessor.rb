@@ -19,17 +19,19 @@ module UMPTG::Review
     ]
     SXPATH
 
-    IMGCONTAINER_XPATH_NEW = <<-ICOXPATHN
+    IMGCONTAINER_XPATH = <<-ICOXPATHN
     ./ancestor::*[
     local-name()='p' or local-name()='div'
     ][1]
     ICOXPATHN
 
     @@IMGCAPTION_XPATH = <<-ICXPATH
-    .//*[
-    local-name()='img'
+    .//*[local-name()='img'
     or local-name()='figcaption'
-    or translate(@class,'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz')='figh'
+    or (
+    parent::*[local-name()!='figcaption']
+    and (
+    translate(@class,'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz')='figh'
     or translate(@class,'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz')='figh1'
     or translate(@class,'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz')='fign'
     or translate(@class,'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz')='image_caption'
@@ -38,6 +40,9 @@ module UMPTG::Review
     or translate(@class,'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz')='figpara'
     or starts-with(translate(@class,'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz'),'figcap')
     or starts-with(translate(@class,'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz'),'figcaption')
+    or starts-with(translate(@class,'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz'),'source')
+    )
+    )
     ]
     ICXPATH
 
@@ -134,21 +139,28 @@ module UMPTG::Review
                         figure_obj_list << figure_obj
                         caption_found = false
                       end
-                      img_container_list = child.xpath(IMGCONTAINER_XPATH_NEW)
-                      img_container_list.each do |img_container|
+                      img_container_list = child.xpath(IMGCONTAINER_XPATH)
+                      if img_container_list.empty?
                         figure_obj.img_list << Image.new(
-                                    container_node: img_container,
+                                    container_node: child,
                                     img_node: child
                                   )
+                      else
+                        img_container_list.each do |img_container|
+                          figure_obj.img_list << Image.new(
+                                      container_node: img_container,
+                                      img_node: child
+                                    )
 
-                        unless img_container.name == "div"
-                          reference_action_list << NormalizeImageContainerAction.new(
-                                   name: name,
-                                   reference_node: img_container,
-                                   #xpath: xpath_base + "/" + @@DIV_XPATH,
-                                   action_node: img_container,
-                                   warning_message: "image: container element should be normalized."
-                                )
+                          unless img_container.name == "div"
+                            reference_action_list << NormalizeImageContainerAction.new(
+                                     name: name,
+                                     reference_node: img_container,
+                                     #xpath: xpath_base + "/" + @@DIV_XPATH,
+                                     action_node: img_container,
+                                     warning_message: "image: container element should be normalized."
+                                  )
+                          end
                         end
                       end
                     else
@@ -194,8 +206,23 @@ module UMPTG::Review
                       end
                     end
 
-                    if figure_obj_list.count == 1
-                      if figure_obj.caption_list.count > 0
+                    if figure_obj_list.count == 1 and figure_obj.caption_list.count > 0
+                      caption_list = figure_obj.caption_list
+                      if caption_list.count == 1 and caption_list.first.name == "figcaption"
+                        case
+                        when figure_obj.img_list.count > 0
+                          resource_path = figure_obj.img_list.first.img_node["src"]
+                        when figure_obj.container_node.key?("data-fulcrum-embed-filename")
+                          resource_path = figure_obj.container_node["data-fulcrum-embed-filename"]
+                        else
+                          resource_path = "(unknown)"
+                        end
+                        reference_action_list << Action.new(
+                                 name: name,
+                                 reference_node: caption_list.first,
+                                 info_message: "image: #{figure_obj.img_list.count} \"#{resource_path}\" has element #{caption_list.first.name} as figure caption container."
+                             )
+                      else
                         reference_action_list << NormalizeFigureCaptionAction.new(
                                  name: name,
                                  figure_container: figure_obj.container_node,
