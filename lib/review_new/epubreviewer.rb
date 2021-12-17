@@ -6,7 +6,8 @@ module UMPTG::Review
           list: ListProcessor.new,
           package: PackageProcessor.new,
           resources: ResourceProcessor.new,
-          table: TableProcessor.new
+          table: TableProcessor.new,
+          accessibility: AccessibilityProcessor.new
         }
 
     attr_reader :epub, :epub_modified, :review_logger, :action_map

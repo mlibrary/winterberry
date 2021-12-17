@@ -1,0 +1,119 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Script updates EPUB accessibility (FOPS-0074).
+
+require 'optparse'
+require 'ostruct'
+require 'os'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+# Process the script parameters.
+options = OpenStruct.new
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} <epub_file> [<epub_file> ...]"
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    script_logger.info(opts)
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  script_logger.info(option_parser.help)
+  return
+end
+
+# Process the command line parameters.
+epub_file_list = ARGV
+
+require_relative File.join(root_dir, "lib", "epub")
+require_relative File.join(root_dir, "lib", "action")
+
+class AccessEntryProcessor < UMPTG::EPUB::EntryProcessor
+  def action_list(args = {})
+    name = args[:name]
+    xml_doc = args[:xml_doc]
+
+    reference_action_list = []
+    access_node_list = xml_doc.xpath("//*[local-name()='span' and @epub:type='pagebreak']")
+    access_node_list.each do |access_node|
+      reference_action_list << UMPTG::Action.new(
+                  access_node: access_node
+              )
+      reference_action_list.last.add_info_msg("found page break #{access_node['aria-label']}")
+    end
+    return reference_action_list
+  end
+end
+
+access_processors = {
+        #package: AccessOPFProcessor.new,
+        spine: AccessEntryProcessor.new
+      }
+
+epub_file_list.each do |epub_file|
+  script_logger.info("*" * 10 + " #{File.basename(epub_file)} " + "*" * 10)
+
+  epub = UMPTG::EPUB::Archive.new(epub_file: epub_file)
+
+  # Process the epub and generate the image information.
+  action_map = UMPTG::EPUB::Processor.process(
+        epub: epub,
+        entry_processors: access_processors,
+        process_opf: true,
+        pass_xml_doc: true,
+        logger: script_logger
+      )
+
+  action_map.each do |entry_name,proc_map|
+    proc_map.each do |key,action_list|
+      next if action_list.nil?
+      action_list.each do |action|
+        action.process()
+      end
+    end
+  end
+
+  epub_modified = false
+  action_map.each do |entry_name,proc_map|
+    update_entry = false
+    proc_map.each do |key,action_list|
+      next if action_list.nil?
+
+      script_logger.info("#{entry_name}: #{key} #{action_list.count} actions")
+
+      action_list.each do |action|
+        action.messages.each do |msg|
+          case msg.level
+          when UMPTG::Message.INFO
+            script_logger.info(msg.text)
+          when UMPTG::Message.WARNING
+            script_logger.warn(msg.text)
+          when UMPTG::Message.ERROR
+            script_logger.error(msg.text)
+          when UMPTG::Message.FATAL
+            script_logger.fatal(msg.text)
+          end
+        end
+      end
+    end
+    if update_entry
+      script_logger.info("Updating entry #{entry_name}")
+      xml_doc = proc_map[:xml_doc]
+      epub.add(entry_name: entry_name, entry_content: UMPTG::XMLUtil.doc_to_xml(xml_doc))
+      epub_modified = true
+    end
+  end
+
+  if epub_modified
+    new_epub_file = File.join(File.dirname(epub_file), File.basename(epub_file, ".*") + "_" + File.basename(__FILE__, ".*") + ".epub")
+    epub.save(epub_file: new_epub_file)
+  end
+end

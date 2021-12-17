@@ -50,7 +50,8 @@ module UMPTG::Review
                 link: false,
                 list: false,
                 resources: true,
-                table: true
+                table: true,
+                accessibility: false
               }
           )
 
