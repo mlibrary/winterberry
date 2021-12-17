@@ -6,7 +6,8 @@ module UMPTG::Review
           list: ListProcessor.new,
           package: PackageProcessor.new,
           resources: ResourceProcessor.new,
-          table: TableProcessor.new
+          table: TableProcessor.new,
+          accessibility: AccessibilityProcessor.new
         }
 
     attr_reader :epub, :epub_modified, :review_logger, :action_map
@@ -44,6 +45,7 @@ module UMPTG::Review
       review_options = args[:review_options]
       normalize = args.key?(:normalize) ? args[:normalize] : false
       normalize_caption_class = args.key?(:normalize_caption_class) ? args[:normalize_caption_class] : false
+      update_css = args.key?(:update_css) ? args[:update_css] : false
 
       @review_logger.info("Normalize EPUB:#{normalize}")
       @review_logger.info("Normalize caption classes:#{normalize_caption_class}")
@@ -80,6 +82,7 @@ module UMPTG::Review
       }
 
       @epub_modified = false
+      css_needs_update = false
       @action_map.each do |entry_name,proc_map|
         @review_logger.info(entry_name)
 
@@ -89,6 +92,9 @@ module UMPTG::Review
           action_list.each do |action|
             if action.status == UMPTG::Review::NormalizeAction.NORMALIZED
               update_entry = true
+              if update_css and action.class.name.end_with?("NormalizeFigureCaptionAction")
+                css_needs_update = true
+              end
             end
             action.messages.each do |msg|
               case msg.level
@@ -112,13 +118,38 @@ module UMPTG::Review
           @epub_modified = true
         end
       end
-=begin
-      if epub_modified
-        epub_normalized_file = File.join(File.dirname(@epub.epub_file), File.basename(@epub.epub_file, ".*") + "_normal.epub")
-        @review_logger.info("Saving normalized EPUB \"#{File.basename(epub_normalized_file)}.")
-        @epub.save(epub_file: epub_normalized_file)
+
+      if css_needs_update
+        css_entry_list = @epub.css
+
+        require 'css_parser'
+
+        centry = nil
+        new_rule = nil
+        parser = CssParser::Parser.new
+        css_entry_list.each do |css_entry|
+          parser.load_string!(css_entry.content)
+          parser.find_rule_sets(['figcaption']).each do |rule|
+            unless rule['font-size'].nil?
+              if rule['font-size'].match?(/[\.]?[0-9]+em/)
+                centry = css_entry
+                new_rule = CssParser::RuleSet.new(rule.selectors.join(","), "")
+                rule.each_declaration do |property,value,is_important|
+                  v = is_important ? "#{value} !important" : value
+                  new_rule.add_declaration!(property, v)
+                end
+                new_rule['font-size'] = new_rule['font-size'].sub(/([\.]?[0-9]+)em([^;]*)/, '\1rem\2')
+                #puts "rule:#{rule.to_s}"
+                #puts "new_rule:#{new_rule.to_s}"
+              end
+            end
+          end
+        end
+        unless new_rule.nil?
+          new_content = centry.content + "\n\n" + new_rule.to_s + "\n"
+          @epub.add(entry_name: centry.name, entry_content: new_content)
+        end
       end
-=end
 
       case
       when issue_cnt[UMPTG::Message.FATAL] > 0
@@ -131,7 +162,7 @@ module UMPTG::Review
         @review_logger.info("Error: 0")
       end
 
-      unless epub_modified or !normalize
+      unless @epub_modified or !normalize
         @review_logger.info("Normalization not necessary.")
       end
     end

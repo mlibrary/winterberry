@@ -15,5 +15,8 @@ module UMPTG::EPUB
       alist = []
       return alist
     end
+
+    def reset()
+    end
   end
 end

@@ -125,6 +125,11 @@ module UMPTG::EPUB
       return item_list(rend.ncx_items, File.dirname(label))
     end
 
+    def css(args = {})
+      label, rend = rendition(args)
+      return item_list(rend.css_items, File.dirname(label))
+    end
+
     def load(args = {})
       @epub_file = args[:epub_file]
       raise "Error: missing file path" if @epub_file.strip.empty?

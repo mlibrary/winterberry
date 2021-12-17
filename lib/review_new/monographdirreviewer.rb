@@ -25,6 +25,7 @@ module UMPTG::Review
     def review(args = {})
       normalize_epub = args.key?(:normalize_epub) ? args[:normalize_epub] : false
       normalize_caption_class = args.key?(:normalize_caption_class) ? args[:normalize_caption_class] : false
+      update_css = args.key?(:update_css) ? args[:update_css] : false
       review_resources = args.key?(:review_resources) ? args[:review_resources] : true
 
       epub_file = @monograph_dir.archived_epub_file
@@ -43,12 +44,14 @@ module UMPTG::Review
       epub_reviewer.review(
             normalize: normalize_epub,
             normalize_caption_class: normalize_caption_class,
+            update_css: update_css,
             review_options: {
                 package: true,
                 link: false,
                 list: false,
                 resources: true,
-                table: true
+                table: true,
+                accessibility: false
               }
           )
 
@@ -83,8 +86,10 @@ module UMPTG::Review
         end
         resources_manifest = UMPTG::Fulcrum::Manifest::Document.new(csv_file: csv_path)
 
-        @review_logger.info("Number of resource references: #{epub_reviewer.resource_path_list.count}")
+        total_references = 0
         epub_reviewer.resource_path_list.each do |entry_name,path_list|
+          @review_logger.info("#{entry_name}: number of resource references: #{path_list.count}")
+          total_references += path_list.count
           path_list.each do |path|
             resource_name = ""
             unless @monograph_dir.manifest.nil?
@@ -95,12 +100,13 @@ module UMPTG::Review
               resource_name = fileset["file_name"]
             end
             if resource_name.strip.empty?
-              @review_logger.warn("#{entry_name}: resource file not found for reference \"#{File.basename(path)}\".")
+              @review_logger.warn("resource file not found for reference \"#{File.basename(path)}\".")
             else
-              @review_logger.info("#{entry_name}: resource file found for reference \"#{File.basename(path)}\".")
+              @review_logger.info("resource file #{resource_name} found for reference \"#{File.basename(path)}\".")
             end
           end
         end
+        @review_logger.info("total number of resource references: #{total_references}")
       end
     end
   end

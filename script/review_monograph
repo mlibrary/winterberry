@@ -25,8 +25,9 @@ options = OpenStruct.new
 options.publisher_dir = File.join(UMPTG::Fulcrum.DEFAULT_DIR, UMPTG::Fulcrum.DEFAULT_PUBLISHER)
 options.normalize = false
 options.normalize_caption_class = false
+options.update_css = false
 option_parser = OptionParser.new do |opts|
-  opts.banner = "Usage: #{File.basename(__FILE__)} [-d <publisher_dir>] [-f production|preview|staging] [-n] [-c] <monograph_id> [<monograph_id>...]"
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-d <publisher_dir>] [-f production|preview|staging] [-n] [-c] [-u] <monograph_id> [<monograph_id>...]"
   opts.on('-c', '--normalize_caption_class', 'Normalize caption class attribute') do |normalize|
     options.normalize_caption_class = true
   end
@@ -38,6 +39,9 @@ option_parser = OptionParser.new do |opts|
   end
   opts.on('-n', '--normalize', 'Normalize EPUB') do |normalize|
     options.normalize = true
+  end
+  opts.on('-u', '--update_css', 'Update CSS') do |update_css|
+    options.update_css = true
   end
   opts.on_tail('-h', '--help', 'Print this help message') do
     script_logger.info(opts)
@@ -77,6 +81,7 @@ monograph_id_list.each do |monograph_id|
   reviewer.review(
               normalize_epub: options.normalize,
               normalize_caption_class: options.normalize_caption_class,
+              update_css: options.update_css,
               review_resources: true
           )
 

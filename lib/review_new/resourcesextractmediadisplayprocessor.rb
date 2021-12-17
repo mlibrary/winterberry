@@ -43,6 +43,7 @@ module UMPTG::Review
           when :element
             if reference_node.name == 'link'
               reference_action_list << RemoveElementAction.new(
+                          name: name,
                           reference_node: reference_node,
                           action_node: reference_node
                         )
@@ -52,23 +53,27 @@ module UMPTG::Review
             node_list = reference_node.xpath("./ancestor::*[local-name()='div' and contains(concat(' ',@class,' '),'default-media-display')][1]")
             if node_list.empty?
               reference_action_list << Action.new(
+                        name: name,
                         reference_node: reference_node,
                         warning_message: "image: #{reference_node['src']} has no default display."
                       )
             else
               action_node = node_list.first
               reference_action_list << RemoveElementMediaAction.new(
+                        name: name,
                         reference_node: reference_node,
                         action_node: action_node
                       )
 
               if action_node.parent.name == "p"
                 reference_action_list << Action.new(
+                          name: name,
                           reference_node: reference_node,
                           warning_message: "image: #{reference_node['src']} container is a p element."
                         )
               else
                 reference_action_list << RenameElementAction.new(
+                          name: name,
                           reference_node: reference_node,
                           action_node: action_node.parent
                         )
@@ -77,11 +82,13 @@ module UMPTG::Review
               node_list = node_list.first.xpath("./following-sibling::*[local-name()='div' and contains(concat(' ',@class,' '),' enhanced-media-display ')][1]")
               if node_list.empty?
                 reference_action_list << Action.new(
+                          name: name,
                           reference_node: reference_node,
                           warning_message: "image: #{reference_node['src']} has no enhanced display."
                         )
               else
                 reference_action_list << RemoveElementAction.new(
+                          name: name,
                           reference_node: reference_node,
                           action_node: node_list.first
                         )
@@ -89,13 +96,10 @@ module UMPTG::Review
             end
           when :marker
             reference_action_list << RemoveMarkerMediaAction.new(
+                      name: name,
                       reference_node: reference_node
                     )
           end
-        end
-
-        reference_action_list.each do |action|
-          action.process()
         end
       end
 

@@ -65,7 +65,11 @@ module UMPTG::EPUB
     end
 
     def ncx_items
-      return manifest.select {|node| node['media-type'].downcase == 'application/x-dtbncx+xml'}
+      return find_media_type('application/x-dtbncx+xml')
+    end
+
+    def css_items
+      return find_media_type('text/css')
     end
 
     private
@@ -77,5 +81,10 @@ module UMPTG::EPUB
       end
       return manifest_items
     end
+
+    def find_media_type(media_type)
+      return manifest.select {|node| node['media-type'].downcase == media_type}
+    end
+
   end
 end

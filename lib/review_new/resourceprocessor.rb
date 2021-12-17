@@ -5,14 +5,64 @@ module UMPTG::Review
 
     RESOURCE_REFERENCE_XPATH = <<-SXPATH
     //*[
-    local-name()='img'
-    or @class='rb'
-    or @class='rbi'
+    local-name()='figure'
+    or (
+    local-name()='p' and (@class='rb' or @class='rbi')
+    ) or (
+    (local-name()='p' or local-name()='div') and translate(@class,'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz')='figurewrap'
+    ) or (
+    local-name()='img' and not(ancestor::*[local-name()='figure' or ((local-name()='p' or local-name()='div') and translate(@class,'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz')='figurewrap')])
+    )
     ]|
     //comment()[
     starts-with(translate(normalize-space(.),'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz'),'insert ')
     ]
     SXPATH
+
+    IMGCONTAINER_XPATH = <<-ICOXPATHN
+    ./ancestor::*[
+    local-name()='p' or local-name()='div'
+    ][1]
+    ICOXPATHN
+
+    @@IMGCAPTION_XPATH = <<-ICXPATH
+    .//*[local-name()='img'
+    or local-name()='figcaption'
+    or (
+    parent::*[local-name()!='figcaption']
+    and (
+    translate(@class,'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz')='figh'
+    or translate(@class,'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz')='figh1'
+    or translate(@class,'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz')='fign'
+    or translate(@class,'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz')='image_caption'
+    or translate(@class,'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz')='figattrib'
+    or translate(@class,'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz')='figatr'
+    or translate(@class,'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz')='figpara'
+    or starts-with(translate(@class,'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz'),'figcap')
+    or starts-with(translate(@class,'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz'),'figcaption')
+    or starts-with(translate(@class,'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz'),'source')
+    )
+    )
+    ]
+    ICXPATH
+
+    IMGPARENT_XPATH = <<-ICPXPATH
+    ./ancestor::*[
+    local-name()='figcaption'
+    or (
+    translate(@class,'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz')='figh'
+    or translate(@class,'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz')='figh1'
+    or translate(@class,'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz')='fign'
+    or translate(@class,'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz')='image_caption'
+    or translate(@class,'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz')='figattrib'
+    or translate(@class,'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz')='figatr'
+    or translate(@class,'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz')='figpara'
+    or starts-with(translate(@class,'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz'),'figcap')
+    or starts-with(translate(@class,'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz'),'figcaption')
+    or starts-with(translate(@class,'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz'),'source')
+    )
+    ]
+    ICPXPATH
 
     attr_reader :resource_path_list
 
@@ -25,6 +75,7 @@ module UMPTG::Review
             )
       super(args)
 
+      reset()
       @resource_path_list = {}
     end
 
@@ -39,187 +90,217 @@ module UMPTG::Review
 
         reference_list = @selector.references(xml_doc)
 
-        figure_list = []
         reference_list.each do |reference_node|
-          figure_container_list = reference_node.xpath(@@FIGUREDIV_XPATH)
-          if figure_container_list.empty?
-            figure_container = nil
-            img_container = nil
-          else
-            figure_container = figure_container_list.first
-            img_container_list = figure_container.xpath(sprintf(@@IMGCONTAINER_XPATH, reference_node.name, reference_node["src"]))
-            img_container = img_container_list.empty? ? reference_node : img_container_list.first
-          end
-
-          img_obj = {
-                reference_node: reference_node,
-                container_node: img_container
-                }
-          if figure_list.empty? or figure_container.nil? or figure_list.last[:container] != figure_container
-            figure_obj = {
-                  container: figure_container_list.empty? ? nil : figure_container,
-                  img_list: [ img_obj ],
-                  container_normalized: false
-                  }
-            figure_list << figure_obj
-          else
-            figure_list.last[:img_list] << img_obj
-          end
-        end
-
-        figure_list.each do |figure_obj|
-          figure_container = figure_obj[:container]
-          container_normalized = figure_obj[:container_normalized]
-
-          figure_obj[:img_list].each do |img_obj|
-            reference_node = img_obj[:reference_node]
-
-            if @selector.reference_type(reference_node) == :marker
-              reference_action_list += marker_reference_actions(
-                        name: name,
-                        reference_node: reference_node,
-                        figure_container: figure_container
-                    )
-              next
-            end
-
+          case reference_node.name
+          when "img"
             resource_path = reference_node["src"]
-
-            @resource_path_list[name] << resource_path
-
-            img_container = img_obj[:container]
-
             reference_action_list << ImageAction.new(
                     name: name,
                     reference_node: reference_node,
                     resource_path: resource_path
                 )
+            @resource_path_list[name] << resource_path
 
-            if figure_container.nil?
-              reference_action_list << Action.new(
-                       name: name,
-                       reference_node: reference_node,
-                       warning_message: "image: \"#{resource_path}\" unable to determine figure container element."
-                   )
-            elsif figure_container.name == "figure"
-              reference_action_list << Action.new(
-                       name: name,
-                       reference_node: reference_node,
-                       info_message: "image: \"#{resource_path}\" has element #{figure_container.name} as figure container."
-                   )
-            else !container_normalized
-              reference_action_list << NormalizeFigureContainerAction.new(
-                       name: name,
-                       reference_node: reference_node,
-                       resource_path: resource_path,
-                       #xpath: xpath_base + "/" + @@DIV_XPATH,
-                       action_node: figure_container,
-                       warning_message: "image: \"#{resource_path}\" figure container element should be normalized."
-                   )
-              figure_obj[:container_normalized] = true
-            end
-          end
-
-          unless figure_container.nil?
-            container_child_list = figure_container.xpath(@@IMGCAPTION_XPATH)
-            if container_child_list.empty?
-              # Probably a figure that contains a marker.
-              # Give warning, but shouldn't be an issue.
-              reference_action_list << Action.new(
-                       name: name,
-                       reference_node: figure_container,
-                       warning_message: "image: has element #{figure_container.name} as figure container and is empty."
-                   )
-            else
-              caption_location = container_child_list.first.name == "img" ? :caption_after : :caption_before
-              sfig_obj = {
-                     img_list:  [],
-                     cap_list: []
-                  }
-              sfig_list = [sfig_obj]
-              state = :img
-              cnode = container_child_list.first.name
-              container_child_list.each do |node|
-                if node.name == "img"
-                  img_container_list = figure_container.xpath(sprintf(@@IMGCONTAINER_XPATH, node.name, node["src"]))
-                  next if img_container_list.empty?
-                  img_container = img_container_list.first
-                else
-                  img_container = nil
-                end
-
-                case state
-                when :img
-                  if node.name == "img"
-                    sfig_obj[:img_list] << img_container
-                  else
-                    unless node.name == "figcaption"
-                      cap_parent_list = node.xpath("./ancestor::*[local-name()='figcaption']")
-                      if cap_parent_list.empty?
-                        sfig_obj[:cap_list] << node
-                        state = :cap
-                      end
-                    end
-                  end
-                when :cap
-                  if node.name == "img"
-                    sfig_obj = {
-                           img_list:  [img_container],
-                           cap_list: []
-                        }
-                    sfig_list << sfig_obj
-                    state = :img
-                  else
-                    unless node.name == "figcaption"
-                      cap_parent_list = node.xpath("./ancestor::*[local-name()='figcaption']")
-                      if cap_parent_list.empty?
-                        sfig_obj[:cap_list] << node
-                      end
-                    end
-                  end
-                end
-              end
-
-              sfig_list2 = sfig_list.select {|sfig_obj| sfig_obj[:cap_list].count > 0 }
-
-              if sfig_list2.count == 1
-                sfig_list2.each do |sfig_obj|
-                  if sfig_obj[:cap_list].count > 0
-                    reference_action_list << NormalizeFigureCaptionAction.new(
-                             name: name,
-                             figure_container: figure_container,
-                             #resource_path: resource_path,
-                             #xpath: xpath_base.strip + "/" + @@FIGUREDIV_XPATH.strip + @@CAPTION_XPATH.strip,
-                             #action_node: node,
-                             cap_list: sfig_obj[:cap_list],
-                             warning_message: "image: figure caption should be normalized."
-                         )
-                  end
-                end
+            reference_action_list << Action.new(
+                     name: name,
+                     reference_node: reference_node,
+                     warning_message: "image: \"#{resource_path}\" unable to determine figure container element."
+                 )
+          else
+            if reference_node.key?("data-fulcrum-embed-filename")
+              # Found an additional resource.
+              resource_path = reference_node["data-fulcrum-embed-filename"].strip
+              if resource_path.empty?
+                # Give warning, but shouldn't be an issue.
+                reference_action_list << Action.new(
+                         name: name,
+                         reference_node: reference_node,
+                         warning_message: "image: has element #{reference_node.name} as figure container and @data-fulcrum-embed-filename is empty."
+                     )
               else
-                sfig_list2.each do |sfig_obj|
-                  reference_action_list << NormalizeFigureNestAction.new(
-                           name: name,
-                           #reference_node: reference_node,
-                           #resource_path: resource_path,
-                           figure_container: figure_container,
-                           caption_location: caption_location,
-                           sfig_obj: sfig_obj,
-                           warning_message: "image: figure container element should be normalized via nesting."
-                       )
-                end
+                @resource_path_list[name] << resource_path
+                reference_action_list << Action.new(
+                         name: name,
+                         reference_node: reference_node,
+                         info_message: "image: \"#{resource_path}\" has element #{reference_node.name} as figure container and @data-fulcrum-embed-filename is set."
+                     )
               end
-
-              sfig_list2.each do |sfig_obj|
-                sfig_obj[:img_list].each do |node|
-                  next if node.name == "div"
-                  reference_action_list << NormalizeImageContainerAction.new(
+            else
+              # Traverse figure|div|p children looking for image(s) or caption(s).
+              # NOTE: assumes caption(s) follow image(s).
+              figure_obj_list = []
+              if @selector.reference_type(reference_node) == :marker
+                reference_action_list += marker_reference_actions(
+                          name: name,
+                          reference_node: reference_node,
+                          figure_container: reference_node
+                      )
+              else
+                container_child_list = reference_node.xpath(@@IMGCAPTION_XPATH)
+                if container_child_list.empty?
+                  # Give warning, but shouldn't be an issue.
+                  reference_action_list << Action.new(
                            name: name,
-                           reference_node: node,
-                           #xpath: xpath_base + "/" + @@DIV_XPATH,
-                           action_node: node,
-                           warning_message: "image: container element should be normalized."
-                        )
+                           reference_node: reference_node,
+                           warning_message: "image: has element #{reference_node.name} as figure container and is empty."
+                       )
+                else
+                  figure_obj = Figure.new(container_node: reference_node)
+                  figure_obj_list << figure_obj
+
+                  caption_found = false
+                  container_child_list.each do |child|
+                    case child.name
+                    when "img"
+                      within_caption = !child.xpath(IMGPARENT_XPATH).empty?
+
+                      if caption_found and !within_caption
+                        figure_obj = Figure.new(container_node: reference_node)
+                        caption_found = false
+                        figure_obj_list << figure_obj
+                      end
+                      img_container_list = child.xpath(IMGCONTAINER_XPATH)
+                      if img_container_list.empty?
+                        figure_obj.img_list << Image.new(
+                                    container_node: child,
+                                    img_node: child,
+                                    within_caption: within_caption
+                                  )
+                      else
+                        img_container_list.each do |img_container|
+                          figure_obj.img_list << Image.new(
+                                      container_node: img_container,
+                                      img_node: child,
+                                      within_caption: within_caption
+                                    )
+                        end
+                      end
+                    else
+                      figure_obj.caption_list << child
+                      caption_found = true
+                    end
+                  end
+
+                  figure_obj_list.each do |figure_obj|
+                    figure_container = figure_obj.container_node
+                    container_normalized = figure_container.name == "figure"
+                    figure_obj.img_list.each do |img_obj|
+                      reference_node = img_obj.img_node
+
+                      resource_path = reference_node["src"]
+
+                      @resource_path_list[name] << resource_path
+
+                      img_container = img_obj.container_node
+
+                      reference_action_list << ImageAction.new(
+                              name: name,
+                              reference_node: reference_node,
+                              resource_path: resource_path
+                          )
+
+                      if img_obj.within_caption
+                        reference_action_list << Action.new(
+                                 name: name,
+                                 reference_node: reference_node,
+                                 warning_message: "image: #{resource_path} is found within a figure caption."
+                             )
+                        next
+                      end
+
+                      if container_normalized
+                        reference_action_list << Action.new(
+                                 name: name,
+                                 reference_node: reference_node,
+                                 info_message: "image: \"#{resource_path}\" has element #{figure_container.name} as figure container."
+                             )
+                      else
+                        reference_action_list << NormalizeFigureContainerAction.new(
+                                 name: name,
+                                 reference_node: reference_node,
+                                 resource_path: resource_path,
+                                 #xpath: xpath_base + "/" + @@DIV_XPATH,
+                                 action_node: figure_container,
+                                 warning_message: "image: \"#{resource_path}\" figure container element should be normalized."
+                             )
+                        container_normalized = true
+                      end
+                    end
+
+                    if figure_obj_list.count == 1 and figure_obj.caption_list.count > 0
+                      caption_list = figure_obj.caption_list
+
+                      case
+                      when figure_obj.img_list.count > 0
+                        resource_path = figure_obj.img_list.first.img_node["src"]
+                      when figure_obj.container_node.key?("data-fulcrum-embed-filename")
+                        resource_path = figure_obj.container_node["data-fulcrum-embed-filename"]
+                      else
+                        resource_path = "(unknown)"
+                      end
+
+                      if caption_list.count == 1 and caption_list.first.name == "figcaption"
+                        reference_action_list << Action.new(
+                                 name: name,
+                                 reference_node: caption_list.first,
+                                 info_message: "image: #{figure_obj.img_list.count} \"#{resource_path}\" has element #{caption_list.first.name} as figure caption container."
+                             )
+                      else
+                        reference_action_list << NormalizeFigureCaptionAction.new(
+                                 name: name,
+                                 figure_container: figure_obj.container_node,
+                                 #resource_path: resource_path,
+                                 #xpath: xpath_base.strip + "/" + @@FIGUREDIV_XPATH.strip + @@CAPTION_XPATH.strip,
+                                 #action_node: node,
+                                 cap_list: figure_obj.caption_list,
+                                 warning_message: "image: figure caption should be normalized."
+                             )
+                        figure_obj.caption_list.each do |caption_node|
+                          if caption_node.key?("style")
+                            # Report @style on caption blocks.
+                            reference_action_list << NormalizeFigureCaptionStyleAction.new(
+                                     name: name,
+                                     reference_node: caption_node,
+                                     resource_path: resource_path,
+                                     warning_message: "image: \"#{resource_path}\" has caption element #{caption_node.name} with @style=\"#{caption_node['style']}\"."
+                                 )
+                          end
+                        end
+                      end
+                    end
+                  end
+
+                  figure_obj_list.each do |figure_obj|
+                    figure_obj.img_list.each do |img_obj|
+                      img_container = img_obj.container_node
+
+                      unless img_obj.within_caption or img_container.name == "div"
+                        reference_node = img_obj.img_node
+                        resource_path = reference_node["src"]
+                        reference_action_list << NormalizeImageContainerAction.new(
+                                 name: name,
+                                 reference_node: img_container,
+                                 #xpath: xpath_base + "/" + @@DIV_XPATH,
+                                 action_node: img_container,
+                                 warning_message: "image: container element should be normalized."
+                              )
+                      end
+                    end
+                  end
+
+                  if figure_obj_list.count > 1
+                    figure_obj_list.each do |figure_obj|
+                      reference_action_list << NormalizeFigureNestAction.new(
+                               name: name,
+                               #reference_node: reference_node,
+                               #resource_path: resource_path,
+                               figure_container: figure_obj.container_node,
+                               caption_location: :caption_after,
+                               figure_obj: figure_obj,
+                               warning_message: "image: figure container element should be normalized via nesting."
+                           )
+                    end
+                  end
                 end
               end
             end
@@ -232,201 +313,12 @@ module UMPTG::Review
       return reference_action_list
     end
 
-=begin
-  Current code starts here
-=end
-
-    def new_action(args = {})
-      case @selector.reference_type(args[:reference_node])
-      when :element
-        list = image_reference_actions(args)
-      when :marker
-        list = marker_reference_actions(args)
-      else
-        list = super(args)
-      end
-      return list
+    def reset()
+      super()
+      @resource_path_list = {}
     end
 
     private
-
-    @@FIGURE_XPATH = <<-FXPATH
-    ./ancestor::*[
-    local-name()='figure'
-    ][1]
-    FXPATH
-
-    @@DIV_XPATH = <<-DXPATH
-    ./ancestor::*[
-    ((local-name()='p' or local-name()='div') and translate(@class,'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz')='figurewrap')
-    ][1]
-    DXPATH
-
-    @@FIGUREDIV_XPATH = <<-FDXPATH
-    ./ancestor::*[
-    local-name()='figure'
-    or ((local-name()='p' or local-name()='div') and translate(@class,'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz')='figurewrap')
-    ][1]
-    FDXPATH
-
-    @@IMGCAPTION_XPATH = <<-ICXPATH
-    .//*[
-    local-name()='img'
-    or local-name()='figcaption'
-    or translate(@class,'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz')='figh'
-    or translate(@class,'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz')='fign'
-    or translate(@class,'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz')='image_caption'
-    or translate(@class,'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz')='figattrib'
-    or translate(@class,'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz')='figatr'
-    or translate(@class,'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz')='figpara'
-    or starts-with(translate(@class,'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz'),'figcap')
-    or starts-with(translate(@class,'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz'),'figcaption')
-    ]
-    ICXPATH
-
-    @@IMGCONTAINER_XPATH = <<-ICOXPATH
-    ./descendant::*[
-    .//*[
-    local-name()='%s' and @src='%s'
-    ]//ancestor::*[
-    local-name()='p' or local-name()='div'
-    ]
-    ]
-    ICOXPATH
-
-    @@CAPBASE_XPATH = <<-CBXPATH
-    local-name()='figcaption'
-    or translate(@class,'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz')='figh'
-    or translate(@class,'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz')='image_caption'
-    or starts-with(translate(@class,'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz'),'figcap')
-    CBXPATH
-    @@CAPAFTER_XPATH = @@IMGCONTAINER_XPATH + "/following-sibling::*[" + @@CAPBASE_XPATH + "][1]"
-    @@CAPBEFORE_XPATH = @@IMGCONTAINER_XPATH + "/preceding-sibling::*[" + @@CAPBASE_XPATH + "][1]"
-
-    @@CAPTION_XPATH = <<-CXPATH
-    .//*[
-    local-name()='figcaption'
-    or translate(@class,'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz')='figh'
-    or translate(@class,'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz')='image_caption'
-    or starts-with(translate(@class,'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz'),'figcap')
-    ]
-    CXPATH
-
-    @@IMG_XPATH = <<-IXPATH
-    .//*[
-    local-name()='img'
-    ]
-    IXPATH
-
-
-    def image_reference_actions(args = {})
-      name = args[:name]
-      reference_node = args[:reference_node]
-
-      resource_path = reference_node.key?('src') ? reference_node['src'] : ""
-
-      action_list = [
-            ImageAction.new(
-                 name: name,
-                 reference_node: reference_node,
-                 resource_path: resource_path
-             )
-           ]
-
-      unless resource_path.strip.empty?
-        @resource_path_list[name] << resource_path
-
-        xpath_base = "//*[local-name()='img' and @src='#{resource_path}']"
-        ResourceProcessor.add_filename_spaces_msg(action_list.last, resource_path)
-
-        # Normalize figure container, if possible.
-        container_list = reference_node.xpath(@@FIGUREDIV_XPATH)
-        if container_list.empty?
-          action_list << Action.new(
-                   name: name,
-                   reference_node: reference_node,
-                   warning_message: "image: \"#{resource_path}\" unable to determine container element."
-               )
-        else
-          container_node = container_list.first
-
-          if container_node.name == "figure"
-            action_list << Action.new(
-                     name: name,
-                     reference_node: reference_node,
-                     info_message: "image: \"#{resource_path}\" has #{container_node.name} as container element."
-                 )
-          elsif !@processed_container.key?(container_node)
-            action_list << NormalizeFigureAction.new(
-                     name: name,
-                     reference_node: reference_node,
-                     resource_path: resource_path,
-                     xpath: xpath_base + "/" + @@DIV_XPATH,
-                     action_node: container_node
-                 )
-            @processed_container[container_node] = true
-          end
-
-          img_container_list = container_node.xpath(sprintf(@@IMGCONTAINER_XPATH, reference_node.name, resource_path))
-          action_list.last.add_info_msg("img_container_list:#{img_container_list.count}")
-          img_container_list.each do |node|
-            #if node.name == "div"
-            if true or node.name == "div"
-              action_list << Action.new(
-                       name: name,
-                       reference_node: reference_node,
-                       warning_message: "image: \"#{resource_path}\" has #{node.name} as container element for image element."
-                   )
-            else
-              action_list << NormalizeImageContainerAction.new(
-                       name: name,
-                       reference_node: reference_node,
-                       resource_path: resource_path,
-                       xpath: xpath_base + "/" + @@DIV_XPATH,
-                       action_node: node
-                   )
-            end
-          end
-
-          container_child_list = container_node.xpath(@@IMGCAPTION_XPATH)
-          if container_child_list.first.name == "img"
-            caption_location = :caption_after
-            caption_list = container_node.xpath(sprintf(@@CAPAFTER_XPATH, reference_node.name, resource_path))
-          else
-            caption_location = :caption_before
-            caption_list = container_node.xpath(sprintf(@@CAPBEFORE_XPATH, reference_node.name, resource_path))
-          end
-
-          if caption_list.empty?
-            # No caption found.
-            action_list << Action.new(
-                     name: name,
-                     reference_node: reference_node,
-                     warning_message: "image: \"#{resource_path}\" unable to determine caption element."
-                 )
-          else
-            caption_node = caption_list.first
-            if caption_node.name == "figcaption"
-              action_list << Action.new(
-                       name: name,
-                       reference_node: reference_node,
-                       info_message: "image: \"#{resource_path}\" has #{caption_node.name} as caption element. Recommended element is figcaption."
-                   )
-            else
-              action_list << NormalizeFigureCaptionAction.new(
-                       name: name,
-                       reference_node: reference_node,
-                       resource_path: resource_path,
-                       xpath: xpath_base.strip + "/" + @@FIGUREDIV_XPATH.strip + @@CAPTION_XPATH.strip,
-                       action_node: caption_node
-                   )
-            end
-          end
-        end
-      end
-
-      return action_list
-    end
 
     def marker_reference_actions(args = {})
       name = args[:name]
