@@ -167,11 +167,15 @@ monograph_id_list.each do |monograph_id|
     pub_date = Date.strptime(pub_date_str, '%Y')
   end
 
+  open_access = ""
+=begin
+  # This is not for OA, but for Free to Read.
   unless monograph_row['open_access?'].nil? or monograph_row['open_access?'].downcase == 'no'
     open_access = "open_access"
   else
     open_access = ""
   end
+=end
 
   minfo = {
        monograph_dir: monograph_dir,
