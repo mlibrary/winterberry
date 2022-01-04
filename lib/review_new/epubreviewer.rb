@@ -139,14 +139,13 @@ module UMPTG::Review
                   new_rule.add_declaration!(property, v)
                 end
                 new_rule['font-size'] = new_rule['font-size'].sub(/([\.]?[0-9]+)em([^;]*)/, '\1rem\2')
-                #puts "rule:#{rule.to_s}"
-                #puts "new_rule:#{new_rule.to_s}"
               end
             end
           end
         end
         unless new_rule.nil?
           new_content = centry.content + "\n\n" + new_rule.to_s + "\n"
+          @review_logger.info("Updating CSS entry #{centry.name}")
           @epub.add(entry_name: centry.name, entry_content: new_content)
         end
       end
