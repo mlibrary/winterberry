@@ -86,7 +86,7 @@ module UMPTG::EPUB
 
     def version(args = {})
       label, rend = rendition(args)
-      rend.version(args[:version])
+      rend.version(args[:version]) if args.key?(:version)
       return rend.version
     end
 

@@ -4,24 +4,31 @@ module UMPTG::EPUB
   require 'tempfile'
 
   class Migrator
+    attr_reader :migrate_logger
+
     def self.migrate(args = {})
       case
       when args.key?(:epub)
         epub = args[:epub]
+        @migrate_logger = args[:migrate_logger]
       when args.key?(:epub_file)
         epub_file = args[:epub_file]
         epub = Archive.new(epub_file: epub_file)
+
+        @migrate_logger = UMPTG::Logger.create(
+                    logger_file: File.join(File.dirname(epub_file), File.basename(epub_file, ".*") + "_migrate.log")
+                 )
       else
         raise "Error: :epub or :epub_file not specified."
       end
 
-      replace_set = {}
-      add_set = []
+      raise "Error: logger not specified" if @migrate_logger.nil?
+
       epub.renditions.each do |rendition|
         raise "Error rendition has no name" if rendition.name.nil? or rendition.name.strip.empty?
         rend_name = File.basename(rendition.name)
 
-        puts "Processing file #{rendition.name}"
+        @migrate_logger.info("Processing file #{rendition.name} version #{epub.version} ==> 3.x")
 
         epub.version(rendition: rendition, version: "3.0")
 
@@ -37,11 +44,11 @@ module UMPTG::EPUB
         epub.add(entry_name: rendition.name, entry_content: File.read(destpath))
 
         nav_items = epub.navigation(rendition: rendition)
-        puts "nav_items: #{nav_items.count}"
+        @migrate_logger.info("nav_items: #{nav_items.count}")
         if nav_items.empty?
           ncx_item_list = epub.ncx(rendition: rendition)
           if ncx_item_list.empty?
-            puts "Warning: no NCX item found."
+            @migrate_logger.warn("Warning: no NCX item found.")
           else
             ncx_entry = ncx_item_list.first
             ncx_href = ncx_entry.name
@@ -74,12 +81,10 @@ module UMPTG::EPUB
         spine_items = epub.spine(rendition: rendition)
         spine_items.each do |spine_item|
 
-          puts "Processing file #{spine_item.name}"
-          STDOUT.flush
+          @migrate_logger.info("Processing file #{spine_item.name}")
 
           # Create the XML tree.
           srcfile = Tempfile.new(File.basename(spine_item.name))
-          #puts srcfile.path
           srcfile.write(spine_item.get_input_stream.read)
           srcfile.close
           destpath = File.join(File.dirname(srcfile.path), File.basename(spine_item.name))
@@ -101,7 +106,7 @@ module UMPTG::EPUB
       end
 
       epub.save(epub_file: output_epub_file)
-      puts "Wrote #{output_epub_file}"
+      @migrate_logger.info("Saved #{output_epub_file}")
     end
   end
 end

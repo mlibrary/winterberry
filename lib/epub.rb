@@ -1,4 +1,5 @@
 module UMPTG
+  require_relative 'logger'
   require_relative 'xmlutil'
   require_relative 'xslt'
   require_relative 'object'
