@@ -332,17 +332,17 @@
 
     <xs:element name="animated_gif" type="type_fileset_resource"/>
     <xs:element name="audio" type="type_fileset_resource"/>
-    <xs:element name="chart" type="type_fileset_resource"/>
-    <xs:element name="code" type="type_fileset_resource"/>
-    <xs:element name="dataset" type="type_fileset_resource"/>
+    <xs:element name="chart" type="type_fileset_resource_allow_download_yes"/>
+    <xs:element name="code" type="type_fileset_resource_allow_download_yes"/>
+    <xs:element name="dataset" type="type_fileset_resource_allow_download_yes"/>
     <xs:element name="external_resource" type="type_fileset_external_resource"/>
     <xs:element name="image" type="type_fileset_resource"/>
     <xs:element name="interactive_map" type="type_fileset_resource"/>
     <xs:element name="map" type="type_fileset_resource"/>
     <xs:element name="model3d" type="type_fileset_resource"/>
     <xs:element name="musical_example" type="type_fileset_resource"/>
-    <xs:element name="table" type="type_fileset_resource"/>
-    <xs:element name="text" type="type_fileset_resource"/>
+    <xs:element name="table" type="type_fileset_resource_allow_download_yes"/>
+    <xs:element name="text" type="type_fileset_resource_allow_download_yes"/>
     <xs:element name="video" type="type_fileset_resource"/>
 
     <xs:complexType name="type_monographs">
@@ -384,6 +384,52 @@
                     <xs:element ref="copyright_holder"/>
                     <xs:element ref="allow_hi_res"/>
                     <xs:element ref="allow_download"/>
+                    <xs:element ref="alt_text" minOccurs="0"/>
+                    <xs:element ref="caption" minOccurs="0"/>
+                    <xs:element ref="url" minOccurs="0"/>
+                    <xs:element ref="holding_contact" minOccurs="0"/>
+                    <xs:element ref="license" minOccurs="0"/>
+                    <xs:element ref="identifier_list" minOccurs="0"/>
+                    <xs:element ref="creator_list" minOccurs="0"/>
+                    <xs:element ref="contributor_list" minOccurs="0"/>
+                    <xs:element ref="description" minOccurs="0"/>
+                    <xs:element ref="doi" minOccurs="0"/>
+                    <!--
+                    <xs:element ref="noid" minOccurs="0"/>
+                    -->
+                    <xs:element ref="hdl" minOccurs="0"/>
+                    <xs:element ref="external_resource_url" minOccurs="0"/>
+                    <xs:element ref="rights_granted" minOccurs="0"/>
+                    <xs:element ref="permissions_expiration_date" minOccurs="0"/>
+                    <xs:element ref="allow_display_after_expiration" minOccurs="0"/>
+                    <xs:element ref="allow_download_after_expiration" minOccurs="0"/>
+                    <xs:element ref="credit_line" minOccurs="0"/>
+                    <xs:element ref="exclusive_to_platform" minOccurs="0"/>
+                    <xs:element ref="content_type_list" minOccurs="0"/>
+                    <xs:element ref="sort_date" minOccurs="0"/>
+                    <xs:element ref="display_date_list" minOccurs="0"/>
+                    <xs:element ref="keywords_list" minOccurs="0"/>
+                    <xs:element ref="section_title_list" minOccurs="0"/>
+                    <xs:element ref="language_list" minOccurs="0"/>
+                    <xs:element ref="transcript" minOccurs="0"/>
+                    <xs:element ref="translation" minOccurs="0"/>
+                    <xs:element ref="redirect_to" minOccurs="0"/>
+                </xs:all>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="type_fileset_resource_allow_download_yes">
+        <xs:complexContent>
+            <xs:extension base="type_fileset_base">
+                <xs:all>
+                    <!--
+                    <xs:element ref="label"/>
+                    -->
+                    <xs:element ref="title"/>
+                    <xs:element ref="copyright_status"/>
+                    <xs:element ref="copyright_holder"/>
+                    <xs:element ref="allow_hi_res"/>
+                    <xs:element name="allow_download" type="type_allow_download_yes"/>
                     <xs:element ref="alt_text" minOccurs="0"/>
                     <xs:element ref="caption" minOccurs="0"/>
                     <xs:element ref="url" minOccurs="0"/>
@@ -512,6 +558,15 @@
             <xs:element ref="yes"/>
             <xs:element ref="no"/>
             <xs:element ref="not_hosted_on_the_platform"/>
+        </xs:choice>
+        <xs:attribute name="enumeration" type="xs:boolean" fixed="true"/>
+        <xs:attribute name="object" type="xs:string" fixed="file_set"/>
+        <xs:attribute name="field_name" type="xs:string" fixed="Allow Download?"/>
+        <xs:attribute name="multivalued" type="xs:string" fixed="no"/>
+    </xs:complexType>
+    <xs:complexType name="type_allow_download_yes">
+        <xs:choice>
+            <xs:element ref="yes"/>
         </xs:choice>
         <xs:attribute name="enumeration" type="xs:boolean" fixed="true"/>
         <xs:attribute name="object" type="xs:string" fixed="file_set"/>
