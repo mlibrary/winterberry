@@ -87,6 +87,8 @@ module UMPTG::Fulcrum::Manifest::Validation
           case
           when metadata_name == 'url'
             field_value = field_value.match('^[^\(]+\(\"([^\"]+)\".*') {|m| m[1] }
+          when metadata_name == 'doi'
+            field_value = field_value.delete_prefix("https://doi.org/")
           when multivalued == :yes_split, multivalued == :yes_multiline
             field_value.strip!
             #separator = multivalued == :yes_split ? ";" : "\n"

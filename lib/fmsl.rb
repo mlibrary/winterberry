@@ -82,6 +82,7 @@ module UMPTG
             else
               puts "Skipping #{row['File Name']}, Fulcrum != 'yes'"
             end
+            next
           end
 
           fulcrum_row = {}
