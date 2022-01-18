@@ -1,6 +1,6 @@
 module UMPTG::Review
 
-  class RemoveAttributeAction < Action
+  class RemoveAttributeAction < NormalizeAction
     def process(args = {})
       super(args)
 
@@ -10,7 +10,7 @@ module UMPTG::Review
       if reference_node.key?(attribute_name)
         reference_node.remove_attribute(attribute_name)
         add_info_msg("#{reference_node.name}: remove attribute #{attribute_name}.")
-        @status = Action.COMPLETED
+        @status = NormalizeAction.NORMALIZED
       else
         add_info_msg("#{reference_node.name}: attribute #{attribute_name} not found.")
         @status = Action.FAILED

@@ -89,7 +89,7 @@ epub_file_list.each do |epub_file|
   epub_reviewer.review(
         review_options: options.reviews,
         normalize: options.normalize[:resources],
-        normalize_caption_class: normalize_caption_class,
+        normalize_caption_class: options.normalize_caption_class,
       )
   action_map = epub_reviewer.action_map
 

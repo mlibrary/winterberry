@@ -16,6 +16,11 @@ module UMPTG
       @status = Action.PENDING
       @messages = []
       @message = ""
+
+      add_info_msg(@properties[:info_message]) if @properties.key?(:info_message)
+      add_warning_msg(@properties[:warning_message]) if @properties.key?(:warning_message)
+      add_error_msg(@properties[:error_message]) if @properties.key?(:error_message)
+      add_fatal_msg(@properties[:fatal_message]) if @properties.key?(:fatal_message)
     end
 
     def process(args = {})

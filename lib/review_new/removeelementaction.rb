@@ -1,6 +1,6 @@
 module UMPTG::Review
 
-  class RemoveElementAction < Action
+  class RemoveElementAction < NormalizeAction
     def process(args = {})
       super(args)
 
@@ -11,7 +11,7 @@ module UMPTG::Review
       action_node.remove()
       add_info_msg("removed element #{action_node_name}")
 
-      @status = Action.COMPLETED
+      @status = NormalizeAction.NORMALIZED
     end
   end
 end

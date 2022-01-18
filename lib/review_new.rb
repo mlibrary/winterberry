@@ -21,6 +21,7 @@ module UMPTG
   require_relative File.join('review_new', 'renameelementaction')
   require_relative File.join('review_new', 'removeelementmediaaction')
   require_relative File.join('review_new', 'removemarkermediaaction')
+  require_relative File.join('review_new', 'stripattributevalueaction')
   require_relative File.join('review_new', 'elementselector')
   require_relative File.join('review_new', 'entryprocessor')
   require_relative File.join('review_new', 'elemententryprocessor')

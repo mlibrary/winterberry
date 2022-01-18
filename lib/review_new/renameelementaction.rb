@@ -1,6 +1,6 @@
 module UMPTG::Review
 
-  class RenameElementAction < Action
+  class RenameElementAction < NormalizeAction
     def process(args = {})
       super(args)
 
@@ -11,7 +11,7 @@ module UMPTG::Review
       action_node.name = "p"
       add_info_msg("rename element #{action_node_name} to #{action_node.name}")
 
-      @status = Action.COMPLETED
+      @status = NormalizeAction.NORMALIZED
     end
   end
 end

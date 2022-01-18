@@ -1,6 +1,6 @@
 module UMPTG::Review
 
-  class RemoveElementMediaAction < Action
+  class RemoveElementMediaAction < NormalizeAction
     def process(args = {})
       super(args)
 
@@ -11,7 +11,7 @@ module UMPTG::Review
       action_node.replace(action_node.children)
       add_info_msg("removed #{action_node_str}")
 
-      @status = Action.COMPLETED
+      @status = NormalizeAction.NORMALIZED
     end
   end
 end
