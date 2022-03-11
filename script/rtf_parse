@@ -49,4 +49,5 @@ rtf_file_list.each do |rtf_file|
           rtf_listener: rtf_listener
         )
   File.write(html_file, html_markup)
+  rtf_listener.reset
 end

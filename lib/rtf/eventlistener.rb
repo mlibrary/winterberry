@@ -4,7 +4,7 @@ module UMPTG::RTF
     attr_reader :output
 
     def initialize
-      @output = ""
+      reset()
     end
 
     def start_document(args = {})
@@ -42,6 +42,10 @@ module UMPTG::RTF
 
     def append_text(txt)
       @output += txt
+    end
+
+    def reset
+      @output = ""
     end
   end
 end
