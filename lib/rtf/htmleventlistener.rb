@@ -19,7 +19,7 @@ module UMPTG::RTF
 
       append_markup("<?xml version=\"1.0\" encoding=\"UTF-8\"?>")
       append_markup("<html xmlns=\"http://www.w3.org/1999/xhtml\">")
-      append_markup("<head></head>")
+      append_markup("<head><title>title</title></head>")
       append_markup("<body>")
     end
 
@@ -47,12 +47,13 @@ module UMPTG::RTF
       # so rely on the names.
       style_name = rtf_document.style_table[style]
       raise "Error: unknown style #{style}" if style_name.nil?
+      ssname = style_name.gsub(/[ ]+/, '_')
       #puts "#{style}:|#{style_name}|"
 
       # If a new division, then open a new section.
       if parser_context[:division]
         event_context[:stack].push("section")
-        append_markup("<section class=\"#{style_name}\">")
+        append_markup("<section class=\"#{ssname}\">")
         return
       end
 
@@ -74,7 +75,7 @@ module UMPTG::RTF
       # Push this element on the stack and add its
       # markup to the output string.
       event_context[:stack].push(elem_name)
-      append_markup("<#{elem_name} class=\"#{style_name}\">")
+      append_markup("<#{elem_name} class=\"#{ssname}\">")
     end
 
     # Close a block.
@@ -139,20 +140,21 @@ module UMPTG::RTF
 
       # Determine whether to wrap any inline style markup.
       inline_cnt = 0
+      ssname = style_name.gsub(/[ ]+/, '_')
       case style_name
       when "Paragraph Number"
         @para_number += 1
         elem_name = "span"
-        append_inline_markup(event_context, elem_name, "<#{elem_name} id=\"para#{@para_number}\" style=\"#{style_name}\">")
+        append_inline_markup(event_context, elem_name, "<#{elem_name} id=\"para#{@para_number}\" class=\"#{ssname}\">")
         inline_cnt += 1
       when "Frequently Used Term + Term w/ Definition"
         elem_name = "span"
-        append_inline_markup(event_context, elem_name, "<#{elem_name} style=\"#{style_name}\">")
+        append_inline_markup(event_context, elem_name, "<#{elem_name} class=\"Frequently_Used_Term_Definition\">")
         inline_cnt += 1
         superscript = "after"
       when "Historical Character"
         elem_name = "a"
-        append_inline_markup(event_context, elem_name, "<#{elem_name} style=\"#{style_name}\">")
+        append_inline_markup(event_context, elem_name, "<#{elem_name} class=\"#{ssname}\">")
         inline_cnt += 1
       when "endnote reference"
         #superscript = "after"

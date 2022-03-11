@@ -1,6 +1,14 @@
 #!/usr/bin/env ruby
 # encoding: utf-8
 
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, 'lib', 'logger')
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
 require 'optparse'
 require 'ostruct'
 
@@ -9,21 +17,17 @@ options = OpenStruct.new
 option_parser = OptionParser.new do |opts|
   opts.banner = "Usage: #{File.basename(__FILE__)}  <rtf_file> [<rtf_file>..]"
   opts.on_tail('-h', '--help', 'Print this help message') do
-    puts opts
+    script_logger.info(opts)
     exit 0
   end
 end
 option_parser.parse!(ARGV)
 if ARGV.count < 1
-  puts option_parser.help
+  script_logger.error(option_parser.help)
   return
 end
 
 rtf_file_list = ARGV
-
-# Determine the root directory of the code base.
-script_dir = File.expand_path(File.dirname(__FILE__))
-root_dir = File.dirname(script_dir)
 
 require_relative File.join(root_dir, 'lib', 'rtf')
 
@@ -31,17 +35,18 @@ rtf_listener = UMPTG::RTF::HTMLEventListener.new
 
 rtf_file_list.each do |rtf_file|
   rtf_file = File.expand_path(rtf_file)
-  if !File.exists?(rtf_file)
-    puts "Error: RTF file \"#{File.basename(rtf_file)}\" does not exist."
+  script_logger.info(rtf_file)
+  unless File.exists?(rtf_file)
+    script_logger.error("Error: RTF file \"#{File.basename(rtf_file)}\" does not exist.")
     next
   end
 
-  html_file = File.join(File.dirname(rtf_file), File.basename(rtf_file, ".*") + ".html")
-  puts "#{File.basename(rtf_file)} ==> #{File.basename(html_file)}"
+  html_file = File.join(File.dirname(rtf_file), File.basename(rtf_file, ".*") + ".xhtml")
+  script_logger.info("#{File.basename(rtf_file)} ==> #{File.basename(html_file)}")
 
   html_markup = UMPTG::RTF::Processor.process(
-          :rtf_content => File.open(rtf_file).read,
-          :rtf_listener => rtf_listener
+          rtf_content: File.open(rtf_file).read,
+          rtf_listener: rtf_listener
         )
   File.write(html_file, html_markup)
 end

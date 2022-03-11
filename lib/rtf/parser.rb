@@ -12,8 +12,8 @@ module UMPTG::RTF
       super(unknown_control_warning_enabled: false)
 
       @parser_context = {
-                :paragraph_style => 0,
-                :character_style => -1,
+                paragraph_style: 0,
+                character_style: -1,
                 #:outlinelevel => 0,
                 #:listlevel => 0,
                 #:listtext => false,
@@ -106,10 +106,12 @@ module UMPTG::RTF
           break if group == 0
           current_pos += 1
         when ';' then
-          puts "Style #{style_type} #{style_id} #{style_name.join}" if @@DEBUG_OUTPUT or true
+          #ssname = style_name.join.gsub(/[ ]+/, '_')
+          ssname = style_name.join
+          puts "Style #{style_type} #{style_id} #{ssname}" if @@DEBUG_OUTPUT or true
           @doc.add_style(
                     :style_id => style_id,
-                    :style_name => style_name.join
+                    :style_name => ssname
                   )
           style_name = []
           style_type = ""
@@ -176,8 +178,9 @@ module UMPTG::RTF
     #
     # @api private
     def parse_control(src, current_pos = 0)
-      if src[current_pos] == "~"
-        ctrl = "~".to_sym
+      ch = src[current_pos]
+      if ch == "~" or ch == "-"
+        ctrl = ch.to_sym
         val = nil
         return [ctrl, val, current_pos]
       end

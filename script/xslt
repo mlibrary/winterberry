@@ -39,7 +39,7 @@ xml_file_list.each do |xml_file|
       next
   end
 
-  output_file = File.join(File.dirname(xml_file), File.basename(xml_file, ".*") + ".csv")
+  output_file = File.join(File.dirname(xml_file), File.basename(xml_file, ".*") + "_transformed.xml")
 
   output_uri = URI(output_file)
   UMPTG::XSLT.transform(

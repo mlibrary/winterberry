@@ -1,0 +1,231 @@
+function process_od(od, sect_od) {}
+function get_paranum(od) {}
+function insert_block(od, doc = current_doc()) {}
+
+function fix_img(doc = current_doc())
+{
+  local O[], x, i
+  x = "//*[local-name()='p' and @class='Normal' and contains(string(),'Insert ')]"
+  xpath_nodeset(O, x, doc)
+  for (i in O) {
+    local o = O[i]
+    local content = oid_content(o, 0x80)
+    eval "content:$content" output=>*
+    if (match(content, "^\[[ ]*Insert[ ]+([^ ]+)[^\]]*\]")) {
+      local fname = basename(match_result(1), ".*")
+      #eval "fname=$fname" output=>*
+      local F[]
+      glob(absolute_file_name("../images/$fname*"), F)
+      if (count(F) > 0) {
+        local fpath = basename(F[1])
+        eval "fpath:$fpath" output=>*
+        goto_oid(o, -1)
+        forward_char(1, doc)
+        insert("<figure><img src=\"../images/$fpath\" alt=\"$fname\"/></figure>", doc)
+        oid_delete(o)
+      }
+    }
+  }
+}
+
+function merge2(edoc, fdoc, doc=current_doc())
+{
+  local O[], o, x, i
+  x = "//*[local-name()='body']"
+  xpath_nodeset(O, x, edoc)
+  if (count(O) == 0) {
+    eval "Error: unable to find English body."
+    return 0
+  }
+  local ebody_od = O[1]
+
+  xpath_nodeset(O, x, fdoc)
+  if (count(O) == 0) {
+    eval "Error: unable to find French body."
+    return 0
+  }
+  local fbody_od = O[1]
+
+  xpath_nodeset(O, x, doc)
+  if (count(O) == 0) {
+    eval "Error: unable to find merge body."
+    return 0
+  }
+  local body_od = O[1]
+
+  local ec_od = oid_child(ebody_od)
+  local fc_od = oid_child(fbody_od)
+  while (oid_valid(ec_od) || oid_valid(fc_od)) {
+    goto_oid(body_od, -1)
+    local ct_od = oid_valid(ec_od) ? ec_od : fc_od
+    local sect = oid_content(ct_od, 0x02)
+    insert(sect."<?Pub Caret?></>", doc)
+    local sect_od = oid_caret(doc)
+
+    process_od(ec_od, fc_od, sect_od)
+    ec_od = oid_next(ec_od)
+    fc_od = oid_next(fc_od)
+  }
+  goto_oid(body_od)
+}
+
+function process_od(ec_od, fc_od, sect_od)
+{
+  local ec_o = oid_child(ec_od)
+  local fc_o = oid_child(fc_od)
+  local e_paranum = 0, f_paranum = 0
+  local loops = 0
+  while (oid_valid(ec_o) || oid_valid(fc_o)) {
+    loops += 1
+    if (loops > 1000) {
+      eval "Loop break" output=>*
+      eval "e_paranum=$e_paranum,f_paranum=$f_paranum" output=>*
+      break
+    }
+
+    local f_num = oid_valid(fc_o) ? get_paranum(fc_o) : f_paranum
+    eval "f_num:$f_num" output=>*
+    local pnum_str = ""
+    if (f_num == -1) {
+      f_num = f_paranum
+    } else {
+      pnum_str = " id=\"para$f_num\""
+    }
+
+    local e_num = oid_valid(ec_o) ? get_paranum(ec_o) : e_paranum
+    eval "e_num:$e_num" output=>*
+    e_num = e_num == -1 ? e_paranum : e_num
+
+    goto_oid(sect_od, -1)
+    insert("<div class=\"grid-container\"$pnum_str><?Pub Caret?><div class=\"grid-child purple\"></><div class=\"grid-child green\"></></>", oid_doc(sect_od))
+    grid_od = oid_caret(doc)
+
+    if (oid_valid(fc_o)) {
+      if (f_num <= e_num || !oid_valid(ec_o)) {
+        goto_oid(oid_child(grid_od, 1), -1)
+        insert_block(fc_o, oid_doc(grid_od))
+        f_paranum = f_num
+        fc_o = oid_next(fc_o)
+      } else {
+        oid_delete_attr(grid_od, 'id')
+      }
+    }
+
+    if (oid_valid(ec_o)) {
+      if (e_num <= f_num || !oid_valid(fc_o)) {
+        goto_oid(oid_child(grid_od, 2), -1)
+        insert_block(ec_o, oid_doc(grid_od))
+        e_paranum = e_num
+        ec_o = oid_next(ec_o)
+      }
+    }
+  }
+}
+
+function get_paranum(od)
+{
+  local pnum_str = trim(oid_xpath_string(od, ".//*[@class=\"Paragraph_Number\"][1]"))
+  eval "pnum_str:$pnum_str,od=$od" output=>*
+  if (pnum_str !="" && match(pnum_str, "([0-9]+)")) {
+    return match_result(1)
+  }
+  return -1
+}
+
+function insert_block(od, doc = current_doc())
+{
+  oid_select(od, 0, 0, 1)
+  local m = selection_markup(oid_doc(od), 0x40|0x80)
+  insert(m, doc)
+}
+
+function process_od1(ec_od, fc_od, sect_od)
+{
+  local ec_o = oid_child(ec_od)
+  local fc_o = oid_child(fc_od)
+  while (oid_valid(ec_o) || oid_valid(fc_o)) {
+    goto_oid(sect_od, -1)
+    insert("<div class=\"grid-container\"><?Pub Caret?><div class=\"grid-child purple\"></><div class=\"grid-child green\"></></>", oid_doc(sect_od))
+    grid_od = oid_caret(doc)
+
+    if (oid_valid(ec_o)) {
+      local O[], x, i
+      oid_xpath_nodeset(ec_o, O, ".//*[@title=\"Paragraph Number\"]")
+      for (i in O) {
+        local o = O[i]
+        oid_modify_attr(o, 'id', oid_attr(o, 'id')."_en")
+      }
+      oid_select(ec_o, 0, 0, 1)
+      local m = selection_markup(oid_doc(ec_o), 0x40|0x80)
+
+      goto_oid(oid_child(grid_od, 1), -1)
+      insert(m, oid_doc(grid_od))
+      ec_o = oid_next(ec_o)
+    }
+    if (oid_valid(fc_o)) {
+      local O[], x, i
+      oid_xpath_nodeset(fc_o, O, ".//*[@title=\"Paragraph Number\"]")
+      for (i in O) {
+        local o = O[i]
+        oid_modify_attr(o, 'id', oid_attr(o, 'id')."_fr")
+      }
+      oid_select(fc_o, 0, 0, 1)
+      local m = selection_markup(oid_doc(fc_o), 0x40|0x80)
+
+      goto_oid(oid_child(grid_od, 2), -1)
+      insert(m, oid_doc(grid_od))
+      fc_o = oid_next(fc_o)
+    }
+  }
+}
+
+function merge1(edoc, fdoc, doc=current_doc())
+{
+  local O[], o, x, i
+  x = "//*[local-name()='body']"
+  xpath_nodeset(O, x, edoc)
+  if (count(O) == 0) {
+    eval "Error: unable to find English body."
+    return 0
+  }
+  local ebody_od = O[1]
+
+  xpath_nodeset(O, x, fdoc)
+  if (count(O) == 0) {
+    eval "Error: unable to find French body."
+    return 0
+  }
+  local fbody_od = O[1]
+
+  xpath_nodeset(O, x, doc)
+  if (count(O) == 0) {
+    eval "Error: unable to find merge body."
+    return 0
+  }
+  local body_od = O[1]
+  insert("<div class=\"en-fr-container\"><?Pub Caret?></>", doc)
+  container_od = oid_caret(doc)
+
+  local ec_od = oid_child(ebody_od)
+  local fc_od = oid_child(fbody_od)
+  while (oid_valid(ec_od) || oid_valid(fc_od)) {
+    goto_oid(container_od, -1)
+    insert("<div class=\"grid-container\"><?Pub Caret?><div class=\"grid-child purple\"></><div class=\"grid-child green\"></></>", doc)
+    div_od = oid_caret(doc)
+
+    if (oid_valid(ec_od)) {
+      oid_select(ec_od, 0, 0, 1)
+      local m = selection_markup(oid_doc(ec_od), 0x40|0x80)
+      goto_oid(oid_child(div_od), -1)
+      insert(m, doc)
+      ec_od = oid_next(ec_od)
+    }
+    if (oid_valid(fc_od)) {
+      oid_select(fc_od, 0, 0, 1)
+      local m = selection_markup(oid_doc(fc_od), 0x40|0x80)
+      goto_oid(oid_child(div_od, 2), -1)
+      insert(m, doc)
+      fc_od = oid_next(fc_od)
+    }
+  }
+}
