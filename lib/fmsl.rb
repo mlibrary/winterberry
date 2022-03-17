@@ -25,6 +25,8 @@ module UMPTG
       if File.extname(fmsl_file) == ".xlsx"
         x = Xsv::Workbook.open(fmsl_file)
         sheet = x.sheets_by_name("Project Data").first
+        raise "Error: no sheets for #{fmsl_file}" if sheet.nil?
+
         fmsl_body_list = []
         sheet.each do |row|
           next if row[0].nil?
