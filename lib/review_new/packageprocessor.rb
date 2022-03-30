@@ -142,7 +142,7 @@ module UMPTG::Review
       if node_list.empty?
         action_list << Action.new(
                name: name,
-               reference_node: metadata_list.first,
+               reference_node: context_node,
                warning_message: msgs[:not_present]
            )
       else
