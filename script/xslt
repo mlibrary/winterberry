@@ -41,7 +41,7 @@ xml_file_list.each do |xml_file|
 
   output_file = File.join(File.dirname(xml_file), File.basename(xml_file, ".*") + "_transformed.xml")
 
-  output_uri = URI(output_file)
+  #output_uri = URI(output_file)
   UMPTG::XSLT.transform(
           xslpath: xsl_file,
           srcpath: xml_file,
