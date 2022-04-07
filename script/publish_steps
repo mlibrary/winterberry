@@ -59,12 +59,14 @@ press_dir = {
         bar:   "MPS",
         ebc:   "UMP",
         heb:   "MPS",
+        maize: "MPS",
         ummaa: "UMMAA"
         }
 sub_dir = {
         amherst: "Amherst",
         bar:   "BAR",
         heb:   "HEB",
+        maize: "maize"
         }
 unless press_dir.key?(options.press)
   script_logger.fatal("invalid press #{options.press}")
@@ -142,7 +144,7 @@ monograph_id_list.each do |monograph_id|
 
   series_id = ""
   case options.press
-  when :amherst, :ebc, :ummaa
+  when :amherst, :ebc, :maize, :ummaa
     series_id = monograph_row["doi"]
   else
     id_list = monograph_row["identifier(s)"]
