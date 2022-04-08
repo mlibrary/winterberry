@@ -1,0 +1,118 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Generate CSV with following columns from a CSV
+# containing ISBN and Series.
+# NOID,ISBN,Series
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+require 'optparse'
+require 'ostruct'
+
+require_relative File.join(root_dir, "lib", "press")
+
+# Process the script parameters.
+options = OpenStruct.new
+options.fulcrum_host = nil
+options.press = UMPTG::Press.default
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} csv_file [..csv_file]"
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    script_logger.info(opts)
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  script_logger.info(option_parser.help)
+  return
+end
+
+csv_file_list = ARGV
+
+require_relative File.join(root_dir, "lib", "fulcrum")
+require_relative File.join(root_dir, "lib", "services")
+
+# Create the serivce for retrieving the NOID manifest.
+service = UMPTG::Services::Heliotrope.new(
+                :fulcrum_host => options.fulcrum_host
+              )
+
+headers = [ "NOID", "Ebook ISBN", "Series" ]
+
+csv_file_list.each do |csv_file|
+  csv_file = File.expand_path(csv_file)
+  unless File.file?(csv_file)
+    script_logger.error("invalid CSV file #{csv_file}")
+    next
+  end
+  script_logger.info("Processing CSV #{File.basename(csv_file)}")
+
+  begin
+    csv = CSV.parse(
+              File.read(csv_file),
+              :headers => true,
+              :return_headers => false,
+              )
+  rescue Exception => e
+    raise e.message
+  end
+
+  result_csv_file = File.join(File.dirname(csv_file), File.basename(csv_file, ".*") + "_series.csv")
+  CSV.open(
+          result_csv_file,
+          "w",
+          :write_headers=> true,
+          :force_quotes => true,
+          :headers => headers
+        ) do |result_csv|
+    csv.each do |row|
+      isbn_list = row["ISBN(s)"]
+      monograph_id = isbn_list.split(';').first[0..12]
+
+      # Use the monograph ID to retrieve the NOID from Fulcrum.
+      script_logger.info("*" * 10 + " #{monograph_id} " + "*" * 10)
+
+      # Use the monograph NOID to retrieve the monograph manifest from Fulcrum.
+      csv_body = service.monograph_export(identifier: monograph_id)
+      if csv_body.nil? or csv_body.empty?
+        script_logger.error("no manifest found for id #{monograph_id}")
+        next
+      end
+      STDOUT.flush
+
+      result_csv_row = { "Ebook ISBN" => monograph_id }
+
+      manifest = UMPTG::Fulcrum::Manifest::Document.new(
+                    :csv_body => csv_body
+                  )
+      if manifest.nil?
+        script_logger.error("no manifest found for id #{monograph_id}")
+      else
+        monograph_row = manifest.monograph_row
+        if monograph_row.nil?
+          script_logger.error("no monograph row found for id #{monograph_id}")
+        else
+          result_csv_row["NOID"] = monograph_row["noid"]
+          series = monograph_row["series"]
+          if series.nil? or series.empty?
+            series = row["Sub Series"]
+          else
+            series += ";" + row["Sub Series"]
+          end
+          result_csv_row["Series"] = series
+
+          result_csv << result_csv_row
+        end
+      end
+    end
+  end
+  script_logger.info("Saved CSV file #{result_csv_file}.")
+end
