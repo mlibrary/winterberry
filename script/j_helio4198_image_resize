@@ -1,0 +1,55 @@
+#!/usr/bin/env ruby
+# encoding: utf-8
+
+# Script resizes an image using rmagick.
+
+require 'optparse'
+require 'ostruct'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+# Process the script parameters.
+options = OpenStruct.new
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} <pct> <image_file> [<image_file>..]"
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    puts opts
+    exit(0)
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 2
+  puts option_parser.help
+  exit(0)
+end
+
+pct_arg = ARGV[0]
+image_file_list = ARGV[1..-1]
+
+pct = pct_arg.to_i
+
+require 'rmagick'
+include Magick
+
+image_file_list.each do |image_file|
+  image_file = File.expand_path(image_file)
+  unless File.file?(image_file)
+    script_logger.error("File \"#{File.basename(image_file)}\" does not exist.")
+    next
+  end
+  script_logger.info("processing file \"#{File.basename(image_file)}\"")
+
+  image = Magick::ImageList.new(image_file)
+
+  resized_image_file = File.join(File.dirname(image_file), File.basename(image_file, ".*") + "_rrm#{pct}pct#{File.extname(image_file)}")
+  resized_image = image.resize(pct / 100.0)
+
+  script_logger.info("saving #{File.basename(resized_image_file)}")
+  resized_image.write(resized_image_file)
+end

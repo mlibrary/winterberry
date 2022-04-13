@@ -82,7 +82,7 @@ gem "image_size", "~> 2.0"
 gem "yaml_db"
 gem 'json'
 gem 'hexapdf'
-#gem 'rmagick'
+gem 'rmagick'
 gem 'ruby-rtf'
 gem 'parslet'
 #gem 'tesseract-ocr'
