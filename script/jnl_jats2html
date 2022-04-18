@@ -40,7 +40,7 @@ jats_file_list.each do |jats_file|
     end
 
     html_file = File.join(File.dirname(jats_file), File.basename(jats_file, ".*") + ".html")
-    XSLT.transform(
+    UMPTG::XSLT.transform(
             :xslpath => jats2html_xsl_file,
             :srcpath => jats_file,
             :destpath => html_file
