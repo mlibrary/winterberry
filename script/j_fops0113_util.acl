@@ -90,21 +90,22 @@ function oid_fix_attr(attr, lang = 'en', od = oid_caret())
   oid_modify_attr(od, attr, new_val)
 }
 
-function oid_set_paranum(od = oid_caret())
+function oid_set_paranum(lang = "", od = oid_caret())
 {
   if (match(oid_content(oid_child(od, 1)), '\[[ ]*([0-9]+)[ ]*\]') \
       || match(oid_content(oid_child(od, 1)), '\[[ ]*([0-9]+)[^0-9]+([0-9]+)[ ]*\]')) {
     local pnum = match_result(1)
-    oid_modify_attr(od, "id", "paragraph_$pnum")
+    local attrVal = trim(lang) == "" ? "paragraph_".$pnum : "paragraph_".lang."_".$pnum
+    oid_modify_attr(od, "id", "paragraph_".lang."_".$pnum)
   }
 }
 
-function set_paranum(doc = current_doc())
+function set_paranum(lang = "", doc = current_doc())
 {
   local O[], i
   xpath_nodeset(O, "//*[local-name()='p'][./*[@class='ParagraphNumber']]")
   for (i in O) {
-    oid_set_paranum(O[i])
+    oid_set_paranum(lang, O[i])
   }
 }
 
