@@ -1,0 +1,291 @@
+# Package of scripts for processing PdeC xhtml.
+
+# Function to merge split elements
+function merge_elem(doc = current_doc())
+{
+  local svDoc = current_doc(doc)
+  local od = oid_first_tag(doc)
+  while (oid_valid(od)) {
+    next_od = oid_forward(od)
+    if (oid_name(od) == oid_name(next_od) && oid_attr(od, "class") == oid_attr(next_od, "class")) {
+      goto_oid(od)
+      forward_char(-1)
+      mark begin
+      goto_oid(next_od,-1);
+      forward_char(1);
+      mark end
+      if (execute("join") == 0) {
+        # Success
+        next_od = oid_current_tag()
+      }
+      clear_mark
+    }
+    od = next_od
+  }
+  current_doc(svDoc)
+  goto_oid(oid_first_tag(doc))
+}
+
+function create_hc_link(href, od = oid_caret())
+{
+  if (oid_valid(od)) {
+    goto_oid(od)
+    local svDoc = current_doc(oid_doc(od))
+    change_tag a
+    current_doc(svDoc)
+    local new_od = oid_caret(oid_doc(od))
+    oid_modify_attr(new_od, "href", href)
+    return 1
+  }
+  return 0
+}
+
+function find_class_noids(cl, O[], doc = current_doc())
+{
+  local x, i
+  x = varsub('//*[@class="$cl"]')
+  xpath_nodeset(O, x, doc)
+  return count(O)
+}
+function find_hc_noids(O[], doc = current_doc()) { return find_class_noids("HistoricalCharacter", O, doc); }
+
+function assign_hc_link(doc = current_doc())
+{
+  local hc_list_file = 'S:\Information Management\Fulcrum\PTG\tickets\FOPS-0113\pdec\hc_french_list.csv'
+  local fp = open(hc_list_file, "r")
+  if (fp < 0) {
+    message "Error opening $hc_list_file"
+    return 0
+  }
+
+  local hc_lines[], lne, i = 0
+  while (getline(fp, lne)) {
+    chop(lne)
+    hc_lines[++i] = lne
+  }
+  close(fp)
+
+  local O[], F[]
+  find_hc_noids(O, doc)
+  for (i = 1; i <= count(O); i++) {
+    local od = O[i]
+    if (i in hc_lines) {
+      local lne = hc_lines[i]
+
+      local ndx = index(lns, '","')
+      if (ndx < 1) {
+        message "pattern not found."
+        continue
+      }
+
+      local href = substr(lne, 2, ndx-2)
+      if (href != "") {
+        goto_oid(od)
+        local svDoc = current_doc(doc)
+        change_tag a
+        od = oid_caret(doc)
+        current_doc(svDoc)
+        oid_modify_attr(od, 'href', href)
+      }
+    }
+  }
+  goto_oid(oid_first(doc))
+}
+
+# Function returns the OIDs of a specific element class
+function find_class(cl, H[], doc = current_doc())
+{
+  local O[], i
+  find_class_noids(cl, O, doc)
+
+  for (i in O) {
+    local c = oid_content(O[i])
+    if (c in H) {
+      H[c] += 1
+    } else {
+      H[c] = 1
+    }
+  }
+  return count(H)
+}
+function find_hc(H[], doc = current_doc()) { return find_class("HistoricalCharacter", H, doc); }
+
+function create_class_csv(path, cl, doc = current_doc())
+{
+  local H[], i
+  find_class(cl, H, doc)
+
+  local fp = open(path, "wb")
+  for (i in H) {
+    write(fp, "\"\",\"$i\"\n")
+  }
+  close(fp)
+  return count(O)
+}
+
+function oid_fix_attr(attr, lang = 'en', od = oid_caret())
+{
+  local val = oid_attr(od, attr)
+  local ndx = index(val, '_')
+  #local ndx = rindex(val, '_')
+  local prefix = substr(val, 1, ndx-1)
+  local suffix = substr(val, ndx+1)
+  local new_val = prefix.'_'.lang.'_'.suffix
+  oid_modify_attr(od, attr, new_val)
+}
+
+function doc_fix_attr(xpath, attr, lang = 'en', doc = current_doc())
+{
+  local O[], i
+  xpath_nodeset(O, xpath, doc)
+  for (i in O) {
+    oid_fix_attr(attr, lang, O[i])
+  }
+}
+function fix_anchor(attr, lang = "en", doc = current_doc())
+{
+  return doc_fix_attr("//*[local-name()='a']", attr, lang, doc)
+}
+function fix_note(attr, lang = "en", doc = current_doc())
+{
+  return doc_fix_attr("//*[@class='notes']/*[local-name()='p']", attr, lang, doc)
+}
+
+function oid_set_paranum(lang = "", od = oid_caret())
+{
+  if (match(oid_content(oid_child(od, 1)), '\[[ ]*([0-9]+)[ ]*\]') \
+      || match(oid_content(oid_child(od, 1)), '\[[ ]*([0-9]+)[^0-9]+([0-9]+)[ ]*\]')) {
+    local pnum = match_result(1)
+    local attrVal = trim(lang) == "" ? "paragraph_".$pnum : "paragraph_".lang."_".$pnum
+    oid_modify_attr(od, "id", attrVal)
+  }
+}
+
+function set_paranum(lang = "", doc = current_doc())
+{
+  local O[], i
+  xpath_nodeset(O, "//*[local-name()='p'][./*[@class='ParagraphNumber']]")
+  for (i in O) {
+    oid_set_paranum(lang, O[i])
+  }
+}
+
+function set_paranum_attrs(doc = current_doc())
+{
+  local O[], i
+  xpath_nodeset(O, "//*[@class='ParagraphNumber']")
+  for (i in O) {
+    local num = substr(oid_attr(oid_parent(O[i]), "id"), 11)
+    oid_modify_attr(O[i], "aria-label", "Paragraph #".num)
+  }
+}
+
+function get_paranum(od = oid_caret())
+{
+  if (oid_valid(od)) {
+    local id = oid_attr(od, 'id')
+    local ndx = rindex(id, '_')
+    return substr(id, ndx+1)
+  }
+}
+
+function insert_block(fc_od, doc = current_doc())
+{
+  oid_select(fc_od, 0, 0, 1)
+  local m = selection_markup(oid_doc(fc_od), 0x40|0x80)
+  goto_oid(oid_caret(doc), -1)
+  insert(m, doc)
+}
+
+function process_od(ec_od, fc_od, sect_od)
+{
+  local ec_o = oid_child(ec_od)
+  local fc_o = oid_child(fc_od)
+  local e_paranum = 0, f_paranum = 0
+  local loops = 0
+  while (oid_valid(ec_o) || oid_valid(fc_o)) {
+    loops += 1
+    if (loops > 1000) {
+      eval "Loop break" output=>*
+      eval "e_paranum=$e_paranum,f_paranum=$f_paranum" output=>*
+      break
+    }
+
+    local f_num = oid_valid(fc_o) ? get_paranum(fc_o) : f_paranum
+    local pnum_str = ""
+    if (f_num == -1) {
+      f_num = f_paranum
+    } else {
+      pnum_str = " id=\"para$f_num\""
+    }
+
+    local e_num = oid_valid(ec_o) ? get_paranum(ec_o) : e_paranum
+    e_num = e_num == -1 ? e_paranum : e_num
+
+    goto_oid(sect_od, -1)
+    insert("<div class=\"grid-container\"$pnum_str><?Pub Caret?><div class=\"grid-child purple\"></><div class=\"grid-child green\"></></>", oid_doc(sect_od))
+    grid_od = oid_caret(doc)
+
+    if (oid_valid(fc_o)) {
+      if (f_num <= e_num || !oid_valid(ec_o)) {
+        goto_oid(oid_child(grid_od, 1), -1)
+        insert_block(fc_o, oid_doc(grid_od))
+        f_paranum = f_num
+        fc_o = oid_next(fc_o)
+      } else {
+        oid_delete_attr(grid_od, 'id')
+      }
+    }
+
+    if (oid_valid(ec_o)) {
+      if (e_num <= f_num || !oid_valid(fc_o)) {
+        goto_oid(oid_child(grid_od, 2), -1)
+        insert_block(ec_o, oid_doc(grid_od))
+        e_paranum = e_num
+        ec_o = oid_next(ec_o)
+      }
+    }
+  }
+}
+
+function merge2(edoc, fdoc, doc=current_doc())
+{
+  local O[], o, x, i
+  x = "//*[local-name()='body']"
+  xpath_nodeset(O, x, edoc)
+  if (count(O) == 0) {
+    eval "Error: unable to find English body."
+    return 0
+  }
+  local ebody_od = O[1]
+
+  xpath_nodeset(O, x, fdoc)
+  if (count(O) == 0) {
+    eval "Error: unable to find French body."
+    return 0
+  }
+  local fbody_od = O[1]
+
+  xpath_nodeset(O, x, doc)
+  if (count(O) == 0) {
+    eval "Error: unable to find merge body."
+    return 0
+  }
+  local body_od = O[1]
+
+  local ec_od = oid_child(ebody_od)
+  local fc_od = oid_child(fbody_od)
+  while (oid_valid(ec_od) || oid_valid(fc_od)) {
+    goto_oid(body_od, -1)
+    local ct_od = oid_valid(ec_od) ? ec_od : fc_od
+    local sect = oid_content(ct_od, 0x02)
+    insert(sect."<?Pub Caret?></>", doc)
+    local sect_od = oid_caret(doc)
+
+    process_od(ec_od, fc_od, sect_od)
+    ec_od = oid_next(ec_od)
+    fc_od = oid_next(fc_od)
+  }
+  goto_oid(body_od)
+}
+

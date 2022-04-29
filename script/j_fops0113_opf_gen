@@ -1,0 +1,75 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Script normalizes PdeC material path names.
+
+require 'optparse'
+require 'ostruct'
+require 'os'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+require_relative File.join(root_dir, "lib", "fulcrum")
+
+# Process the script parameters.
+options = OpenStruct.new
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} <path_name> [<path_name>...]"
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    script_logger.info(opts)
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  script_logger.info(option_parser.help)
+  return
+end
+
+# Process the command line parameters.
+path_name_list = ARGV
+
+require 'fileutils'
+
+path_name_list.each do |path_name|
+  path_name = File.expand_path(path_name)
+  unless File.exists?(path_name)
+    script_logger.error("path #{path_name} does not exist.")
+    next
+  end
+  #script_logger.info("processing path #{File.basename(path_name)}.")
+
+  if File.directory?(path_name)
+    path_base_name = File.basename(path_name)
+    path_base_ext = ""
+  else
+    path_base_name = File.basename(path_name, ".*")
+    #path_base_name.delete_suffix!('_edited_docx_generate_html')
+    path_base_name.delete_suffix!('_edited')
+    path_base_ext = File.extname(File.basename(path_name)).downcase
+    path_base_ext = ".jpg" if path_base_ext == ".jpeg"
+  end
+
+  new_path_id = "xhtml_" + path_base_name.gsub(/[ \-\,\.]/, '_')
+  new_path_id.gsub!(/[_]{2,}/, '_')
+
+  new_path_base_name = path_base_name.gsub(/[ _\,\.]/, '-')
+  new_path_base_name.gsub!(/[\-]{2,}/, '-')
+
+  #media_type = "image/jpeg"
+  media_type = "application/xhtml+xml"
+
+  new_path_name = File.join(File.dirname(path_name), new_path_base_name + path_base_ext)
+  href = new_path_name.delete_prefix('S:/Information Management/Fulcrum/PTG/tickets/FOPS-0113/epub/OEBPS/')
+  #href = new_path_name.delete_prefix('S:/Information Management/Fulcrum/PTG/tickets/FOPS-0113/docx2xhtml/')
+
+  puts "<item id=\"#{new_path_id}\" href=\"#{href}\"  media-type=\"#{media_type}\"/>"
+
+  #FileUtils.mv(path_name, new_path_name) unless path_name == new_path_name
+end
