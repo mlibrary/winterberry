@@ -49,6 +49,49 @@ function find_class_noids(cl, O[], doc = current_doc())
 }
 function find_hc_noids(O[], doc = current_doc()) { return find_class_noids("HistoricalCharacter", O, doc); }
 
+function assign_hc_link(doc = current_doc())
+{
+  local hc_list_file = 'S:\Information Management\Fulcrum\PTG\tickets\FOPS-0113\pdec\hc_french_list.csv'
+  local fp = open(hc_list_file, "r")
+  if (fp < 0) {
+    message "Error opening $hc_list_file"
+    return 0
+  }
+
+  local hc_lines[], lne, i = 0
+  while (getline(fp, lne)) {
+    chop(lne)
+    hc_lines[++i] = lne
+  }
+  close(fp)
+
+  local O[], F[]
+  find_hc_noids(O, doc)
+  for (i = 1; i <= count(O); i++) {
+    local od = O[i]
+    if (i in hc_lines) {
+      local lne = hc_lines[i]
+
+      local ndx = index(lns, '","')
+      if (ndx < 1) {
+        message "pattern not found."
+        continue
+      }
+
+      local href = substr(lne, 2, ndx-2)
+      if (href != "") {
+        goto_oid(od)
+        local svDoc = current_doc(doc)
+        change_tag a
+        od = oid_caret(doc)
+        current_doc(svDoc)
+        oid_modify_attr(od, 'href', href)
+      }
+    }
+  }
+  goto_oid(oid_first(doc))
+}
+
 # Function returns the OIDs of a specific element class
 function find_class(cl, H[], doc = current_doc())
 {
@@ -83,11 +126,29 @@ function create_class_csv(path, cl, doc = current_doc())
 function oid_fix_attr(attr, lang = 'en', od = oid_caret())
 {
   local val = oid_attr(od, attr)
-  local ndx = rindex(val, '_')
+  local ndx = index(val, '_')
+  #local ndx = rindex(val, '_')
   local prefix = substr(val, 1, ndx-1)
-  local pnum = substr(val, ndx+1)
-  local new_val = prefix.'_'.lang.'_'.pnum
+  local suffix = substr(val, ndx+1)
+  local new_val = prefix.'_'.lang.'_'.suffix
   oid_modify_attr(od, attr, new_val)
+}
+
+function doc_fix_attr(xpath, attr, lang = 'en', doc = current_doc())
+{
+  local O[], i
+  xpath_nodeset(O, xpath, doc)
+  for (i in O) {
+    oid_fix_attr(attr, lang, O[i])
+  }
+}
+function fix_anchor(attr, lang = "en", doc = current_doc())
+{
+  return doc_fix_attr("//*[local-name()='a']", attr, lang, doc)
+}
+function fix_note(attr, lang = "en", doc = current_doc())
+{
+  return doc_fix_attr("//*[@class='notes']/*[local-name()='p']", attr, lang, doc)
 }
 
 function oid_set_paranum(lang = "", od = oid_caret())
@@ -96,7 +157,7 @@ function oid_set_paranum(lang = "", od = oid_caret())
       || match(oid_content(oid_child(od, 1)), '\[[ ]*([0-9]+)[^0-9]+([0-9]+)[ ]*\]')) {
     local pnum = match_result(1)
     local attrVal = trim(lang) == "" ? "paragraph_".$pnum : "paragraph_".lang."_".$pnum
-    oid_modify_attr(od, "id", "paragraph_".lang."_".$pnum)
+    oid_modify_attr(od, "id", attrVal)
   }
 }
 
@@ -106,6 +167,16 @@ function set_paranum(lang = "", doc = current_doc())
   xpath_nodeset(O, "//*[local-name()='p'][./*[@class='ParagraphNumber']]")
   for (i in O) {
     oid_set_paranum(lang, O[i])
+  }
+}
+
+function set_paranum_attrs(doc = current_doc())
+{
+  local O[], i
+  xpath_nodeset(O, "//*[@class='ParagraphNumber']")
+  for (i in O) {
+    local num = substr(oid_attr(oid_parent(O[i]), "id"), 11)
+    oid_modify_attr(O[i], "aria-label", "Paragraph #".num)
   }
 }
 
@@ -217,3 +288,4 @@ function merge2(edoc, fdoc, doc=current_doc())
   }
   goto_oid(body_od)
 }
+
