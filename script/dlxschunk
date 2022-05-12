@@ -42,9 +42,10 @@ dlxs_file_list.each do |dlxs_file|
   output_dir = File.join(File.dirname(dlxs_file), File.basename(dlxs_file, ".*") + "_output")
   FileUtils.mkdir_p output_dir
 
-  output_uri = URI(output_dir)
+  #output_uri = URI(output_dir)
   params = {}
-  params["output_dir"] = "file:///" + output_uri.to_s + "/"
+  #params["output_dir"] = "file:///" + output_uri.to_s + "/"
+  params["output_dir"] = "file:///" + output_dir + "/"
   UMPTG::XSLT.transform(
           :xslpath => dlxschunk_xsl_file,
           :srcpath => dlxs_file,

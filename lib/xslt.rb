@@ -1,4 +1,8 @@
 module UMPTG
+  require 'open3'
+
+  require_relative File.join("logger")
+
   class XSLT
     @@XSL_DIR = File.join(__dir__, 'xsl')
     @@JAR_PATH = File.join(__dir__, 'jars', 'Saxon-HE-9.9.1-1.jar')
@@ -9,7 +13,15 @@ module UMPTG
       xsl_path = args[:xslpath]
       src_path = args[:srcpath]
       dest_path = args[:destpath]
+      logger = args[:logger]
       parameters = args[:parameters]
+
+      if logger.nil?
+        logger = UMPTG::Logger.create(logger_fp: STDOUT) if logger.nil?
+        do_flush = true
+      else
+        do_flush = false
+      end
 
       parameters_str = ""
       parameters.each { |key, val| parameters_str += " #{key}=\"#{val}\""} unless parameters == nil
@@ -18,18 +30,29 @@ module UMPTG
       else
         cmd_str = sprintf(@@CMD_STR_DEST, @@JAR_PATH, xsl_path, src_path, dest_path, parameters_str)
       end
-      puts cmd_str
-      STDOUT.flush
+      logger.info(cmd_str)
 
+      Open3.popen3(cmd_str) do |stdin, stdout, stderr, thread|
+        unless stderr.closed?
+          st = stderr.read
+          logger.info(st) unless st.empty?
+        end
+        unless stdout.closed?
+          st = stdout.read
+          logger.info(st) unless st.empty?
+        end
+      end
+      return true
+=begin
       ok = system(cmd_str)
       status = $?
-
       case ok
       when true
       else
-        puts "Transform failed (status = #{status})"
+        logger.error("Transform failed (status = #{ok})")
       end
       return ok
+=end
     end
 
     def self.XSL_DIR

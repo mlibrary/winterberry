@@ -24,6 +24,7 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
                 indent="yes"/>
 
     <xsl:param name="image_list" required="no"/>
+    <xsl:param name="language" select="'en'"/>
 
     <xsl:variable name="image_doc">
         <xsl:element name="imagedoc">
@@ -91,6 +92,90 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
                 <xsl:attribute name="term" select="'All Rights Reserved'"/>
                 <xsl:attribute name="url" select="'https://www.press.umich.edu/about/licenses#all-rights-reserved'"/>
             </xsl:element>
+            <xsl:element name="license">
+                <xsl:attribute name="type" select="'cc-by/3.0/us'"/>
+                <xsl:attribute name="active" select="false()"/>
+                <xsl:attribute name="term" select="'Attribution 3.0 United States'"/>
+                <xsl:attribute name="url" select="'https://creativecommons.org/licenses/by/3.0/us/'"/>
+            </xsl:element>
+            <xsl:element name="license">
+                <xsl:attribute name="type" select="'cc-by-sa/3.0/us'"/>
+                <xsl:attribute name="active" select="false()"/>
+                <xsl:attribute name="term" select="'Attribution-ShareAlike 3.0 United States'"/>
+                <xsl:attribute name="url" select="'https://creativecommons.org/licenses/by-sa/3.0/us/'"/>
+            </xsl:element>
+            <xsl:element name="license">
+                <xsl:attribute name="type" select="'cc-by-nc/3.0/us'"/>
+                <xsl:attribute name="active" select="false()"/>
+                <xsl:attribute name="term" select="'Attribution-NonCommercial 3.0 United States'"/>
+                <xsl:attribute name="url" select="'https://creativecommons.org/licenses/by-nc/3.0/us/'"/>
+            </xsl:element>
+            <xsl:element name="license">
+                <xsl:attribute name="type" select="'cc-by-nd/3.0/us'"/>
+                <xsl:attribute name="active" select="false()"/>
+                <xsl:attribute name="term" select="'Attribution-NoDerivs 3.0 United States'"/>
+                <xsl:attribute name="url" select="'https://creativecommons.org/licenses/by-nd/3.0/us/'"/>
+            </xsl:element>
+            <xsl:element name="license">
+                <xsl:attribute name="type" select="'cc-by-nc-nd/3.0/us'"/>
+                <xsl:attribute name="active" select="false()"/>
+                <xsl:attribute name="term" select="'Attribution-NonCommercial-NoDerivs 3.0 United States'"/>
+                <xsl:attribute name="url" select="'https://creativecommons.org/licenses/by-nc-nd/3.0/us/'"/>
+            </xsl:element>
+            <xsl:element name="license">
+                <xsl:attribute name="type" select="'cc-by-nc-sa/3.0/us'"/>
+                <xsl:attribute name="active" select="false()"/>
+                <xsl:attribute name="term" select="'Attribution-NonCommercial-ShareAlike 3.0 United States'"/>
+                <xsl:attribute name="url" select="'https://creativecommons.org/licenses/by-nc-sa/3.0/us/'"/>
+            </xsl:element>
+            <xsl:element name="license">
+                <xsl:attribute name="type" select="'cc-by/2.0'"/>
+                <xsl:attribute name="active" select="false()"/>
+                <xsl:attribute name="term" select="'Creative Commons Attribution 2.0 Generic license'"/>
+                <xsl:attribute name="url" select="'https://creativecommons.org/licenses/by/2.0/'"/>
+            </xsl:element>
+            <xsl:element name="license">
+                <xsl:attribute name="type" select="'cc-by-sa/2.1/jp'"/>
+                <xsl:attribute name="active" select="false()"/>
+                <xsl:attribute name="term" select="'Creative Commons Attribution-ShareAlike 2.1 Japan'"/>
+                <xsl:attribute name="url" select="'https://creativecommons.org/licenses/by-sa/2.1/jp/'"/>
+            </xsl:element>
+            <xsl:element name="license">
+                <xsl:attribute name="type" select="'cc-by/3.0'"/>
+                <xsl:attribute name="active" select="false()"/>
+                <xsl:attribute name="term" select="'Creative Commons Attribution license, 3.0 Unported'"/>
+                <xsl:attribute name="url" select="'https://creativecommons.org/licenses/by/3.0/'"/>
+            </xsl:element>
+            <xsl:element name="license">
+                <xsl:attribute name="type" select="'cc-by-nd/3.0'"/>
+                <xsl:attribute name="active" select="false()"/>
+                <xsl:attribute name="term" select="'Creative Commons Attribution-NoDerivatives license, 3.0'"/>
+                <xsl:attribute name="url" select="'https://creativecommons.org/licenses/by-nd/3.0/'"/>
+            </xsl:element>
+            <xsl:element name="license">
+                <xsl:attribute name="type" select="'cc-by-nc-nd/3.0'"/>
+                <xsl:attribute name="active" select="false()"/>
+                <xsl:attribute name="term" select="'Creative Commons Attribution-NonCommercial-NoDerivatives license, 3.0 Unported'"/>
+                <xsl:attribute name="url" select="'https://creativecommons.org/licenses/by-nc-nd/3.0/'"/>
+            </xsl:element>
+            <xsl:element name="license">
+                <xsl:attribute name="type" select="'cc-by-nc/3.0'"/>
+                <xsl:attribute name="active" select="false()"/>
+                <xsl:attribute name="term" select="'Creative Commons Attribution-NonCommercial license, 3.0 Unported'"/>
+                <xsl:attribute name="url" select="'https://creativecommons.org/licenses/by-nc/3.0/'"/>
+            </xsl:element>
+            <xsl:element name="license">
+                <xsl:attribute name="type" select="'cc-by-nc-sa/3.0'"/>
+                <xsl:attribute name="active" select="false()"/>
+                <xsl:attribute name="term" select="'Creative Commons Attribution-NonCommercial-ShareAlike'"/>
+                <xsl:attribute name="url" select="'https://creativecommons.org/licenses/by-nc-sa/3.0/'"/>
+            </xsl:element>
+            <xsl:element name="license">
+                <xsl:attribute name="type" select="'cc-by-sa/3.0'"/>
+                <xsl:attribute name="active" select="false()"/>
+                <xsl:attribute name="term" select="'Creative Commons Attribution-ShareAlike license, 3.0'"/>
+                <xsl:attribute name="url" select="'https://creativecommons.org/licenses/by-sa/3.0/'"/>
+            </xsl:element>
         </xsl:element>
     </xsl:variable>
 
@@ -111,6 +196,7 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
 
             <xsl:attribute name="article-type" select="'research-article'"/>
             <xsl:attribute name="dtd-version" select="'1.2'"/>
+            <xsl:attribute name="xml:lang" select="$language"/>
 
             <xsl:apply-templates select="@*|node()"/>
         </xsl:element>
@@ -200,7 +286,18 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
                                 </xsl:element>
                             </xsl:if>
                         </xsl:if>
-                        <xsl:apply-templates select="FILEDESC/PUBLICATIONSTMT/AVAILABILITY"/>
+                        <xsl:element name="license">
+                            <xsl:if test="exists(FILEDESC/PUBLICATIONSTMT/AVAILABILITY/@TYPE)">
+                                <xsl:variable name="license_type" select="FILEDESC/PUBLICATIONSTMT/AVAILABILITY/@TYPE"/>
+                                <xsl:variable name="license" select="$license_doc/licenses/license[@type=lower-case($license_type)]"/>
+                                <xsl:if test="exists($license)">
+                                    <xsl:attribute name="href" namespace="http://www.w3.org/1999/xlink" select="$license/@url"/>
+                                </xsl:if>
+                            </xsl:if>
+                            <xsl:for-each select="FILEDESC/PUBLICATIONSTMT/AVAILABILITY/P">
+                                <xsl:apply-templates select="."/>
+                            </xsl:for-each>
+                        </xsl:element>
                     </xsl:element>
                 </xsl:if>
 
@@ -300,14 +397,23 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
                         <xsl:value-of select="'publisher-id'"/>
                     </xsl:when>
                     <xsl:otherwise>
-                        <xsl:value-of select="@TYPE"/>
+                        <xsl:value-of select="lower-case(@TYPE)"/>
                     </xsl:otherwise>
                 </xsl:choose>
             </xsl:attribute>
 
             <xsl:choose>
-                <xsl:when test="@TYPE='doi'">
-                    <xsl:value-of select="substring-after(.,'http://dx.doi.org/')"/>
+                <xsl:when test="lower-case(@TYPE)='doi'">
+                    <xsl:variable name="doi" select="."/>
+                    <xsl:variable name="type" select="@TYPE"/>
+                    <xsl:analyze-string regex="https://[^/]+/(.*)" select="$doi">
+                        <xsl:matching-substring>
+                            <xsl:value-of select="regex-group(1)"/>
+                        </xsl:matching-substring>
+                        <xsl:non-matching-substring>
+                            <xsl:value-of select="$doi"/>
+                        </xsl:non-matching-substring>
+                    </xsl:analyze-string>
                 </xsl:when>
                 <xsl:otherwise>
                     <xsl:value-of select="."/>
@@ -426,6 +532,7 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
         </xsl:element>
     </xsl:template>
 
+    <!--
     <xsl:template match="FILEDESC/PUBLICATIONSTMT/AVAILABILITY">
         <xsl:if test="exists(P) or exists(@TYPE)">
             <xsl:element name="license">
@@ -444,6 +551,12 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
             </xsl:element>
         </xsl:if>
     </xsl:template>
+    -->
+    <xsl:template match="FILEDESC/PUBLICATIONSTMT/AVAILABILITY/P">
+        <xsl:element name="license-p">
+            <xsl:value-of select="."/>
+        </xsl:element>
+    </xsl:template>
 
     <xsl:template match="TEXT">
         <xsl:apply-templates select="@*|node()"/>
@@ -458,7 +571,7 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
 
     <xsl:template match="DIV1|DIV2|DIV3|DIV4">
         <xsl:choose>
-            <xsl:when test="lower-case(./HEAD)='abstract' or exists(./P[@TYPE='author'])">
+            <xsl:when test="lower-case(./HEAD[1])='abstract' or exists(./P[@TYPE='author'])">
                 <!-- This should be the abtract and should have
                     been processed by the HEADER. Skip. -->
                 <xsl:message>Skip <xsl:value-of select="local-name(.)"/></xsl:message>
@@ -530,7 +643,9 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
 
     <xsl:template match="PTR">
         <xsl:element name="xref">
-            <xsl:attribute name="rid" select="lower-case(@TARGET)"/>
+            <xsl:variable name="target" select="lower-case(@TARGET)"/>
+            <xsl:attribute name="id" select="concat($target,'_ref')"/>
+            <xsl:attribute name="rid" select="$target"/>
             <xsl:attribute name="ref-type" select="'fn'"/>
             <xsl:apply-templates select="@*[name()!='TARGET' and name()!='N']|node()"/>
             <xsl:value-of select="lower-case(@N)"/>
@@ -551,10 +666,24 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
                     </xsl:element>
                 </xsl:element>
             </xsl:when>
+            <xsl:when test="@TYPE = 'alttext'">
+                <xsl:element name="alt-text">
+                    <xsl:apply-templates select="@*[name()!='TARGET' and name()!='TYPE']|node()"/>
+                </xsl:element>
+            </xsl:when>
             <xsl:when test="starts-with(lower-case(@URL), 'mailto:')">
                 <xsl:element name="email">
                     <xsl:attribute name="xlink:href" select="@URL"/>
                     <xsl:value-of select="."/>
+                </xsl:element>
+            </xsl:when>
+            <xsl:when test="exists(@TARGET)">
+                <xsl:element name="xref">
+                    <xsl:variable name="target" select="lower-case(@TARGET)"/>
+                    <xsl:attribute name="id" select="concat($target,'_ref')"/>
+                    <xsl:attribute name="rid" select="$target"/>
+                    <xsl:attribute name="ref-type" select="'sec'"/>
+                    <xsl:apply-templates select="@*[name()!='TARGET' and name()!='TYPE']|node()"/>
                 </xsl:element>
             </xsl:when>
             <xsl:otherwise>
@@ -639,7 +768,7 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
                                                 <xsl:apply-templates select="*[position()>1 and local-name()='HEAD']"/>
                                             </xsl:element>
                                         </xsl:if>
-                                        <xsl:apply-templates select="*[position()>1 and local-name()!='HEAD']"/>
+                                        <xsl:apply-templates select="*[position()>1 and local-name()!='HEAD' and local-name()!='REF']"/>
                                     </xsl:element>
                                 </xsl:if>
                             </xsl:when>
@@ -647,11 +776,11 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
                                 <xsl:element name="caption">
                                     <xsl:choose>
                                         <xsl:when test="exists(HEAD)">
-                                            <xsl:apply-templates/>
+                                            <xsl:apply-templates select="*[local-name()!='REF']"/>
                                         </xsl:when>
                                         <xsl:otherwise>
                                             <xsl:element name="title">
-                                                <xsl:apply-templates/>
+                                                <xsl:apply-templates select="*[local-name()!='REF']"/>
                                             </xsl:element>
                                         </xsl:otherwise>
                                     </xsl:choose>
@@ -662,6 +791,9 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
                 </xsl:otherwise>
             </xsl:choose>
 
+            <xsl:if test="exists(REF)">
+                <xsl:apply-templates select="REF"/>
+            </xsl:if>
             <xsl:if test="exists(@ENTITY)">
                 <xsl:element name="graphic">
                     <xsl:attribute name="xlink:href" select="mlibxsl:make-resource-path(@ENTITY)"/>
@@ -998,7 +1130,7 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
 
     <xsl:template match="FRONT|LB|MILESTONE"/>
 
-    <xsl:template match="TD/@TYPE"/>
+    <xsl:template match="TD/@TYPE|REF/@TARGET|@NODE"/>
 
     <xsl:template match="NOTE1/@ID">
         <xsl:attribute name="{lower-case(local-name())}" select="lower-case(.)"/>
@@ -1023,10 +1155,17 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
 
     <xsl:template name="add-section">
         <xsl:param name="divNode"/>
-
         <xsl:element name="sec">
+            <xsl:apply-templates select="$divNode/@*"/>
             <xsl:choose>
-                <xsl:when test="exists($divNode/*[local-name()='HEAD'])">
+                <xsl:when test="count($divNode/*[local-name()='HEAD']) > 1">
+                    <xsl:element name="label">
+                        <xsl:apply-templates select="$divNode/@*"/>
+                        <xsl:apply-templates select="$divNode/*[local-name()='HEAD'][1]/node()"/>
+                    </xsl:element>
+                    <xsl:apply-templates select="$divNode/*[local-name()='HEAD'][position() > 1]"/>
+                </xsl:when>
+                <xsl:when test="count($divNode/*[local-name()='HEAD']) = 1">
                     <xsl:apply-templates select="$divNode/*[local-name()='HEAD']"/>
                 </xsl:when>
                 <xsl:otherwise>
@@ -1070,6 +1209,27 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
                     </xsl:element>
                 </xsl:element>
             </xsl:when>
+            <xsl:when test="$style='b'">
+                <xsl:element name="bold">
+                    <xsl:apply-templates select="$node/@*[name()!='REND']|node()"/>
+                </xsl:element>
+            </xsl:when>
+            <xsl:when test="$style='i' or $style='math'">
+                <xsl:element name="italic">
+                    <xsl:apply-templates select="$node/@*[name()!='REND']|node()"/>
+                </xsl:element>
+            </xsl:when>
+            <xsl:when test="$style='u' or $style='underlined'">
+                <xsl:element name="underline">
+                    <xsl:apply-templates select="$node/@*[name()!='REND']|node()"/>
+                </xsl:element>
+            </xsl:when>
+            <xsl:when test="$style='smcap'">
+                <xsl:element name="sc">
+                    <xsl:apply-templates select="$node/@*[name()!='REND']|node()"/>
+                </xsl:element>
+            </xsl:when>
+            <!--
             <xsl:when test="$style='center' or $style='right' or $style='left' or $style='indent5' or $style='alignright' or $style='alignleft'">
                 <xsl:message>Style ignored: <xsl:value-of select="$style"/></xsl:message>
                 <xsl:apply-templates select="$node/@*[name()!='REND']|node()"/>
@@ -1077,27 +1237,10 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
             <xsl:when test="$style='indent1'">
                 <xsl:apply-templates select="$node/@*[name()!='REND']|node()"/>
             </xsl:when>
+            -->
             <xsl:otherwise>
-                <xsl:variable name="sstyle">
-                    <xsl:choose>
-                        <xsl:when test="$style='b'">
-                            <xsl:value-of select="'bold'"/>
-                        </xsl:when>
-                        <xsl:when test="$style='i' or $style='math'">
-                            <xsl:value-of select="'italic'"/>
-                        </xsl:when>
-                        <xsl:when test="$style='u' or $style='underlined'">
-                            <xsl:value-of select="'underline'"/>
-                        </xsl:when>
-                        <xsl:when test="$style='smcap'">
-                            <xsl:value-of select="'sc'"/>
-                        </xsl:when>
-                        <xsl:otherwise>
-                            <xsl:value-of select="$style"/>
-                        </xsl:otherwise>
-                    </xsl:choose>
-                </xsl:variable>
-                <xsl:element name="{$sstyle}">
+                <xsl:element name="styled-content">
+                    <xsl:attribute name="style" select="@REND"/>
                     <xsl:apply-templates select="$node/@*[name()!='REND']|node()"/>
                 </xsl:element>
             </xsl:otherwise>

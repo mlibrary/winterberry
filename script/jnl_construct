@@ -4,6 +4,14 @@
 require 'optparse'
 require 'ostruct'
 
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
 # Process the script parameters.
 options = OpenStruct.new
 options.journal_dir = Dir.pwd
@@ -17,7 +25,7 @@ option_parser = OptionParser.new do |opts|
     options.generate_xhtml = true
   end
   opts.on_tail('-h', '--help', 'Print this help message') do
-    puts opts
+    script_logger.info(opts)
     exit 0
   end
 end
@@ -25,16 +33,17 @@ option_parser.parse!(ARGV)
 
 # Journal directory exists?
 journal_dir = File.expand_path(options.journal_dir)
-if !File.directory?(journal_dir)
-  puts "Error: journal directory not found \"#{journal_dir}."
+unless File.directory?(journal_dir)
+  script_logger.error("journal directory not found \"#{journal_dir}.")
   exit 1
 end
 
 # Journal directory valid?
+articles_dir = File.join(journal_dir, "articles")
 dlxs_dir = File.join(journal_dir, "dlxs")
 resources_dir = File.join(journal_dir, "resources")
-if !File.directory?(dlxs_dir) or !File.directory?(resources_dir)
-  puts "Error: journal directory invalid \"#{File.basename(journal_dir)}."
+unless File.directory?(articles_dir) and File.directory?(dlxs_dir) and File.directory?(resources_dir)
+  script_logger.error("journal directory invalid \"#{File.basename(journal_dir)}.")
   exit 1
 end
 
@@ -46,10 +55,6 @@ if journal_name_list.empty?
   end
 end
 
-# Determine the root directory of the code base.
-script_dir = File.expand_path(File.dirname(__FILE__))
-root_dir = File.dirname(script_dir)
-
 require_relative File.join(root_dir, 'lib', 'xslt')
 
 require 'fileutils'
@@ -60,15 +65,15 @@ jats2html_xsl_file = File.join(root_dir, "lib", "journal", "xsl", "jats-html.xsl
 journal_name_list.each do |journal_name|
   dlxs_file = File.join(dlxs_dir, journal_name + ".xml")
   if !File.exists?(dlxs_file)
-    puts "#{journal_name}: ERROR no DLXS file."
+    script_logger.error("#{journal_name}: no DLXS file.")
     next
   end
 
-  article_dir = File.join(journal_dir, journal_name)
+  article_dir = File.join(articles_dir, journal_name)
   FileUtils.mkdir_p article_dir
 
   jats_file = File.join(article_dir, journal_name + "_jats.xml")
-  puts "#{journal_name}: #{File.basename(dlxs_file)} ==> #{File.basename(jats_file)}"
+  script_logger.info("#{journal_name}: #{File.basename(dlxs_file)} ==> #{File.basename(jats_file)}")
 
   # Pass the resource file names as a parameter to the XSLT.
   resource_file_list = Dir.glob(File.join(resources_dir, "#{journal_name}*"))
@@ -99,7 +104,7 @@ journal_name_list.each do |journal_name|
   # and construct the XSLT parameter.
   resource_list_param = ""
   resource_file_table.each do |key,resource_file|
-    puts "Copying resource #{File.basename(resource_file)}"
+    script_logger.info("Copying resource #{File.basename(resource_file)}")
     FileUtils.cp(resource_file, article_dir)
 
     #resource_list_param += "#{key}:#{File.join("resources", File.basename(resource_file))};"
@@ -112,17 +117,19 @@ journal_name_list.each do |journal_name|
            }
 
   rc = UMPTG::XSLT.transform(
-          :xslpath => dlxs2jats_xsl_file,
-          :srcpath => dlxs_file,
-          :destpath => jats_file,
-          :parameters => params
+          xslpath: dlxs2jats_xsl_file,
+          srcpath: dlxs_file,
+          destpath: jats_file,
+          logger: script_logger,
+          parameters: params
           )
   if rc and options.generate_xhtml
     html_file = File.join(File.dirname(jats_file), File.basename(jats_file, ".*") + ".html")
     UMPTG::XSLT.transform(
-            :xslpath => jats2html_xsl_file,
-            :srcpath => jats_file,
-            :destpath => html_file
+            xslpath: jats2html_xsl_file,
+            srcpath: jats_file,
+            destpath: html_file,
+            logger: script_logger
             )
   end
 end
