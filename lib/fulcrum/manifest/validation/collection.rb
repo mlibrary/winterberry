@@ -127,6 +127,7 @@ module UMPTG::Fulcrum::Manifest::Validation
             new_value = CollectionSchema.normalize(field_value)
             if metadata_name == 'license'
               new_value = "license_" + new_value
+              #puts "field_value:#{field_value},new_value:#{new_value}"
             end
             field_value = "<#{new_value}/>"
           else

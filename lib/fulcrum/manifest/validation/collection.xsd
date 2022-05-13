@@ -185,6 +185,27 @@
             <xs:attribute name="active" type="xs:boolean" fixed="false"/>
         </xs:complexType>
     </xs:element>
+    <xs:element name="license_creative_commons_attribution_2.0_generic">
+        <xs:complexType>
+            <xs:attribute name="id" type="type_string_url" fixed="https://creativecommons.org/licenses/by/2.0/"/>
+            <xs:attribute name="term" type="xs:string" fixed="Creative Commons Attribution 2.0 Generic license"/>
+            <xs:attribute name="active" type="xs:boolean" fixed="false"/>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="license_creative_commons_attribution_sharealike_2.0_generic_license">
+        <xs:complexType>
+            <xs:attribute name="id" type="type_string_url" fixed="https://creativecommons.org/licenses/by-sa/2.0/"/>
+            <xs:attribute name="term" type="xs:string" fixed="Creative Commons Attribution-ShareAlike 2.0 Generic license"/>
+            <xs:attribute name="active" type="xs:boolean" fixed="false"/>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="license_creative_commons_attribution_sharealike_2.5_generic_license">
+        <xs:complexType>
+            <xs:attribute name="id" type="type_string_url" fixed="https://creativecommons.org/licenses/by-sa/2.5/"/>
+            <xs:attribute name="term" type="xs:string" fixed="Creative Commons Attribution-ShareAlike 2.5 Generic license"/>
+            <xs:attribute name="active" type="xs:boolean" fixed="false"/>
+        </xs:complexType>
+    </xs:element>
     <xs:element name="license_creative_commons_attribution_sharealike_2.1_japan">
         <xs:complexType>
             <xs:attribute name="id" type="type_string_url" fixed="https://creativecommons.org/licenses/by-sa/2.1/jp/"/>
@@ -228,6 +249,13 @@
         </xs:complexType>
     </xs:element>
     <xs:element name="license_creative_commons_attribution_sharealike_license_3.0">
+        <xs:complexType>
+            <xs:attribute name="id" type="type_string_url" fixed="https://creativecommons.org/licenses/by-sa/3.0/"/>
+            <xs:attribute name="term" type="xs:string" fixed="Creative Commons Attribution-ShareAlike license, 3.0"/>
+            <xs:attribute name="active" type="xs:boolean" fixed="false"/>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="license_creative_commons_attribution_sharealike_license_3.0_unported">
         <xs:complexType>
             <xs:attribute name="id" type="type_string_url" fixed="https://creativecommons.org/licenses/by-sa/3.0/"/>
             <xs:attribute name="term" type="xs:string" fixed="Creative Commons Attribution-ShareAlike license, 3.0"/>
@@ -845,6 +873,9 @@
             <xs:element ref="license_attribution_noncommercial_sharealike_3.0_united_states"/>
             <xs:element ref="license_all_rights_reserved"/>
             <xs:element ref="license_creative_commons_attribution_2.0_generic_license"/>
+            <xs:element ref="license_creative_commons_attribution_2.0_generic"/>
+            <xs:element ref="license_creative_commons_attribution_sharealike_2.0_generic_license"/>
+            <xs:element ref="license_creative_commons_attribution_sharealike_2.5_generic_license"/>
             <xs:element ref="license_creative_commons_attribution_sharealike_2.1_japan"/>
             <xs:element ref="license_creative_commons_attribution_license_3.0_unported"/>
             <xs:element ref="license_creative_commons_attribution_noderivatives_license_3.0"/>
@@ -852,6 +883,7 @@
             <xs:element ref="license_creative_commons_attribution_noncommercial_license_3.0_unported"/>
             <xs:element ref="license_creative_commons_attribution_noncommercial_sharealike"/>
             <xs:element ref="license_creative_commons_attribution_sharealike_license_3.0"/>
+            <xs:element ref="license_creative_commons_attribution_sharealike_license_3.0_unported"/>
         </xs:choice>
         <xs:attribute name="enumeration" type="xs:boolean" fixed="true"/>
         <xs:attribute name="object" type="xs:string" fixed="universal"/>

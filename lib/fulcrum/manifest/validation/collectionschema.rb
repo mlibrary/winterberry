@@ -62,7 +62,10 @@ module UMPTG::Fulcrum::Manifest::Validation
     end
 
     def self.normalize(name)
-      return name.strip.downcase.gsub(/[ \-\/]+/, '_')
+      n = name.strip.downcase.gsub(/\,/, ' ')
+      g = n.gsub(/[ \-\/]+/, '_')
+      #puts "g=#{g}" if g.start_with?("creative")
+      return g
     end
 
     def self.resource?(name)
