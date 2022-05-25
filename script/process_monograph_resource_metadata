@@ -179,14 +179,17 @@ monograph_id_list.each do |monograph_id|
             node = object.node
             node_map = object.map
             reference_name = node_map['resource_name'].strip
-
             resource = resource_map.reference_resource(reference_name)
             if resource.nil?
               monograph_loggers[monograph_id].warn("#{object.name}: no resource found for reference \"#{reference_name}\".")
             else
               monograph_loggers[monograph_id].info("#{object.name}: mapping reference \"#{reference_name}\" to resource \"#{resource.name}\".")
               node_map["caption"] = node_map["caption"].text unless node_map["caption"].nil?
+
+              # Replace following line if extended resource descriptions exist.
+              # It will allow for first encountered captions/alttext to win.
               resource.resource_properties = node_map
+              #resource.resource_properties = node_map if resource.resource_properties.nil?
             end
 
             resource_map.add(
@@ -213,6 +216,11 @@ monograph_id_list.each do |monograph_id|
         next
       end
       fmsl_file = fmsl_file_list.first
+      if fmsl_file_list.count > 1
+        # If resource directory contains resource files that are CSV, look for manifest.csv.
+        ff = fmsl_file_list.find {|f| File.basename(f).downcase == "manifest.csv" }
+        fmsl_file = ff unless ff.nil?
+      end
       monograph_loggers[monograph_id].warn("Multiple FMSLs for monograph #{monograph_dir}. Using #{File.basename(fmsl_file)}.") \
             if fmsl_file_list.count > 1
       monograph_loggers[monograph_id].info("Using FMSL #{File.basename(fmsl_file)}.") if fmsl_file_list.count == 1

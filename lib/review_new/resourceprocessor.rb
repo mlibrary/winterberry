@@ -271,6 +271,14 @@ module UMPTG::Review
                   end
 
                   figure_obj_list.each do |figure_obj|
+                    if figure_obj.img_list.empty?
+                      reference_action_list << Action.new(
+                               name: name,
+                               reference_node: figure_obj.container_node,
+                               error_message: "image: figure object with no image node."
+                           )
+                      next
+                    end
                     figure_obj.img_list.each do |img_obj|
                       img_container = img_obj.container_node
 
@@ -290,6 +298,7 @@ module UMPTG::Review
 
                   if figure_obj_list.count > 1
                     figure_obj_list.each do |figure_obj|
+                      next if figure_obj.img_list.empty?
                       reference_action_list << NormalizeFigureNestAction.new(
                                name: name,
                                #reference_node: reference_node,

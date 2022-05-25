@@ -87,9 +87,11 @@ fmsl_file_list.each do |fmsl_file|
   manifest_csv = UMPTG::FMSL.to_manifest(fmsl_body: fmsl_body)
 
   # Make sure there no duplicate columns.
-  unless manifest_csv.headers.count == manifest_csv.headers.uniq.count
+  filter_headers = manifest_csv.headers.select {|h| !(h.nil? or h.empty?) }
+  unless filter_headers.count == filter_headers.uniq.count
+    filter_headers.each {|h| puts h }
     # Tried Array#difference, but didn't work. ?
-    sorted = manifest_csv.headers.sort
+    sorted = filter_headers.sort
     df = []
     sorted.each_index do |ndx|
       next if ndx == 0
@@ -123,7 +125,7 @@ fmsl_file_list.each do |fmsl_file|
     script_logger.info("No resources check performed.")
   else
     manifest_csv.each do |row|
-      next unless row['External Resource URL'].nil?
+      next unless row['External Resource URL'].nil? or row['External Resource URL'].strip.empty?
 
       resource_name = row['File Name']
       if resource_name.nil? or resource_name.strip.empty?

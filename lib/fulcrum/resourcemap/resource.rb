@@ -13,5 +13,9 @@ module UMPTG::Fulcrum::ResourceMap
 
       @resource_properties = args[:resource_properties]
     end
+
+    def to_s
+      return super() + ",properties=#{@resource_properties}"
+    end
   end
 end
