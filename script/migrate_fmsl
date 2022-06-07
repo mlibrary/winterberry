@@ -89,7 +89,7 @@ fmsl_file_list.each do |fmsl_file|
   # Make sure there no duplicate columns.
   filter_headers = manifest_csv.headers.select {|h| !(h.nil? or h.empty?) }
   unless filter_headers.count == filter_headers.uniq.count
-    filter_headers.each {|h| puts h }
+    #filter_headers.each {|h| puts h }
     # Tried Array#difference, but didn't work. ?
     sorted = filter_headers.sort
     df = []
