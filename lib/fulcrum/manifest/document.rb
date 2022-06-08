@@ -56,7 +56,7 @@ module UMPTG::Fulcrum::Manifest
 
       kind = args[:kind]
       row = @csv.find {|row| row['representative_kind'] == kind.downcase }
-      raise "Error: representative #{kind} not found" if row.nil?
+      #raise "Error: representative #{kind} not found" if row.nil?
       return row
     end
 

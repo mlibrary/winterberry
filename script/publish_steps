@@ -124,6 +124,12 @@ monograph_id_list.each do |monograph_id|
     script_logger.info("Using monograph directory #{monograph_dir}") if monograph_dir_list.count == 1
   end
 
+  # Use the monograph ID to retrieve the manifest from Fulcrum.
+  manifest = UMPTG::Fulcrum::Manifest::Document.new(
+                monograph_id: monograph_id,
+                fulcrum_host: options.fulcrum_host
+              )
+=begin
   # Use the monograph ID to retrieve the NOID from Fulcrum.
   monograph_noid = service.monograph_noid(identifier: monograph_id)
   if monograph_noid.nil? or monograph_noid.empty?
@@ -140,7 +146,16 @@ monograph_id_list.each do |monograph_id|
   manifest = UMPTG::Fulcrum::Manifest::Document.new(
                 :csv_body => csv_body
               )
+=end
   monograph_row = manifest.monograph_row
+  monograph_noid = monograph_row['noid']
+  epub_row = manifest.representative_row(kind: "epub")
+  if epub_row.nil?
+    epub_noid = nil
+    script_logger.error("no EPUB row found for id #{monograph_id}")
+  else
+    epub_noid = epub_row['noid']
+  end
 
   series_id = ""
   case options.press
@@ -182,6 +197,7 @@ monograph_id_list.each do |monograph_id|
   minfo = {
        monograph_dir: monograph_dir,
        monograph_noid: monograph_noid,
+       epub_noid: epub_noid,
        monograph_doi: monograph_row["doi"],
        monograph_series: series_id,
        monograph_pub_date: pub_date,
@@ -308,6 +324,13 @@ File.open(cmds_file, "w") do |fp|
   fp.puts "# Rails console"
   fp.puts "sudo -u heliotrope-production RAILS_ENV=production bundle exec rails console"
   fp.puts
+  fp.puts "# Unpack EPUBs"
+  monograph_info.each do |monograph_id,minfo|
+    mminfo = minfo.delete_if {|key,value| key == :monograph_dir}
+    fp.puts "#{monograph_id}: UnpackJob.perform_now('#{minfo[:epub_noid]}', 'epub')"
+  end
+  fp.puts
+
   fp.puts "# Publish monographs (bulleit-1)"
   fp.puts "%w[#{monograph_noid_list.join(' ')}].each do |noid|"
   fp.puts "  monograph = Monograph.find(noid)"
