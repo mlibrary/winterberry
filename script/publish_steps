@@ -100,9 +100,7 @@ bulleit1_task_dir = File.join(bulleit1_publish_dir, task_id)
 script_logger.info("Using task directory #{File.basename(task_dir)}")
 
 # Create the serivce for retrieving the NOID manifest.
-service = UMPTG::Services::Heliotrope.new(
-                :fulcrum_host => options.fulcrum_host
-              )
+service = UMPTG::Services::Heliotrope.new()
 
 # For each monograph ID, retrieve NOID, DOI, and BAR number
 monograph_info = {}
@@ -126,8 +124,7 @@ monograph_id_list.each do |monograph_id|
 
   # Use the monograph ID to retrieve the manifest from Fulcrum.
   manifest = UMPTG::Fulcrum::Manifest::Document.new(
-                monograph_id: monograph_id,
-                fulcrum_host: options.fulcrum_host
+                monograph_id: monograph_id
               )
 =begin
   # Use the monograph ID to retrieve the NOID from Fulcrum.
@@ -149,12 +146,24 @@ monograph_id_list.each do |monograph_id|
 =end
   monograph_row = manifest.monograph_row
   monograph_noid = monograph_row['noid']
+
+  # Find EPUB representative NOID
+  epub_noid = nil
   epub_row = manifest.representative_row(kind: "epub")
   if epub_row.nil?
-    epub_noid = nil
     script_logger.error("no EPUB row found for id #{monograph_id}")
   else
     epub_noid = epub_row['noid']
+    script_logger.info("using EPUB NOID #{epub_noid} for id #{monograph_id}")
+  end
+
+  pdf_noid = nil
+  pdf_row = manifest.representative_row(kind: "pdf_ebook")
+  if pdf_row.nil?
+    script_logger.error("no PDF row found for id #{monograph_id}")
+  else
+    pdf_noid = pdf_row['noid']
+    script_logger.info("using PDF NOID #{pdf_noid} for id #{monograph_id}")
   end
 
   series_id = ""
@@ -198,6 +207,7 @@ monograph_id_list.each do |monograph_id|
        monograph_dir: monograph_dir,
        monograph_noid: monograph_noid,
        epub_noid: epub_noid,
+       pdf_noid: pdf_noid,
        monograph_doi: monograph_row["doi"],
        monograph_series: series_id,
        monograph_pub_date: pub_date,
@@ -324,10 +334,17 @@ File.open(cmds_file, "w") do |fp|
   fp.puts "# Rails console"
   fp.puts "sudo -u heliotrope-production RAILS_ENV=production bundle exec rails console"
   fp.puts
-  fp.puts "# Unpack EPUBs"
+  fp.puts "# Unpack representatives"
   monograph_info.each do |monograph_id,minfo|
     mminfo = minfo.delete_if {|key,value| key == :monograph_dir}
-    fp.puts "#{monograph_id}: UnpackJob.perform_now('#{minfo[:epub_noid]}', 'epub')"
+
+    epub_noid = minfo[:epub_noid]
+    pdf_noid = minfo[:pdf_noid]
+
+    fp.puts "#{monograph_id}:"
+    fp.puts "\tUnpackJob.perform_now('','')" if epub_noid.nil? and pdf_noid.nil?
+    fp.puts "\tUnpackJob.perform_now('#{minfo[:epub_noid]}','epub')" unless epub_noid.nil?
+    fp.puts "\tUnpackJob.perform_now('#{minfo[:pdf_noid]}','pdf_ebook')" unless pdf_noid.nil?
   end
   fp.puts
 
@@ -341,8 +358,8 @@ File.open(cmds_file, "w") do |fp|
   fp.puts "    PublishJob.perform_later(monograph)"
   fp.puts "  end"
   fp.puts "end;0"
-
   fp.puts
+
   fp.puts "# Monograph information"
   fp.puts monograph_info.keys.join(' ')
   monograph_info.each do |monograph_id,minfo|
