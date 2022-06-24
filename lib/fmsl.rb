@@ -29,7 +29,7 @@ module UMPTG
 
         fmsl_body_list = []
         sheet.each do |row|
-          next if row[0].nil?
+          next if row.compact.empty?
           fmsl_body_list << CSV.generate_line(row)
         end
       else
