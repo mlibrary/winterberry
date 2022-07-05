@@ -29,7 +29,7 @@ module UMPTG::Review
     .//*[local-name()='img'
     or local-name()='figcaption'
     or (
-    parent::*[local-name()!='figcaption']
+    count(ancestor::*[local-name()='figcaption'])=0
     and (
     translate(@class,'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz')='figh'
     or translate(@class,'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz')='figh1'
