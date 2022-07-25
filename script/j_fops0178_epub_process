@@ -1,0 +1,388 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Script to display image thumbnails within extended
+# captions.
+
+require 'optparse'
+require 'ostruct'
+require 'os'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+# Process the script parameters.
+options = OpenStruct.new
+options.normalize = false
+options.normalize_caption_class = false
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} <epub_file> [<epub_file>...]"
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    script_logger.info(opts)
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  script_logger.info(option_parser.help)
+  return
+end
+
+# Process the command line parameters.
+epub_file_list = ARGV
+
+require_relative File.join(root_dir, "lib", "review_new")
+require_relative File.join(root_dir, "lib", "fulcrum")
+
+class BuildFigureMapProcessor < UMPTG::EPUB::EntryProcessor
+  attr_reader :figure_map, :figure_ref_map
+
+  def initialize(args = {})
+    super(args)
+
+    @figure_map = {}
+    @figure_ref_map = {}
+  end
+
+  def action_list(args = {})
+    name = args[:name]
+    xml_doc = args[:xml_doc]
+
+    alist = []
+    if File.basename(name) == 'div1_excap.xhtml'
+      node_list = xml_doc.xpath("//*[local-name()='a' and @href]")
+      node_list.each do |node|
+        href = node['href'].strip
+        next if href.empty?
+
+        @figure_ref_map[href] = node
+      end
+    else
+      node_list = xml_doc.xpath("//*[local-name()='figure' and @id]")
+      node_list.each do |node|
+        id = node['id'].strip
+        next if id.empty?
+
+        href = File.basename(name) + '#' + id
+        @figure_map[href] = node
+      end
+    end
+    return alist
+  end
+end
+
+class InsertFigureAction < UMPTG::Review::NormalizeAction
+  def process(args = {})
+    super(args)
+
+    name = @properties[:name]
+
+    reference_node = @properties[:reference_node]
+    figure_node = @properties[:figure_node]
+    figure_id = @properties[:figure_id]
+
+    cell_node = reference_node.xpath("./ancestor::*[local-name()='td'][1]").first \
+            unless reference_node.nil?
+    img_node = figure_node.xpath(".//*[local-name()='img'][1]").first \
+            unless figure_node.nil?
+    unless reference_node.nil? or figure_node.nil? or cell_node.nil? or img_node.nil?
+      # Add duplicated image within extended caption
+      new_figure_node = cell_node.document.create_element("figure")
+      new_figure_id = figure_id + "_ref"
+      new_figure_node['id'] = new_figure_id
+      new_img_node = img_node.dup(1)
+      new_figure_node.prepend_child(new_img_node)
+      cell_node.prepend_child(new_figure_node)
+      add_info_msg("duplicated figure image #{figure_id} within reference.")
+
+      @status = UMPTG::Review::NormalizeAction.NORMALIZED
+      return
+    end
+
+    add_error_msg("invalid reference node for ID #{figure_id}") if reference_node.nil?
+    add_error_msg("invalid cell node for ID #{figure_id}") if cell_node.nil?
+    add_error_msg("invalid figure node for ID #{figure_id}") if figure_node.nil?
+    add_error_msg("invalid img node for ID #{figure_id}") if img_node.nil?
+    @status = UMPTG::Review::NormalizeAction.FAILED
+   end
+end
+
+class InsertCaptionLinkAction < UMPTG::Review::NormalizeAction
+  def process(args = {})
+    super(args)
+
+    name = @properties[:name]
+
+    reference_node = @properties[:reference_node]
+    figure_id = reference_node['id'].strip
+
+    unless reference_node.nil?
+      # Add link to extended caption in figure.
+      new_caption_container = reference_node.document.create_element("span")
+      new_caption_container['class'] = 'figcaption'
+      new_caption_link = reference_node.document.create_element("a")
+      new_caption_link['href'] = 'div1_excap.xhtml#' + figure_id + "_ref"
+      new_caption_link.content = "Extended caption"
+
+      new_caption_container.add_child(new_caption_link)
+      reference_node.add_child(new_caption_container)
+      add_info_msg("inserted extended caption link within figure image #{figure_id}.")
+
+      @status = UMPTG::Review::NormalizeAction.NORMALIZED
+      return
+    end
+
+    add_error_msg("invalid reference node for ID #{figure_id}") if reference_node.nil?
+
+    @status = UMPTG::Review::NormalizeAction.FAILED
+   end
+end
+
+class InsertFigureProcessor < UMPTG::EPUB::EntryProcessor
+  def action_list(args = {})
+    name = args[:name]
+    xml_doc = args[:xml_doc]
+
+    figure_map = @properties[:figure_map]
+    figure_ref_map = @properties[:figure_ref_map]
+
+    alist = []
+    if File.basename(name) == 'div1_excap.xhtml'
+      node_list = xml_doc.xpath("//*[local-name()='a' and @href]")
+      node_list.each do |node|
+        href = node['href'].strip
+        next if href.empty? or figure_ref_map[href].nil?
+
+        id = href.partition('#').last
+
+        figure_node = figure_map[href]
+        if figure_node.nil?
+          alist << UMPTG::Review::Action.new(
+                  name: name,
+                  reference_node: node,
+                  info_message: "no InsertFigureAction for ID #{href}"
+                )
+          next
+        end
+
+        alist << InsertFigureAction.new(
+                name: name,
+                reference_node: node,
+                figure_node: figure_node,
+                figure_id: id
+              )
+      end
+    else
+      node_list = xml_doc.xpath("//*[local-name()='figure' and @id]")
+      node_list.each do |node|
+        id = node['id'].strip
+        next if id.empty?
+
+        href = File.basename(name) + '#' + id
+        if figure_ref_map[href].nil?
+          alist << UMPTG::Review::Action.new(
+                  name: name,
+                  reference_node: node,
+                  info_message: "no InsertCaptionLinkAction for ID #{id}"
+                )
+          next
+        end
+
+        alist << InsertCaptionLinkAction.new(
+                name: name,
+                reference_node: node
+              )
+      end
+    end
+    return alist
+  end
+end
+
+class UpdateAssetLinkAction < UMPTG::Review::NormalizeAction
+  def process(args = {})
+    super(args)
+
+    name = @properties[:name]
+
+    reference_node = @properties[:reference_node]
+    manifest_csv = @properties[:manifest_csv]
+
+    unless reference_node.nil?
+      figure_id = reference_node['id'].strip
+
+      img_node = reference_node.xpath("descendant::*[local-name()='img' and @src]").first
+      if img_node.nil?
+        add_warn_msg("no img element for ID #{figure_id}")
+        @status = UMPTG::Review::NormalizeAction.FAILED
+        return
+      end
+      img_src = img_node['src']
+      add_info_msg("found resource #{img_src} for ID #{figure_id}")
+
+      img_src_base = File.basename(img_src, ".*") + "-lg" + File.extname(img_src)
+      fileset = manifest_csv.fileset(img_src_base)
+      if fileset['file_name'].empty?
+        add_error_msg("no resource found for #{img_src_base} for ID #{figure_id}")
+        @status = UMPTG::Review::NormalizeAction.FAILED
+        return
+      end
+      add_info_msg("found resource #{fileset['file_name']} for ID #{figure_id}")
+
+      view_asset_caption_node = reference_node.xpath("descendant::*[local-name()='a' and @target='_blank']").first
+      if view_asset_caption_node.nil?
+        add_warn_msg("no view asset caption element for ID #{figure_id}")
+        @status = UMPTG::Review::NormalizeAction.NO_ACTION
+        return
+      end
+
+      old_href = view_asset_caption_node['href']
+      new_href = fileset['link'].match('^[^\(]+\(\"([^\"]+)\".*') {|m| m[1] }
+
+      view_asset_caption_node['href'] = new_href
+      add_info_msg("updated asset link from #{old_href} to #{new_href} for ID #{figure_id}.")
+
+      @status = UMPTG::Review::NormalizeAction.NORMALIZED
+      return
+    end
+
+    add_error_msg("invalid reference node for ID #{figure_id}") if reference_node.nil?
+    @status = UMPTG::Review::NormalizeAction.FAILED
+   end
+end
+
+class UpdateAssetLinkProcessor < UMPTG::EPUB::EntryProcessor
+  attr_reader :manifest_csv
+
+  def initialize(args = {})
+    super(args)
+
+    @manifest_csv = @properties[:manifest_csv]
+  end
+
+  def action_list(args = {})
+    name = args[:name]
+    xml_doc = args[:xml_doc]
+
+    alist = []
+    node_list = xml_doc.xpath("//*[local-name()='figure' and @id and descendant::*[local-name()='a' and @target='_blank']]")
+    node_list.each do |node|
+      alist << UpdateAssetLinkAction.new(
+              name: name,
+              reference_node: node,
+              manifest_csv: @manifest_csv
+            )
+    end
+    return alist
+  end
+end
+
+build_processors = {
+        BuildFigureMap: BuildFigureMapProcessor.new
+      }
+
+epub_file_list.each do |epub_file|
+  epub_file = File.expand_path(epub_file)
+
+  # Process the epub and generate the image information.
+  #script_logger.info("epub_file:#{epub_file}")
+  epub = UMPTG::EPUB::Archive.new(epub_file: epub_file)
+
+  # Load manifest file.
+  manifest_file = File.join(File.dirname(epub_file), "manifest.csv")
+  unless File.file?(manifest_file)
+    script_logger.error("no manifest file found for EPUB #{epub_file}")
+    next
+  end
+  manifest_csv = UMPTG::Fulcrum::Manifest::Document.new(
+                  csv_file: manifest_file
+                )
+  if manifest_csv.nil?
+    script_logger.error("loading manifest file for EPUB #{epub_file}")
+    next
+  end
+
+  update_asset_link_processor = UpdateAssetLinkProcessor.new(manifest_csv: manifest_csv)
+
+  action_map = UMPTG::EPUB::Processor.process(
+        epub: epub,
+        #entry_processors: build_processors,
+        entry_processors: {
+              UpdateAssetLink: update_asset_link_processor
+            },
+        pass_xml_doc: true,
+        logger: script_logger
+      )
+=begin
+  figure_map = build_processors[:BuildFigureMap].figure_map
+  figure_ref_map = build_processors[:BuildFigureMap].figure_ref_map
+
+  insert_processor = InsertFigureProcessor.new(
+         figure_map: figure_map,
+         figure_ref_map: figure_ref_map
+         )
+
+  action_map = UMPTG::EPUB::Processor.process(
+        epub: epub,
+        entry_processors: {
+              InsertFigure: insert_processor
+            },
+        pass_xml_doc: true,
+        logger: script_logger
+      )
+=end
+
+  action_map.each do |entry_name,proc_map|
+    proc_map.each do |key,action_list|
+      next if action_list.nil?
+      action_list.each do |action|
+        action.process()
+      end
+    end
+  end
+
+  epub_modified = false
+  action_map.each do |entry_name,proc_map|
+    script_logger.info("Reporting #{entry_name}")
+
+    update_entry = false
+    proc_map.each do |key,action_list|
+      next if action_list.nil?
+      action_list.each do |action|
+        if action.status == UMPTG::Review::NormalizeAction.NORMALIZED
+          update_entry = true
+        end
+        action.messages.each do |msg|
+          case msg.level
+          when UMPTG::Message.INFO
+            script_logger.info(msg.text)
+          when UMPTG::Message.WARNING
+            script_logger.warn(msg.text)
+          when UMPTG::Message.ERROR
+            script_logger.error(msg.text)
+          when UMPTG::Message.FATAL
+            script_logger.fatal(msg.text)
+          end
+        end
+      end
+    end
+    if update_entry
+      script_logger.info("Updating entry #{entry_name}")
+      xml_doc = proc_map[:xml_doc]
+      epub.add(entry_name: entry_name, entry_content: UMPTG::XMLUtil.doc_to_xml(xml_doc))
+      epub_modified = true
+    end
+  end
+  if epub_modified
+    new_epub_file = File.join(
+              File.dirname(epub_file),
+              File.basename(epub_file, ".*") + "_fixed.epub"
+            )
+    script_logger.info("Saving EPUB #{File.basename(new_epub_file)}")
+    epub.save(epub_file: new_epub_file)
+  end
+end
