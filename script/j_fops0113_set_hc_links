@@ -1,0 +1,166 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Script used for FOPS-0184 to create CSV that
+# has HEB Round (16-18) title descriptions to be
+# used by MPS to update.
+
+require 'optparse'
+require 'ostruct'
+require 'os'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+# Process the script parameters.
+options = OpenStruct.new
+options.output_dir = Dir.pwd()
+options.fulcrum_host = 'production'
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-f production|preview|staging] <noid> <xhtml_file> [<xhtml_file>...]"
+  opts.on('-f', '--fulcrum_host [production|preview|staging]', 'Fulcrum environment') do |fulcrum_host|
+    options.fulcrum_host = fulcrum_host
+  end
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    script_logger.info(opts)
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 2
+  script_logger.info(option_parser.help)
+  return
+end
+
+# Process the command line parameters.
+monograph_id = ARGV[0]
+xhtml_file_list = ARGV[1..-1]
+
+require_relative File.join(root_dir, "lib", "xmlutil")
+require_relative File.join(root_dir, "lib", "services")
+require_relative File.join(root_dir, "lib", "fulcrum", "manifest")
+
+script_logger.info("*" * 10 + " #{options.fulcrum_host} #{monograph_id} " + "*" * 10)
+
+service = UMPTG::Services::Heliotrope.new(
+                fulcrum_host: options.fulcrum_host
+              )
+
+manifest_body = service.monograph_export(noid: monograph_id)
+
+# Use the monograph ID to retrieve the manifest from Fulcrum.
+manifest = UMPTG::Fulcrum::Manifest::Document.new(
+              csv_body: manifest_body
+            )
+if manifest.nil?
+  script_logger.error("no manifest found for id #{monograph_id}")
+  exit(0)
+end
+
+xhtml_file_list.each do |xhtml_file|
+  xhtml_file = File.expand_path(xhtml_file)
+  unless File.file?(xhtml_file)
+    script_logger.error("invalid XHTML file #{xhtml_file}")
+    next
+  end
+  script_logger.info("processing XHTML #{File.basename(xhtml_file)}")
+
+  xml_doc = UMPTG::XMLUtil.parse(xml_content: File.read(xhtml_file))
+  if xml_doc.nil?
+    script_logger.error("unable to parse XHTML #{File.basename(xhtml_file)}")
+    next
+  end
+  script_logger.info("setting links in XHTML #{File.basename(xhtml_file)}")
+
+  nlist = xml_doc.xpath("//*[local-name()='figure']")
+  nlist.each do |node|
+    link = ""
+    img_list = node.xpath(".//*[local-name()='img']")
+    img_list.each do |inode|
+      src = inode['src']
+      if src.nil? or src.empty?
+        script_logger.error("no @src for image #{inode['id']}")
+        next
+      end
+      resource_name = File.basename(src)
+      fileset = manifest.fileset(resource_name)
+      if fileset.nil?
+        script_logger.error("no fileset found for image #{resource_name}")
+        next
+      end
+      link = fileset['link'].strip[12..-3]
+      script_logger.info("name:#{resource_name}  #{link}")
+    end
+    if link.empty?
+      script_logger.error("no link found for image #{inode['id']}")
+      next
+    end
+
+    figcap_list = node.xpath("./*[local-name()='figcaption']")
+    if figcap_list.empty?
+      figcap_node = node.document.create_element("figcaption")
+      node.add_child(figcap_node)
+
+      p_node = figcap_node.document.create_element("p")
+      a_node = p_node.document.create_element("a")
+
+      p_node.add_child(a_node)
+      p_node['class'] = 'figcap'
+      figcap_node.add_child(p_node)
+    else
+      a_node_list = figcap_list.first.xpath(".//*[local-name()='a']")
+      if a_node_list.empty?
+        script_logger.error("no anchor found for image #{inode['id']}")
+        next
+      end
+      a_node = a_node_list.first
+    end
+    a_node.content = "Image information"
+    a_node['href'] = link
+  end
+
+  new_xhtml_file = File.join(File.dirname(xhtml_file), File.basename(xhtml_file, ".*") + "_set_hc_links" + File.extname(xhtml_file))
+  File.write(new_xhtml_file, xml_doc)
+end
+
+=begin
+csv_file = File.join(options.output_dir, "heb_description.csv")
+CSV.open(
+        csv_file,
+        "w",
+        :write_headers=> true,
+        :headers => [ "HEB ID", "Title", "Description", "NOID"]
+      ) do |csv|
+  monograph_id_list.each do |monograph_id|
+    script_logger.info("*" * 10 + " #{monograph_id} " + "*" * 10)
+
+    # Use the monograph ID to retrieve the manifest from Fulcrum.
+    manifest = UMPTG::Fulcrum::Manifest::Document.new(
+                  monograph_id: monograph_id
+                )
+    if manifest.nil?
+      script_logger.error("no manifest found for id #{monograph_id}")
+      next
+    end
+
+    if manifest.monograph_row.nil?
+      script_logger.error("no monograph row found for id #{monograph_id}")
+      next
+    end
+    #puts manifest.monograph_row
+
+    row = {
+            'HEB ID' => monograph_id,
+            'Title' => manifest.monograph_row['title'],
+            'Description' => manifest.monograph_row['description'],
+            'NOID' => manifest.monograph_row['noid']
+      }
+    csv << row
+  end
+end
+=end
