@@ -184,7 +184,7 @@ monograph_id_list.each do |monograph_id|
               monograph_loggers[monograph_id].warn("#{object.name}: no resource found for reference \"#{reference_name}\".")
             else
               monograph_loggers[monograph_id].info("#{object.name}: mapping reference \"#{reference_name}\" to resource \"#{resource.name}\".")
-              node_map["caption"] = node_map["caption"].text unless node_map["caption"].nil?
+              node_map["caption"] = node_map["caption"].text.strip unless node_map["caption"].nil?
 
               # Replace following line if extended resource descriptions exist.
               # It will allow for first encountered captions/alttext to win.
