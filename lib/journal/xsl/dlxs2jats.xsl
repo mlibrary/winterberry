@@ -1134,6 +1134,23 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
 
     <xsl:template match="DIV1/@TYPE|TD/@TYPE|REF/@TARGET|@NODE"/>
 
+    <xsl:template match="TABLE/@BORDER">
+        <xsl:variable name="border" select="."/>
+        <xsl:choose>
+            <xsl:when test="$border='1'">
+                <xsl:attribute name="frame" select="'box'"/>
+                <xsl:attribute name="rule" select="'all'"/>
+            </xsl:when>
+            <xsl:when test="$border='0'">
+                <xsl:attribute name="frame" select="'box'"/>
+                <xsl:attribute name="rule" select="'all'"/>
+            </xsl:when>
+            <xsl:otherwise>
+                <xsl:attribute name="{lower-case(local-name())}" select="lower-case(.)"/>
+            </xsl:otherwise>
+        </xsl:choose>
+    </xsl:template>
+
     <xsl:template match="NOTE1/@ID">
         <xsl:attribute name="{lower-case(local-name())}" select="lower-case(.)"/>
     </xsl:template>
