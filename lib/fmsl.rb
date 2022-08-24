@@ -78,7 +78,7 @@ module UMPTG
             next if UMPTG::Fulcrum::Manifest.blank_row_name?(file_name)
           end
 
-          unless row['Fulcrum'].nil? or row['Fulcrum'].downcase == 'yes'
+          unless row['Fulcrum'].nil? or row['Fulcrum'].strip.downcase == 'yes'
             if row['File Name'].nil?
               puts "Skipping row (no file name), Fulcrum != 'yes'"
             else
