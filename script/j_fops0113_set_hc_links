@@ -79,7 +79,7 @@ xhtml_file_list.each do |xhtml_file|
 
   nlist = xml_doc.xpath("//*[local-name()='figure']")
   nlist.each do |node|
-    link = ""
+    fileset = nil
     img_list = node.xpath(".//*[local-name()='img']")
     img_list.each do |inode|
       src = inode['src']
@@ -88,19 +88,16 @@ xhtml_file_list.each do |xhtml_file|
         next
       end
       resource_name = File.basename(src)
-      fileset = manifest.fileset(resource_name)
-      if fileset.nil?
-        script_logger.error("no fileset found for image #{resource_name}")
+      fs = manifest.fileset(resource_name)
+      if fs["noid"].empty?
+        script_logger.warn("no fileset found for image #{resource_name}")
         next
       end
-      link = fileset['link'].strip[12..-3]
-      script_logger.info("name:#{resource_name}  #{link}")
+      fileset = fs
     end
-    if link.empty?
-      script_logger.error("no link found for image #{inode['id']}")
-      next
-    end
+    next if fileset.nil?
 
+    fname = fileset["file_name"]
     figcap_list = node.xpath("./*[local-name()='figcaption']")
     if figcap_list.empty?
       figcap_node = node.document.create_element("figcaption")
@@ -115,11 +112,14 @@ xhtml_file_list.each do |xhtml_file|
     else
       a_node_list = figcap_list.first.xpath(".//*[local-name()='a']")
       if a_node_list.empty?
-        script_logger.error("no anchor found for image #{inode['id']}")
+        script_logger.warn("no anchor found for image #{fname}")
         next
       end
       a_node = a_node_list.first
     end
+
+    link = fileset['link'].strip[12..-3]
+    script_logger.info("Setting #{fname}  #{link}")
     a_node.content = "Image information"
     a_node['href'] = link
   end
