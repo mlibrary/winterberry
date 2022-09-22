@@ -1,24 +1,9 @@
 module UMPTG::Review
-  class TableProcessor < EntryProcessor
-    @@children = [ 'caption', 'colgroup', 'thead', 'tbody', 'tfoot' ]
-
+  class TableProcessor < ElementEntryProcessor
     def initialize(args = {})
-      args[:containers] = [ 'table' ]
+      args[:container_elements] = [ 'table' ]
+      args[:child_elements] = [ 'caption', 'colgroup', 'thead', 'tbody', 'tfoot' ]
       super(args)
-    end
-
-    #
-    #
-    # Arguments:
-    #   :name       Content identifier, e.g. EPUB entry name or file name.
-    #   :fragment   XML fragment for Marker to process.
-    def new_action(args = {})
-      action = UMPTG::Review::TableAction.new(
-          name: args[:name],
-          fragment: args[:fragment],
-          children: @@children
-          )
-      return action
     end
   end
 end

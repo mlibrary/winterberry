@@ -1,11 +1,14 @@
 module UMPTG::Review
 
   class EntryProcessor < UMPTG::EPUB::EntryProcessor
-  
-    @@fragment_processor = nil
+    attr_accessor :normalize
 
     def initialize(args = {})
       super(args)
+
+      @logger = @properties[:logger]
+      @selector = @properties[:selector]
+      @normalize = @properties.key?(:normalize) ? @properties[:normalize] : false
     end
 
     # Select the XML fragments to process and create Actions for each fragment.
@@ -13,34 +16,27 @@ module UMPTG::Review
     # Arguments:
     #   :name       Content identifier, e.g. EPUB entry name or file name.
     #   :content    Entry XML content
-    #   :selector   Class that select elements/comments within the XML content
     def action_list(args = {})
       name = args[:name]
+      xml_doc = args[:xml_doc]
 
-      selector = UMPTG::Fragment::ContainerSelector.new
-      selector.containers = @properties[:containers]
-      args[:selector] = selector
+      reference_action_list = []
+      unless @selector.nil? or xml_doc.nil?
 
-      # Use the default Fragment processor and return the selected fragments.
-      @@fragment_processor = UMPTG::Fragment::Processor.new if @@fragment_processor.nil?
-      fragments = @@fragment_processor.process(args)
+        reference_list = @selector.references(xml_doc)
 
-      # For each fragment, generate a processing action.
-      alist = []
-      fragments.each do |fragment|
-        action = new_action(
-            name: name,
-            fragment: fragment
-            )
-        alist << action
+        # For each reference element, determine the necessary actions.
+        reference_list.each do |refnode|
+          reference_action_list += new_action(
+                    name: name,
+                    reference_node: refnode
+                  )
+        end
       end
 
-      # Process each action.
-      alist.each do |action|
-        action.process(name: name)
-      end
-
-      return alist
+      # Return the list of Actions which contains the status
+      # for each.
+      return reference_action_list
     end
 
     # Instantiate a new Action for the XML fragment of a referenced resource.
@@ -49,10 +45,9 @@ module UMPTG::Review
     #   :name       Content identifier, e.g. EPUB entry name or file name.
     #   :fragment   XML fragment to process.
     def new_action(args = {})
-      action = UMPTG::Action.new(
-          name: args[:name],
-          fragment: args[:fragment]
-          )
+      return [
+            Action.new(args)
+          ]
     end
   end
 end

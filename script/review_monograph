@@ -59,7 +59,7 @@ monograph_id_list = ARGV
 
 require 'fileutils'
 
-require_relative File.join(root_dir, "lib", "review_new")
+require_relative File.join(root_dir, "lib", "review")
 
 monograph_id_list.each do |monograph_id|
   script_logger.info("*" * 10 + " #{monograph_id} " + "*" * 10)

@@ -37,7 +37,7 @@ end
 
 epub_file_list = ARGV
 
-require_relative File.join(root_dir, "lib", "review_new")
+require_relative File.join(root_dir, "lib", "review")
 require_relative File.join(root_dir, "lib", "epub")
 
 epub_file_list.each do |epub_file|

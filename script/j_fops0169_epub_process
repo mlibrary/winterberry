@@ -45,7 +45,7 @@ end
 # Process the command line parameters.
 epub_file_list = ARGV
 
-require_relative File.join(root_dir, "lib", "review_new")
+require_relative File.join(root_dir, "lib", "review")
 
 class RemoveFigcaptionProcessor < UMPTG::EPUB::EntryProcessor
     def action_list(args = {})
