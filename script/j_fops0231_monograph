@@ -1,0 +1,119 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Script used for FOPS-0231 to rename HEB Round 19
+# monograph directories from ISBN to HEB ID.
+# CSV file has 2 columns.
+# List of filenames,HEB ID
+
+require 'optparse'
+require 'ostruct'
+require 'os'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+# Process the script parameters.
+options = OpenStruct.new
+options.output_dir = Dir.pwd()
+options.fulcrum_host = 'production'
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} <csv_file> <monograph_dir> [<monograph_dir>...]"
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    script_logger.info(opts)
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 2
+  script_logger.info(option_parser.help)
+  return
+end
+
+# Process the command line parameters.
+csv_file = ARGV[0]
+monograph_dir_list = ARGV[1..-1]
+
+unless File.file?(csv_file)
+  script_logger.error("invalid CSV file \"#{csv_file}\".")
+  exit(0)
+end
+
+require 'csv'
+require 'fileutils'
+
+begin
+  csv = CSV.parse(
+            File.read(csv_file),
+            :headers => true,
+            :return_headers => false)
+ #          :header_converters => lambda { |h| h.strip.downcase.gsub(' ', '_') }
+ #          :headers => true, :converters => :all,
+rescue Exception => e
+  raise e.message
+end
+
+fname2id = {}
+csv.each do |row|
+  filename_list = row['Filenames']
+  heb_id = row['HEB ID']
+  filename_list.split(';').each do |file_name|
+    bname = File.basename(file_name, ".*").strip
+    bname = bname.gsub(/\-/,'')
+    bname = bname[0..12]
+    fname2id[bname] = heb_id
+    #script_logger.info("#{bname}:#{heb_id}")
+  end
+end
+
+monograph_dir_list.each do |monograph_dir|
+  monograph_dir = File.expand_path(monograph_dir)
+  unless File.directory?(monograph_dir)
+    script_logger.error("invalid HEB directory #{monograph_dir}")
+    next
+  end
+
+  monograph_name = File.basename(monograph_dir, ".*")
+  unless fname2id.key?(monograph_name)
+    script_logger.warn("no entry for #{monograph_name}. Skipping.")
+    next
+  end
+  script_logger.info("processing HEB directory #{File.basename(monograph_dir)}")
+
+  heb_id = fname2id[monograph_name]
+  if heb_id.nil? or heb_id.empty?
+    script_logger.warn("no HEB ID for #{monograph_name}. Skipping.")
+    next
+  end
+
+  heb_dir = File.join(File.dirname(monograph_dir), heb_id)
+  heb_dir_exists = Dir.exists?(heb_dir)
+  if heb_dir_exists
+    script_logger.warn("HEB directory #{heb_id} exists.")
+    dest_dir = heb_dir
+  else
+    dest_dir = monograph_dir
+  end
+
+  Dir.glob(File.join(monograph_dir, "*")).each do |mfile|
+    new_mfile = File.join(dest_dir, heb_id + File.extname(mfile))
+    ctr = 1
+    while File.exists?(new_mfile) do
+      new_mfile = File.join(dest_dir, heb_id + "_#{ctr}" + File.extname(mfile))
+      ctr += 1
+    end
+    script_logger.info("mv #{File.basename(mfile)} #{File.basename(new_mfile)}")
+    FileUtils.mv(mfile, new_mfile)
+  end
+  if heb_dir_exists
+    FileUtils.rm_rf(monograph_dir)
+  else
+    script_logger.info("mv #{File.basename(monograph_dir)} #{File.basename(heb_dir)}")
+    FileUtils.mv(monograph_dir, heb_dir)
+  end
+end

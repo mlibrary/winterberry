@@ -6,6 +6,15 @@
 
 require 'optparse'
 require 'ostruct'
+require 'os'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
 
 # Process the script parameters.
 options = OpenStruct.new
@@ -22,11 +31,6 @@ if ARGV.count < 1
   return
 end
 
-# Determine the root directory of the code base.
-script_dir = File.expand_path(File.dirname(__FILE__))
-#root_dir = File.dirname(script_dir)
-root_dir = File.expand_path(File.join(script_dir, ".."))
-
 epub_file_list = ARGV
 
 require_relative File.join(root_dir, "lib", "epub")
@@ -34,10 +38,15 @@ require_relative File.join(root_dir, "lib", "epub")
 epub_file_list.each do |epub_file|
   epub_file = File.expand_path(epub_file)
   unless File.exists?(epub_file)
-    puts "Error: invalid EPUB file path #{epub_file}."
+    script_logger.error("invalid EPUB file path #{epub_file}.")
     next
   end
-  puts "Processing #{File.basename(epub_file)}"
 
-  UMPTG::EPUB::Migrator.migrate(epub_file: epub_file)
+  epub = UMPTG::EPUB::Archive.new(epub_file: epub_file)
+  script_logger.info("processing #{File.basename(epub_file)}, version #{epub.version}")
+
+  UMPTG::EPUB::Migrator.migrate(
+        epub: epub,
+        migrate_logger: script_logger
+        )
 end

@@ -1,0 +1,188 @@
+#!/usr/bin/env ruby
+# encoding: utf-8
+
+require 'optparse'
+require 'ostruct'
+
+# Process the script parameters.
+options = OpenStruct.new
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)}  <csv_file> monograph_dir [<monograph_dir>..]"
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    puts opts
+    exit(0)
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 2
+  puts option_parser.help
+  exit(0)
+end
+
+csv_file = ARGV[0]
+monograph_dir_list = ARGV[1..-1]
+
+unless File.exist?(csv_file)
+  puts "Error: CSV \"#{File.basename(csv_file)}\" does not exist."
+  exit(1)
+end
+puts "Using CSV file \"#{File.basename(csv_file)}\""
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require 'csv'
+
+require_relative File.join(root_dir, 'lib', 'ninebark', 'validation')
+
+FULCRUM_MONOGRAPH_HEADERS = CollectionSchema.headers()
+
+fm_csv = CSV.parse(
+          File.read(csv_file),
+          :headers => true,
+          #:header_converters=> lambda {|f| fm_header_convert(f)},
+          :return_headers => false
+        )
+
+def convert_isbn(isbn, row_format = nil, format_default = nil)
+  unless isbn.nil? or isbn.strip.empty?
+    isbn = isbn.strip.gsub(/\-/, '')
+  end
+  if row_format.nil? or row_format.strip.empty?
+    format = format_default
+  else
+    format = row_format.strip.downcase.gsub(/\-/, '')
+  end
+  return isbn, format
+end
+
+monograph_dir_list.each do |monograph_dir|
+  monograph_dir = File.expand_path(monograph_dir)
+  unless File.directory?(monograph_dir)
+    puts "Error: Directory \"#{File.basename(monograph_dir)}\" does not exist."
+    next
+  end
+  puts "Processing directory \"#{File.basename(monograph_dir)}\""
+
+  title_id = File.basename(monograph_dir)[0..12]
+  title_id = File.basename(monograph_dir)
+  puts "title_id: #{title_id}"
+
+  file_list = Dir.glob(File.join(monograph_dir, "*"))
+  rep_row_list = []
+  file_list.each do |fl|
+    file_name = File.basename(fl)
+    ext = File.extname(file_name)
+    next if ext.nil? or ext.strip.empty?
+
+    case ext.strip.downcase
+    when '.jpg', '.png', '.bmp', '.jpeg'
+      rep_kind = 'cover'
+    when '.epub'
+      rep_kind = 'epub'
+    when '.pdf'
+      rep_kind = 'pdf_ebook'
+    else
+      puts "Skipping file #{file_name}"
+      next
+    end
+
+    rep_row_list << {
+          'File Name' => file_name,
+          'Title' => file_name,
+          'Representative Kind' => rep_kind
+      }
+  end
+
+=begin
+  monograph_row = { 'File Name' => '://:MONOGRAPH://:' }
+
+  # Search CSV for monograph metadata. Directory name
+  # is the search key. First, search HEB ID field (ID).
+  # If fails, then search the ISBN fields (ISBN[1-3]_13).
+  fm_row_list = fm_csv.select {|row| !row['ID'].nil? and row['ID'].strip.downcase == title_id }
+  if fm_row_list.empty?
+    title_isbn = title_id[0..12]
+    fm_row_list = fm_csv.select do |row|
+      (!row['ISBN1_13'].nil? and row['ISBN1_13'].strip.gsub(/\-/,'') == title_isbn) \
+      or (!row['ISBN2_13'].nil? and row['ISBN2_13'].strip.gsub(/\-/,'') == title_isbn) \
+      or (!row['ISBN3_13'].nil? and row['ISBN3_13'].strip.gsub(/\-/,'') == title_isbn)
+    end
+  end
+  if fm_row_list.empty?
+    puts "Warning: no CSV row found for #{title_id}. Skipping."
+    #next
+  else
+    puts "Found CSV row for #{title_id}."
+  end
+  fm_row = fm_row_list.first
+
+  # Make sure required fields are filled in:
+  #   Title, Publisher (citation), Creator(s), Pub Year,
+  #   Pub Location, Handle, Identifier(s), ISBN(s)
+  unless fm_row.nil?
+    format_isbn = {}
+    isbn, format = convert_isbn(fm_row['ISBN1_13'], fm_row['Pub Format'], "hardcover")
+    format_isbn[format] = isbn unless isbn.nil? or isbn.empty?
+    isbn, format = convert_isbn(fm_row['ISBN2_13'], fm_row['Pub Format 2'], "paperback")
+    format_isbn[format] = isbn unless isbn.nil? or isbn.empty?
+    isbn, format = convert_isbn(fm_row['ISBN3_13'], nil, "ebook")
+    format_isbn[format] = isbn unless isbn.nil? or isbn.empty?
+    # Monograph row
+    isbn_list = []
+    format_isbn.each do |key,val|
+      isbn_list << "#{val} (#{key})"
+    end
+    monograph_row['ISBN(s)'] = isbn_list.join(';')
+
+    author_list = []
+    author_list << "#{fm_row['Author last']}, #{fm_row['Author first']}"
+    author_list << "#{fm_row['Author last 2']}, #{fm_row['Author first 2']}" unless fm_row['Author last 2'].nil? or fm_row['Author last 2'].empty?
+    monograph_row['Creator(s)'] = author_list.join(';')
+
+    #monograph_row['Handle'] = fm_row['Handle Prefix'] + fm_row['ID'][3..7] unless fm_row['Handle Prefix'].nil?
+    #monograph_row['Handle'] = "http://hdl.handle.net/2027/heb." + fm_row['ID'][3..7] if fm_row['Handle Prefix'].nil?
+    #monograph_row['Handle'] = "2027/heb." + fm_row['ID'][3..7] if fm_row['Handle Prefix'].nil?
+    monograph_row['Handle'] = "2027/heb." + fm_row['ID'][3..7]
+    fm_row.each do |key,val|
+      next if key.nil? or key.strip.empty?
+
+      case key
+      when 'ID'
+        monograph_row['Identifier(s)'] = val.downcase
+      when 'Pub Date'
+        monograph_row['Pub Year'] = val
+      when 'Publisher'
+        monograph_row['Publisher'] = val
+      when 'Pub City 1'
+        monograph_row['Pub Location'] = val
+      when 'Handle Prefix'
+      when 'ISBN1_13', 'ISBN2_13', 'ISBN3_13'
+      when 'Pub Format', 'Pub Format 2'
+      when 'Pub Date 2', 'Pub Date 3'
+      else
+        monograph_row[key] = val
+      end
+    end
+  end
+=end
+
+  fulcrum_body = CSV.generate(
+          :headers => FULCRUM_MONOGRAPH_HEADERS,
+          :write_headers => true
+        ) do |csv|
+
+    csv << { "File Name" => "***row left intentionally blank***" }
+    rep_row_list.each do |rep_row|
+      csv << rep_row
+    end
+    #csv << monograph_row
+  end
+
+  # Save the Fulcrum metadata CSV file.
+  fulcrum_file = File.join(monograph_dir, title_id + "_fulcrum.csv")
+  puts "Creating metadata file #{fulcrum_file}"
+  File.write(fulcrum_file, fulcrum_body)
+  #break
+end

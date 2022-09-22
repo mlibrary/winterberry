@@ -10,19 +10,22 @@ module UMPTG::EPUB
       case
       when args.key?(:epub)
         epub = args[:epub]
-        @migrate_logger = args[:migrate_logger]
+        epub_file = epub.epub_file
       when args.key?(:epub_file)
         epub_file = args[:epub_file]
         epub = Archive.new(epub_file: epub_file)
-
-        @migrate_logger = UMPTG::Logger.create(
-                    logger_file: File.join(File.dirname(epub_file), File.basename(epub_file, ".*") + "_migrate.log")
-                 )
       else
         raise "Error: :epub or :epub_file not specified."
       end
 
-      raise "Error: logger not specified" if @migrate_logger.nil?
+      case
+      when args.key?(:migrate_logger)
+        @migrate_logger = args[:migrate_logger]
+      else
+        @migrate_logger = UMPTG::Logger.create(
+                    logger_file: File.join(File.dirname(epub_file), File.basename(epub_file, ".*") + "_migrate.log")
+                 )
+      end
 
       epub.renditions.each do |rendition|
         raise "Error rendition has no name" if rendition.name.nil? or rendition.name.strip.empty?
