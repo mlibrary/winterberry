@@ -55,7 +55,9 @@ service = UMPTG::Services::Heliotrope.new(
                 :fulcrum_host => options.fulcrum_host
               )
 
-headers = [ "Identifier", "NOID", "ISBN(s)", "Monograph Link", "Pub Year" ]
+headers = [ "BAR Number", "ISBN" ] if options.press == :bar
+headers = [ "ISBN" ] unless options.press == :bar
+headers += [ "Monograph Link", "Pub Year" ]
 
 csv_file = File.join(Dir.pwd, options.press.to_s + "_qc.csv")
 CSV.open(
@@ -69,69 +71,49 @@ CSV.open(
     # Use the monograph ID to retrieve the NOID from Fulcrum.
     script_logger.info("*" * 10 + " #{monograph_id} " + "*" * 10)
 
-    # For HEB and BAR, prefix the monograph_id
-    case options.press
-    when :bar
-      identifier = "bar_number:#{monograph_id.upcase}"
-    when :heb
-      identifier = "heb_id:#{monograph_id}"
-    else
-      identifier = monograph_id
-    end
+    # BAR numbers need to be uppercase?
+    monograph_id = monograph_id.upcase if options.press == :bar
 
     # Use the monograph NOID to retrieve the monograph manifest from Fulcrum.
-    id2csv_body_list = service.monograph_export(identifier: identifier)
-    if id2csv_body_list.empty?
+    csv_body = service.monograph_export(identifier: monograph_id)
+    if csv_body.nil? or csv_body.empty?
       script_logger.error("no manifest found for id #{monograph_id}")
       next
     end
     STDOUT.flush
 
-    id2csv_body_list.each do |id, csv_body_list|
-      if [:heb,:bar].include?(options.press)
-        identifier = id.split(':')[1]
+    csv_row = { "ISBN" => monograph_id }
+
+    manifest = UMPTG::Fulcrum::Manifest::Document.new(
+                  :csv_body => csv_body
+                )
+    if manifest.nil?
+      script_logger.error("no manifest found for id #{monograph_id}")
+    else
+      monograph_row = manifest.monograph_row
+      if monograph_row.nil?
+        script_logger.error("no monograph row found for id #{monograph_id}")
       else
-        identifier = id
-      end
-      
-      csv_body_list.each do |csv_body|
-        csv_row = { "Identifier" => identifier }
+        noid = monograph_row["noid"]
+        title = monograph_row["title"]
+        pub_year = monograph_row["pub_year"]
+        csv_row["Monograph Link"] = "=HYPERLINK(\"https://www.fulcrum.org/concern/monographs/#{noid}\",\"#{title}\")"
+        csv_row["Pub Year"] = "#{pub_year}"
 
-        manifest = UMPTG::Fulcrum::Manifest::Document.new(
-                      csv_body: csv_body
-                    )
-        if manifest.nil?
-          script_logger.error("no manifest found for id #{monograph_id}")
-        else
-          monograph_row = manifest.monograph_row
-          if monograph_row.nil?
-            script_logger.error("no monograph row found for id #{monograph_id}")
-          else
-            noid = monograph_row["noid"]
-            script_logger.info("manifest found for id #{monograph_id}, NOID #{noid}")
-            title = monograph_row["title"]
-            pub_year = monograph_row["pub_year"]
-            csv_row["ISBN(s)"] = monograph_row["isbn(s)"]
-            csv_row["NOID"] = noid
-            csv_row["Monograph Link"] = "=HYPERLINK(\"https://www.fulcrum.org/concern/monographs/#{noid}\",\"#{title}\")"
-            csv_row["Pub Year"] = "#{pub_year}"
+        case options.press
+        when :bar
+          identifiers = monograph_row["identifier(s)"]
+          script_logger.info(identifiers)
 
-            case options.press
-            when :bar
-              identifiers = monograph_row["identifier(s)"]
-              script_logger.info(identifiers)
-
-              unless identifiers.nil? or identifiers.empty?
-                b_list = identifiers.split(';').each.select {|n| n.strip.downcase.start_with?("bar_number:") }
-                unless b_list.empty?
-                  bar_number = b_list.first.split(':')[1].strip
-                  csv_row["BAR Number"] = bar_number
-                end
-              end
+          unless identifiers.nil? or identifiers.empty?
+            b_list = identifiers.split(';').each.select {|n| n.strip.downcase.start_with?("bar_number:") }
+            unless b_list.empty?
+              bar_number = b_list.first.split(':')[1].strip
+              csv_row["BAR Number"] = bar_number
             end
-            csv << csv_row
           end
         end
+        csv << csv_row
       end
     end
   end

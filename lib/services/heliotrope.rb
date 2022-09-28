@@ -42,47 +42,78 @@ module UMPTG::Services
     # Identifier may be HEB ID or BAR number.
     # DOI should not contain the prefix.
     def monograph_noid(args = {})
-      identifier = args[:identifier]
+      case
+      when args.include?(:identifier)
+        identifier_list = [ args[:identifier] ]
+      when args.include?(:identifier_list)
+        identifier_list = args[:identifier_list]
+      else
+        return ""
+      end
 
-      # Try each type until success
-      ["isbn", "identifier:heb_id", "identifier:bar_number", "doi"].each do |t|
-        case
-        when t == "doi", identifier.start_with?(@@DOI_PREFIX)
-          id = identifier.delete_prefix(@@DOI_PREFIX)
-        else
-          type_list = t.split(':')
-          if type_list.count > 1
-              t = type_list[0]
-              id = "#{type_list[1]}:#{identifier}"
+      # Attempt to retrieve the NOID for the specified identifier
+      id2noid_list = {}
+      identifier_list.each do |identifier|
+        id2noid_list[identifier] = nil
+
+        # Try each type until success
+        ["isbn", "identifier", "doi"].each do |t|
+          case
+          when t == "doi", identifier.start_with?(@@DOI_PREFIX)
+            id = identifier.delete_prefix(@@DOI_PREFIX)
           else
             id = identifier
           end
-        end
 
-        begin
-          response = connection.get("noids?#{t}=#{id}")
-        rescue StandardError => e
-          e.message
-        end
-        next if response.nil? or !response.success? or response.body.empty?
+          begin
+            response = connection.get("noids?#{t}=#{id}")
+          rescue StandardError => e
+            e.message
+          end
 
-        return response.body.first["id"]
+          unless response.nil? or !response.success? or response.body.empty?
+            id2noid_list[identifier] = response.body.collect { |b| b['id'] }
+            break
+          end
+        end
       end
-      return ""
+      return id2noid_list
     end
 
     # Monograph Manifest from the NOID or an identifier
     #
     def monograph_export(args = {})
-      noid = args.key?(:noid) ? args[:noid] : monograph_noid(args)
-
-      begin
-        response = connection.get("monographs/#{noid}/manifest")
-      rescue StandardError => e
-        e.message
+      #noid = args.key?(:noid) ? args[:noid] : monograph_noid(args)
+      noid_list = {}
+      case
+      when args.include?(:noid)
+        noid_list[args[:noid]] = args[:noid]
+      when args.include?(:noid_list)
+        args[:noid_list].each do |noid|
+          noid_list[noid] = noid
+        end
+      else
+        noid_list = monograph_noid(args)
       end
-      return "" if response == nil || !response.success?
-      return response.body
+
+      id2manifest_list = {}
+      noid_list.each do |identifier,noid_list|
+        id2manifest_list[identifier] = []
+
+        noid_list.each do |noid|
+          begin
+            response = connection.get("monographs/#{noid}/manifest")
+          rescue StandardError => e
+            e.message
+          end
+          if response == nil or !response.success?
+            id2manifest_list[identifier] << ""
+          else
+            id2manifest_list[identifier] << response.body
+          end
+        end
+      end
+      return id2manifest_list
     end
 
     def self.FULCRUM_API
