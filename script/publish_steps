@@ -58,6 +58,7 @@ press_dir = {
         amherst: "MPS",
         bar:   "MPS",
         ebc:   "UMP",
+        elt:   "michelt",
         heb:   "MPS",
         maize: "MPS",
         ummaa: "UMMAA"
@@ -168,7 +169,7 @@ monograph_id_list.each do |monograph_id|
 
   series_id = ""
   case options.press
-  when :amherst, :ebc, :maize, :ummaa
+  when :amherst, :ebc, :elt, :maize, :ummaa
     series_id = monograph_row["doi"]
   else
     id_list = monograph_row["identifier(s)"]
@@ -244,7 +245,7 @@ else
     end
 
     case options.press
-    when :ebc, :ummaa
+    when :ebc, :elt, :ummaa
       product = "ebc_" + perd
     else
       product = options.press.to_s + "_" + perd
@@ -262,7 +263,7 @@ else
       else
         product += "_int"
       end
-    when :ebc, :ummaa
+    when :ebc, :elt, :ummaa
       product = "ebc_backlist"
     end
     if component_product.key?(product)
@@ -273,7 +274,7 @@ else
 
     unless minfo[:monograph_open_access].empty?
       case options.press
-      when :ebc, :ummaa, :amherst
+      when :ebc, :elt, :ummaa, :amherst
         product = "ebc_open"
       else
         raise "Found open access for press #{options.press}"
