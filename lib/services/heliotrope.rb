@@ -45,12 +45,18 @@ module UMPTG::Services
       identifier = args[:identifier]
 
       # Try each type until success
-      ["isbn", "identifier", "doi"].each do |t|
+      ["isbn", "identifier:heb_id", "identifier:bar_number", "doi"].each do |t|
         case
         when t == "doi", identifier.start_with?(@@DOI_PREFIX)
           id = identifier.delete_prefix(@@DOI_PREFIX)
         else
-          id = identifier
+          type_list = t.split(':')
+          if type_list.count > 1
+              t = type_list[0]
+              id = "#{type_list[1]}:#{identifier}"
+          else
+            id = identifier
+          end
         end
 
         begin

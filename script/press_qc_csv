@@ -71,6 +71,9 @@ CSV.open(
     # Use the monograph ID to retrieve the NOID from Fulcrum.
     script_logger.info("*" * 10 + " #{monograph_id} " + "*" * 10)
 
+    # BAR numbers need to be uppercase?
+    monograph_id = monograph_id.upcase if options.press == :bar
+
     # Use the monograph NOID to retrieve the monograph manifest from Fulcrum.
     csv_body = service.monograph_export(identifier: monograph_id)
     if csv_body.nil? or csv_body.empty?
