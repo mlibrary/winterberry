@@ -144,8 +144,20 @@ module UMPTG::Fulcrum::Manifest::Validation
           unless row["external_resource_url"].nil? or row["external_resource_url"].empty?
             elem = "external_resource"
           else
-            elem = CollectionSchema.normalize(row["resource_type"]) unless row['resource_type'].nil?
-            elem = "no_type" if row['resource_type'].nil?
+            if row['resource_type'].nil?
+              elem = "no_type"
+            else
+              elem = CollectionSchema.normalize(row["resource_type"])
+              elem1 = elem
+              if elem == "chart"
+                # If chart is just an image, then validate it as an
+                # image. Determine by checking the file extension.
+                fext = File.extname(row["file_name"])
+                if [".bmp", ".jpg", ".jpeg", ".png", ".tif", ".tiff"].include?(fext)
+                  elem = "image"
+                end
+              end
+            end
           end
         else
           elem = "metadata"
