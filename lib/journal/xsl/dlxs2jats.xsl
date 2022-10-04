@@ -5,9 +5,8 @@
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xmlns:xi="http://www.w3.org/2001/XInclude"
         xmlns:xlink="http://www.w3.org/1999/xlink"
-        xmlns:dlxs="http://mlib.umich.edu/namespace/dlxs"
         xmlns:mlibxsl="http://www.mlib.umich.edu/namespace/mlibxsl"
-        exclude-result-prefixes="xs xi dlxs mlibxsl"
+        exclude-result-prefixes="xs xi mlibxsl"
         version="2.0">
 
     <!--
@@ -26,16 +25,7 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
     <xsl:param name="image_list" required="no"/>
     <xsl:param name="language" select="'en'"/>
 
-    <xsl:variable name="image_doc">
-        <xsl:element name="imagedoc">
-            <xsl:for-each select="tokenize($image_list,';')">
-                <xsl:element name="image">
-                    <xsl:attribute name="entity" select="tokenize(.,':')[1]"/>
-                    <xsl:attribute name="path" select="tokenize(.,':')[2]"/>
-                </xsl:element>
-            </xsl:for-each>
-        </xsl:element>
-    </xsl:variable>
+    <xsl:variable name="image_doc" select="document($image_list)"/>
 
     <xsl:variable name="license_doc">
         <xsl:element name="licenses">
@@ -189,6 +179,10 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
                   select="/DLPSTEXTCLASS/TEXT//*[@TYPE='prelim' and starts-with(lower-case(normalize-space(string())),'keywords:')]"/>
 
     <xsl:template match="DLPSTEXTCLASS">
+        <xsl:message>image_list2=<xsl:value-of select="$image_list"/></xsl:message>
+        <xsl:message>imagedoc=<xsl:value-of select="$image_doc//resource[1]/@entity"/>,<xsl:value-of select="$image_doc//resource[1]/@file_name"/>,<xsl:value-of select="$image_doc//resource[1]/caption"/></xsl:message>
+        <!--
+        -->
         <xsl:element name="article">
             <xsl:namespace name="xlink" select="'http://www.w3.org/1999/xlink'"/>
             <xsl:namespace name="mml" select="'http://www.w3.org/1998/Math/MathML'"/>
@@ -660,7 +654,8 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
             <xsl:when test="@TYPE = 'youtube'">
                 <xsl:element name="media">
                     <xsl:attribute name="mimetype" select="'video'"/>
-                    <xsl:attribute name="xlink:show" select="'embed'"/>
+                    <xsl:attribute name="position" select="'anchor'"/>
+                    <xsl:attribute name="specific-use" select="'online'"/>
                     <xsl:attribute name="xlink:href" select="concat('https://youtu.be/',@ENTITY)"/>
                     <xsl:element name="caption">
                         <xsl:element name="title">
@@ -672,6 +667,30 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
             <xsl:when test="@TYPE = 'alttext'">
                 <xsl:element name="alt-text">
                     <xsl:apply-templates select="@*[name()!='TARGET' and name()!='TYPE']|node()"/>
+                </xsl:element>
+            </xsl:when>
+            <xsl:when test="@TYPE = 'video'">
+                <xsl:variable name="image_info" select="mlibxsl:make-resource(@FILENAME)"/>
+                <xsl:message>FILENAME=<xsl:value-of select="@FILENAME"/>,image_info=<xsl:value-of select="$image_info/@file_type"/></xsl:message>
+                <xsl:element name="media">
+                    <xsl:attribute name="mimetype" select="concat(@TYPE,'/',$image_info/@file_type)"/>
+                    <xsl:attribute name="position" select="'anchor'"/>
+                    <xsl:attribute name="specific-use" select="'online'"/>
+                    <xsl:attribute name="xlink:href" select="$image_info/@embed_link"/>
+                    <xsl:element name="caption">
+                        <xsl:element name="title">
+                            <xsl:value-of select="$image_info/caption"/>
+                        </xsl:element>
+                    </xsl:element>
+                    <xsl:element name="object-id">
+                        <xsl:attribute name="pub-id-type" select="'doi'"/>
+                        <xsl:attribute name="specific-use" select="'metadata'"/>
+                        <xsl:value-of select="$image_info/@doi"/>
+                    </xsl:element>
+                    <xsl:element name="ext-link">
+                        <xsl:attribute name="ext-link-type" select="@TYPE"/>
+                        <xsl:attribute name="xlink:href" select="$image_info/@link"/>
+                    </xsl:element>
                 </xsl:element>
             </xsl:when>
             <xsl:when test="starts-with(lower-case(@URL), 'mailto:')">
@@ -712,7 +731,7 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
     <xsl:template match="FIGURE[@TYPE='inline']">
         <xsl:element name="inline-graphic">
             <xsl:if test="exists(@ENTITY)">
-                <xsl:attribute name="xlink:href" select="mlibxsl:make-resource-path(@ENTITY)"/>
+                <xsl:attribute name="xlink:href" select="mlibxsl:make-resource(@ENTITY)/@file_name"/>
                 <xsl:apply-templates select="@*[name()!='ENTITY' and name()!='TYPE']|node()"/>
             </xsl:if>
         </xsl:element>
@@ -799,7 +818,7 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
             </xsl:if>
             <xsl:if test="exists(@ENTITY)">
                 <xsl:element name="graphic">
-                    <xsl:attribute name="xlink:href" select="mlibxsl:make-resource-path(@ENTITY)"/>
+                    <xsl:attribute name="xlink:href" select="mlibxsl:make-resource(@ENTITY)/@file_name"/>
                 </xsl:element>
             </xsl:if>
         </xsl:element>
@@ -1075,7 +1094,7 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
     <xsl:template match="CELL/FIGURE">
         <xsl:if test="exists(@ENTITY)">
             <xsl:element name="graphic">
-                <xsl:attribute name="xlink:href" select="mlibxsl:make-resource-path(@ENTITY)"/>
+                <xsl:attribute name="xlink:href" select="mlibxsl:make-resource(@ENTITY)/@file_name"/>
             </xsl:element>
         </xsl:if>
     </xsl:template>
@@ -1407,10 +1426,21 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
         </xsl:element>
     </xsl:template>
 
+    <xsl:function name="mlibxsl:make-resource">
+        <xsl:param name="entity"/>
+
+        <xsl:choose>
+            <xsl:when test="$image_doc/resources/resource[@file_name=$entity]">
+                <xsl:sequence select="$image_doc/resources/resource[@file_name=$entity]"/>
+            </xsl:when>
+        </xsl:choose>
+        <xsl:sequence select="$image_doc/resources/resource[@entity=$entity]"/>
+    </xsl:function>
+
     <xsl:function name="mlibxsl:make-resource-path">
         <xsl:param name="entity"/>
 
-        <xsl:variable name="item" select="$image_doc/imagedoc/image[@entity=$entity]"/>
-        <xsl:sequence select="$item/@path"/>
+        <xsl:variable name="item" select="$image_doc/resources/resource[@entity=$entity]"/>
+        <xsl:sequence select="$item/@file_name"/>
     </xsl:function>
 </xsl:stylesheet>

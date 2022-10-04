@@ -14,12 +14,16 @@ script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
 
 # Process the script parameters.
 options = OpenStruct.new
+options.fulcrum_host = nil
 options.journal_dir = Dir.pwd
 options.generate_xhtml = false
 option_parser = OptionParser.new do |opts|
-  opts.banner = "Usage: #{File.basename(__FILE__)} [-d journal_dir] [-x] [journal_name...]"
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-f production|preview|staging] [-d journal_dir] [-x] [journal_name...]"
   opts.on('-d', '--directory [DIRECTORY]', 'Journal directory') do |da|
     options.journal_dir = da
+  end
+  opts.on('-f', '--fulcrum_host host', 'Fulcrum environment') do |fulcrum_host|
+    options.fulcrum_host = fulcrum_host
   end
   opts.on('-x', '--xhtml', 'Generate XHTML') do |da|
     options.generate_xhtml = true
@@ -56,11 +60,36 @@ if journal_name_list.empty?
 end
 
 require_relative File.join(root_dir, 'lib', 'xslt')
+require_relative File.join(root_dir, "lib", "fulcrum")
+require_relative File.join(root_dir, "lib", "services")
+
+# Create the serivce for retrieving the manifest.
+service = UMPTG::Services::Heliotrope.new(
+                :fulcrum_host => options.fulcrum_host
+              )
 
 require 'fileutils'
+require 'nokogiri'
 
 dlxs2jats_xsl_file = File.join(root_dir, "lib", "journal", "xsl", "dlxs2jats.xsl")
 jats2html_xsl_file = File.join(root_dir, "lib", "journal", "xsl", "jats-html.xsl")
+
+def detect(path)
+  header = File.binread(path, 50).downcase
+  case
+  when header[0..2] == 'gif'
+    return 'gif'
+  when header[1..3] == 'png'
+    return 'png'
+  when header[5..8] == 'jfif'
+    return 'jpg'
+  when header[28..30] == 'mp4'
+    return 'mp4'
+  when header[1..3] == 'pdf'
+    return 'pdf'
+  end
+  return ""
+end
 
 journal_name_list.each do |journal_name|
   dlxs_file = File.join(dlxs_dir, journal_name + ".xml")
@@ -100,20 +129,64 @@ journal_name_list.each do |journal_name|
     end
   end
 
+  # If a monograph exists, retrieve its manifest
+  manifest = nil
+  id2csv_body_list = service.monograph_export(identifier: "#{journal_name}")
+  if id2csv_body_list.empty?
+    script_logger.warn("no manifest found for id #{journal_name}")
+  else
+    manifest = UMPTG::Fulcrum::Manifest::Document.new(
+                  csv_body: id2csv_body_list[journal_name].first
+                )
+    if manifest.nil?
+      script_logger.error("generating manifest CSV for #{journal_name}")
+    end
+    script_logger.info("manifest found for #{journal_name}")
+  end
+
   # Copy the resource files to be used
   # and construct the XSLT parameter.
+  KSP='#'
+  RSP=';'
+  FSP='^'
+  VSP='='
+  RESOURCE_MARKUP = "<resource entity=\"%s\" file_name=\"%s\" file_type=\"%s\" link=\"%s\" embed_link=\"%s\" doi=\"%s\"><title>%s</title><caption>%s</caption></resource>"
+  resource_list = []
   resource_list_param = ""
   resource_file_table.each do |key,resource_file|
     script_logger.info("Copying resource #{File.basename(resource_file)}")
     FileUtils.cp(resource_file, article_dir)
 
+    file_type = detect(resource_file)
+
+    link = title = caption = embed_link = doi = ""
+    fileset = manifest.fileset(File.basename(resource_file))
+    unless fileset.nil?
+      link = fileset['link'][12..-3]
+
+      embed_markup = fileset['embed_code']
+      unless embed_markup.nil? or embed_markup.empty?
+        embed_doc = Nokogiri::XML::DocumentFragment.parse(embed_markup)
+        iframe_node = embed_doc.xpath(".//*[local-name()='iframe']").first
+        embed_link = iframe_node['src']
+        puts "src:#{embed_link}" unless iframe_node.nil?
+      end
+
+      title = fileset['title']
+      caption = fileset['caption']
+      doi = fileset['doi']
+    end
     #resource_list_param += "#{key}:#{File.join("resources", File.basename(resource_file))};"
-    resource_list_param += "#{key}:#{File.basename(resource_file)};"
+    resource_list_param += "#{key}#{KSP}file_name#{VSP}#{File.basename(resource_file)}#{FSP}file_type#{VSP}#{file_type}#{FSP}link#{VSP}#{link}#{FSP}embed_link#{VSP}#{embed_link}#{FSP}caption#{VSP}#{caption}#{FSP}title#{VSP}#{title}#{RSP}"
+    resource_list << sprintf(RESOURCE_MARKUP, key, File.basename(resource_file), file_type, link, embed_link, doi, title, caption)
   end
-  resource_list_param = resource_list_param[0..-2]
+  resource_list_param2 = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<resources>" + resource_list.join + "</resources>"
+  rfile = File.expand_path('junk.xml')
+  File.write(rfile, resource_list_param2)
+  resource_list_param = resource_list_param[0..-3]
 
   params = {
-              "image_list" => resource_list_param
+              "image_list" => URI(rfile)
            }
 
   rc = UMPTG::XSLT.transform(
@@ -123,6 +196,8 @@ journal_name_list.each do |journal_name|
           logger: script_logger,
           parameters: params
           )
+  #FileUtils.rm(rfile)
+
   if rc and options.generate_xhtml
     html_file = File.join(File.dirname(jats_file), File.basename(jats_file, ".*") + ".html")
     UMPTG::XSLT.transform(
