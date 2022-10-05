@@ -76,6 +76,21 @@ module UMPTG::Fulcrum::Manifest
              }
     end
 
+    def fileset_from_noid(noid)
+      if noid != nil
+        fileset_row = @csv.find {|row| row['noid'] == noid }
+        return fileset_row unless fileset_row.nil?
+      end
+
+      return {
+                "noid" => "",
+                "file_name" => "",
+                "resource_name" => "",
+                "link" => "",
+                "embed_code" => ""
+             }
+    end
+
     def filesets()
       return @csv.select {|row|
           (

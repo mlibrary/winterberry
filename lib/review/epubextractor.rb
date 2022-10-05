@@ -2,7 +2,8 @@ module UMPTG::Review
   class EPUBExtractor < EPUBProcessor
 
     @@PROCESSORS = {
-          resources: ResourcesExtractMediaDisplayProcessor.new,
+          #resources: ResourcesExtractMediaDisplayProcessor.new,
+          resources: ResourcesExtractIframeProcessor.new,
           package: PackageExtractMediaDisplayProcessor.new
         }
 
@@ -16,6 +17,7 @@ module UMPTG::Review
       @logger.info("Extract EPUB")
 
       processors = @@PROCESSORS.select {|key,proc| extract_options[key] == true }
+      processors[:resources].manifest = @properties[:manifest]
 
       @epub_modified = false
       epub.entries.each do |entry|
@@ -58,7 +60,7 @@ module UMPTG::Review
         proc_map.each do |key,action_list|
           next if action_list.nil?
           action_list.each do |action|
-            update_entry = true
+            update_entry = true if action.status == UMPTG::Review::NormalizeAction.NORMALIZED
             action.messages.each do |msg|
               case msg.level
               when UMPTG::Message.INFO
