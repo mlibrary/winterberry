@@ -19,7 +19,8 @@ script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
 options = OpenStruct.new
 options.publisher_dir = Dir.pwd
 options.extractors = {
-        package: true,
+#        package: true,
+        package: false,
         resources: true
     }
 option_parser = OptionParser.new do |opts|
@@ -38,7 +39,25 @@ end
 epub_file_list = ARGV
 
 require_relative File.join(root_dir, "lib", "review")
-require_relative File.join(root_dir, "lib", "epub")
+require_relative File.join(root_dir, "lib", "fulcrum")
+
+# Create the serivce for retrieving the NOID.
+service = UMPTG::Services::Heliotrope.new(
+                :fulcrum_host => options.fulcrum_host
+              )
+service_response = service.monograph_export(noid: 'zc77sr415')
+if service_response.empty?
+  script_logger.error("unable to retrieve manifest.")
+  exit 1
+end
+manifest_body = service_response['zc77sr415'].first
+manifest = UMPTG::Fulcrum::Manifest::Document.new(
+              csv_body: manifest_body
+            )
+if manifest.nil?
+  script_logger.error("no manifest found for id #{monograph_id}")
+  exit 1
+end
 
 epub_file_list.each do |epub_file|
   epub_file = File.expand_path(epub_file)
@@ -54,6 +73,7 @@ epub_file_list.each do |epub_file|
   # Process the epub and generate the image information.
   epub_extractor = UMPTG::Review::EPUBExtractor.new(
         epub_file: epub_file,
+        manifest: manifest,
         logger_file: epub_log_file
       )
   epub = epub_extractor.epub
