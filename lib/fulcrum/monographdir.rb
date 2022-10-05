@@ -30,6 +30,7 @@ module UMPTG::Fulcrum
                       monograph_id: @monograph_id
                   )
           monograph_dir_list = []
+=begin
           if @manifest.nil?
             # Find the ebook source folder. Look for a directory
             # using the monograph id.
@@ -46,6 +47,25 @@ module UMPTG::Fulcrum
             end
             @isbn = ebook_isbn
           end
+=end
+          unless @manifest.nil?
+            # From the manifest, determine the ebook ISBN without dashes.
+            ebook_isbn = @manifest.isbn["open access"]
+            ebook_isbn = @manifest.isbn["ebook"] if ebook_isbn.nil?
+
+            unless ebook_isbn.nil? or ebook_isbn.strip.empty?
+              ebook_isbn = ebook_isbn.strip.gsub('-', '')
+              #monograph_dir_list = Dir.glob(File.join(@publisher_dir, @publisher, "#{ebook_isbn}_*"))
+              monograph_dir_list = Dir.glob(File.join(@publisher_dir, "#{ebook_isbn}_*"))
+            end
+            @isbn = ebook_isbn
+          end
+
+          # Find the ebook source folder. Look for a directory
+          # using the monograph id.
+          monograph_dir_list = Dir.glob(File.join(@publisher_dir, @publisher, "#{@monograph_id}_*")) if monograph_dir_list.empty?
+          monograph_dir_list = Dir.glob(File.join(@publisher_dir, @monograph_id)) if monograph_dir_list.empty?
+          monograph_dir_list = Dir.glob(File.join(@publisher_dir, "#{@monograph_id}_*")) if monograph_dir_list.empty?
           @monograph_dir = monograph_dir_list.empty? ? nil : monograph_dir_list.first
         end
       else

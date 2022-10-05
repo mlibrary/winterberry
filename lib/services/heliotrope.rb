@@ -54,7 +54,7 @@ module UMPTG::Services
       # Attempt to retrieve the NOID for the specified identifier
       id2noid_list = {}
       identifier_list.each do |identifier|
-        id2noid_list[identifier] = nil
+        id2noid_list[identifier] = []
 
         # Try each type until success
         ["isbn", "identifier", "doi"].each do |t|
@@ -87,13 +87,14 @@ module UMPTG::Services
       noid_list = {}
       case
       when args.include?(:noid)
-        noid_list[args[:noid]] = args[:noid]
+        noid_list[args[:noid]] = [ args[:noid] ]
       when args.include?(:noid_list)
         args[:noid_list].each do |noid|
-          noid_list[noid] = noid
+          noid_list[noid] = [ noid ]
         end
       else
         noid_list = monograph_noid(args)
+        noid_list[args[:monograph_id]] = [args[:monograph_id]] if nod_list.empty? and args.include?(:monograph_id)
       end
 
       id2manifest_list = {}

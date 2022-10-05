@@ -69,7 +69,7 @@ monograph_id_list.each do |monograph_id|
               fulcrum_host: options.fulcrum_host,
               monograph_id: monograph_id
           )
-  unless Dir.exists?(monograph_dir.monograph_dir)
+  if monograph_dir.monograph_dir.nil? or !Dir.exists?(monograph_dir.monograph_dir)
     script_logger.error("invalid monograph directory #{monograph_dir.monograph_dir}.")
     next
   end

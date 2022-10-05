@@ -19,35 +19,41 @@ module UMPTG::Fulcrum::Manifest
         csv_file = @properties[:csv_file]
         raise "Error: invalid CSV file path #{csv_file}" \
               if csv_file.nil? or csv_file.strip.empty? or !File.exists?(csv_file)
-        csv_body = File.read(csv_file)
+        csv_body = { csv_file => [File.read(csv_file)] }
       when @properties.key?(:monograph_id)
         service = UMPTG::Services::Heliotrope.new(
                         :fulcrum_host => @properties[:fulcrum_host]
                       )
-        csv_body = service.monograph_export(identifier: @properties[:monograph_id])
+        csv_body = service.monograph_export(noid: @properties[:monograph_id])
+        csv_body = service.monograph_export(identifier: @properties[:monograph_id]) if csv_body.empty?
       else
         # No content specified
         csv_body = nil
       end
 
-      raise "Error: manifest is empty" if csv_body.nil? or csv_body.strip.empty?
+      #raise "Error: manifest is empty" if csv_body.nil? or csv_body.strip.empty?
+      return "" if csv_body.nil? or csv_body.empty?
 
-      begin
-        @csv = CSV.parse(
-                  csv_body,
-                  :headers => true,
-                  :return_headers => false,
-                  :header_converters => lambda { |h| h.strip.downcase.gsub(' ', '_') })
-       #          :headers => true, :converters => :all,
-      rescue Exception => e
-        raise e.message
-      end
+      csv_body.each do |key,manifest_list|
+        manifest_list.each do |manifest_body|
+          begin
+            @csv = CSV.parse(
+                      manifest_body,
+                      :headers => true,
+                      :return_headers => false,
+                      :header_converters => lambda { |h| h.strip.downcase.gsub(' ', '_') })
+           #          :headers => true, :converters => :all,
+          rescue Exception => e
+            raise e.message
+          end
 
-      @monograph_row = @csv.find {|row| row['file_name'] == UMPTG::Fulcrum::Manifest.MONOGRAPH_FILE_NAME }
-      @noid = @monograph_row['noid'] unless @monograph_row.nil?
-      @isbn = {}
-      unless @monograph_row.nil?
-        @isbn = parse_isbns(@monograph_row['isbn(s)'])
+          @monograph_row = @csv.find {|row| row['file_name'] == UMPTG::Fulcrum::Manifest.MONOGRAPH_FILE_NAME }
+          @noid = @monograph_row['noid'] unless @monograph_row.nil?
+          @isbn = {}
+          unless @monograph_row.nil?
+            @isbn = parse_isbns(@monograph_row['isbn(s)'])
+          end
+        end
       end
     end
 
