@@ -64,7 +64,6 @@ module UMPTG::Services
           else
             id = identifier
           end
-
           begin
             response = connection.get("noids?#{t}=#{id}")
           rescue StandardError => e
@@ -94,7 +93,7 @@ module UMPTG::Services
         end
       else
         noid_list = monograph_noid(args)
-        noid_list[args[:monograph_id]] = [args[:monograph_id]] if nod_list.empty? and args.include?(:monograph_id)
+        noid_list[args[:monograph_id]] = [args[:monograph_id]] if noid_list.empty? and args.include?(:monograph_id)
       end
 
       id2manifest_list = {}
@@ -107,11 +106,7 @@ module UMPTG::Services
           rescue StandardError => e
             e.message
           end
-          if response == nil or !response.success?
-            id2manifest_list[identifier] << ""
-          else
-            id2manifest_list[identifier] << response.body
-          end
+          id2manifest_list[identifier] << response.body unless response.nil? or !response.success?
         end
       end
       return id2manifest_list

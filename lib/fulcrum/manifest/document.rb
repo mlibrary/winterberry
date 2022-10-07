@@ -14,7 +14,8 @@ module UMPTG::Fulcrum::Manifest
 
       case
       when @properties.key?(:csv_body)
-        csv_body = @properties[:csv_body]
+        body = @properties[:csv_body]
+        csv_body = { body => [ body ]}
       when @properties.key?(:csv_file)
         csv_file = @properties[:csv_file]
         raise "Error: invalid CSV file path #{csv_file}" \
@@ -25,7 +26,8 @@ module UMPTG::Fulcrum::Manifest
                         :fulcrum_host => @properties[:fulcrum_host]
                       )
         csv_body = service.monograph_export(noid: @properties[:monograph_id])
-        csv_body = service.monograph_export(identifier: @properties[:monograph_id]) if csv_body.empty?
+        csv_body = service.monograph_export(identifier: @properties[:monograph_id]) \
+                      if csv_body[@properties[:monograph_id]].empty?
       else
         # No content specified
         csv_body = nil

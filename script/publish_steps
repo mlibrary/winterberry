@@ -124,8 +124,16 @@ monograph_id_list.each do |monograph_id|
   end
 
   # Use the monograph ID to retrieve the manifest from Fulcrum.
+  case options.press
+  when :bar
+    identifier = "bar_number:#{monograph_id}"
+  when :heb
+    identifier = "heb_id:#{monograph_id}"
+  else
+    identifier = monograph_id
+  end
   manifest = UMPTG::Fulcrum::Manifest::Document.new(
-                monograph_id: monograph_id
+                monograph_id: identifier
               )
 =begin
   # Use the monograph ID to retrieve the NOID from Fulcrum.
