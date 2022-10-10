@@ -586,7 +586,7 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
                     <xsl:apply-templates select="./*"/>
                 </xsl:element>
             </xsl:when>
-            <xsl:when test="not(exists(./HEAD))">
+            <xsl:when test="not(exists(./HEAD)) and not(exists(./TABLE))">
                 <xsl:apply-templates select="./*[not(@TYPE='prelim' or @TYPE='author')]"/>
             </xsl:when>
             <xsl:otherwise>
@@ -641,7 +641,9 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
     <xsl:template match="PTR">
         <xsl:element name="xref">
             <xsl:variable name="target" select="lower-case(@TARGET)"/>
+            <!--
             <xsl:attribute name="id" select="concat($target,'_ref')"/>
+            -->
             <xsl:attribute name="rid" select="$target"/>
             <xsl:attribute name="ref-type" select="'fn'"/>
             <xsl:apply-templates select="@*[name()!='TARGET' and name()!='N']|node()"/>
@@ -671,7 +673,6 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
             </xsl:when>
             <xsl:when test="@TYPE = 'video'">
                 <xsl:variable name="image_info" select="mlibxsl:make-resource(@FILENAME)"/>
-                <xsl:message>FILENAME=<xsl:value-of select="@FILENAME"/>,image_info=<xsl:value-of select="$image_info/@file_type"/></xsl:message>
                 <xsl:element name="media">
                     <xsl:attribute name="mimetype" select="concat(@TYPE,'/',$image_info/@file_type)"/>
                     <xsl:attribute name="position" select="'anchor'"/>
@@ -682,11 +683,13 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
                             <xsl:value-of select="$image_info/caption"/>
                         </xsl:element>
                     </xsl:element>
-                    <xsl:element name="object-id">
-                        <xsl:attribute name="pub-id-type" select="'doi'"/>
-                        <xsl:attribute name="specific-use" select="'metadata'"/>
-                        <xsl:value-of select="$image_info/@doi"/>
-                    </xsl:element>
+                    <xsl:if test="string-length(normalize-space($image_info/@doi)) > 0">
+                        <xsl:element name="object-id">
+                            <xsl:attribute name="pub-id-type" select="'doi'"/>
+                            <xsl:attribute name="specific-use" select="'metadata'"/>
+                            <xsl:value-of select="$image_info/@doi"/>
+                        </xsl:element>
+                    </xsl:if>
                     <xsl:element name="ext-link">
                         <xsl:attribute name="ext-link-type" select="@TYPE"/>
                         <xsl:attribute name="xlink:href" select="$image_info/@link"/>
@@ -702,19 +705,35 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
             <xsl:when test="exists(@TARGET)">
                 <xsl:element name="xref">
                     <xsl:variable name="target" select="lower-case(@TARGET)"/>
+                    <!--
                     <xsl:attribute name="id" select="concat($target,'_ref')"/>
+                    -->
                     <xsl:attribute name="rid" select="$target"/>
                     <xsl:attribute name="ref-type" select="'sec'"/>
                     <xsl:apply-templates select="@*[name()!='TARGET' and name()!='TYPE']|node()"/>
                 </xsl:element>
             </xsl:when>
             <xsl:otherwise>
-                <xsl:element name="ext-link">
-                    <xsl:call-template name="set-reference-attributes">
-                        <xsl:with-param name="refNode" select="."/>
-                    </xsl:call-template>
-                    <xsl:apply-templates select="@*[name()!='TYPE' and name()!='URL' and name()!='ENTITY' and name()!='FILENAME']|node()"/>
-                </xsl:element>
+                <xsl:choose>
+                    <xsl:when test="substring(local-name(parent::*[1]),1,3)='DIV'">
+                        <xsl:element name="p">
+                            <xsl:element name="ext-link">
+                                <xsl:call-template name="set-reference-attributes">
+                                    <xsl:with-param name="refNode" select="."/>
+                                </xsl:call-template>
+                                <xsl:apply-templates select="@*[name()!='TYPE' and name()!='URL' and name()!='ENTITY' and name()!='FILENAME']|node()"/>
+                            </xsl:element>
+                        </xsl:element>
+                    </xsl:when>
+                    <xsl:otherwise>
+                        <xsl:element name="ext-link">
+                            <xsl:call-template name="set-reference-attributes">
+                                <xsl:with-param name="refNode" select="."/>
+                            </xsl:call-template>
+                            <xsl:apply-templates select="@*[name()!='TYPE' and name()!='URL' and name()!='ENTITY' and name()!='FILENAME']|node()"/>
+                        </xsl:element>
+                    </xsl:otherwise>
+                </xsl:choose>
             </xsl:otherwise>
         </xsl:choose>
     </xsl:template>
@@ -1158,11 +1177,11 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
         <xsl:choose>
             <xsl:when test="$border='1'">
                 <xsl:attribute name="frame" select="'box'"/>
-                <xsl:attribute name="rule" select="'all'"/>
+                <xsl:attribute name="rules" select="'all'"/>
             </xsl:when>
             <xsl:when test="$border='0'">
                 <xsl:attribute name="frame" select="'box'"/>
-                <xsl:attribute name="rule" select="'all'"/>
+                <xsl:attribute name="rules" select="'all'"/>
             </xsl:when>
             <xsl:otherwise>
                 <xsl:attribute name="{lower-case(local-name())}" select="lower-case(.)"/>
