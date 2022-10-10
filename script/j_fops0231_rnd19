@@ -144,7 +144,7 @@ monograph_dir_list.each do |monograph_dir|
 
     monograph_row['Title'] = fm_row['Main title']
     unless fm_row['Subtitle'].nil? or fm_row['Subtitle'].empty?
-      monograph_row['Title'] += ': ' + fm_row['Main title']
+      #monograph_row['Title'] += ': ' + fm_row['Main title']
     end
 
 =begin
@@ -158,7 +158,7 @@ monograph_dir_list.each do |monograph_dir|
 
       case key
       when 'HEBID'
-        monograph_row['Identifier(s)'] = val.downcase
+        monograph_row['Identifier(s)'] = "heb_id:#{val.downcase}"
       #when 'Date published'
       when 'Copyright year'
         monograph_row['Pub Year'] = val
