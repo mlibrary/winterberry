@@ -683,17 +683,25 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
                             <xsl:value-of select="$image_info/caption"/>
                         </xsl:element>
                     </xsl:element>
-                    <xsl:if test="string-length(normalize-space($image_info/@doi)) > 0">
-                        <xsl:element name="object-id">
-                            <xsl:attribute name="pub-id-type" select="'doi'"/>
-                            <xsl:attribute name="specific-use" select="'metadata'"/>
-                            <xsl:value-of select="$image_info/@doi"/>
-                        </xsl:element>
-                    </xsl:if>
-                    <xsl:element name="ext-link">
-                        <xsl:attribute name="ext-link-type" select="@TYPE"/>
-                        <xsl:attribute name="xlink:href" select="$image_info/@link"/>
-                    </xsl:element>
+                    <xsl:choose>
+                        <xsl:when test="string-length(normalize-space($image_info/@doi)) > 0">
+                            <xsl:element name="object-id">
+                                <xsl:attribute name="pub-id-type" select="'doi'"/>
+                                <xsl:attribute name="specific-use" select="'metadata'"/>
+                                <xsl:value-of select="$image_info/@doi"/>
+                            </xsl:element>
+                            <xsl:element name="ext-link">
+                                <xsl:attribute name="ext-link-type" select="'doi'"/>
+                                <xsl:attribute name="xlink:href" select="$image_info/@doi"/>
+                            </xsl:element>
+                        </xsl:when>
+                        <xsl:otherwise>
+                            <xsl:element name="ext-link">
+                                <xsl:attribute name="ext-link-type" select="'uri'"/>
+                                <xsl:attribute name="xlink:href" select="$image_info/@link"/>
+                            </xsl:element>
+                        </xsl:otherwise>
+                    </xsl:choose>
                 </xsl:element>
             </xsl:when>
             <xsl:when test="starts-with(lower-case(@URL), 'mailto:')">
@@ -1395,7 +1403,7 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
         <xsl:param name="refNode"/>
 
         <xsl:if test="exists($refNode/@TYPE)">
-            <xsl:attribute name="ext-link-type" select="$refNode/@TYPE"/>
+            <xsl:attribute name="ext-link-type" select="'uri'"/>
         </xsl:if>
         <xsl:choose>
             <xsl:when test="exists($refNode/@URL)">
