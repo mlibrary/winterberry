@@ -126,7 +126,8 @@ monograph_id_list.each do |monograph_id|
   # Use the monograph ID to retrieve the manifest from Fulcrum.
   case options.press
   when :bar
-    identifier = "bar_number:#{monograph_id}"
+    #identifier = "bar_number:#{monograph_id}"
+    identifier = monograph_id
   when :heb
     identifier = "heb_id:#{monograph_id}"
   else
