@@ -144,7 +144,7 @@ monograph_dir_list.each do |monograph_dir|
 
     monograph_row['Title'] = fm_row['Main title']
     unless fm_row['Subtitle'].nil? or fm_row['Subtitle'].empty?
-      #monograph_row['Title'] += ': ' + fm_row['Main title']
+      monograph_row['Title'] += ': ' + fm_row['Subtitle']
     end
 
 =begin
