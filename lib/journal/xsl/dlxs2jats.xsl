@@ -675,6 +675,7 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
                 <xsl:variable name="image_info" select="mlibxsl:make-resource(@FILENAME)"/>
                 <xsl:element name="media">
                     <xsl:attribute name="mimetype" select="concat(@TYPE,'/',$image_info/@file_type)"/>
+                    <xsl:attribute name="mime-subtype" select="$image_info/@file_type"/>
                     <xsl:attribute name="position" select="'anchor'"/>
                     <xsl:attribute name="specific-use" select="'online'"/>
                     <xsl:attribute name="xlink:href" select="$image_info/@embed_link"/>
@@ -753,6 +754,10 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
             </xsl:if>
             <xsl:apply-templates select="@*[name()!='TYPE']|node()"/>
         </xsl:element>
+    </xsl:template>
+
+    <xsl:template match="*[(local-name()='Q1' or local-name()='P') and @REND='code']//LB">
+        <xsl:text>&#x0a;</xsl:text>
     </xsl:template>
 
     <xsl:template match="FIGURE[@TYPE='inline']">
@@ -1025,6 +1030,7 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
             <xsl:apply-templates select="@*|node()"/>
         </xsl:element>
     </xsl:template>
+
     <xsl:template match="Q1[@TYPE='epig']">
         <xsl:element name="verse-group">
             <xsl:apply-templates select="@*[name()!='TYPE']|node()"/>
@@ -1197,15 +1203,17 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
         </xsl:choose>
     </xsl:template>
 
-    <xsl:template match="NOTE1/@ID">
-        <xsl:attribute name="{lower-case(local-name())}" select="lower-case(.)"/>
-    </xsl:template>
-
     <xsl:template match="element()">
         <xsl:element name="{lower-case(local-name())}">
             <xsl:apply-templates select="@*|node()"/>
         </xsl:element>
     </xsl:template>
+
+    <xsl:template match="NOTE1/@ID">
+        <xsl:attribute name="{lower-case(local-name())}" select="lower-case(.)"/>
+    </xsl:template>
+
+    <xsl:template match="Q1/@REND"/>
 
     <xsl:template match="@*">
         <xsl:attribute name="{lower-case(local-name())}" select="."/>
@@ -1299,6 +1307,11 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
             </xsl:when>
             <xsl:when test="$style='smcap'">
                 <xsl:element name="sc">
+                    <xsl:apply-templates select="$node/@*[name()!='REND' and name()!='TYPE']|node()"/>
+                </xsl:element>
+            </xsl:when>
+            <xsl:when test="$style='code'">
+                <xsl:element name="code">
                     <xsl:apply-templates select="$node/@*[name()!='REND' and name()!='TYPE']|node()"/>
                 </xsl:element>
             </xsl:when>

@@ -74,6 +74,12 @@ require 'nokogiri'
 dlxs2jats_xsl_file = File.join(root_dir, "lib", "journal", "xsl", "dlxs2jats.xsl")
 jats2html_xsl_file = File.join(root_dir, "lib", "journal", "xsl", "jats-html.xsl")
 
+KSP='#'
+RSP=';'
+FSP='^'
+VSP='='
+RESOURCE_MARKUP = "<resource entity=\"%s\" file_name=\"%s\" file_type=\"%s\" link=\"%s\" embed_link=\"%s\" doi=\"%s\"><title>%s</title><caption>%s</caption></resource>"
+
 def detect(path)
   header = File.binread(path, 50).downcase
   case
@@ -132,7 +138,7 @@ journal_name_list.each do |journal_name|
   # If a monograph exists, retrieve its manifest
   manifest = nil
   id2csv_body_list = service.monograph_export(identifier: "#{journal_name}")
-  if id2csv_body_list.empty?
+  if id2csv_body_list[journal_name].empty?
     script_logger.warn("no manifest found for id #{journal_name}")
   else
     manifest = UMPTG::Fulcrum::Manifest::Document.new(
@@ -146,11 +152,6 @@ journal_name_list.each do |journal_name|
 
   # Copy the resource files to be used
   # and construct the XSLT parameter.
-  KSP='#'
-  RSP=';'
-  FSP='^'
-  VSP='='
-  RESOURCE_MARKUP = "<resource entity=\"%s\" file_name=\"%s\" file_type=\"%s\" link=\"%s\" embed_link=\"%s\" doi=\"%s\"><title>%s</title><caption>%s</caption></resource>"
   resource_list = []
   resource_list_param = ""
   resource_file_table.each do |key,resource_file|
@@ -160,7 +161,7 @@ journal_name_list.each do |journal_name|
     file_type = detect(resource_file)
 
     link = title = caption = embed_link = doi = ""
-    fileset = manifest.fileset(File.basename(resource_file))
+    fileset = manifest.fileset(File.basename(resource_file)) unless manifest.nil?
     unless fileset.nil?
       link = fileset['link'][12..-3]
 
