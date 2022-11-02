@@ -179,7 +179,7 @@ monograph_id_list.each do |monograph_id|
   series_id = ""
   case options.press
   when :amherst, :ebc, :elt, :maize, :ummaa
-    series_id = monograph_row["doi"]
+    series_id = monograph_row["doi"].strip
   else
     id_list = monograph_row["identifier(s)"]
     unless id_list.nil?
@@ -187,10 +187,10 @@ monograph_id_list.each do |monograph_id|
       case options.press
       when :bar
         list = id_a.select {|id| id.strip.downcase.start_with?('bar_number:') }
-        series_id = list.first.delete_prefix('bar_number:').strip unless list.empty?
+        series_id = list.first.strip.delete_prefix('bar_number:').strip unless list.empty?
       when :heb
         list = id_a.select {|id| id.strip.downcase.match?(/^heb[0-9]{5}\.[0-9]{4}\.[0-9]{3}/) }
-        series_id = list.first.delete_prefix('bar_number:').strip unless list.empty?
+        series_id = list.first.strip.delete_prefix('heb_id:').strip unless list.empty?
       end
     end
   end
