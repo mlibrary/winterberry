@@ -56,6 +56,10 @@ service = UMPTG::Services::Heliotrope.new(
               )
 
 headers = [ "Identifier", "NOID", "ISBN(s)", "Monograph Link", "Pub Year" ]
+=begin
+# FOPS-227 workaround
+headers = [ "DOI", "Identifier(s)" ]
+=end
 
 csv_file = File.join(Dir.pwd, options.press.to_s + "_qc.csv")
 CSV.open(
@@ -115,6 +119,11 @@ CSV.open(
             csv_row["NOID"] = noid
             csv_row["Monograph Link"] = "=HYPERLINK(\"https://www.fulcrum.org/concern/monographs/#{noid}\",\"#{title}\")"
             csv_row["Pub Year"] = "#{pub_year}"
+=begin
+            # FOPS-227 workaround
+            csv_row["Identifier(s)"] = monograph_row["identifier(s)"]
+            csv_row["DOI"] = monograph_row["doi"]
+=end
 
             case options.press
             when :bar
