@@ -22,9 +22,13 @@ module UMPTG
     def self.load(args = {})
       fmsl_file = args[:fmsl_file]
 
-      if File.extname(fmsl_file) == ".xlsx"
+      if File.extname(fmsl_file) == ".xlsx" or File.extname(fmsl_file) == ".xls"
         x = Xsv::Workbook.open(fmsl_file)
         sheet = x.sheets_by_name("Project Data").first
+        if sheet.nil?
+          puts "Sheet 'Project Data' not found. Attempt to use first sheet."
+          sheet = x.sheets[0] if x.sheets.count > 0
+        end
         raise "Error: no sheets for #{fmsl_file}" if sheet.nil?
 
         fmsl_body_list = []
