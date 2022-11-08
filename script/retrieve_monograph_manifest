@@ -64,7 +64,11 @@ monograph_id_list.each do |monograph_id|
 
     puts "Writing CSV file #{output_path}"
     File.open(output_path, "w") do |f|
-      f.write(service_response)
+      service_response.each do |id,manifest_list|
+        manifest_list.each do |m|
+          f.write(m)
+        end
+      end
     end
   end
 end
