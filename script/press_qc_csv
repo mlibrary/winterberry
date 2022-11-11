@@ -56,10 +56,8 @@ service = UMPTG::Services::Heliotrope.new(
               )
 
 headers = [ "Identifier", "NOID", "ISBN(s)", "Monograph Link", "Pub Year" ]
-=begin
 # FOPS-227 workaround
-headers = [ "DOI", "Identifier(s)" ]
-=end
+#headers = [ "Link", "Identifier(s)" ]
 
 csv_file = File.join(Dir.pwd, options.press.to_s + "_qc.csv")
 CSV.open(
@@ -121,21 +119,29 @@ CSV.open(
             csv_row["Pub Year"] = "#{pub_year}"
 =begin
             # FOPS-227 workaround
-            csv_row["Identifier(s)"] = monograph_row["identifier(s)"]
-            csv_row["DOI"] = monograph_row["doi"]
+            link = monograph_row['link']
+            lm = link.match('\=HYPERLINK\(\"([^\"]*)\"\)')
+            unless lm.nil?
+              link = lm[1]
+            end
+            csv_row["Link"] = link
 =end
 
-            case options.press
-            when :bar
-              identifiers = monograph_row["identifier(s)"]
-              script_logger.info(identifiers)
+            identifiers = monograph_row["identifier(s)"]
+            script_logger.info(identifiers)
 
-              unless identifiers.nil? or identifiers.empty?
+            unless identifiers.nil? or identifiers.empty?
+              case options.press
+              when :bar
                 b_list = identifiers.split(';').each.select {|n| n.strip.downcase.start_with?("bar_number:") }
-                unless b_list.empty?
-                  bar_number = b_list.first.split(':')[1].strip
-                  csv_row["BAR Number"] = bar_number
-                end
+                ndx = "BAR Number"
+              when :heb
+                b_list = identifiers.split(';').each.select {|n| n.strip.downcase.start_with?("heb_id:") }
+                ndx = "Identifier(s)"
+              end
+              unless b_list.empty?
+                id_val = b_list.first.split(':')[1].strip
+                csv_row[ndx] = id_val
               end
             end
             csv << csv_row
