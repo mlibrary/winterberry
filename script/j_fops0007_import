@@ -1,0 +1,159 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Generate a list of directories for
+# importing HEB PDFs to existing monographs
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+require 'optparse'
+require 'ostruct'
+
+# Process the script parameters.
+options = OpenStruct.new
+options.fulcrum_host = nil
+options.dest_dir = "S:/Information Management/Fulcrum/MPS/HEB/epub2pdf/Fulcrum_batch1"
+
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-d directory] [-f production|preview|staging] <identifier> [<identifier>..]"
+  opts.on('-d', '--directory dir', 'Directory') do |d|
+    options.dest_dir = d
+  end
+  opts.on('-f', '--fulcrum_host host', 'Fulcrum environment') do |fulcrum_host|
+    options.fulcrum_host = fulcrum_host
+  end
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    script_logger.info(opts)
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  script_logger.info(option_parser.help)
+  return
+end
+
+identifier_list = ARGV
+
+dest_dir = File.expand_path(options.dest_dir)
+if !Dir.exists?(dest_dir)
+  script_logger.error("destination dir #{dest_dir} does not exist.")
+  exit 1
+end
+script_logger.info("using destination directory #{dest_dir}")
+
+src_dir = File.join(File.dirname(dest_dir), "fixepub")
+
+require 'fileutils'
+
+require_relative File.join(root_dir, "lib", "fulcrum")
+
+CSV_HEADERS = [
+                "File Name",
+                "Title",
+                "Allow Download?",
+                "Representative Kind"
+              ]
+
+# Create the serivce for retrieving the NOID manifest.
+service = UMPTG::Services::Heliotrope.new(
+                :fulcrum_host => options.fulcrum_host
+              )
+
+script_commands = []
+identifier_list.each do |identifier|
+  script_logger.info("*" * 10 + " #{identifier} " + "*" * 10)
+
+  heb_src_dir = Dir.glob(File.join(src_dir, "*", identifier)).first
+  if heb_src_dir.nil? or !Dir.exists?(heb_src_dir)
+    script_logger.error("HEB directory for #{identifier} does not exist.")
+    next
+  end
+  script_logger.info("processing HEB directory #{heb_src_dir}.")
+
+  # Use the monograph NOID to retrieve the monograph manifest from Fulcrum.
+  heb_id = "heb_id:#{identifier}"
+  id2csv_body_list = service.monograph_export(identifier_list: [ identifier, heb_id ])
+  csv_body_list = nil
+  id2csv_body_list.each do |id,clist|
+    unless clist.empty?
+      csv_body_list = clist
+      break
+    end
+  end
+  if csv_body_list.nil?
+    script_logger.error("no manifest found for id #{identifier}. Skipping.")
+    next
+  end
+  script_logger.info("one manifest for #{identifier}.") if csv_body_list.count == 1
+  script_logger.warn("multiple manifests for #{identifier}.") if csv_body_list.count > 1
+
+  pdf_rep = nil
+  noid_list = []
+  csv_body_list.each do |csv_body|
+    manifest = UMPTG::Fulcrum::Manifest::Document.new(
+                  csv_body: csv_body
+                )
+    noid_list << manifest.monograph_row['noid']
+    pdf_rep = manifest.representative_row(kind: "pdf_ebook")
+    if pdf_rep.nil?
+      script_logger.info("no PDF found for #{identifier}.")
+    else
+      script_logger.error("PDF found for #{identifier}. Skipping.")
+      break
+    end
+  end
+  next unless pdf_rep.nil?
+
+  heb_src_pdf_file = Dir.glob(File.join(heb_src_dir, "heb*_pdf_construct_from_epub_100pct.pdf")).first
+  if heb_src_pdf_file.nil? or !File.exists?(heb_src_pdf_file)
+    script_logger.error("PDF for ID #{monograph_id} does not exist.")
+    next
+  end
+  #script_logger.info("Src PDF : #{heb_src_pdf_file}")
+
+  heb_dest_dir = File.join(dest_dir, File.basename(heb_src_dir))
+  script_logger.info("creating destination directory #{heb_dest_dir}")
+  STDOUT.flush
+
+  FileUtils.mkdir_p heb_dest_dir
+
+  heb_dest_pdf_file = File.join(heb_dest_dir, File.basename(heb_src_pdf_file)[0..16] + File.extname(heb_src_pdf_file))
+  #script_logger.info("Dest PDF: #{heb_dest_pdf_file}")
+  FileUtils.cp(heb_src_pdf_file, heb_dest_pdf_file)
+
+  heb_dest_csv_file = File.join(heb_dest_dir, "manifest.csv")
+  CSV.open(
+          heb_dest_csv_file,
+          "w",
+          :write_headers=> true,
+          :force_quotes => true,
+          :headers => CSV_HEADERS
+        ) do |csv|
+
+    csv << { "File Name" => UMPTG::Fulcrum::Manifest.BLANK_ROW_FILE_NAME }
+
+    csv << {
+              "File Name" => File.basename(heb_dest_pdf_file),
+              "Title" => File.basename(heb_dest_pdf_file),
+              "Allow Download?" => "no",
+              "Representative Kind" => "pdf_ebook"
+            }
+  end
+
+  mnt_heb_dest_dir = File.join(File::SEPARATOR, "mnt", "umptmm", heb_dest_dir.delete_prefix("S:/Information Management/Fulcrum/"))
+  noid_list.each do |noid|
+    comm = "sudo -u heliotrope-production RAILS_ENV=production bundle exec script/import -m #{noid} -d #{mnt_heb_dest_dir}"
+    script_commands << comm
+  end
+end
+
+script_file = File.join(dest_dir, "import.sh")
+script_logger.info("writing script file #{script_file}")
+File.write(script_file, script_commands.join("\n"))
