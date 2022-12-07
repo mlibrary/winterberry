@@ -234,7 +234,7 @@ monograph_id_list.each do |monograph_id|
       monograph_loggers[monograph_id].info("Using FMSL #{File.basename(fmsl_file)}.") if fmsl_file_list.count == 1
 
       # Read the monograph source FMSL.
-      fmsl_csv = CSVFile.read(:csv_path => fmsl_file)
+      fmsl_csv = UMPTG::CSVFile.read(:csv_path => fmsl_file)
       if fmsl_csv.nil?
         monograph_loggers[monograph_id].error("Reading FMSL #{File.basename(fmsl_file)}.")
         next
