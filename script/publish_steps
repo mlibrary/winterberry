@@ -345,6 +345,26 @@ File.open(cmds_file, "w") do |fp|
   fp.puts "# Rails console"
   fp.puts "sudo -u heliotrope-production RAILS_ENV=production bundle exec rails console"
   fp.puts
+
+  fp.puts "# Publish monographs (bulleit-1)"
+  fp.puts "%w[#{monograph_noid_list.join(' ')}].each do |noid|"
+  fp.puts "  monograph = Monograph.find(noid)"
+  fp.puts "  if monograph.nil?"
+  fp.puts "    puts \"Error: no monograph for NOID \#{noid}.\""
+  fp.puts "  else"
+  fp.puts "    puts \"Publishing monograph \#{noid}.\""
+  fp.puts "    PublishJob.perform_later(monograph)"
+  fp.puts "  end"
+  fp.puts "end;0"
+
+  fp.puts
+  fp.puts "# Publishing ticket comment"
+  fp.puts "[~mbakeryo]"
+  fp.puts "Created the components *#{components_files.keys.join('*, *')}* and marked the monographs public. Also, the DOIs were successfully submitted to CrossRef for deposit. The results can be found in the attached zip files:"
+  fp.puts
+  fp.puts
+  fp.puts "Reassigning to [~mbakeryo]."
+  fp.puts
   fp.puts "# Unpack representatives"
   monograph_info.each do |monograph_id,minfo|
     mminfo = minfo.delete_if {|key,value| key == :monograph_dir}
@@ -359,32 +379,12 @@ File.open(cmds_file, "w") do |fp|
   end
   fp.puts
 
-  fp.puts "# Publish monographs (bulleit-1)"
-  fp.puts "%w[#{monograph_noid_list.join(' ')}].each do |noid|"
-  fp.puts "  monograph = Monograph.find(noid)"
-  fp.puts "  if monograph.nil?"
-  fp.puts "    puts \"Error: no monograph for NOID \#{noid}.\""
-  fp.puts "  else"
-  fp.puts "    puts \"Publishing monograph \#{noid}.\""
-  fp.puts "    PublishJob.perform_later(monograph)"
-  fp.puts "  end"
-  fp.puts "end;0"
-  fp.puts
-
   fp.puts "# Monograph information"
   fp.puts monograph_info.keys.join(' ')
   monograph_info.each do |monograph_id,minfo|
     mminfo = minfo.delete_if {|key,value| key == :monograph_dir}
     fp.puts "#{monograph_id},#{mminfo.values.join(',')}"
   end
-
-  fp.puts
-  fp.puts "# Publishing ticket comment"
-  fp.puts "[~mbakeryo]"
-  fp.puts "Created the components *#{components_files.keys.join('*, *')}* and marked the monographs public. The results can be found in the attached zip files:"
-  fp.puts
-  fp.puts
-  fp.puts "Reassigning to [~jvanderw]."
   fp.puts
   fp.puts "# Create monographs"
   fp.puts "find /mnt/umptmm/<monograph_dir>/ -maxdepth 1 -mindepth 1 -type d -print0 | sort -zn | xargs -0 -I '{}' echo sudo -u heliotrope-production RAILS_ENV=production bundle exec script/import -d '{}' -p <heb|michigan|um-pccn> -v private -q"
