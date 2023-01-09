@@ -121,6 +121,14 @@ monograph_id_list.each do |monograph_id|
     script_logger.warn("Multiple monograph directories found for id #{monograph_id}. Using #{monograph_dir}") \
           if monograph_dir_list.count > 1
     script_logger.info("Using monograph directory #{monograph_dir}") if monograph_dir_list.count == 1
+
+    resources_dir_list = Dir.glob(File.join(monograph_dir, "[Rr]esources"))
+    if resources_dir_list.empty?
+      script_logger.warn("no resources directory found for #{File.basename(monograph_dir)}")
+      monograph_resources_dir = nil
+    else
+      monograph_resources_dir = resources_dir_list.first
+    end
   end
 
   # Use the monograph ID to retrieve the manifest from Fulcrum.
@@ -215,8 +223,9 @@ monograph_id_list.each do |monograph_id|
 =end
 
   minfo = {
-       monograph_dir: monograph_dir,
        monograph_noid: monograph_noid,
+       monograph_dir: monograph_dir,
+       monograph_resources_dir: monograph_resources_dir,
        epub_noid: epub_noid,
        pdf_noid: pdf_noid,
        monograph_doi: monograph_row["doi"],
@@ -319,24 +328,43 @@ File.open(cmds_file, "w") do |fp|
     prefix = ""
     monograph_dir = minfo[:monograph_dir]
     unless monograph_dir.nil?
-      resources_dir_list = Dir.glob(File.join(monograph_dir, "[Rr]esources"))
+      monograph_resources_dir = minfo[:monograph_resources_dir]
 
       bulleit1_monograph_dir = File.join(
                   options.bulleit1_dir,
                   sd_dir,
                   File.basename(monograph_dir)
                 )
-      if resources_dir_list.empty?
-        script_logger.warn("no resources directory found for #{File.basename(monograph_dir)}")
+      if monograph_resources_dir.nil?
         resources_dir = File.join(bulleit1_monograph_dir, "Resources")
         prefix = "#"
       else
-        resources_dir = File.join(bulleit1_monograph_dir, File.basename(resources_dir_list.first))
+        resources_dir = File.join(bulleit1_monograph_dir, File.basename(monograph_resources_dir))
       end
       fp.puts "#{prefix}sudo -u heliotrope-production RAILS_ENV=production bundle exec script/import -m #{noid} -d #{resources_dir}"
       fp.puts
     end
   end
+
+  fp.puts "# Resource processing ticket comment"
+  fp.puts "[~jilliand] [~mbakeryo]"
+  fp.puts "Resource processed the following titles:"
+  monograph_info.each do |monograph_id,minfo|
+    monograph_dir = minfo[:monograph_dir]
+    unless monograph_dir.nil? or minfo[:monograph_resources_dir].nil?
+      fp.puts "# #{File.basename(monograph_dir)}"
+    end
+  end
+  fp.puts "No Fulcrum EPUB Specification infractions found with the following titles. UnpackJob was executed in the Fulcrum Rails console to force the resources to be embedded and the EPUBs have been updated on Fulcrum."
+  fp.puts "# "
+  fp.puts
+  fp.puts "Fulcrum EPUB Specification infractions were found for the following titles. The EPUBs for these were normalized and should be updated on Fulcrum overnight."
+  fp.puts "# "
+  fp.puts
+  fp.puts "The following issues were encountered and corrected:"
+  fp.puts "# "
+  fp.puts
+  
   fp.puts "# Create components (nectar)"
   components_files.each do |product,comp_file|
     fp.puts "bundle exec ruby bin/restrict_items.rb -f #{comp_file} -p #{product} >& #{bulleit1_task_dir}/restrict_items_#{product}.log"
@@ -382,7 +410,7 @@ File.open(cmds_file, "w") do |fp|
   fp.puts "# Monograph information"
   fp.puts monograph_info.keys.join(' ')
   monograph_info.each do |monograph_id,minfo|
-    mminfo = minfo.delete_if {|key,value| key == :monograph_dir}
+    mminfo = minfo.delete_if {|key,value| key == :monograph_dir or key == :monograph_resources_dir}
     fp.puts "#{monograph_id},#{mminfo.values.join(',')}"
   end
   fp.puts
