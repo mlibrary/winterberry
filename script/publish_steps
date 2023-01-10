@@ -322,6 +322,8 @@ end
 cmds_file = File.join(task_dir, task_id + ".txt")
 File.open(cmds_file, "w") do |fp|
   fp.puts "# Import resources"
+
+  monograph_has_resources = false
   monograph_info.each do |monograph_id,minfo|
     noid = minfo[:monograph_noid]
 
@@ -340,31 +342,34 @@ File.open(cmds_file, "w") do |fp|
         prefix = "#"
       else
         resources_dir = File.join(bulleit1_monograph_dir, File.basename(monograph_resources_dir))
+        monograph_has_resources = true
       end
       fp.puts "#{prefix}sudo -u heliotrope-production RAILS_ENV=production bundle exec script/import -m #{noid} -d #{resources_dir}"
       fp.puts
     end
   end
 
-  fp.puts "# Resource processing ticket comment"
-  fp.puts "[~jilliand] [~mbakeryo]"
-  fp.puts "Resource processed the following titles:"
-  monograph_info.each do |monograph_id,minfo|
-    monograph_dir = minfo[:monograph_dir]
-    unless monograph_dir.nil? or minfo[:monograph_resources_dir].nil?
-      fp.puts "# #{File.basename(monograph_dir)}"
+  if monograph_has_resources
+    fp.puts "# Resource processing ticket comment"
+    fp.puts "[~jilliand] [~mbakeryo]"
+    fp.puts "Resource processed the following titles:"
+    monograph_info.each do |monograph_id,minfo|
+      monograph_dir = minfo[:monograph_dir]
+      unless monograph_dir.nil? or minfo[:monograph_resources_dir].nil?
+        fp.puts "# #{File.basename(monograph_dir)}"
+      end
     end
+    fp.puts "No Fulcrum EPUB Specification infractions found with the following titles. UnpackJob was executed in the Fulcrum Rails console to force the resources to be embedded and the EPUBs have been updated on Fulcrum."
+    fp.puts "# "
+    fp.puts
+    fp.puts "Fulcrum EPUB Specification infractions were found for the following titles. The EPUBs for these were normalized and should be updated on Fulcrum overnight."
+    fp.puts "# "
+    fp.puts
+    fp.puts "The following issues were encountered and corrected:"
+    fp.puts "# "
+    fp.puts
   end
-  fp.puts "No Fulcrum EPUB Specification infractions found with the following titles. UnpackJob was executed in the Fulcrum Rails console to force the resources to be embedded and the EPUBs have been updated on Fulcrum."
-  fp.puts "# "
-  fp.puts
-  fp.puts "Fulcrum EPUB Specification infractions were found for the following titles. The EPUBs for these were normalized and should be updated on Fulcrum overnight."
-  fp.puts "# "
-  fp.puts
-  fp.puts "The following issues were encountered and corrected:"
-  fp.puts "# "
-  fp.puts
-  
+
   fp.puts "# Create components (nectar)"
   components_files.each do |product,comp_file|
     fp.puts "bundle exec ruby bin/restrict_items.rb -f #{comp_file} -p #{product} >& #{bulleit1_task_dir}/restrict_items_#{product}.log"
