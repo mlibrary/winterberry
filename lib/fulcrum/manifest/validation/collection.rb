@@ -149,13 +149,16 @@ module UMPTG::Fulcrum::Manifest::Validation
             else
               elem = CollectionSchema.normalize(row["resource_type"])
               elem1 = elem
-              if elem == "chart"
+              case elem.downcase
+              when "chart"
                 # If chart is just an image, then validate it as an
                 # image. Determine by checking the file extension.
                 fext = File.extname(row["file_name"])
                 if [".bmp", ".jpg", ".jpeg", ".png", ".tif", ".tiff"].include?(fext)
                   elem = "image"
                 end
+              when "3d_model"
+                elem = "model3d"
               end
             end
           end

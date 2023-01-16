@@ -299,6 +299,7 @@ module UMPTG::Review
                   if figure_obj_list.count > 1
                     figure_obj_list.each do |figure_obj|
                       next if figure_obj.img_list.empty?
+                      next if figure_obj.container_node.name.downcase == "figure"
                       reference_action_list << NormalizeFigureNestAction.new(
                                name: name,
                                #reference_node: reference_node,

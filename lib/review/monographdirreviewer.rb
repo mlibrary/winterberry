@@ -14,10 +14,10 @@ module UMPTG::Review
 
       @review_dir = File.join(@monograph_dir.monograph_dir, "review")
 
-      FileUtils.mkdir_p review_dir
+      FileUtils.mkdir_p @review_dir
 
       @review_logger = UMPTG::Logger.create(
-                  logger_file: File.join(review_dir, @monograph_dir.monograph_id + "_review.log")
+                  logger_file: File.join(@review_dir, @monograph_dir.monograph_id + "_review.log")
                )
 
     end
