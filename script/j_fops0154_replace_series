@@ -45,7 +45,8 @@ service = UMPTG::Services::Heliotrope.new(
                 :fulcrum_host => options.fulcrum_host
               )
 
-headers = [ "NOID", "Ebook ISBN", "Series" ]
+#headers = [ "NOID", "Ebook ISBN", "Series" ]
+headers = [ "NOID", "BAR Number", "Ebook ISBN", "Title", "Series" ]
 
 csv_file_list.each do |csv_file|
   csv_file = File.expand_path(csv_file)
@@ -81,8 +82,8 @@ csv_file_list.each do |csv_file|
       script_logger.info("*" * 10 + " #{monograph_id} " + "*" * 10)
 
       # Use the monograph NOID to retrieve the monograph manifest from Fulcrum.
-      csv_body = service.monograph_export(identifier: monograph_id)
-      if csv_body.nil? or csv_body.empty?
+      csv_body_tbl = service.monograph_export(identifier: monograph_id)
+      if csv_body_tbl.nil? or csv_body_tbl.empty?
         script_logger.error("no manifest found for id #{monograph_id}")
         next
       end
@@ -90,26 +91,44 @@ csv_file_list.each do |csv_file|
 
       result_csv_row = { "Ebook ISBN" => monograph_id }
 
-      manifest = UMPTG::Fulcrum::Manifest::Document.new(
-                    :csv_body => csv_body
-                  )
-      if manifest.nil?
-        script_logger.error("no manifest found for id #{monograph_id}")
-      else
-        monograph_row = manifest.monograph_row
-        if monograph_row.nil?
-          script_logger.error("no monograph row found for id #{monograph_id}")
-        else
-          result_csv_row["NOID"] = monograph_row["noid"]
-          series = monograph_row["series"]
-          if series.nil? or series.empty?
-            series = row["Sub Series"]
+      csv_body_tbl.each do |key,csv_body_list|
+        csv_body_list.each do |csv_body|
+          manifest = UMPTG::Fulcrum::Manifest::Document.new(
+                        csv_body: csv_body
+                      )
+          if manifest.nil?
+            script_logger.error("no manifest found for id #{monograph_id}")
           else
-            series += ";" + row["Sub Series"]
-          end
-          result_csv_row["Series"] = series
+            monograph_row = manifest.monograph_row
+            if monograph_row.nil?
+              script_logger.error("no monograph row found for id #{monograph_id}")
+            else
+              result_csv_row["NOID"] = monograph_row["noid"]
+              series = monograph_row["series"]
+              if series.nil? or series.empty?
+                series = row["Series"]
+              else
+                series += ";" + row["Series"] unless row["Series"].nil? or row["Series"].strip.empty?
+              end
+              result_csv_row["Series"] = series
 
-          result_csv << result_csv_row
+              #result_csv_row["Title"] = monograph_row["title"]
+              result_csv_row["Title"] = "=HYPERLINK(\"#{monograph_row['link'][12..-3]}\",\"#{monograph_row['title']}\")"
+
+              bar_number = ""
+              identifier_list = monograph_row["identifier(s)"]
+              unless identifier_list.nil?
+                identifier_list.split(';').each do |identifier|
+                  if identifier.strip.downcase.start_with?('bar_number:')
+                    bar_number = identifier.strip.downcase.delete_prefix('bar_number:').strip.upcase
+                  end
+                end
+              end
+              result_csv_row["BAR Number"] = bar_number
+
+              result_csv << result_csv_row
+            end
+          end
         end
       end
     end
