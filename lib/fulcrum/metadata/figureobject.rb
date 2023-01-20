@@ -15,7 +15,16 @@ module UMPTG::Fulcrum::Metadata
     def initialize(args = {})
       super(args)
 
-      @resource_name = @node['src']
+      @resource_name = nil
+      case @node.name
+      when 'img'
+        @resource_name = @node['src']
+      when 'video'
+        nl = @node.xpath(".//*[local-name()='source' and @src]")
+        @resource_name = nl.first['src'] unless nl.empty?
+      end
+      raise "#{@node.name} unsupported figure object." if @resource_name.nil?
+
       @caption = @properties[:caption]
     end
 

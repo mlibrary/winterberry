@@ -8,6 +8,8 @@ module UMPTG::Fulcrum::Metadata
   .//*[
   local-name()='img'
   or local-name()='figcaption'
+  or local-name()='video'
+  or @class='caption'
   or @class='figcap'
   or @class='figCap'
   or @class='figCaption'
@@ -22,10 +24,10 @@ module UMPTG::Fulcrum::Metadata
       case @fragment.node.name
       when 'img'
         # Process <img> fragment.
-        olist = Action.process_image(fragment, args)
+        olist = Action.process_image(@fragment, args)
       else
         # Must be a <figure> fragment. Process the contained images and captions.
-        nodes = fragment.node.xpath(@@SELECTION_XPATH)
+        nodes = @fragment.node.xpath(@@SELECTION_XPATH)
         if nodes.count > 0
           # Empty figure elements not expected.
           olist = Action.process_figure(nodes, args)
