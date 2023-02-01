@@ -67,7 +67,7 @@ isbn_list.each do |isbn|
       script_logger.warn("no NOIDs found for ISBN #{isbn}.")
       next
     end
-    script_logger.info("found #{noid_list.count} NOIDs for ISBN #{isbn}.")
+    script_logger.info("found #{noid_list.count} NOIDs (#{noid_list.join(',')}) for ISBN #{isbn}.")
     noid_list.each do |noid|
       blist = doi_report_doc.xpath("//*[local-name()='resource' and contains(string(),'" + noid + "')]/ancestor::*[local-name()='book'][1]")
       blist.each do |n|
