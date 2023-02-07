@@ -60,7 +60,13 @@ isbn_list.each do |isbn|
 
   bnode_list = doi_report_doc.xpath("//*[local-name()='eISBN' and string()='#{isbn}']/ancestor::*[local-name()='book'][1]")
   if bnode_list.empty?
-    script_logger.warn("no book nodes found for ISBN #{isbn}.")
+    script_logger.warn("no ebook nodes found for ISBN #{isbn}.")
+    bnode_list = doi_report_doc.xpath("//*[local-name()='printISBN' and string()='#{isbn}']/ancestor::*[local-name()='book'][1]")
+    if bnode_list.empty?
+      script_logger.warn("no print nodes found for ISBN #{isbn}.")
+    end
+  end
+  if bnode_list.empty?
     noid_map = service.monograph_noid(identifier: isbn)
     noid_list = noid_map[isbn]
     if noid_list.empty?
