@@ -70,6 +70,7 @@ service = UMPTG::Services::Heliotrope.new(
 
 require 'fileutils'
 require 'nokogiri'
+require 'htmlentities'
 
 dlxs2jats_xsl_file = File.join(root_dir, "lib", "journal", "xsl", "dlxs2jats.xsl")
 jats2html_xsl_file = File.join(root_dir, "lib", "journal", "xsl", "jats-html.xsl")
@@ -78,7 +79,7 @@ KSP='#'
 RSP=';'
 FSP='^'
 VSP='='
-RESOURCE_MARKUP = "<resource entity=\"%s\" file_name=\"%s\" file_type=\"%s\" link=\"%s\" embed_link=\"%s\" doi=\"%s\"><title>%s</title><caption>%s</caption></resource>"
+RESOURCE_MARKUP = "<resource entity=\"%s\" file_name=\"%s\" file_type=\"%s\" link=\"%s\" embed_link=\"%s\" doi=\"%s\"><title>%s</title><caption>%s</caption><embed_code>%s</embed_code></resource>"
 
 def detect(path)
   header = File.binread(path, 50).downcase
@@ -97,6 +98,7 @@ def detect(path)
   return ""
 end
 
+encoder = HTMLEntities.new
 journal_name_list.each do |journal_name|
   dlxs_file = File.join(dlxs_dir, journal_name + ".xml")
   if !File.exists?(dlxs_file)
@@ -160,7 +162,7 @@ journal_name_list.each do |journal_name|
 
     file_type = detect(resource_file)
 
-    link = title = caption = embed_link = doi = ""
+    link = title = caption = embed_link = doi = embed_code = ""
     fileset = manifest.fileset(File.basename(resource_file)) unless manifest.nil?
     unless fileset.nil?
       link = fileset['link'][12..-3]
@@ -176,10 +178,11 @@ journal_name_list.each do |journal_name|
       title = fileset['title']
       caption = fileset['caption']
       doi = fileset['doi']
+      embed_code = fileset['embed_code']
     end
     #resource_list_param += "#{key}:#{File.join("resources", File.basename(resource_file))};"
     resource_list_param += "#{key}#{KSP}file_name#{VSP}#{File.basename(resource_file)}#{FSP}file_type#{VSP}#{file_type}#{FSP}link#{VSP}#{link}#{FSP}embed_link#{VSP}#{embed_link}#{FSP}caption#{VSP}#{caption}#{FSP}title#{VSP}#{title}#{RSP}"
-    resource_list << sprintf(RESOURCE_MARKUP, key, File.basename(resource_file), file_type, link, embed_link, doi, title, caption)
+    resource_list << sprintf(RESOURCE_MARKUP, key, File.basename(resource_file), file_type, link, embed_link, doi, title, caption, encoder.encode(embed_code))
   end
   resource_list_param2 = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<resources>" + resource_list.join + "</resources>"
   rfile = File.expand_path('junk.xml')

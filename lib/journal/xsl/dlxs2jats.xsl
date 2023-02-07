@@ -25,6 +25,9 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
     <xsl:param name="image_list" required="no"/>
     <xsl:param name="language" select="'en'"/>
 
+    <xsl:variable name="TABLE_BORDER_THICK" select="'2'"/>
+    <xsl:variable name="TABLE_BORDER_STYLE" select="concat($TABLE_BORDER_THICK,'px solid;')"/>
+
     <xsl:variable name="image_doc" select="document($image_list)"/>
 
     <xsl:variable name="license_doc">
@@ -674,7 +677,10 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
             <xsl:when test="@TYPE = 'video'">
                 <xsl:variable name="image_info" select="mlibxsl:make-resource(@FILENAME)"/>
                 <xsl:element name="media">
+                    <!--
                     <xsl:attribute name="mimetype" select="concat(@TYPE,'/',$image_info/@file_type)"/>
+                    -->
+                    <xsl:attribute name="mimetype" select="lower-case(@TYPE)"/>
                     <xsl:attribute name="mime-subtype" select="$image_info/@file_type"/>
                     <xsl:attribute name="position" select="'anchor'"/>
                     <xsl:attribute name="specific-use" select="'online'"/>
@@ -703,6 +709,14 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
                             </xsl:element>
                         </xsl:otherwise>
                     </xsl:choose>
+                    <xsl:element name="attrib">
+                        <xsl:attribute name="specific-use" select="'stylesheet'"/>
+                        <xsl:value-of select="$image_info/@embed_link"/>
+                    </xsl:element>
+                    <xsl:element name="attrib">
+                        <xsl:attribute name="specific-use" select="'embed_code'"/>
+                        <xsl:value-of select="$image_info/embed_code"/>
+                    </xsl:element>
                 </xsl:element>
             </xsl:when>
             <xsl:when test="starts-with(lower-case(@URL), 'mailto:')">
@@ -723,12 +737,14 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
                 </xsl:element>
             </xsl:when>
             <xsl:otherwise>
+                <xsl:variable name="image_info" select="mlibxsl:make-resource(@FILENAME)"/>
                 <xsl:choose>
                     <xsl:when test="substring(local-name(parent::*[1]),1,3)='DIV'">
                         <xsl:element name="p">
                             <xsl:element name="ext-link">
                                 <xsl:call-template name="set-reference-attributes">
                                     <xsl:with-param name="refNode" select="."/>
+                                    <xsl:with-param name="image_info" select="$image_info"/>
                                 </xsl:call-template>
                                 <xsl:apply-templates select="@*[name()!='TYPE' and name()!='URL' and name()!='ENTITY' and name()!='FILENAME']|node()"/>
                             </xsl:element>
@@ -738,6 +754,7 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
                         <xsl:element name="ext-link">
                             <xsl:call-template name="set-reference-attributes">
                                 <xsl:with-param name="refNode" select="."/>
+                                <xsl:with-param name="image_info" select="$image_info"/>
                             </xsl:call-template>
                             <xsl:apply-templates select="@*[name()!='TYPE' and name()!='URL' and name()!='ENTITY' and name()!='FILENAME']|node()"/>
                         </xsl:element>
@@ -1087,6 +1104,8 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
     </xsl:template>
 
     <xsl:template match="TABLE/CAPTION|TABLE/HEAD">
+        <xsl:apply-templates/>
+        <!--
         <xsl:apply-templates select="@*"/>
 
         <xsl:choose>
@@ -1099,16 +1118,61 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
                 <xsl:apply-templates/>
             </xsl:otherwise>
         </xsl:choose>
+        -->
     </xsl:template>
 
     <xsl:template match="ROW">
+        <xsl:variable name="border" select="ancestor::*[local-name()='TABLE'][1]/@BORDER"/>
         <xsl:element name="tr">
+            <!--
+            <xsl:if test="$border > '0'">
+                <xsl:choose>
+                    <xsl:when test="exists(following-sibling::*[1])">
+                        <xsl:attribute name="style" select="concat('border-top:',$TABLE_BORDER_STYLE)"/>
+                    </xsl:when>
+                    <xsl:otherwise>
+                        <xsl:attribute name="style" select="concat('border-top:',$TABLE_BORDER_STYLE,'border-bottom:',$TABLE_BORDER_STYLE)"/>
+                    </xsl:otherwise>
+                </xsl:choose>
+            </xsl:if>
+            -->
             <xsl:apply-templates select="@*|node()"/>
         </xsl:element>
     </xsl:template>
 
     <xsl:template match="CELL">
+        <xsl:variable name="border" select="ancestor::*[local-name()='TABLE'][1]/@BORDER"/>
         <xsl:element name="td">
+            <xsl:if test="$border > '0'">
+                <xsl:variable name="notLastCell" select="exists(following-sibling::*[local-name()='CELL'][1])"/>
+                <xsl:variable name="notLastRow" select="exists(ancestor::*[local-name()='ROW'][1]/following-sibling::*[1])"/>
+
+                <xsl:choose>
+                    <xsl:when test="$notLastCell and $notLastRow">
+                        <xsl:attribute name="style" select="concat('border-top:',$TABLE_BORDER_STYLE,'border-left:',$TABLE_BORDER_STYLE)"/>
+                    </xsl:when>
+                    <xsl:when test="$notLastCell">
+                        <xsl:attribute name="style" select="concat('border-top:',$TABLE_BORDER_STYLE,'border-left:',$TABLE_BORDER_STYLE,'border-bottom:',$TABLE_BORDER_STYLE)"/>
+                    </xsl:when>
+                    <xsl:when test="$notLastRow">
+                        <xsl:attribute name="style" select="concat('border-top:',$TABLE_BORDER_STYLE,'border-left:',$TABLE_BORDER_STYLE,'border-right:',$TABLE_BORDER_STYLE)"/>
+                    </xsl:when>
+                    <xsl:otherwise>
+                        <xsl:attribute name="style" select="concat('border-top:',$TABLE_BORDER_STYLE,'border-left:',$TABLE_BORDER_STYLE,'border-bottom:',$TABLE_BORDER_STYLE,'border-right:',$TABLE_BORDER_STYLE)"/>
+                    </xsl:otherwise>
+                </xsl:choose>
+                <!--
+                <xsl:choose>
+                    <xsl:when test="exists(following-sibling::*[1])">
+                        <xsl:attribute name="style" select="concat('border-left:',$TABLE_BORDER_STYLE)"/>
+                    </xsl:when>
+                    <xsl:otherwise>
+                        <xsl:attribute name="style" select="concat('border-top:',$TABLE_BORDER_STYLE,'border-left:',$TABLE_BORDER_STYLE,'border-right:',$TABLE_BORDER_STYLE,'border-bottom:',$TABLE_BORDER_STYLE)"/>
+                        <xsl:attribute name="style" select="concat('border-left:',$TABLE_BORDER_STYLE,'border-right:',$TABLE_BORDER_STYLE)"/>
+                    </xsl:otherwise>
+                </xsl:choose>
+                -->
+            </xsl:if>
             <xsl:choose>
                 <xsl:when test="exists(@ROLE)">
                     <xsl:attribute name="content-type" select="@ROLE"/>
@@ -1187,6 +1251,7 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
     <xsl:template match="DIV1/@TYPE|TD/@TYPE|REF/@TARGET|@NODE"/>
 
     <xsl:template match="TABLE/@BORDER">
+        <!--
         <xsl:variable name="border" select="."/>
         <xsl:choose>
             <xsl:when test="$border='1'">
@@ -1201,6 +1266,7 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
                 <xsl:attribute name="{lower-case(local-name())}" select="lower-case(.)"/>
             </xsl:otherwise>
         </xsl:choose>
+        -->
     </xsl:template>
 
     <xsl:template match="element()">
@@ -1345,7 +1411,14 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
         <xsl:param name="node"/>
 
         <xsl:element name="table-wrap">
-            <xsl:if test="exists($node/HEAD)">
+            <xsl:if test="exists($node/*[local-name()='HEAD' or local-name()='CAPTION'])">
+                <!--
+                <xsl:element name="caption">
+                    <xsl:element name="p">
+                        <xsl:apply-templates select="$node/*[local-name()='HEAD' or local-name()='CAPTION']"/>
+                    </xsl:element>
+                </xsl:element>
+                -->
                 <xsl:choose>
                     <xsl:when test="matches(lower-case(normalize-space($node/*[1])),'^(fig|figure|figures|table|tables)[ ]+[a-zA-Z0-9\-\.:]+ ')">
                         <xsl:variable name="children" select="$node/*[1]/child::node()"/>
@@ -1414,11 +1487,15 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
 
     <xsl:template name="set-reference-attributes">
         <xsl:param name="refNode"/>
+        <xsl:param name="image_info" required="no"/>
 
         <xsl:if test="exists($refNode/@TYPE)">
             <xsl:attribute name="ext-link-type" select="'uri'"/>
         </xsl:if>
         <xsl:choose>
+            <xsl:when test="exists($image_info)">
+                <xsl:attribute name="xlink:href" select="$image_info/@link"/>
+            </xsl:when>
             <xsl:when test="exists($refNode/@URL)">
                 <xsl:attribute name="xlink:href" select="$refNode/@URL"/>
             </xsl:when>
