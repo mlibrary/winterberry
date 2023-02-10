@@ -3,7 +3,7 @@ module UMPTG::EPUB
   require 'zip'
 
   class Archive < UMPTG::Object
-    attr_reader :epub_file
+    attr_reader :epub_file, :modified
 
     def initialize(args = {})
       super(args)
@@ -18,6 +18,7 @@ module UMPTG::EPUB
         label = "OEBPS/content.opf"
         rend = UMPTG::EPUB::Rendition.new(name: label)
         @renditions[label] = rend
+        @modified = false
       end
     end
 
@@ -46,11 +47,15 @@ module UMPTG::EPUB
 
         if @name2entry.key?(entry_name)
           entry = @name2entry[entry_name]
-          entry.content = entry_content
+          if entry_content != entry.content
+            entry.content = entry_content
+            @modified = true
+          end
         else
           zip_entry = Zip::Entry.new
           zip_entry.name = entry_name
           entry = Entry.new(zip_entry: zip_entry, content: entry_content)
+          @modified = true
         end
       end
 
@@ -62,6 +67,7 @@ module UMPTG::EPUB
       raise "Error: empty entry name" if entry_name.strip.empty?
 
       @name2entry.delete(entry_name)
+      @modified = true
     end
 
     def save(args = {})
@@ -132,6 +138,8 @@ module UMPTG::EPUB
 
     def load(args = {})
       @epub_file = args[:epub_file]
+      @modified = false
+
       raise "Error: missing file path" if @epub_file.strip.empty?
       raise "Error: invalid file path" unless File.exist?(@epub_file)
 
