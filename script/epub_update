@@ -19,38 +19,54 @@ script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
 
 # Process the script parameters.
 options = OpenStruct.new
+options.css_file_list = []
 option_parser = OptionParser.new do |opts|
-  opts.banner = "Usage: #{File.basename(__FILE__)} css_file epub_file [epub_file...]"
+  opts.banner = "Usage: #{File.basename(__FILE__)} -c css_file epub_file [epub_file...]"
+  opts.on('-c', '--css [css_file]', 'CSS replacement') do |css_file|
+    options.css_file_list << css_file
+  end
   opts.on_tail('-h', '--help', 'Print this help message') do
     script_logger.info(opts)
     exit 0
   end
 end
 option_parser.parse!(ARGV)
-if ARGV.count < 2
+if ARGV.count < 1
   script_logger.info(option_parser.help)
   return
 end
-css_file = ARGV[0]
-epub_file_list = ARGV[1..-1]
+epub_file_list = ARGV
 
 require 'css_parser'
 
 require_relative File.join(root_dir, 'lib', 'epub')
 
+def fulcrum_css_version(css_content)
+  # Check to see if this is a Fulcrum CSS stylesheet.
+  matches = css_content.downcase.match('\/\/[ \t]*about:.*fulcrum[ \t]+')
+  return '' if matches.nil?
+
+  # Is Fulcrum CSS. Attempt to determine the version.
+  matches = css_content.match('\/\/[ \t]+[Vv]ersion[ \t]+([0-9\.]+)')
+  return '' if matches.nil?
+
+  # Found the version.
+  css_version = matches.captures.first
+  return css_version
+end
+
 # Process the new Fulcrum CSS stylesheet.
 # Load it and attempt to determine its version.
 # Exit if it appears to be invalid.
+css_file = options.css_file_list.first
 css_content = File.read(css_file)
 css_parser = CssParser::Parser.new
 css_parser.load_string!(css_content)
-matches = css_content.match('\/\/[ \t]+[Vv]ersion[ \t]+([0-9\.]+)')
-if matches.nil?
-  css_version = nil
-  script_logger.error("version not found for #{File.basename(css_file)}")
+css_version = fulcrum_css_version(css_content)
+if css_version.empty?
+  script_logger.error("Fulcrum version not found for #{File.basename(css_file)}")
   exit 1
 end
-css_version = matches.captures.first unless matches.nil?
 script_logger.info("version #{css_version} found for #{File.basename(css_file)}")
 
 # Travese the list of EPUB files to update.
@@ -72,24 +88,12 @@ epub_file_list.each do |epub_file|
     script_logger.info("processing CSS file #{epub_css_entry.name}")
 
     # Check to see if this is a Fulcrum CSS stylesheet.
-    matches = epub_css_entry.content.downcase.match('\/\/[ \t]*about:.*fulcrum[ \t]+')
-    if matches.nil?
+    epub_css_version = fulcrum_css_version(epub_css_entry.content)
+    if epub_css_version.empty?
       script_logger.warn("appears to not be a Fulcrum CSS stylesheet. Skipping.")
       next
     end
-
-    # Is Fulcrum CSS. Attempt to determine the version.
-    matches = epub_css_entry.content.match('\/\/[ \t]+[Vv]ersion[ \t]+([0-9\.]+)')
-    if matches.nil?
-      script_logger.warn("version not found. Skipping.")
-      next
-    end
-
-    # Found the version.
-    epub_css_version = matches.captures.first
-    matches.captures.each do |m|
-      script_logger.info("version #{m} found.")
-    end
+    script_logger.info("version #{epub_css_version} found.")
     STDOUT.flush
 
     # Parse the CSS stylesheet and attempt to determine
