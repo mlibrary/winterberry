@@ -70,6 +70,8 @@ service = UMPTG::Services::Heliotrope.new(
 
 require 'fileutils'
 require 'nokogiri'
+require 'htmlentities'
+require 'uri'
 
 dlxs2jats_xsl_file = File.join(root_dir, "lib", "journal", "xsl", "dlxs2jats.xsl")
 jats2html_xsl_file = File.join(root_dir, "lib", "journal", "xsl", "jats-html.xsl")
@@ -78,9 +80,44 @@ KSP='#'
 RSP=';'
 FSP='^'
 VSP='='
-RESOURCE_MARKUP = "<resource entity=\"%s\" file_name=\"%s\" file_type=\"%s\" link=\"%s\" embed_link=\"%s\" doi=\"%s\"><title>%s</title><caption>%s</caption></resource>"
+
+#https://heliotrope-preview.hydra.lib.umich.edu/downloads/wh246t40n?file=embed_css
+LINK_HREF_MARKUP = "%s/downloads/%s?file=embed_css"
+
+LINK_MARKUP = <<-LMARKUP
+<link href=\"%s\" rel=\"stylesheet\" type=\"text/css\"></link>
+LMARKUP
+
+AUDIO_IFRAME_MARKUP = <<-AMARKUP
+<iframe id=\"fulcrum-embed-iframe-%s\" src=\"%s\" title=\"%s\"></iframe>
+AMARKUP
+
+VIDEO_IFRAME_MARKUP = <<-VMARKUP
+<iframe id=\"fulcrum-embed-iframe-%s\" src=\"%s&fs=1\" title=\"%s\" allowfullscreen></iframe>
+VMARKUP
+
+MEDIA_MARKUP = <<-MMARKUP
+<div id=\"fulcrum-embed-outer-%s\">
+<div id=\"fulcrum-embed-inner-%s\">
+%s
+</div>
+</div>
+MMARKUP
+
+RESOURCE_MARKUP = <<-RMARKUP
+<resource entity=\"%s\" file_name=\"%s\" file_type=\"%s\" noid=\"%s\"
+  link=\"%s\" embed_link=\"%s\" css_link=\"%s\" doi=\"%s\">
+<title>%s</title>
+<caption>%s</caption>
+<embed_code>%s</embed_code>
+<css_stylesheet>%s</css_stylesheet>
+</resource>
+RMARKUP
 
 def detect(path)
+  ext = File.extname(path)
+  return (ext.nil? or ext.empty?) ? "" : ext[1..-1]
+
   header = File.binread(path, 50).downcase
   case
   when header[0..2] == 'gif'
@@ -97,6 +134,7 @@ def detect(path)
   return ""
 end
 
+encoder = HTMLEntities.new
 journal_name_list.each do |journal_name|
   dlxs_file = File.join(dlxs_dir, journal_name + ".xml")
   if !File.exists?(dlxs_file)
@@ -156,30 +194,56 @@ journal_name_list.each do |journal_name|
   resource_list_param = ""
   resource_file_table.each do |key,resource_file|
     script_logger.info("Copying resource #{File.basename(resource_file)}")
-    FileUtils.cp(resource_file, article_dir)
+
+    res_file = File.join(article_dir, File.basename(resource_file))
+    FileUtils.cp(resource_file, article_dir) unless File.exist?(res_file)
 
     file_type = detect(resource_file)
 
-    link = title = caption = embed_link = doi = ""
+    link = title = caption = embed_link = doi = embed_code = ""
     fileset = manifest.fileset(File.basename(resource_file)) unless manifest.nil?
     unless fileset.nil?
       link = fileset['link'][12..-3]
 
+      link_uri = URI(link)
+      link_scheme_host = link_uri.scheme + "://" + link_uri.host
+
       embed_markup = fileset['embed_code']
       unless embed_markup.nil? or embed_markup.empty?
         embed_doc = Nokogiri::XML::DocumentFragment.parse(embed_markup)
-        iframe_node = embed_doc.xpath(".//*[local-name()='iframe']").first
+        iframe_node = embed_doc.xpath("descendant-or-self::*[local-name()='iframe']").first
         embed_link = iframe_node['src']
-        puts "src:#{embed_link}" unless iframe_node.nil?
       end
 
       title = fileset['title']
       caption = fileset['caption']
       doi = fileset['doi']
+      embed_code = fileset['embed_code']
+      noid = fileset['noid']
+      css_link = sprintf(LINK_HREF_MARKUP, link_scheme_host, noid)
+
+      resource_type = fileset['resource_type']
+      resource_type = "" if resource_type.nil?
+
+      case resource_type.downcase
+      when "audio"
+        iframe_markup = sprintf(AUDIO_IFRAME_MARKUP, noid, embed_link, title)
+    when "video"
+        iframe_markup = sprintf(VIDEO_IFRAME_MARKUP, noid, embed_link, title)
+      else
+        iframe_markup = ""
+      end
+
+      css_embed_code = sprintf(LINK_MARKUP, css_link) + \
+            sprintf(MEDIA_MARKUP, noid, noid, iframe_markup)
+
     end
     #resource_list_param += "#{key}:#{File.join("resources", File.basename(resource_file))};"
     resource_list_param += "#{key}#{KSP}file_name#{VSP}#{File.basename(resource_file)}#{FSP}file_type#{VSP}#{file_type}#{FSP}link#{VSP}#{link}#{FSP}embed_link#{VSP}#{embed_link}#{FSP}caption#{VSP}#{caption}#{FSP}title#{VSP}#{title}#{RSP}"
-    resource_list << sprintf(RESOURCE_MARKUP, key, File.basename(resource_file), file_type, link, embed_link, doi, title, caption)
+    resource_list << sprintf(RESOURCE_MARKUP, key, \
+         File.basename(resource_file), file_type, noid, link, embed_link, css_link, \
+         doi, title, caption, \
+         encoder.encode(embed_code), encoder.encode(css_embed_code))
   end
   resource_list_param2 = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<resources>" + resource_list.join + "</resources>"
   rfile = File.expand_path('junk.xml')
