@@ -3103,6 +3103,54 @@
     <xsl:template match="media">
         <xsl:variable name="data-doi" select="child::object-id[@pub-id-type='doi']/text()"/>
         <xsl:choose>
+            <!-- Handle Fulcrum Media -->
+            <xsl:when test="exists(./*[local-name()='attrib' and @specific-use='umptg_fulcrum_resource'])">
+                <xsl:variable name="fulcrum_elem" select="./*[local-name()='attrib' and @specific-use='umptg_fulcrum_resource']"/>
+                <xsl:variable name="css_embed_code" select="$fulcrum_elem/*[local-name()='alternatives']/*[@specific-use='umptg_fulcrum_resource_css_embed_code']"/>
+
+                <xsl:value-of select="$css_embed_code" disable-output-escaping="yes"/>
+                <xsl:apply-templates select="*[local-name()!='attrib']"/>
+                <!--
+                <xsl:variable name="embed_link" select="@xlink:href"/>
+                <xsl:variable name="css_link" select="$fulcrum_elem/ext-link[@specific-use='umptg_fulcrum_resource_css_stylesheet_link']/@xlink:href"/>
+                <xsl:variable name="identifier" select="$fulcrum_elem/*[local-name()='alternatives']/*[@specific-use='umptg_fulcrum_resource_identifier']"/>
+                <xsl:variable name="title" select="$fulcrum_elem/*[local-name()='alternatives']/*[@specific-use='umptg_fulcrum_resource_title']"/>
+
+               <xsl:element name="link">
+                    <xsl:attribute name="href">
+                        <xsl:value-of select="$css_link"/>
+                    </xsl:attribute>
+                    <xsl:attribute name="rel">
+                        <xsl:value-of select="'stylesheet'"/>
+                    </xsl:attribute>
+                    <xsl:attribute name="type">
+                        <xsl:value-of select="'text/css'"/>
+                    </xsl:attribute>
+                </xsl:element>
+                <xsl:element name="div">
+                    <xsl:attribute name="id">
+                        <xsl:value-of select="concat('fulcrum-embed-outer-',$identifier)"/>
+                    </xsl:attribute>
+                    <xsl:element name="div">
+                        <xsl:attribute name="id">
+                            <xsl:value-of select="concat('fulcrum-embed-inner-',$identifier)"/>
+                        </xsl:attribute>
+                        <xsl:element name="iframe">
+                            <xsl:attribute name="id">
+                                <xsl:value-of select="concat('fulcrum-embed-iframe-',$identifier)"/>
+                            </xsl:attribute>
+                            <xsl:attribute name="src">
+                                <xsl:value-of select="$embed_link"/>
+                            </xsl:attribute>
+                            <xsl:attribute name="title">
+                                <xsl:value-of select="$title"/>
+                            </xsl:attribute>
+                        </xsl:element>
+                    </xsl:element>
+                    <xsl:apply-templates select="*[local-name()!='attrib']"/>
+                </xsl:element>
+                -->
+            </xsl:when>
             <!-- Handle Video Media-->
             <xsl:when test="@mimetype = 'video'">
               <xsl:choose>
@@ -3119,16 +3167,6 @@
                     <xsl:apply-templates select="." mode="youtube"/>
                   </div>
                 </xsl:when>
-                  <xsl:when test="exists(./*[local-name()='attrib' and (@specific-use='fulcrum_embed_code' or @specific-use='fulcrum_css_stylesheet')])">
-                      <div class="media video-content">
-                          <div class="media-inline video-inline">
-                              <div class="acta-inline-video">
-                                  <xsl:value-of select="./*[local-name()='attrib' and (@specific-use='fulcrum_embed_code' or @specific-use='fulcrum_css_stylesheet')]" disable-output-escaping="yes"/>
-                              </div>
-                          </div>
-                      </div>
-                      <xsl:apply-templates select="*[local-name()!='attrib']"/>
-                  </xsl:when>
                 <xsl:otherwise>
                   <a href="{@xlink:href}">Video URL</a>
                 </xsl:otherwise>
@@ -3143,16 +3181,6 @@
                     <xsl:apply-templates select="." mode="soundcloud"/>
                   </div>
                 </xsl:when>
-                  <xsl:when test="exists(./*[local-name()='attrib' and (@specific-use='fulcrum_embed_code' or @specific-use='fulcrum_css_stylesheet')])">
-                      <div class="media video-content">
-                          <div class="media-inline video-inline">
-                              <div class="acta-inline-video">
-                                  <xsl:value-of select="./*[local-name()='attrib' and (@specific-use='fulcrum_embed_code' or @specific-use='fulcrum_css_stylesheet')]" disable-output-escaping="yes"/>
-                              </div>
-                          </div>
-                      </div>
-                      <xsl:apply-templates select="*[local-name()!='attrib']"/>
-                  </xsl:when>
                 <xsl:otherwise>
                   <a href="{@xlink:href}">Video URL</a>
                 </xsl:otherwise>
