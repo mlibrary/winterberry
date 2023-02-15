@@ -202,7 +202,7 @@ journal_name_list.each do |journal_name|
 
     link = title = caption = embed_link = doi = embed_code = ""
     fileset = manifest.fileset(File.basename(resource_file)) unless manifest.nil?
-    unless fileset.nil?
+    unless fileset.nil? or fileset['noid'].strip.empty?
       link = fileset['link'][12..-3]
 
       link_uri = URI(link)
@@ -228,7 +228,9 @@ journal_name_list.each do |journal_name|
       case resource_type.downcase
       when "audio"
         iframe_markup = sprintf(AUDIO_IFRAME_MARKUP, noid, embed_link, title)
-    when "video"
+      when "interactive map"
+        iframe_markup = sprintf(AUDIO_IFRAME_MARKUP, noid, embed_link, title)
+      when "video"
         iframe_markup = sprintf(VIDEO_IFRAME_MARKUP, noid, embed_link, title)
       else
         iframe_markup = ""

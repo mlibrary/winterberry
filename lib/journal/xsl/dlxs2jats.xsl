@@ -27,6 +27,8 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
 
     <xsl:variable name="TABLE_BORDER_THICK" select="'2'"/>
     <xsl:variable name="TABLE_BORDER_STYLE" select="concat($TABLE_BORDER_THICK,'px solid;')"/>
+    <xsl:variable name="TABLE_PADDING" select="'5px'"/>
+    <xsl:variable name="TABLE_PADDING_STYLE" select="concat($TABLE_PADDING,';')"/>
 
     <xsl:variable name="image_doc" select="document($image_list)"/>
 
@@ -674,7 +676,7 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
                     <xsl:apply-templates select="@*[name()!='TARGET' and name()!='TYPE']|node()"/>
                 </xsl:element>
             </xsl:when>
-            <xsl:when test="@TYPE = 'video' or @TYPE='audio'">
+            <xsl:when test="@TYPE = 'video' or @TYPE='audio' or @TYPE='map'">
                 <xsl:element name="media">
                     <xsl:attribute name="mimetype" select="lower-case(@TYPE)"/>
                     <xsl:attribute name="position" select="'anchor'"/>
@@ -734,18 +736,19 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
                     </xsl:choose>
                     <xsl:choose>
                         <xsl:when test="exists($image_info)">
+                            <xsl:choose>
+                                <xsl:when test="string-length(normalize-space($image_info/@doi)) > 0">
+                                    <xsl:element name="object-id">
+                                        <xsl:attribute name="pub-id-type" select="'doi'"/>
+                                        <xsl:value-of select="$image_info/@doi"/>
+                                    </xsl:element>
+                                </xsl:when>
+                            </xsl:choose>
                             <xsl:element name="attrib">
                                 <xsl:attribute name="id" select="concat('umptg_fulcrum_resource_',$image_info/@noid)"/>
                                 <xsl:attribute name="specific-use" select="'umptg_fulcrum_resource'"/>
                                 <xsl:choose>
                                     <xsl:when test="string-length(normalize-space($image_info/@doi)) > 0">
-                                        <!--
-                                        <xsl:element name="object-id">
-                                            <xsl:attribute name="pub-id-type" select="'doi'"/>
-                                            <xsl:attribute name="specific-use" select="'metadata'"/>
-                                            <xsl:value-of select="$image_info/@doi"/>
-                                        </xsl:element>
-                                        -->
                                         <xsl:element name="ext-link">
                                             <xsl:attribute name="ext-link-type" select="'doi'"/>
                                             <xsl:attribute name="xlink:href" select="$image_info/@doi"/>
@@ -781,6 +784,7 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
                                         <xsl:attribute name="position" select="'anchor'"/>
                                         <xsl:value-of select="$image_info/@noid"/>
                                     </xsl:element>
+                                    <!--
                                     <xsl:element name="code">
                                         <xsl:attribute name="specific-use" select="'umptg_fulcrum_resource_css_embed_code'"/>
                                         <xsl:attribute name="position" select="'anchor'"/>
@@ -788,7 +792,6 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
                                         <xsl:attribute name="code-version" select="'1.0'"/>
                                         <xsl:value-of select="$image_info/css_stylesheet"/>
                                     </xsl:element>
-                                    <!--
                                     <xsl:element name="code">
                                         <xsl:attribute name="specific-use" select="'umptg_fulcrum_resource_embed_code'"/>
                                         <xsl:attribute name="position" select="'anchor'"/>
@@ -1212,18 +1215,6 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
     <xsl:template match="ROW">
         <xsl:variable name="border" select="ancestor::*[local-name()='TABLE'][1]/@BORDER"/>
         <xsl:element name="tr">
-            <!--
-            <xsl:if test="$border > '0'">
-                <xsl:choose>
-                    <xsl:when test="exists(following-sibling::*[1])">
-                        <xsl:attribute name="style" select="concat('border-top:',$TABLE_BORDER_STYLE)"/>
-                    </xsl:when>
-                    <xsl:otherwise>
-                        <xsl:attribute name="style" select="concat('border-top:',$TABLE_BORDER_STYLE,'border-bottom:',$TABLE_BORDER_STYLE)"/>
-                    </xsl:otherwise>
-                </xsl:choose>
-            </xsl:if>
-            -->
             <xsl:apply-templates select="@*|node()"/>
         </xsl:element>
     </xsl:template>
@@ -1232,34 +1223,7 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
         <xsl:variable name="border" select="ancestor::*[local-name()='TABLE'][1]/@BORDER"/>
         <xsl:element name="td">
             <xsl:if test="$border > '0'">
-                <xsl:variable name="notLastCell" select="exists(following-sibling::*[local-name()='CELL'][1])"/>
-                <xsl:variable name="notLastRow" select="exists(ancestor::*[local-name()='ROW'][1]/following-sibling::*[1])"/>
-
-                <xsl:choose>
-                    <xsl:when test="$notLastCell and $notLastRow">
-                        <xsl:attribute name="style" select="concat('border-top:',$TABLE_BORDER_STYLE,'border-left:',$TABLE_BORDER_STYLE)"/>
-                    </xsl:when>
-                    <xsl:when test="$notLastCell">
-                        <xsl:attribute name="style" select="concat('border-top:',$TABLE_BORDER_STYLE,'border-left:',$TABLE_BORDER_STYLE,'border-bottom:',$TABLE_BORDER_STYLE)"/>
-                    </xsl:when>
-                    <xsl:when test="$notLastRow">
-                        <xsl:attribute name="style" select="concat('border-top:',$TABLE_BORDER_STYLE,'border-left:',$TABLE_BORDER_STYLE,'border-right:',$TABLE_BORDER_STYLE)"/>
-                    </xsl:when>
-                    <xsl:otherwise>
-                        <xsl:attribute name="style" select="concat('border-top:',$TABLE_BORDER_STYLE,'border-left:',$TABLE_BORDER_STYLE,'border-bottom:',$TABLE_BORDER_STYLE,'border-right:',$TABLE_BORDER_STYLE)"/>
-                    </xsl:otherwise>
-                </xsl:choose>
-                <!--
-                <xsl:choose>
-                    <xsl:when test="exists(following-sibling::*[1])">
-                        <xsl:attribute name="style" select="concat('border-left:',$TABLE_BORDER_STYLE)"/>
-                    </xsl:when>
-                    <xsl:otherwise>
-                        <xsl:attribute name="style" select="concat('border-top:',$TABLE_BORDER_STYLE,'border-left:',$TABLE_BORDER_STYLE,'border-right:',$TABLE_BORDER_STYLE,'border-bottom:',$TABLE_BORDER_STYLE)"/>
-                        <xsl:attribute name="style" select="concat('border-left:',$TABLE_BORDER_STYLE,'border-right:',$TABLE_BORDER_STYLE)"/>
-                    </xsl:otherwise>
-                </xsl:choose>
-                -->
+                <xsl:attribute name="style" select="concat('border:',$TABLE_BORDER_STYLE,'padding:',$TABLE_PADDING_STYLE)"/>
             </xsl:if>
             <xsl:choose>
                 <xsl:when test="exists(@ROLE)">
@@ -1322,7 +1286,7 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
 
     <xsl:template match="HI1">
         <xsl:choose>
-            <xsl:when test="exists(@REND) and not(empty(@REND))">
+            <xsl:when test="normalize-space(@REND) != ''">
                 <xsl:call-template name="add-inline-style">
                     <xsl:with-param name="node" select="."/>
                     <xsl:with-param name="style" select="@REND"/>
@@ -1444,17 +1408,17 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
                     </xsl:element>
                 </xsl:element>
             </xsl:when>
-            <xsl:when test="$style='b'">
+            <xsl:when test="$style='b' or $style='bold'">
                 <xsl:element name="bold">
                     <xsl:apply-templates select="$node/@*[name()!='REND' and name()!='TYPE']|node()"/>
                 </xsl:element>
             </xsl:when>
-            <xsl:when test="$style='i' or $style='math'">
+            <xsl:when test="$style='i' or $style='italic' or $style='math'">
                 <xsl:element name="italic">
                     <xsl:apply-templates select="$node/@*[name()!='REND' and name()!='TYPE']|node()"/>
                 </xsl:element>
             </xsl:when>
-            <xsl:when test="$style='u' or $style='underlined'">
+            <xsl:when test="$style='u' or $style='underline' or $style='underlined'">
                 <xsl:element name="underline">
                     <xsl:apply-templates select="$node/@*[name()!='REND' and name()!='TYPE']|node()"/>
                 </xsl:element>
@@ -1559,7 +1523,12 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
                 </xsl:choose>
             </xsl:if>
             <xsl:element name="table">
+                <xsl:variable name="border" select="$node/ancestor-or-self::*[local-name()='TABLE'][1]/@BORDER"/>
                 <xsl:apply-templates select="$node/@*[name()!='REND']"/>
+
+                <xsl:if test="$border > '0'">
+                    <xsl:attribute name="style" select="concat('border:',$TABLE_BORDER_STYLE,'border-collapse:collapse;')"/>
+                </xsl:if>
                 <xsl:element name="tbody">
                     <xsl:apply-templates select="$node/*[local-name()!='HEAD' and local-name()!='CAPTION']"/>
                 </xsl:element>
