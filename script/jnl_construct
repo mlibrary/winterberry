@@ -226,14 +226,12 @@ journal_name_list.each do |journal_name|
       resource_type = "" if resource_type.nil?
 
       case resource_type.downcase
-      when "audio"
-        iframe_markup = sprintf(AUDIO_IFRAME_MARKUP, noid, embed_link, title)
-      when "interactive map"
-        iframe_markup = sprintf(AUDIO_IFRAME_MARKUP, noid, embed_link, title)
       when "video"
         iframe_markup = sprintf(VIDEO_IFRAME_MARKUP, noid, embed_link, title)
-      else
+      when ""
         iframe_markup = ""
+      else
+        iframe_markup = sprintf(AUDIO_IFRAME_MARKUP, noid, embed_link, title)
       end
 
       css_embed_code = sprintf(LINK_MARKUP, css_link) + \

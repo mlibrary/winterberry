@@ -998,11 +998,15 @@
     <xsl:template match="table-wrap/table">
       <xsl:variable name="graphics" select="./@xlink:href"/>
         <table>
+          <!-- Necessary for viewing instance in browser.
+               Displays double table frame border in Janeway
+               test site, so commented out for now.
           <xsl:if test="@style">
               <xsl:attribute name="style">
                   <xsl:value-of select="./@style"/>
               </xsl:attribute>
           </xsl:if>
+          -->
          <xsl:choose>
           <xsl:when test="./@content-type = 'example'">
             <xsl:attribute name="content-type">
@@ -3109,7 +3113,7 @@
         <xsl:variable name="data-doi" select="child::object-id[@pub-id-type='doi']/text()"/>
         <xsl:choose>
             <!-- Handle Fulcrum Media -->
-            <xsl:when test="exists(./*[local-name()='attrib' and @specific-use='umptg_fulcrum_resource'])">
+            <xsl:when test="./*[local-name()='attrib' and @specific-use='umptg_fulcrum_resource']">
                 <xsl:variable name="fulcrum_elem" select="./*[local-name()='attrib' and @specific-use='umptg_fulcrum_resource']"/>
                 <!--
                 <xsl:variable name="css_embed_code" select="$fulcrum_elem/*[local-name()='alternatives']/*[@specific-use='umptg_fulcrum_resource_css_embed_code']"/>

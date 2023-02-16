@@ -676,7 +676,7 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
                     <xsl:apply-templates select="@*[name()!='TARGET' and name()!='TYPE']|node()"/>
                 </xsl:element>
             </xsl:when>
-            <xsl:when test="@TYPE = 'video' or @TYPE='audio' or @TYPE='map'">
+            <xsl:when test="@TYPE='image' or @TYPE = 'video' or @TYPE='audio' or @TYPE='map'">
                 <xsl:element name="media">
                     <xsl:attribute name="mimetype" select="lower-case(@TYPE)"/>
                     <xsl:attribute name="position" select="'anchor'"/>
