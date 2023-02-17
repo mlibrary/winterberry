@@ -6,6 +6,7 @@ module UMPTG::Review
           list: ListProcessor.new,
           package: PackageProcessor.new,
           resources: ResourceProcessor.new,
+          role_remove: RoleRemoveProcessor.new,
           table: TableProcessor.new,
         }
 

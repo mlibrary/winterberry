@@ -22,6 +22,7 @@ options.reviews = {
         link: false,
         list: false,
         resources: true,
+        role_remove: false,
         table: true
     }
 options.vendor = :default
@@ -49,6 +50,9 @@ option_parser = OptionParser.new do |opts|
   end
   opts.on('-n', '--normalize', 'Normalize actions') do |da|
     options.normalize[:resources] = true
+  end
+  opts.on('-r', '--role_attribute', 'Review role attribute') do |da|
+    options.normalize[:role_remove] = true
   end
   opts.on_tail('-h', '--help', 'Print this help message') do
     puts opts
