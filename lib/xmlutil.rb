@@ -30,9 +30,17 @@ module UMPTG
     end
 
     def self.parse(args = {})
-      content = args[:xml_content]
+      xml_content = args[:xml_content]
+      if xml_content.nil? or xml_content.empty?
+        xml_file = args[:xml_file]
+        raise "error: either :xml_content or :xml_file must be provided" \
+            if xml_file.nil? or xml_file.empty?
+
+        xml_content = File.read(xml_file)
+      end
+
       begin
-        xml_doc = Nokogiri::XML(content, nil, 'UTF-8')
+        xml_doc = Nokogiri::XML(xml_content, nil, 'UTF-8')
       rescue Exception => e
         raise e.message
       end
@@ -67,6 +75,10 @@ module UMPTG
       rescue Exception => e
         puts e.message
       end
+    end
+
+    def self.XML_PI
+      return @@XML_PI
     end
   end
 end

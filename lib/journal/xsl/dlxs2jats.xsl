@@ -737,10 +737,10 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
                     <xsl:choose>
                         <xsl:when test="exists($image_info)">
                             <xsl:choose>
-                                <xsl:when test="string-length(normalize-space($image_info/@doi)) > 0">
+                                <xsl:when test="string-length(normalize-space($image_info/@doi_noprefix)) > 0">
                                     <xsl:element name="object-id">
                                         <xsl:attribute name="pub-id-type" select="'doi'"/>
-                                        <xsl:value-of select="$image_info/@doi"/>
+                                        <xsl:value-of select="$image_info/@doi_noprefix"/>
                                     </xsl:element>
                                 </xsl:when>
                             </xsl:choose>
@@ -748,10 +748,10 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
                                 <xsl:attribute name="id" select="concat('umptg_fulcrum_resource_',$image_info/@noid)"/>
                                 <xsl:attribute name="specific-use" select="'umptg_fulcrum_resource'"/>
                                 <xsl:choose>
-                                    <xsl:when test="string-length(normalize-space($image_info/@doi)) > 0">
+                                    <xsl:when test="string-length(normalize-space($image_info/@doi_noprefix)) > 0">
                                         <xsl:element name="ext-link">
                                             <xsl:attribute name="ext-link-type" select="'doi'"/>
-                                            <xsl:attribute name="xlink:href" select="$image_info/@doi"/>
+                                            <xsl:attribute name="xlink:href" select="$image_info/@doi_noprefix"/>
                                         </xsl:element>
                                     </xsl:when>
                                 </xsl:choose>

@@ -106,7 +106,7 @@ MMARKUP
 
 RESOURCE_MARKUP = <<-RMARKUP
 <resource entity=\"%s\" file_name=\"%s\" file_type=\"%s\" noid=\"%s\"
-  link=\"%s\" embed_link=\"%s\" css_link=\"%s\" doi=\"%s\">
+  link=\"%s\" embed_link=\"%s\" css_link=\"%s\" doi=\"%s\" doi_noprefix=\"%s\">
 <title>%s</title>
 <caption>%s</caption>
 <embed_code>%s</embed_code>
@@ -218,6 +218,7 @@ journal_name_list.each do |journal_name|
       title = fileset['title']
       caption = fileset['caption']
       doi = fileset['doi']
+      doi_noprefix = doi.nil? ? "" : doi.delete_prefix("https://doi.org/")
       embed_code = fileset['embed_code']
       noid = fileset['noid']
       css_link = sprintf(LINK_HREF_MARKUP, link_scheme_host, noid)
@@ -227,6 +228,8 @@ journal_name_list.each do |journal_name|
 
       case resource_type.downcase
       when "video"
+        iframe_markup = sprintf(VIDEO_IFRAME_MARKUP, noid, embed_link, title)
+      when "image"
         iframe_markup = sprintf(VIDEO_IFRAME_MARKUP, noid, embed_link, title)
       when ""
         iframe_markup = ""
@@ -242,7 +245,7 @@ journal_name_list.each do |journal_name|
     resource_list_param += "#{key}#{KSP}file_name#{VSP}#{File.basename(resource_file)}#{FSP}file_type#{VSP}#{file_type}#{FSP}link#{VSP}#{link}#{FSP}embed_link#{VSP}#{embed_link}#{FSP}caption#{VSP}#{caption}#{FSP}title#{VSP}#{title}#{RSP}"
     resource_list << sprintf(RESOURCE_MARKUP, key, \
          File.basename(resource_file), file_type, noid, link, embed_link, css_link, \
-         doi, title, caption, \
+         doi, doi_noprefix, title, caption, \
          encoder.encode(embed_code), encoder.encode(css_embed_code))
   end
   resource_list_param2 = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<resources>" + resource_list.join + "</resources>"

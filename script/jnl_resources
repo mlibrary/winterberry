@@ -1,0 +1,268 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Script takes a list of journal article IDs and processes
+# any Fulcrum resources referenced within.
+
+require 'optparse'
+require 'ostruct'
+require 'os'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+# Process the script parameters.
+options = OpenStruct.new
+options.fulcrum_host = nil
+options.resource_map_file = nil
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-f production|preview|staging] [-m resource_map_file] monograph_id jats_file [jats_file...]"
+  opts.on('-f', '--fulcrum_host host', 'Fulcrum environment') do |fulcrum_host|
+    options.fulcrum_host = fulcrum_host
+  end
+  opts.on('-m', '--resource_map_file map_file', 'Resource Map File') do |map_file|
+    options.resource_map_file = map_file
+  end
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    script_logger.info(opts)
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 2
+  script_logger.info(option_parser.help)
+  exit 0
+end
+
+monograph_id = ARGV[0]
+jats_file_list = ARGV[1..-1]
+
+require_relative File.join(root_dir, "lib", "fulcrum", "manifest")
+require_relative File.join(root_dir, "lib", "xmlutil")
+require_relative File.join(root_dir, "lib", "services")
+require_relative File.join(root_dir, "lib", "journal")
+
+# Retrieve the manifest for the monograph resources
+service = UMPTG::Services::Heliotrope.new(
+                :fulcrum_host => options.fulcrum_host
+              )
+id2csv_body_list = service.monograph_export(
+        noid: monograph_id,
+        fulcrum_host: options.fulcrum_host
+        )
+if id2csv_body_list[monograph_id].empty?
+  script_logger.warn("no manifest found for id #{monograph_id}")
+  exit 1
+end
+manifest = UMPTG::Fulcrum::Manifest::Document.new(
+              csv_body: id2csv_body_list[monograph_id].first
+            )
+if manifest.nil?
+  script_logger.warn("generating manifest CSV for #{monograph_id}")
+  exit 1
+end
+script_logger.info("manifest retrieved for #{monograph_id}")
+
+if options.resource_map_file.nil?
+  resource_map = nil
+else
+  resource_map = UMPTG::Fulcrum::ResourceMap::Map.new(
+      xml_path: options.resource_map_file
+      )
+  script_logger.info("using resource map #{File.basename(options.resource_map_file)}")
+end
+
+# Initalize the JATS resource processor
+jats_processor = UMPTG::Journal::JATSResourceProcessor.new( logger: script_logger)
+
+# Manifest cache to reuse for those retrieved
+manifests = {}
+jats_file_list.each do |jats_file|
+  jats_file = File.expand_path(jats_file)
+  unless File.exists?(jats_file)
+    script_logger.error("invalid EPUB file path #{jats_file}.")
+    next
+  end
+  script_logger.info("*** processing #{File.basename(jats_file)} ***")
+  STDOUT.flush
+
+  jats_doc = UMPTG::XMLUtil.parse(xml_file: jats_file)
+  next if jats_doc.nil?
+
+  jats_doc = jats_processor.process(
+        jats_doc: jats_doc,
+        manifest: manifest,
+        resource_map: resource_map,
+        fulcrum_host: options.fulcrum_host
+        )
+
+  new_jats_file = File.join(
+        File.dirname(jats_file),
+        File.basename(jats_file, ".*") + "_" + File.basename(__FILE__) + File.extname(jats_file)
+        )
+  UMPTG::Journal::JATSResourceProcessor.save(jats_doc, new_jats_file)
+  #File.write(new_jats_file, UMPTG::XMLUtil.doc_to_xml(jats_doc))
+  script_logger.info("wrote file #{File.basename(new_jats_file)}.")
+
+=begin
+  begin
+    jats_doc = Nokogiri::XML(File.open(jats_file))
+  rescue StandardError => e
+    e.message
+  end
+
+  manifest = nil
+  ji_list = jats_doc.xpath(JOURNAL_ID_XPATH)
+  ji_list.each do |ji_noid|
+    journal_id = ji_noid.content
+    script_logger.info("journal id:#{journal_id}")
+    STDOUT.flush
+
+    unless manifests.key?(journal_id)
+      identifier = "journal_name:#{journal_id}"
+      id2csv_body_list = service.monograph_export(identifier: identifier)
+      if id2csv_body_list[identifier].empty?
+        script_logger.warn("no manifest found for id #{journal_id}")
+      else
+        manifest = UMPTG::Fulcrum::Manifest::Document.new(
+                      csv_body: id2csv_body_list[identifier].first
+                    )
+        if manifest.nil?
+          script_logger.error("generating manifest CSV for #{journal_id}")
+          next
+        end
+      end
+
+      script_logger.info("manifest retrieved for #{journal_id}")
+      manifests[journal_id] = manifest
+      break
+    end
+  end
+  next if manifest.nil?
+
+  resource_ref_list = jats_doc.xpath(FULCRUM_RESOURCE_XPATH)
+  script_logger.info("found #{resource_ref_list.count} resource references")
+
+  resource_ref_list.each do |ref_node|
+    fig_node = ref_node.xpath("ancestor-or-self::*[local-name()='fig'][1]").first
+    if fig_node.nil?
+      script_logger.warn("no figure container for link #{ref_node['xlink:href']}.")
+      next
+    end
+
+    href = ref_node['xlink:href']
+    noid = href.split('/').last
+
+    fileset = manifest.fileset_from_noid(noid)
+    if fileset.nil?
+      script_logger.warn("no fileset for href #{href}")
+      next
+    end
+    script_logger.info("found fileset for href #{href}")
+
+    link_uri = URI(href)
+    link_scheme_host = link_uri.scheme + "://" + link_uri.host
+
+    embed_markup = fileset['embed_code']
+    unless embed_markup.nil? or embed_markup.empty?
+      embed_doc = Nokogiri::XML::DocumentFragment.parse(embed_markup)
+      iframe_node = embed_doc.xpath("descendant-or-self::*[local-name()='iframe']").first
+      embed_link = iframe_node['src']
+    end
+
+    title = fileset['title']
+    title = "" if title.nil?
+    caption = fileset['caption']
+    caption = "" if caption.nil?
+    doi = fileset['doi']
+    doi = "" if doi.nil?
+    embed_code = fileset['embed_code']
+    noid = fileset['noid']
+    css_link = sprintf(LINK_HREF_MARKUP, link_scheme_host, noid)
+
+    media_element = jats_doc.document.create_element("media")
+    media_element['xlink:href'] = sprintf("%s/embed?hdl=2027%sfulcrum.%s", link_scheme_host, "%2F", noid)
+    media_element['mimetype'] = fileset['resource_type']
+    media_element['mime-subtype'] = File.extname(fileset['file_name'])[1..-1]
+    media_element['position'] = 'anchor'
+    media_element['specific-use'] = 'online'
+
+    unless title.strip.empty? and caption.strip.empty?
+      caption_element = media_element.document.create_element("caption")
+      media_element.add_child(caption_element)
+      unless title.strip.empty?
+        child_element = caption_element.document.create_element("title")
+        caption_element.add_child(child_element)
+        child_element.content = title
+      end
+      unless caption.strip.empty?
+        child_element = caption_element.document.create_element("p")
+        caption_element.add_child(child_element)
+        child_element.content = caption
+      end
+    end
+    unless doi.strip.empty?
+      child_element = media_element.document.create_element("object-id")
+      media_element.add_child(child_element)
+      child_element['pub-id-type'] = "doi"
+      child_element.content = doi
+    end
+
+    attrib_element = media_element.document.create_element("attrib")
+    media_element.add_child(attrib_element)
+    attrib_element['id'] = "umptg_fulcrum_resource_" + noid
+    attrib_element['specific-use'] = "umptg_fulcrum_resource"
+
+    unless doi.strip.empty?
+      child_element = attrib_element.document.create_element("ext-link")
+      attrib_element.add_child(child_element)
+      child_element['ext-link-type'] = "doi"
+      child_element['xlink:href'] = doi
+    end
+
+    child_element = attrib_element.document.create_element("ext-link")
+    attrib_element.add_child(child_element)
+    child_element['ext-link-type'] = "uri"
+    child_element['specific-use'] = "umptg_fulcrum_resource_link"
+    child_element['xlink:href'] = href
+
+    child_element = attrib_element.document.create_element("ext-link")
+    attrib_element.add_child(child_element)
+    child_element['ext-link-type'] = "uri"
+    child_element['specific-use'] = "umptg_fulcrum_resource_css_stylesheet_link"
+    child_element['xlink:href'] = css_link
+
+    child_element = attrib_element.document.create_element("ext-link")
+    attrib_element.add_child(child_element)
+    child_element['ext-link-type'] = "uri"
+    child_element['specific-use'] = "umptg_fulcrum_resource_embed_link"
+    child_element['xlink:href'] = embed_link
+
+    alt_element = attrib_element.document.create_element("alternatives")
+    attrib_element.add_child(alt_element)
+    child_element = alt_element.document.create_element("preformat")
+    alt_element.add_child(child_element)
+    child_element['specific-use'] = "umptg_fulcrum_resource_identifier"
+    child_element['position'] = "anchor"
+    child_element.content = noid
+
+    unless title.strip.empty?
+      child_element = alt_element.document.create_element("preformat")
+      alt_element.add_child(child_element)
+      child_element['specific-use'] = "umptg_fulcrum_resource_title"
+      child_element['position'] = "anchor"
+      child_element.content = title
+    end
+
+    puts media_element
+  end
+=end
+
+  script_logger.info()
+  STDOUT.flush
+end
