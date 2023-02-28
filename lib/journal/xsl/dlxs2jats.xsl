@@ -184,10 +184,6 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
                   select="/DLPSTEXTCLASS/TEXT//*[@TYPE='prelim' and starts-with(lower-case(normalize-space(string())),'keywords:')]"/>
 
     <xsl:template match="DLPSTEXTCLASS">
-        <xsl:message>image_list2=<xsl:value-of select="$image_list"/></xsl:message>
-        <xsl:message>imagedoc=<xsl:value-of select="$image_doc//resource[1]/@entity"/>,<xsl:value-of select="$image_doc//resource[1]/@file_name"/>,<xsl:value-of select="$image_doc//resource[1]/caption"/></xsl:message>
-        <!--
-        -->
         <xsl:element name="article">
             <xsl:namespace name="xlink" select="'http://www.w3.org/1999/xlink'"/>
             <xsl:namespace name="mml" select="'http://www.w3.org/1998/Math/MathML'"/>
@@ -893,7 +889,7 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
                         </xsl:element>
                     </xsl:if>
                 </xsl:when>
-                <xsl:when test="normalize-space(*[local-name()='HEAD' or local-name()='P']) !=''">
+                <xsl:when test="normalize-space(*[local-name()='HEAD' or local-name()='P'][1]) !=''">
                     <xsl:call-template name="add-label-caption">
                         <xsl:with-param name="node" select="."/>
                     </xsl:call-template>

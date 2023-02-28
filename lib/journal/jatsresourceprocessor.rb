@@ -134,7 +134,6 @@ JDT
           fig_node.previous = media_element
           fig_node.remove
 
-          #media_element['xlink:href'] = sprintf("%s/embed?hdl=2027%sfulcrum.%s", link_scheme_host, "%2F", noid)
           media_element['xlink:href'] = embed_link
           media_element['mimetype'] = fileset['resource_type']
           media_element['mime-subtype'] = File.extname(fileset['file_name'])[1..-1]
@@ -142,71 +141,83 @@ JDT
           media_element['specific-use'] = 'online'
 
           unless title.strip.empty? and caption.strip.empty?
-            caption_element = media_element.document.create_element("caption")
-            media_element.add_child(caption_element)
-            unless title.strip.empty?
-              child_element = caption_element.document.create_element("title")
-              caption_element.add_child(child_element)
-              child_element.content = title
-            end
-            unless caption.strip.empty?
-              child_element = caption_element.document.create_element("p")
-              caption_element.add_child(child_element)
-              child_element.content = caption
-            end
+            caption_element = add_element("caption", media_element)
+            add_element_unless_no_content("title", caption_element, title)
+            add_element_unless_no_content("p", caption_element, caption)
           end
-          unless doi.strip.empty?
-            child_element = media_element.document.create_element("object-id")
-            media_element.add_child(child_element)
-            child_element['pub-id-type'] = "doi"
-            child_element.content = doi_noprefix
-          end
+          add_element_unless_no_content(
+                  "object-id",
+                  media_element,
+                  doi_noprefix,
+                  {
+                      "pub-id-type" => "doi"
+                  }
+                  )
 
-          attrib_element = media_element.document.create_element("attrib")
-          media_element.add_child(attrib_element)
-          attrib_element['id'] = "umptg_fulcrum_resource_" + noid
-          attrib_element['specific-use'] = "umptg_fulcrum_resource"
+          attrib_element = add_element(
+                "attrib",
+                media_element,
+                '',
+                {
+                    "id" => "umptg_fulcrum_resource_" + noid,
+                    "specific-use" => "umptg_fulcrum_resource"
+                }
+                )
 
           unless doi.strip.empty?
-            child_element = attrib_element.document.create_element("ext-link")
-            attrib_element.add_child(child_element)
-            child_element['ext-link-type'] = "doi"
-            child_element['xlink:href'] = doi_noprefix
+            add_ext_link(
+                attrib_element,
+                {
+                  "ext-link-type" => "doi",
+                  "xlink:href" => doi_noprefix
+                }
+                )
           end
 
-          child_element = attrib_element.document.create_element("ext-link")
-          attrib_element.add_child(child_element)
-          child_element['ext-link-type'] = "uri"
-          child_element['specific-use'] = "umptg_fulcrum_resource_link"
-          child_element['xlink:href'] = href
+          add_ext_link(
+              attrib_element,
+              {
+                "ext-link-type" => "uri",
+                "specific-use" => "umptg_fulcrum_resource_link",
+                "xlink:href" => href
+              }
+              )
+          add_ext_link(
+              attrib_element,
+              {
+                "ext-link-type" => "uri",
+                "specific-use" => "umptg_fulcrum_resource_css_stylesheet_link",
+                "xlink:href" => css_link
+              }
+              )
+          add_ext_link(
+              attrib_element,
+              {
+                "ext-link-type" => "uri",
+                "specific-use" => "umptg_fulcrum_resource_embed_link",
+                "xlink:href" => embed_link
+              }
+              )
 
-          child_element = attrib_element.document.create_element("ext-link")
-          attrib_element.add_child(child_element)
-          child_element['ext-link-type'] = "uri"
-          child_element['specific-use'] = "umptg_fulcrum_resource_css_stylesheet_link"
-          child_element['xlink:href'] = css_link
-
-          child_element = attrib_element.document.create_element("ext-link")
-          attrib_element.add_child(child_element)
-          child_element['ext-link-type'] = "uri"
-          child_element['specific-use'] = "umptg_fulcrum_resource_embed_link"
-          child_element['xlink:href'] = embed_link
-
-          alt_element = attrib_element.document.create_element("alternatives")
-          attrib_element.add_child(alt_element)
-          child_element = alt_element.document.create_element("preformat")
-          alt_element.add_child(child_element)
-          child_element['specific-use'] = "umptg_fulcrum_resource_identifier"
-          child_element['position'] = "anchor"
-          child_element.content = noid
-
-          unless title.strip.empty?
-            child_element = alt_element.document.create_element("preformat")
-            alt_element.add_child(child_element)
-            child_element['specific-use'] = "umptg_fulcrum_resource_title"
-            child_element['position'] = "anchor"
-            child_element.content = title
-          end
+          alt_element = add_element("alternatives", attrib_element)
+          add_element(
+                "preformat",
+                alt_element,
+                noid,
+                {
+                    "specific-use" => "umptg_fulcrum_resource_identifier",
+                    "position" => "anchor"
+                }
+                )
+          add_element_unless_no_content(
+                  "preformat",
+                  alt_element,
+                  title,
+                  {
+                      "specific-use" => "umptg_fulcrum_resource_title",
+                      "position" => "anchor"
+                  }
+                  )
         end
       end
       return jats_doc
@@ -268,6 +279,26 @@ JDT
       jats_doc.root.remove_attribute('xsi:noNamespaceSchemaLocation')
 
       return jats_doc
+    end
+
+    def add_element(elemName, parentElem, content = '', attrs = {})
+      child_elem = parentElem.document.create_element(elemName)
+      parentElem.add_child(child_elem)
+      child_elem.content = content unless content.strip.empty?
+
+      attrs.each do |attrName,attrValue|
+        child_elem[attrName] = attrValue unless attrValue.strip.empty?
+      end
+      return child_elem
+    end
+
+    def add_element_unless_no_content(elemName, parentElem, content = '', attrs = {})
+      return add_element(elemName, parentElem, content, attrs) \
+            unless content.strip.empty?
+    end
+
+    def add_ext_link(parentElem, attrs = {})
+      return add_element("ext-link", parentElem, '', attrs)
     end
   end
 end
