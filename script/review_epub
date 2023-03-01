@@ -31,7 +31,8 @@ options.default_actions = {
     }
 options.generate_map = false
 options.normalize = {
-        resources: false
+        resources: false,
+        role_remove: false
     }
 options.normalize_caption_class = false
 option_parser = OptionParser.new do |opts|
@@ -52,6 +53,7 @@ option_parser = OptionParser.new do |opts|
     options.normalize[:resources] = true
   end
   opts.on('-r', '--role_attribute', 'Review role attribute') do |da|
+    options.reviews[:role_remove] = true
     options.normalize[:role_remove] = true
   end
   opts.on_tail('-h', '--help', 'Print this help message') do
