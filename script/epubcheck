@@ -7,4 +7,4 @@ root_dir = File.dirname(script_dir)
 
 require_relative File.join(root_dir, 'lib', 'epubcheck')
 
-EpubCheck.invoke(ARGV)
+UMPTG::EpubCheck.invoke(ARGV)
