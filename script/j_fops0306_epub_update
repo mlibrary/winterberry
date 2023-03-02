@@ -1,7 +1,8 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
-# Script takes a list of EPUBs, determines the list of
+# Script takes a list of EPUBs, normalizes each
+# if necessary, then determines the list of
 # CSS stylesheets and outputs info about each, and
 # possibly replaces stylesheets
 
@@ -19,6 +20,22 @@ script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
 
 # Process the script parameters.
 options = OpenStruct.new
+options.reviews = {
+        package: true,
+        link: false,
+        list: false,
+        resources: true,
+        role_remove: true,
+        table: true
+    }
+options.vendor = :default
+options.default_actions = {
+        resources: :embed
+    }
+options.normalize = {
+        resources: true,
+        role_remove: true
+    }
 options.css_file_list = []
 options.force_update = false
 option_parser = OptionParser.new do |opts|
@@ -42,6 +59,7 @@ end
 epub_file_list = ARGV
 
 require_relative File.join(root_dir, 'lib', 'review')
+require_relative File.join(root_dir, 'lib', 'epubcheck')
 
 epub_updater = UMPTG::Review::EPUBUpdater.new(
       logger: script_logger
@@ -59,6 +77,21 @@ epub_file_list.each do |epub_file|
 
   epub = UMPTG::EPUB::Archive.new(epub_file: epub_file)
 
+  # Log the processing into a file for this monograph.
+  epub_log_file = File.join(File.dirname(epub_file), File.basename(epub_file, ".*") + "_review.log")
+
+  # Process the epub and generate the image information.
+  epub_reviewer = UMPTG::Review::EPUBReviewer.new(
+        epub: epub,
+        logger_file: epub_log_file
+      )
+  epub_log = epub_reviewer.review_logger
+
+  epub_reviewer.review(
+        review_options: options.reviews,
+        normalize: options.normalize[:resources]
+      )
+
   epub_updater.update(
       epub: epub,
       css_file_list: options.css_file_list,
@@ -67,9 +100,16 @@ epub_file_list.each do |epub_file|
 
   if epub.modified
     # EPUB updated. Save it to a new file.
-    new_epub_file = File.join(File.dirname(epub_file), File.basename(epub_file, ".*") + "_replace" + File.extname(epub_file))
+    new_epub_file = File.join(File.dirname(epub_file), File.basename(epub_file, ".*") + "_epub_update" + File.extname(epub_file))
     script_logger.info("EPUB updated. Writing new EPUB file #{File.basename(new_epub_file)}")
     epub.save(epub_file: new_epub_file)
+    STDOUT.flush
+
+    log_file = File.join(File.dirname(new_epub_file), File.basename(new_epub_file, ".*") + "_epubcheck.xml")
+    UMPTG::EpubCheck.check_file(
+        epub_file: new_epub_file,
+        :logfile => log_file
+        )
   else
     # No EPUB updates.
     script_logger.info("no updates for EPUB file #{File.basename(epub_file)}")

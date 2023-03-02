@@ -16,7 +16,6 @@ require 'ostruct'
 
 # Process the script parameters.
 options = OpenStruct.new
-options.publisher_dir = Dir.pwd
 options.reviews = {
         package: true,
         link: false,

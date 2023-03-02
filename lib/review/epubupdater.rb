@@ -3,19 +3,9 @@ module UMPTG::Review
 
     require 'css_parser'
 
-    attr_reader :epub, :review_logger, :action_map
+    attr_reader :review_logger
 
     def initialize(args = {})
-      # Determine the EPUB to use.
-      case
-      when args.key?(:epub_file)
-        @epub = UMPTG::EPUB::Archive.new(epub_file: args[:epub_file])
-      when args.key?(:epub)
-        @epub = args[:epub]
-      else
-        raise "Error no EPUB specified"
-      end
-
       # Init log file. Use specified path or STDOUT.
       case
       when args.key?(:logger_file)
@@ -34,6 +24,16 @@ module UMPTG::Review
     end
     
     def update(args = {})
+      # Determine the EPUB to use.
+      case
+      when args.key?(:epub_file)
+        epub = UMPTG::EPUB::Archive.new(epub_file: args[:epub_file])
+      when args.key?(:epub)
+        epub = args[:epub]
+      else
+        raise "Error no EPUB specified"
+      end
+
       css_file_list = args[:css_file_list]
       if css_file_list.nil? or css_file_list.empty?
         @review_logger.error("no CSS file(s) specified.")
@@ -203,6 +203,7 @@ module UMPTG::Review
             next unless File.basename(href) == File.basename(epub_css_entry.name)
 
             node['href'] = File.join(File.dirname(href), css_file_name)
+            node['id'] = node['href'].gsub(/[\.\/]+/, '_')
             @review_logger.info("EPUB OPF entry #{href} updated to #{node['href']}.")
           end
         end

@@ -1,36 +1,34 @@
-class EpubCheck
-  JAR_PATH = File.join(__dir__, 'epubcheck', 'epubcheck.jar')
-  CMD_STR_EPUB = "--version -q -o \"%s\" \"%s\""
-  CMD_STR_EPUBDIR = "--version -q -o \"%s\" -mode exp \"%s\""
-  CMD_STR_ALL = "java -jar \"%s\" %s"
+module UMPTG
+  class EpubCheck
+    JAR_PATH = File.join(__dir__, 'epubcheck', 'epubcheck.jar')
+    CMD_STR_EPUB = "--version -q -o \"%s\" \"%s\""
+    CMD_STR_EPUBDIR = "--version -q -o \"%s\" -mode exp \"%s\""
+    CMD_STR_ALL = "java -jar \"%s\" %s"
 
-  def self.check_file(args)
-    epub_path = args[:epubpath]
-    log_file = args[:logfile]
+    def self.check_file(args)
+      epub_file = args[:epub_file]
+      log_file = args[:logfile]
 
-    cmd_str = File.directory?(epub_path) ? CMD_STR_EPUBDIR : CMD_STR_EPUB
-    java_cmd_str = sprintf(cmd_str, log_file, epub_path)
-    execute(java_cmd_str)
-  end
+      cmd_str = File.directory?(epub_file) ? CMD_STR_EPUBDIR : CMD_STR_EPUB
+      java_cmd_str = sprintf(cmd_str, log_file, epub_file)
+      execute(java_cmd_str)
+    end
 
-  def self.invoke(args = [])
-    opts_str = args.count == 0 ? "-h" : args.join(' ')
-    execute(opts_str)
-  end
+    def self.invoke(args = [])
+      opts_str = args.count == 0 ? "-h" : args.join(' ')
+      execute(opts_str)
+    end
 
-  def self.execute(opts_str)
-    java_cmd_str = sprintf(CMD_STR_ALL, JAR_PATH, opts_str)
-    #puts java_cmd_str
-    #STDOUT.flush
+    def self.execute(opts_str)
+      java_cmd_str = sprintf(CMD_STR_ALL, JAR_PATH, opts_str)
 
-    ok = system(java_cmd_str)
-    status = $?
+      ok = system(java_cmd_str)
+      status = $?
 
-    case ok
-    when true
-    else
-      #puts "epubcheck failed (status = #{status})"
+      case ok
+      when true
+      else
+      end
     end
   end
-
 end
