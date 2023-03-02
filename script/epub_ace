@@ -1,0 +1,71 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Script interaces with Ace command line.
+
+require 'optparse'
+require 'ostruct'
+require 'os'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+# Process the script parameters.
+options = OpenStruct.new
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} ace_json_file [ace_json_file...]"
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    script_logger.info(opts)
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  script_logger.info(option_parser.help)
+  return
+end
+
+# Process the command line parameters.
+ace_json_file_list = ARGV
+
+require 'json'
+
+ace_json_file_list.each do |ace_json_file|
+  script_logger.info("*" * 10 + " #{ace_json_file} " + "*" * 10)
+  ace_json_file = File.expand_path(ace_json_file)
+  unless File.exists?(ace_json_file)
+    script_logger.error("invalid EPUB file path #{ace_json_file}.")
+    next
+  end
+  script_logger.info("Reviewing #{File.basename(ace_json_file)}")
+
+  #ace_json = JSON.parse(File.read(ace_json_file), {symbolize_names: true})
+  ace_json = JSON.parse(File.read(ace_json_file))
+
+  result = ace_json['earl:result']['earl:outcome']
+  script_logger.info("result:#{result}")
+
+  if result.strip.downcase == "fail"
+    ace_json.each do |key,val|
+      case key
+      when "assertions"
+        val.each do |assert|
+          assert_result = assert['earl:result']['earl:outcome']
+          #script_logger.info("assert result:#{assert_result}")
+          if assert_result == "fail"
+            assert["assertions"].each do |assert2|
+              impact = assert2["earl:test"]["earl:impact"]
+              title = assert2["earl:test"]["dct:title"]
+              script_logger.info("#{impact}:#{title}")
+            end
+          end
+        end
+      end
+    end
+  end
+end

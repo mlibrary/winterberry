@@ -38,5 +38,6 @@ module UMPTG
   require_relative File.join('review', 'epubprocessor')
   require_relative File.join('review', 'epubextractor')
   require_relative File.join('review', 'epubreviewer')
+  require_relative File.join('review', 'epubupdater')
 
 end

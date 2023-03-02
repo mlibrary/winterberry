@@ -3,7 +3,7 @@ module UMPTG::EPUB
   require 'zip'
 
   class Entry < UMPTG::Object
-    attr_accessor :content
+    attr_accessor :content, :modified
     
     def initialize(args = {})
       super(args)
@@ -17,6 +17,8 @@ module UMPTG::EPUB
       else
         raise "Error: missing entry content" if @properties[:content].nil? and @properties[:zip_entry].nil?
       end
+
+      @modified = false
     end
 
     def name

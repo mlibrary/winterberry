@@ -49,12 +49,14 @@ module UMPTG::EPUB
           entry = @name2entry[entry_name]
           if entry_content != entry.content
             entry.content = entry_content
+            entry.modified = true
             @modified = true
           end
         else
           zip_entry = Zip::Entry.new
           zip_entry.name = entry_name
           entry = Entry.new(zip_entry: zip_entry, content: entry_content)
+          entry.modified = true
           @modified = true
         end
       end
