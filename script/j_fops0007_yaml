@@ -1,0 +1,67 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Script reads a YAML file
+
+require 'optparse'
+require 'ostruct'
+require 'os'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+# Process the script parameters.
+options = OpenStruct.new
+options.css_file_list = []
+options.force_update = false
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} yaml_file [yaml_file...]"
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    script_logger.info(opts)
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  script_logger.info(option_parser.help)
+  return
+end
+yaml_file_list = ARGV
+
+require 'yaml'
+
+yaml_file_list.each do |yaml_file|
+  yaml_file = File.expand_path(yaml_file)
+  unless File.exists?(yaml_file)
+    script_logger.error("invalid EPUB file path #{yaml_file}.")
+    next
+  end
+  script_logger.info("*** processing #{File.basename(yaml_file)} ***")
+  STDOUT.flush
+
+  yaml = YAML.load_file(yaml_file)
+
+  yaml.each do |entry|
+    entry.each do |key,val|
+      entry["items"].each do |v|
+        if v["copyholder"].empty? and !v["puburl"].empty?
+          script_logger.info("copyholder: #{v['puburl']}")
+          v['copyholder'] = v['puburl']
+          v['puburl'] = ""
+        end
+      end
+    end
+  end
+
+  new_yaml_file = File.join(
+        File.dirname(yaml_file),
+        File.basename(yaml_file, ".*") + "_new" + File.extname(yaml_file)
+        )
+  File.write(new_yaml_file, yaml.to_yaml)
+  script_logger.info("wrote file #{File.basename(new_yaml_file)}")
+end
