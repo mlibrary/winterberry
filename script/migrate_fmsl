@@ -133,6 +133,7 @@ fmsl_file_list.each do |fmsl_file|
         next
       end
       next if UMPTG::Fulcrum::Manifest.blank_row_name?(resource_name)
+      next if resource_name.strip == UMPTG::Fulcrum::Manifest.MONOGRAPH_FILE_NAME
 
       # Determine if the resource file exists and is not 0 size.
       resource_file = File.join(File.dirname(fmsl_file), resource_name)

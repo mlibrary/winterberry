@@ -362,11 +362,11 @@
     <xs:element name="resource_type" type="type_resource_type"/>
 
     <xs:element name="aboutware" type="type_fileset"/>
-    <xs:element name="cover" type="type_fileset"/>
+    <xs:element name="cover" type="type_fileset_representative"/>
     <xs:element name="database" type="type_fileset"/>
-    <xs:element name="epub" type="type_fileset_resource"/>
+    <xs:element name="epub" type="type_fileset_representative"/>
     <xs:element name="mobi" type="type_fileset_resource"/>
-    <xs:element name="pdf_ebook" type="type_fileset_resource"/>
+    <xs:element name="pdf_ebook" type="type_fileset_representative"/>
     <xs:element name="peer_reviews" type="type_fileset"/>
     <xs:element name="related" type="type_fileset"/>
     <xs:element name="reviews" type="type_fileset"/>
@@ -411,6 +411,16 @@
         <xs:complexContent>
             <xs:extension base="type_fileset_base">
                 <xs:group ref="type_base_properties"/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="type_fileset_representative">
+        <xs:complexContent>
+            <xs:extension base="type_fileset_base">
+                <xs:all>
+                    <xs:element ref="title"/>
+                    <xs:element ref="url" minOccurs="0"/>
+                </xs:all>
             </xs:extension>
         </xs:complexContent>
     </xs:complexType>
