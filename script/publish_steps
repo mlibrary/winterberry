@@ -60,6 +60,7 @@ press_dir = {
         ebc:   "UMP",
         elt:   "michelt",
         heb:   "MPS",
+        lever:   "MPS",
         maize: "MPS",
         ummaa: "UMMAA"
         }
@@ -67,6 +68,7 @@ sub_dir = {
         amherst: "Amherst",
         bar:   "BAR",
         heb:   "HEB",
+        lever:   "Lever",
         maize: "maize"
         }
 unless press_dir.key?(options.press)
