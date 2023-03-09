@@ -20,7 +20,7 @@
     <xs:element name="content_type_list" type="type_content_type_list"/>
     <xs:element name="contributor" type="type_contributor"/>
     <xs:element name="contributor_list" type="type_contributor_list"/>
-    <xs:element name="copyright_holder" type="type_copyright_holder"/>
+    <xs:element name="rightsholder" type="type_rightsholder"/>
     <xs:element name="copyright_status" type="type_copyright_status"/>
     <xs:element name="creator_display" type="type_creator_display"/>
     <xs:element name="creator" type="type_creator"/>
@@ -433,7 +433,7 @@
                     -->
                     <xs:element ref="title"/>
                     <xs:element ref="copyright_status"/>
-                    <xs:element ref="copyright_holder"/>
+                    <xs:element ref="rightsholder"/>
                     <xs:element ref="allow_hi_res"/>
                     <xs:element ref="allow_download"/>
                     <xs:element ref="alt_text" minOccurs="0"/>
@@ -479,7 +479,7 @@
                     -->
                     <xs:element ref="title"/>
                     <xs:element ref="copyright_status"/>
-                    <xs:element ref="copyright_holder"/>
+                    <xs:element ref="rightsholder"/>
                     <xs:element ref="allow_hi_res"/>
                     <xs:element name="allow_download" type="type_allow_download_yes"/>
                     <xs:element ref="alt_text" minOccurs="0"/>
@@ -525,7 +525,7 @@
                     -->
                     <xs:element ref="title"/>
                     <xs:element ref="copyright_status"/>
-                    <xs:element ref="copyright_holder"/>
+                    <xs:element ref="rightsholder"/>
                     <xs:element ref="allow_hi_res"/>
                     <xs:element ref="allow_download"/>
                     <xs:element ref="alt_text" minOccurs="0"/>
@@ -565,7 +565,7 @@
     <xs:complexType name="type_monograph_metadata">
         <xs:all>
             <xs:element ref="title"/>
-            <xs:element ref="copyright_holder"/>
+            <xs:element ref="rightsholder"/>
             <xs:element ref="isbn_list"/>
             <xs:element ref="url" minOccurs="0"/>
             <xs:element ref="holding_contact" minOccurs="0"/>
@@ -693,7 +693,7 @@
             </xs:extension>
         </xs:complexContent>
     </xs:complexType>
-    <xs:complexType name="type_copyright_holder">
+    <xs:complexType name="type_rightsholder">
         <xs:simpleContent>
             <xs:extension base="type_string">
                 <xs:attribute name="object" type="xs:string" fixed="universal"/>

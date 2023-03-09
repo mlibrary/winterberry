@@ -88,8 +88,8 @@
   :field_name: Additional Creator(s)
   :multivalued: :yes_multiline
 - :object: :universal
-  :metadata_name: copyright_holder
-  :field_name: Copyright Holder
+  :metadata_name: rightsholder
+  :field_name: Rightsholder
   :multivalued: :no
 - :object: :file_set
   :metadata_name: copyright_status
