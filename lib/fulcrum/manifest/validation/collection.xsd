@@ -276,6 +276,62 @@
             <xs:attribute name="active" type="xs:boolean" fixed="false"/>
         </xs:complexType>
     </xs:element>
+    <xs:element name="license_creative_commons_zero_license_implies_pd">
+        <xs:complexType>
+            <xs:attribute name="id" type="type_string_url" fixed="https://creativecommons.org/publicdomain/zero/1.0/"/>
+            <xs:attribute name="term" type="xs:string" fixed="Creative Commons Zero license (implies pd)"/>
+            <xs:attribute name="active" type="xs:boolean" fixed="true"/>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="license_creative_commons_public_domain_mark_1.0">
+        <xs:complexType>
+            <xs:attribute name="id" type="type_string_url" fixed="https://creativecommons.org/publicdomain/mark/1.0/"/>
+            <xs:attribute name="term" type="xs:string" fixed="Creative Commons Public Domain Mark 1.0"/>
+            <xs:attribute name="active" type="xs:boolean" fixed="true"/>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="license_creative_commons_attribution_noderivatives_license_3.0_unported">
+        <xs:complexType>
+            <xs:attribute name="id" type="type_string_url" fixed="https://creativecommons.org/licenses/by-nd/3.0/"/>
+            <xs:attribute name="term" type="xs:string" fixed="Creative Commons Attribution-NoDerivatives license, 3.0 Unported"/>
+            <xs:attribute name="active" type="xs:boolean" fixed="true"/>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="license_creative_commons_attribution_noncommercial_sharealike_license_3.0_unported">
+        <xs:complexType>
+            <xs:attribute name="id" type="type_string_url" fixed="https://creativecommons.org/licenses/by-nc-sa/3.0/"/>
+            <xs:attribute name="term" type="xs:string" fixed="Creative Commons Attribution-NonCommercial-ShareAlike license, 3.0 Unported"/>
+            <xs:attribute name="active" type="xs:boolean" fixed="true"/>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="license_creative_commons_attribution_sharealike_2.5_generic">
+        <xs:complexType>
+            <xs:attribute name="id" type="type_string_url" fixed="https://creativecommons.org/licenses/by-sa/2.5/"/>
+            <xs:attribute name="term" type="xs:string" fixed="Creative Commons Attribution-ShareAlike 2.5 Generic"/>
+            <xs:attribute name="active" type="xs:boolean" fixed="true"/>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="license_creative_commons_attribution_sharealike_2.0_generic">
+        <xs:complexType>
+            <xs:attribute name="id" type="type_string_url" fixed="https://creativecommons.org/licenses/by-sa/2.5/"/>
+            <xs:attribute name="term" type="xs:string" fixed="Creative Commons Attribution-ShareAlike 2.5 Generic"/>
+            <xs:attribute name="active" type="xs:boolean" fixed="true"/>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="license_creative_commons_attribution_noncommercial_sharealike_2.0_generic">
+        <xs:complexType>
+            <xs:attribute name="id" type="type_string_url" fixed="https://creativecommons.org/licenses/by-nc-sa/2.0/"/>
+            <xs:attribute name="term" type="xs:string" fixed="Creative Commons Attribution-NonCommercial-ShareAlike 2.0 Generic"/>
+            <xs:attribute name="active" type="xs:boolean" fixed="true"/>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="license_creative_commons_attribution_noncommercial_noderivs_2.0_generic">
+        <xs:complexType>
+            <xs:attribute name="id" type="type_string_url" fixed="https://creativecommons.org/licenses/by-nc-nd/2.0/"/>
+            <xs:attribute name="term" type="xs:string" fixed="Creative Commons Attribution-NonCommercial-NoDerivs 2.0 Generic"/>
+            <xs:attribute name="active" type="xs:boolean" fixed="true"/>
+        </xs:complexType>
+    </xs:element>
 
     <xs:element name="high_res">
         <xs:complexType>
@@ -881,34 +937,44 @@
     <xs:complexType name="type_license">
         <xs:choice>
             <xs:element ref="license_creative_commons_attribution_4.0_international_license"/>
+            <xs:element ref="license_creative_commons_attribution_sharealike_4.0_international_license"/>
+            <xs:element ref="license_creative_commons_attribution_noderivatives_4.0_international_license"/>
             <xs:element ref="license_creative_commons_attribution_noncommercial_4.0_international_license"/>
             <xs:element ref="license_creative_commons_attribution_noncommercial_noderivatives_4.0_international_license"/>
             <xs:element ref="license_creative_commons_attribution_noncommercial_sharealike_4.0_international_license"/>
-            <xs:element ref="license_creative_commons_attribution_noncommercial_sharealike_3.0_international_license"/>
-            <xs:element ref="license_creative_commons_attribution_noncommercial_sharealike_2.0_international_license"/>
-            <xs:element ref="license_creative_commons_attribution_noderivatives_4.0_international_license"/>
-            <xs:element ref="license_creative_commons_attribution_sharealike_4.0_international_license"/>
-            <xs:element ref="license_creative_commons_all_rights_reserved_international_license"/>
-            <xs:element ref="license_creative_commons_public_domain_mark_1.0_international_license"/>
-            <xs:element ref="license_creative_commons_public_domain_zero_1.0_international_license"/>
+            <xs:element ref="license_all_rights_reserved"/>
+            <xs:element ref="license_creative_commons_attribution_license_3.0_unported"/>
+            <xs:element ref="license_creative_commons_attribution_sharealike_license_3.0_unported"/>
+            <xs:element ref="license_creative_commons_attribution_noncommercial_license_3.0_unported"/>
+            <xs:element ref="license_creative_commons_attribution_noncommercial_noderivatives_license_3.0_unported"/>
+            <xs:element ref="license_creative_commons_attribution_sharealike_2.1_japan"/>
+            <xs:element ref="license_creative_commons_attribution_2.0_generic_license"/>
+            <xs:element ref="license_creative_commons_zero_license_implies_pd"/>
+            <xs:element ref="license_creative_commons_public_domain_mark_1.0"/>
+            <xs:element ref="license_creative_commons_attribution_noderivatives_license_3.0_unported"/>
+            <xs:element ref="license_creative_commons_attribution_noncommercial_sharealike_license_3.0_unported"/>
+            <xs:element ref="license_creative_commons_attribution_sharealike_2.5_generic"/>
+            <xs:element ref="license_creative_commons_attribution_sharealike_2.0_generic"/>
+            <xs:element ref="license_creative_commons_attribution_noncommercial_sharealike_2.0_generic"/>
+            <xs:element ref="license_creative_commons_attribution_noncommercial_noderivs_2.0_generic"/>
+<!--
             <xs:element ref="license_attribution_3.0_united_states"/>
             <xs:element ref="license_attribution_sharealike_3.0_united_states"/>
             <xs:element ref="license_attribution_noncommercial_3.0_united_states"/>
             <xs:element ref="license_attribution_noderivs_3.0_united_states"/>
             <xs:element ref="license_attribution_noncommercial_noderivs_3.0_united_states"/>
             <xs:element ref="license_attribution_noncommercial_sharealike_3.0_united_states"/>
-            <xs:element ref="license_all_rights_reserved"/>
-            <xs:element ref="license_creative_commons_attribution_2.0_generic_license"/>
-            <xs:element ref="license_creative_commons_attribution_2.0_generic"/>
             <xs:element ref="license_creative_commons_attribution_sharealike_2.0_generic_license"/>
+            <xs:element ref="license_creative_commons_attribution_2.0_generic"/>
             <xs:element ref="license_creative_commons_attribution_sharealike_2.5_generic_license"/>
-            <xs:element ref="license_creative_commons_attribution_sharealike_2.1_japan"/>
-            <xs:element ref="license_creative_commons_attribution_license_3.0_unported"/>
             <xs:element ref="license_creative_commons_attribution_noderivatives_license_3.0"/>
-            <xs:element ref="license_creative_commons_attribution_noncommercial_noderivatives_license_3.0_unported"/>
-            <xs:element ref="license_creative_commons_attribution_noncommercial_license_3.0_unported"/>
             <xs:element ref="license_creative_commons_attribution_sharealike_license_3.0"/>
-            <xs:element ref="license_creative_commons_attribution_sharealike_license_3.0_unported"/>
+            <xs:element ref="license_creative_commons_attribution_noncommercial_sharealike_3.0_international_license"/>
+            <xs:element ref="license_creative_commons_attribution_noncommercial_sharealike_2.0_international_license"/>
+            <xs:element ref="license_creative_commons_all_rights_reserved_international_license"/>
+            <xs:element ref="license_creative_commons_public_domain_mark_1.0_international_license"/>
+            <xs:element ref="license_creative_commons_public_domain_zero_1.0_international_license"/>
+-->
         </xs:choice>
         <xs:attribute name="enumeration" type="xs:boolean" fixed="true"/>
         <xs:attribute name="object" type="xs:string" fixed="universal"/>
