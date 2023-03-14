@@ -47,6 +47,7 @@ module UMPTG::Review
             update_css: update_css,
             review_options: {
                 package: true,
+                keyword: true,
                 link: false,
                 list: false,
                 resources: true,
