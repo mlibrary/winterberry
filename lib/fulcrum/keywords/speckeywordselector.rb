@@ -9,7 +9,7 @@ module UMPTG::Fulcrum::Keywords
   # XPath expression for retrieving keywords
 @@SELECTION_XPATH = <<-SXPATH
 //*[
-local-name()='span' and (@class='tetr' or @class='tetr-i')
+local-name()='span' and @data-fulcrum-keyword
 ]
 SXPATH
 

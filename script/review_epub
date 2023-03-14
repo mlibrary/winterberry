@@ -18,6 +18,7 @@ require 'ostruct'
 options = OpenStruct.new
 options.reviews = {
         package: true,
+        keyword: true,
         link: false,
         list: false,
         resources: true,

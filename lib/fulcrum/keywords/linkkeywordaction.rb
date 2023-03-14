@@ -17,12 +17,15 @@ module UMPTG::Fulcrum::Keywords
       @keyword_container.content = nil
       @keyword_container.add_child(link_fragment)
 
+      k = @keyword_container['data-fulcrum-keyword']
+      @keyword_container.remove_attribute('data-fulcrum-keyword') if k.nil? or k.empty?
+
       @status = UMPTG::Action.COMPLETED
     end
 
     def keyword
-      k = @keyword_container['data-fulcrum-keyword'].nil? ? @keyword_container.text : \
-              @keyword_container['data-fulcrum-keyword']
+      k = @keyword_container['data-fulcrum-keyword']
+      k = @keyword_container.text if k.nil? or k.empty?
       return ERB::Util.url_encode(k)
     end
 

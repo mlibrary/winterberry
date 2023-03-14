@@ -2,6 +2,7 @@ module UMPTG::Review
   class EPUBReviewer
 
     @@REVIEW_PROCESSORS = {
+          keyword: KeywordProcessor.new,
           link: LinkProcessor.new,
           list: ListProcessor.new,
           package: PackageProcessor.new,
