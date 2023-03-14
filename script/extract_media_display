@@ -24,45 +24,40 @@ options.extractors = {
         resources: true
     }
 option_parser = OptionParser.new do |opts|
-  opts.banner = "Usage: #{File.basename(__FILE__)} epub_file [epub_file...]"
+  opts.banner = "Usage: #{File.basename(__FILE__)} manifest_file epub_file [epub_file...]"
   opts.on_tail('-h', '--help', 'Print this help message') do
     puts opts
     exit 0
   end
 end
 option_parser.parse!(ARGV)
-if ARGV.count < 1
+if ARGV.count < 2
   puts option_parser.help
   return
 end
-
-epub_file_list = ARGV
+manifest_file = ARGV[0]
+epub_file_list = ARGV[1..-1]
 
 require_relative File.join(root_dir, "lib", "review")
 require_relative File.join(root_dir, "lib", "fulcrum")
 
-# Create the serivce for retrieving the NOID.
-service = UMPTG::Services::Heliotrope.new(
-                :fulcrum_host => options.fulcrum_host
-              )
-service_response = service.monograph_export(noid: 'zc77sr415')
-if service_response.empty?
-  script_logger.error("unable to retrieve manifest.")
+manifest_file = File.expand_path(manifest_file)
+unless File.exists?(manifest_file)
+  script_logger.error("manifest file #{manifest_file} does not exist.")
   exit 1
 end
-manifest_body = service_response['zc77sr415'].first
 manifest = UMPTG::Fulcrum::Manifest::Document.new(
-              csv_body: manifest_body
+            csv_file: manifest_file
             )
 if manifest.nil?
-  script_logger.error("no manifest found for id #{monograph_id}")
+  script_logger.error("invalid manifest found for file #{manifest_file}")
   exit 1
 end
 
 epub_file_list.each do |epub_file|
   epub_file = File.expand_path(epub_file)
   unless File.exists?(epub_file)
-    puts "Error: invalid EPUB file path #{epub_file}."
+    script_logger.error("invalid EPUB file path #{epub_file}.")
     next
   end
   script_logger.info("Extracting #{File.basename(epub_file)}")

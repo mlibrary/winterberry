@@ -21,11 +21,13 @@ module UMPTG::Fulcrum::Keywords
     end
 
     def keyword
-      return ERB::Util.url_encode(@keyword_container.text)
+      k = @keyword_container['data-fulcrum-keyword'].nil? ? @keyword_container.text : \
+              @keyword_container['data-fulcrum-keyword']
+      return ERB::Util.url_encode(k)
     end
 
     def href
-      return "https://www.fulcrum.org/concern/monographs/#{@monograph_noid}?f%5Bkeywords_sim%5D%5B%5D=#{keyword}"
+      return "https://www.fulcrum.org/concern/monographs/#{@monograph_noid}?f%5Bkeyword_sim%5D%5B%5D=#{keyword}"
     end
 
     def to_s

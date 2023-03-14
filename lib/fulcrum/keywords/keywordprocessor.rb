@@ -34,6 +34,8 @@ module UMPTG::Fulcrum::Keywords
       # markup or an additional resource that should be inserted.
       alist = []
       keyword_list.each do |keyword|
+        next unless keyword['data-fulcrum-keyword-skip'].nil? or keyword['data-fulcrum-keyword-skip'].downcase != 'true'
+
         action = LinkKeywordAction.new(
                   keyword_container: keyword,
                   monograph_noid: @monograph_noid

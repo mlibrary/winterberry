@@ -28,6 +28,7 @@ module UMPTG::Fulcrum::Manifest
         csv_body = service.monograph_export(noid: @properties[:monograph_id])
         csv_body = service.monograph_export(identifier: @properties[:monograph_id]) \
                       if csv_body[@properties[:monograph_id]].empty?
+        csv_body = nil if csv_body[@properties[:monograph_id]].empty?
       else
         # No content specified
         csv_body = nil

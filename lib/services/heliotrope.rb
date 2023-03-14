@@ -104,7 +104,7 @@ module UMPTG::Services
           begin
             response = connection.get("monographs/#{noid}/manifest")
           rescue StandardError => e
-            e.message
+            puts e.message
           end
           id2manifest_list[identifier] << response.body unless response.nil? or !response.success?
         end
