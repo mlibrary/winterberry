@@ -146,24 +146,6 @@ monograph_id_list.each do |monograph_id|
   manifest = UMPTG::Fulcrum::Manifest::Document.new(
                 monograph_id: identifier
               )
-=begin
-  # Use the monograph ID to retrieve the NOID from Fulcrum.
-  monograph_noid = service.monograph_noid(identifier: monograph_id)
-  if monograph_noid.nil? or monograph_noid.empty?
-    script_logger.error("no NOID found for monograph ID #{monograph_id}")
-    next
-  end
-
-  # Use the monograph NOID to retrieve the monograph manifest from Fulcrum.
-  csv_body = service.monograph_export(noid: monograph_noid)
-  if csv_body.nil? or csv_body.empty?
-    script_logger.error("no manifest found for id #{monograph_id}")
-    next
-  end
-  manifest = UMPTG::Fulcrum::Manifest::Document.new(
-                :csv_body => csv_body
-              )
-=end
   monograph_row = manifest.monograph_row
   monograph_noid = monograph_row['noid']
 
@@ -352,6 +334,13 @@ File.open(cmds_file, "w") do |fp|
   end
 
   if monograph_has_resources
+    fp.puts "# Unpack EPUB representatives"
+    epub_noid_list = monograph_info.values.collect {|minfo| minfo[:epub_noid]}
+    pdf_noid_list = monograph_info.values.collect {|minfo| minfo[:pdf_noid]}
+    fp.puts "%w[#{epub_noid_list.join(' ')}].each do |noid|"
+    fp.puts "\tUnpackJob.perform_now(noid,'epub')"
+    fp.puts "end;0"
+    fp.puts
     fp.puts "# Resource processing ticket comment"
     fp.puts "[~jilliand] [~mbakeryo]"
     fp.puts "Resource processed the following titles:"
@@ -383,13 +372,7 @@ File.open(cmds_file, "w") do |fp|
 
   fp.puts "# Publish monographs (bulleit-1)"
   fp.puts "%w[#{monograph_noid_list.join(' ')}].each do |noid|"
-  fp.puts "  monograph = Monograph.find(noid)"
-  fp.puts "  if monograph.nil?"
-  fp.puts "    puts \"Error: no monograph for NOID \#{noid}.\""
-  fp.puts "  else"
-  fp.puts "    puts \"Publishing monograph \#{noid}.\""
-  fp.puts "    PublishJob.perform_later(monograph)"
-  fp.puts "  end"
+  fp.puts "\tPublishJob.perform_now(Monograph.find(noid))"
   fp.puts "end;0"
 
   fp.puts
@@ -402,15 +385,13 @@ File.open(cmds_file, "w") do |fp|
   fp.puts
   fp.puts "# Unpack representatives"
   monograph_info.each do |monograph_id,minfo|
-    mminfo = minfo.delete_if {|key,value| key == :monograph_dir}
-
     epub_noid = minfo[:epub_noid]
     pdf_noid = minfo[:pdf_noid]
 
     fp.puts "#{monograph_id}:"
     fp.puts "\tUnpackJob.perform_now('','')" if epub_noid.nil? and pdf_noid.nil?
-    fp.puts "\tUnpackJob.perform_now('#{minfo[:epub_noid]}','epub')" unless epub_noid.nil?
-    fp.puts "\tUnpackJob.perform_now('#{minfo[:pdf_noid]}','pdf_ebook')" unless pdf_noid.nil?
+    fp.puts "\tUnpackJob.perform_now('#{epub_noid}','epub')" unless epub_noid.nil?
+    fp.puts "\tUnpackJob.perform_now('#{pdf_noid}','pdf_ebook')" unless pdf_noid.nil?
   end
   fp.puts
 
