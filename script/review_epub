@@ -23,7 +23,8 @@ options.reviews = {
         list: false,
         resources: true,
         role_remove: false,
-        table: true
+        table: true,
+        url_wrap: false
     }
 options.vendor = :default
 options.default_actions = {

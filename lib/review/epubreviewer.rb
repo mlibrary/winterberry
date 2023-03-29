@@ -9,6 +9,7 @@ module UMPTG::Review
           resources: ResourceProcessor.new,
           role_remove: RoleRemoveProcessor.new,
           table: TableProcessor.new,
+          url_wrap: URLWrapProcessor.new
         }
 
     attr_reader :epub, :epub_modified, :review_logger, :action_map
