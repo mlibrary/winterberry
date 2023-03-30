@@ -31,6 +31,10 @@ JDT
     //*[
     local-name()='graphic'
     and @*[local-name()='href']
+    ] |
+    //*[
+    local-name()='fig'
+    and @data-fulcrum-embed-filename
     ]
     FRXPATH
 
@@ -87,7 +91,8 @@ JDT
             next
           end
 
-          href = ref_node['xlink:href']
+          href = fig_node['data-fulcrum-embed-filename'].nil? ? ref_node['xlink:href'] : \
+                fig_node['data-fulcrum-embed-filename']
           fileset = nil
           unless resource_map.nil?
             resource = resource_map.reference_resource(href)

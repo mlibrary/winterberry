@@ -30,7 +30,7 @@ require 'uri'
 
 require_relative File.join(root_dir, 'lib', 'xslt')
 
-jats2html_xsl_file = File.join(root_dir, "lib", "journal", "xsl", "jats-html.xsl")
+jats2html_xsl_file = File.join(root_dir, "lib", "journal", "xsl", "janeway.xsl")
 
 jats_file_list.each do |jats_file|
     jats_file = File.expand_path(jats_file)
