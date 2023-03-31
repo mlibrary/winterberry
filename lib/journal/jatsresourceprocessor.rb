@@ -1,6 +1,7 @@
 module UMPTG::Journal
 
   require 'nokogiri'
+  require 'htmlentities'
 
   class JATSResourceProcessor < UMPTG::Object
     attr_reader :logger
@@ -49,6 +50,8 @@ JDT
       end
 
       @service = nil
+      @markdown_parser = nil
+      @entity_encoder = nil
     end
 
     def resource_ref_node_list(args = {})
@@ -123,12 +126,25 @@ JDT
           link_scheme_host = link_uri.scheme + "://" + link_uri.host
 
           href = fileset['link'][12..-3]
-          title = fileset['title']
-          title = "" if title.nil?
-          caption = fileset['caption']
-          caption = "" if caption.nil?
-          doi = fileset['doi']
-          doi = "" if doi.nil?
+          title = fileset['title'].nil? ? "" : fileset['title']
+          caption = fileset['caption'].nil? ? "" : fileset['caption']
+          doi = fileset['doi'].nil? ? "" : fileset['doi']
+
+          if @markdown.nil?
+            @entity_encoder = HTMLEntities.new
+
+            extensions = {
+              autolink: true,
+              fenced_code_blocks: true
+            }
+            @markdown = Redcarpet::Markdown.new(
+                      UMPTG::Journal::JATSRenderer.new,
+                      extensions)
+          end
+
+          title = @markdown.render(@entity_encoder.encode(title.force_encoding("UTF-8")))
+          caption = @markdown.render(@entity_encoder.encode(caption.force_encoding("UTF-8")))
+
           doi_noprefix = doi.delete_prefix("https://doi.org/")
           embed_code = fileset['embed_code']
           noid = fileset['noid']
@@ -289,7 +305,11 @@ JDT
     def add_element(elemName, parentElem, content = '', attrs = {})
       child_elem = parentElem.document.create_element(elemName)
       parentElem.add_child(child_elem)
-      child_elem.content = content unless content.strip.empty?
+      unless content.strip.empty?
+        #child_elem.content = content
+        nl = child_elem.parse(content)
+        child_elem.add_child(nl)
+      end
 
       attrs.each do |attrName,attrValue|
         child_elem[attrName] = attrValue unless attrValue.strip.empty?
