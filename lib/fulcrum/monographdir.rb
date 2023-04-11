@@ -52,8 +52,9 @@ module UMPTG::Fulcrum
             # From the manifest, determine the ebook ISBN without dashes.
             ebook_isbn = @manifest.isbn["open access"]
             ebook_isbn = @manifest.isbn["ebook"] if ebook_isbn.nil?
+            ebook_isbn = ebook_isbn.nil? ? "" : ebook_isbn.strip
 
-            unless ebook_isbn.nil? or ebook_isbn.strip.empty?
+            unless ebook_isbn.empty?
               ebook_isbn = ebook_isbn.strip.gsub('-', '')
               #monograph_dir_list = Dir.glob(File.join(@publisher_dir, @publisher, "#{ebook_isbn}_*"))
               monograph_dir_list = Dir.glob(File.join(@publisher_dir, "#{ebook_isbn}_*"))

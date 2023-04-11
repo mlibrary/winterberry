@@ -74,6 +74,11 @@ module UMPTG::Review
         resources_manifest = nil
         csv_path = File.join(@monograph_dir.resources_dir, "manifest.csv")
         unless File.exists?(csv_path)
+          if @monograph_dir.isbn.nil?
+            @review_logger.error("no ISBN for id #{@monograph_dir.monograph_id}.")
+            return
+          end
+
           csv_path_list = Dir.glob(File.join(@monograph_dir.resources_dir, @monograph_dir.isbn + "*.csv"))
           if csv_path_list.empty?
             @review_logger.warn("no resources CSV for id #{@monograph_dir.monograph_id}.")
