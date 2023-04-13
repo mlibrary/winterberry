@@ -1,0 +1,80 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# This script retrieves one or more monograph manifest files from Fulcrum
+# and returns the specified metadata field values. If no fields are
+# specified, then all are returned.
+#
+# Invoke this script without any parameters to display the usage.
+
+require 'optparse'
+require 'ostruct'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+# Process the script parameters.
+options = OpenStruct.new
+options.fulcrum_column_list = []
+options.fulcrum_host = nil
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-c <column_header>] [-f production|preview|staging] <noid> [<noid>..]"
+  opts.on('-c', '--manifest_column <column_header>', 'Fulcrum manifest metadata field') do |col|
+    options.fulcrum_column_list << col
+  end
+  opts.on('-f', '--fulcrum_host [production|preview|staging]', 'Fulcrum environment') do |fulcrum_host|
+    options.fulcrum_host = fulcrum_host
+  end
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    script_logger.info(opts)
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  script_logger.info(option_parser.help)
+  exit 0
+end
+
+require_relative File.join(root_dir, 'lib', 'fulcrum')
+
+# Rest of the parameters is a list of monograph noids.
+noid_list = ARGV
+
+if options.fulcrum_column_list.empty?
+  script_logger.info("using all manifest metadata fields.")
+else
+  # Metadata fields specified. Determine if list is valid.
+  # Prepend the NOID field.
+  fheaders = UMPTG::Fulcrum::Manifest::Validation::CollectionSchema.HEADERS.collect {|h| h.downcase}
+
+  options.fulcrum_column_list.prepend('NOID')
+  options.fulcrum_column_list.each do |col|
+    unless fheaders.include?(col.downcase)
+      script_logger.error("invalid Fulcrum metadata field")
+      exit 1
+    end
+  end
+  script_logger.info("using Fulcrum metadata field(s) #{options.fulcrum_column_list.join(',')}")
+end
+
+noid_list.each do |noid|
+  script_logger.info("*** #{noid} **")
+
+  # Attempt to download the monograph manifest.
+  manifest = UMPTG::Fulcrum::Manifest::Document.new(
+                monograph_id: noid
+              )
+  if options.fulcrum_column_list.empty?
+    script_logger.info(manifest.monograph_row.to_h)
+  else
+    field_values = {}
+    options.fulcrum_column_list.each {|col| field_values[col] = manifest.monograph_row[col.downcase] }
+    script_logger.info(field_values.to_s)
+  end
+end
