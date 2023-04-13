@@ -35,7 +35,8 @@ module UMPTG::Fulcrum::Resources
     def link_markup(descr = nil)
       descr = "View resource." if descr == nil
 
-      link = @reference_action_def.link
+      link = @reference_action_def.doi
+      link = @reference_action_def.link if link.empty?
       return "<a href=\"#{link}\" target=\"_blank\">#{descr}</a>"
     end
 

@@ -70,9 +70,13 @@ module UMPTG::Fulcrum::Manifest
     end
 
     def fileset(file_name)
-      if file_name != nil
+      unless file_name.nil?
         file_name_base = File.basename(file_name, ".*").downcase
         fileset_row = @csv.find {|row| !row['file_name'].nil? and File.basename(row['file_name'], ".*").downcase == file_name_base }
+        if fileset_row.nil?
+          fn = HTMLEntities.new.decode(file_name)
+          fileset_row = @csv.find {|row| row['external_resource_url'] == fn }
+        end
         return fileset_row unless fileset_row.nil?
       end
 

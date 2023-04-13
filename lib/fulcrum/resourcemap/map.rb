@@ -2,6 +2,7 @@ module UMPTG::Fulcrum::ResourceMap
 
   require 'nokogiri'
   require 'csv'
+  require 'htmlentities'
 
   # Class representing a resource map, i.e a
   # mapping of file references to Fulcrum resources.
@@ -44,6 +45,8 @@ module UMPTG::Fulcrum::ResourceMap
     @@parser = nil
     @@processor = XMLSaxDocument.new
 
+    @@encoder = nil
+
     attr_reader :actions, :resources
     attr_accessor :default_action, :vendors
 
@@ -81,20 +84,38 @@ module UMPTG::Fulcrum::ResourceMap
 
     def add_resource(args = {})
       name = args[:name]
+
+      @@encoder = HTMLEntities.new if @@encoder.nil?
+      ename = @@encoder.encode(name)
       resource_properties = args[:resource_properties]
       id = args.has_key?(:id) ? args[:id] : \
-            ResourceMapObject.name_id(name)
+            ResourceMapObject.name_id(ename)
 
       resource = @resources[id]
       if resource.nil?
         resource = Resource.new(
                   :id => id,
-                  :name => name
+                  :name => ename
                 )
         @resources[id] = resource
       end
       resource.resource_properties = resource_properties
       return resource
+    end
+
+    # Add a new action
+    def add_action(args = {})
+      name = args[:name]
+      reference = args[:reference]
+      resource = args[:resource]
+      type = args[:type]
+
+      @actions << Action.new(
+              name: name,
+              reference: reference,
+              resource: resource,
+              type: type.to_sym
+            )
     end
 
     # Add a new map entry, reference => resource.
@@ -258,7 +279,7 @@ module UMPTG::Fulcrum::ResourceMap
                 sprintf(
                     @@XML_ACTION,
                     action.reference.id,
-                    action.resource.id,
+                    action.resource.nil? ? "" : action.resource.id,
                     action.type,
                     name_str,
                     xpath_str
