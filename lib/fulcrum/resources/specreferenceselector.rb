@@ -10,6 +10,7 @@ module UMPTG::Fulcrum::Resources
   //*[
   (local-name()='p' and @class='fig')
   or (local-name()='figure' and count(*[local-name()='p' and @class='fig'])=0)
+  or (local-name()='span' and @data-fulcrum-embed-filename)
   or @class='rb'
   or @class='rbi'
   ]
@@ -22,16 +23,9 @@ module UMPTG::Fulcrum::Resources
       return :marker if node.comment?
       return :marker if node.name == 'p' \
              and (node['class'] == 'rb' or node['class'] == 'rbi')
-      return :marker if node.name == 'figure' \
+      return :marker if (node.name == 'figure' or node.name == 'span') \
              and node.key?('data-fulcrum-embed-filename') \
              and !node['data-fulcrum-embed-filename'].empty?
-=begin
-      attr = node.attribute("class")
-      unless attr.nil?
-        attr = attr.text.downcase
-        return :marker if attr == "rb" or attr == "rbi"
-      end
-=end
       return :element
     end
   end

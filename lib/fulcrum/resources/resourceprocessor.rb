@@ -162,7 +162,7 @@ module UMPTG::Fulcrum::Resources
       node_list = [ reference_container ] if node_list.nil? or node_list.empty?
       reference_action_list = []
       node_list.each do |node|
-        if node.name == "figure" and node.key?("data-fulcrum-embed-filename")
+        if (node.name == "figure" or node.name == "span") and node.key?("data-fulcrum-embed-filename")
           path = node["data-fulcrum-embed-filename"]
         else
           path = node.text.strip

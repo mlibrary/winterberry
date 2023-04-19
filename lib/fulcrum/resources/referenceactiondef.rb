@@ -50,11 +50,8 @@ module UMPTG::Fulcrum::Resources
 
     # Resource Fulcrum link path.
     def doi
-      unless @resource_metadata.nil? or @resource_metadata['doi'].nil?
-        doi_data = @resource_metadata['doi']
-        doi = doi_data.match('^[^\(]+\(\"([^\"]+)\".*') {|m| m[1] }
-        return doi
-      end
+      #doi = @resource_metadata.nil? ? "" : @resource_metadata['doi']
+      #return doi unless doi.nil? or doi.strip.empty?
       return ""
     end
 
