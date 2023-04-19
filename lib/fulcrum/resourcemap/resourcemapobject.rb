@@ -15,6 +15,7 @@ module UMPTG::Fulcrum::ResourceMap
 
     def self.name_id(name)
       return name.gsub(/[ \.\/\\]/, '_') unless name.nil?
+      return ""
     end
   end
 end

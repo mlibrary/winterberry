@@ -162,7 +162,7 @@ module UMPTG::Fulcrum::Resources
       node_list = [ reference_container ] if node_list.nil? or node_list.empty?
       reference_action_list = []
       node_list.each do |node|
-        if node.name == "figure" and node.key?("data-fulcrum-embed-filename")
+        if (node.name == "figure" or node.name == "span") and node.key?("data-fulcrum-embed-filename")
           path = node["data-fulcrum-embed-filename"]
         else
           path = node.text.strip
@@ -251,6 +251,7 @@ module UMPTG::Fulcrum::Resources
           # NOID specified, then this is an invalid row.
           # NOTE: replace any spaces in the name with an '_'.
           resource_name = resource_name.gsub(/[ ]+/, '_')
+          resource_name = resource_name.gsub(/#38;/, '')
           fileset_row = @resource_metadata.fileset(resource_name)
           if fileset_row['noid'].empty?
             @logger.error("No fileset row for resource #{resource_name}")

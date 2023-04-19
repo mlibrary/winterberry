@@ -1,0 +1,196 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Script creates a resource map from specified source,
+# such as monograph manifest.
+
+require 'optparse'
+require 'ostruct'
+require 'os'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+# Process the script parameters.
+options = OpenStruct.new
+options.output_dir = Dir.pwd
+options.default_actions = {
+        resources: :embed
+        }
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-r embed|link|none|remove] <monograph_id|manifest_file> epub_file [<epub_file>...]"
+  opts.on('-r', '--keywords [embed|link|none|remove]', 'Default resoorces processing action') do |action|
+    options.default_actions[:resources] = action.to_sym
+  end
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    puts opts
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 2
+  puts option_parser.help
+  return
+end
+
+# Process the command line parameters.
+resource_file = ARGV[0]
+epub_file_list = ARGV[1..-1]
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require 'fileutils'
+
+require_relative File.join(root_dir, "lib", "fulcrum")
+
+script_logger.fatal("Error: invalid default resources action #{options.default_actions[:resources]}.") \
+      unless UMPTG::Fulcrum::EPUBProcessor.valid_action?(options.default_actions[:resources])
+script_logger.info("Processing resources #{options.default_actions[:resources].to_s}")
+
+# Determine if this is a manifest file or monograph ID.
+manifest_file = File.expand_path(resource_file)
+if File.exists?(manifest_file)
+  # Have a manifest file
+  manifest = UMPTG::Fulcrum::Manifest::Document.new(
+                csv_file: manifest_file
+              )
+else
+  # See if this is a monograph ID.
+  manifest = UMPTG::Fulcrum::Manifest::Document.new(
+                monograph_id: resource_file
+              )
+end
+if manifest.nil?
+  script_logger.fatal("generating manifest CSV for manifest file #{resource_file}")
+  exit 1
+end
+script_logger.info("manifest retrieved from file #{resource_file}")
+
+# Process all inputs specified specified.
+epub_file_list.each do |epub_file|
+  epub_file = File.expand_path(epub_file)
+  unless File.exists?(epub_file)
+    script_logger.error("EPUB file not found #{epub_file}")
+    next
+  end
+
+  # Create the map and set the default action.
+  resource_map = UMPTG::Fulcrum::ResourceMap::Map.new
+  resource_map.default_action = options.default_actions[:resources]
+  resource_map.vendors[:epub] = :default
+
+  # Add the resources
+  manifest.filesets().each do |fileset|
+    name = fileset['file_name']
+    name = fileset['external_resource_url'] if name.nil?
+    resource_map.add_resource(name: name)
+  end
+
+  # Initialize EPUB markup processors, figure/image and marker.
+  processors = UMPTG::Fulcrum::Metadata.vendor_processor(resource_map.vendors[:epub])
+  #processors.each_value {|p| p.reset }
+
+  # Process the epub and generate the image information.
+  action_map = UMPTG::EPUB::Processor.process(
+        epub_file: epub_file,
+        entry_processors: processors,
+        logger: script_logger
+      )
+
+  action_map.each do |entry_name,proc_map|
+    proc_map.each do |key,action_list|
+      next if action_list.nil?
+      action_list.each do |action|
+        action.object_list.each do |object|
+          node = object.node
+          node_map = object.map
+          reference_name = node_map['resource_name'].strip
+
+          resource = resource_map.reference_resource(reference_name)
+          if resource.nil?
+            #script_logger.warn("#{object.name}: no resource found for reference \"#{reference_name}\".")
+          else
+            #script_logger.info("#{object.name}: mapping reference \"#{reference_name}\" to resource \"#{resource.name}\".")
+          end
+
+          reference = resource_map.add_reference(
+                name: reference_name
+              )
+          resource_map.add_action(
+                reference: reference,
+                resource: resource,
+                type: resource.nil? ? "none" : "default"
+                )
+        end
+      end
+    end
+  end
+
+  # Save the resource map XML file.
+  resource_map_file = File.join(File.dirname(epub_file), File.basename(epub_file, ".*") + "_resource_map.xml")
+  resource_map.save(resource_map_file)
+  script_logger.info("Saved resource map file #{resource_map_file}")
+
+=begin
+
+  if update_fmsl or !resource_map_exists
+    # Either updating the FMSL or the resource map file
+    # needs to be generated.
+
+    # Initialize EPUB markup processors, figure/image and marker.
+    processors = UMPTG::Fulcrum::Metadata.vendor_processor(resource_map.vendors[:epub])
+    #processors.each_value {|p| p.reset }
+
+    # Process the epub and generate the image information.
+    action_map = UMPTG::EPUB::Processor.process(
+          epub_file: epub_file,
+          entry_processors: processors,
+          logger: monograph_loggers[monograph_id]
+        )
+
+    action_map.each do |entry_name,proc_map|
+      proc_map.each do |key,action_list|
+        next if action_list.nil?
+        action_list.each do |action|
+          action.object_list.each do |object|
+            node = object.node
+            node_map = object.map
+            reference_name = node_map['resource_name'].strip
+            resource = resource_map.reference_resource(reference_name)
+            if resource.nil?
+              monograph_loggers[monograph_id].warn("#{object.name}: no resource found for reference \"#{reference_name}\".")
+            else
+              monograph_loggers[monograph_id].info("#{object.name}: mapping reference \"#{reference_name}\" to resource \"#{resource.name}\".")
+              node_map["caption"] = node_map["caption"].text.strip unless node_map["caption"].nil?
+
+              if options.first_descr
+                # It will allow for first encountered captions/alttext to win.
+                resource.resource_properties = node_map if resource.resource_properties.nil?
+              else
+                # It will allow for the last encountered captions/alttext to win.
+                resource.resource_properties = node_map
+              end
+            end
+
+            resource_map.add(
+                  reference_name: reference_name,
+                  resource: resource,
+                  resource_path: resource.nil? ? "" : resource.name,
+                  type: "default"
+                )
+          end
+        end
+      end
+    end
+
+    # Save the resource map XML file.
+    resource_map.save(resource_map_file) unless resource_map_exists
+=end
+end
