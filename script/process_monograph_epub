@@ -19,12 +19,16 @@ options.publisher_dir = "s:/Information\ Management/Fulcrum/UMP"
 #options.publisher_dir = "c:/Users/tbelc/Documents/Fulcrum/UMP/"
 options.manifest_file = nil
 options.fulcrum_host = nil
+options.resource_css = :default
 options.default_actions = {
         keywords:  :disable,
         resources: :embed
         }
 option_parser = OptionParser.new do |opts|
   opts.banner = "Usage: #{File.basename(__FILE__)} [-f production|preview|staging] [-d <publisher_dir>] [-r disable|embed|link|none|update_alt] [-k disable|link|none] <monograph_id> [<monograph_id>..]"
+  opts.on('-c', '--resource_css [default|enhanced]', 'Resource CSS styling') do |type|
+    options.resource_css = type
+  end
   opts.on('-d', '--publisher_directory [DIRECTORY]', 'Publisher site directory') do |publisher_dir|
     options.publisher_dir = publisher_dir
   end
@@ -84,8 +88,7 @@ service = UMPTG::Services::Heliotrope.new(
               )
 
 # Provide the directory path for adding the stylesheet link.
-fulcrum_css_name = 'fulcrum_default.css'
-#fulcrum_css_name = 'fulcrum_enhanced.css'
+fulcrum_css_name = options.resource_css == :default ? 'fulcrum_default.css' : 'fulcrum_enhanced.css'
 fulcrum_css_file = File.join(root_dir, 'lib', 'css', fulcrum_css_name)
 
 monograph_loggers = {}
