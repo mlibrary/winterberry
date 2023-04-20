@@ -1,0 +1,237 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Script used for FOPS-0355 to merge
+# Princeton HEB ISBNs with HEB metadata
+# TMM import CSV.
+
+require 'optparse'
+require 'ostruct'
+require 'os'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+# Process the script parameters.
+options = OpenStruct.new
+options.output_dir = Dir.pwd()
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} <heb_tmm_csv_file> <heb_pu_csv_file>"
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    script_logger.info(opts)
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 2
+  script_logger.info(option_parser.help)
+  return
+end
+
+# Process the command line parameters.
+heb_tmm_csv_file = ARGV[0]
+heb_pu_csv_file = ARGV[1]
+
+require_relative File.join(root_dir, "lib", "csvfile")
+require_relative File.join(root_dir, "lib", "fulcrum")
+
+def load_csv(script_logger, csv_file)
+  csv_file = File.expand_path(csv_file)
+  unless File.file?(csv_file)
+    script_logger.error("invalid CSV file #{heb_tmm_csv_file}.")
+    return nil
+  end
+  script_logger.info("processing CSV file #{File.basename(csv_file)}.")
+
+  csv = UMPTG::CSVFile.read(csv_path: csv_file)
+  if csv.nil?
+    script_logger.error("Reading FMSL #{File.basename(csv_file)}.")
+    return nil
+  end
+  return csv
+end
+
+heb_tmm_csv = load_csv(script_logger, heb_tmm_csv_file)
+heb_pu_csv = load_csv(script_logger, heb_pu_csv_file)
+exit(1) if heb_tmm_csv.nil? or heb_pu_csv.nil?
+
+missing_isbn_row_list = []
+heb_pu_csv.each do |row|
+  noid = row['NOID']
+  isbns = row['ISBN(s)']
+  if isbns.nil? or isbns.strip.empty?
+    script_logger.warn("empty ISBN(s) for NOID #{noid}")
+    next
+  end
+
+  isbns.split(';').each do |isbn_format|
+    m = isbn_format.strip.match(/^([^ ]+)[ ]+\(([^\)]+)\)/)
+    if m.nil?
+      script_logger.error("unable to parse ISBN format #{isbn_format}")
+      next
+    end
+    isbn = m[1]
+    format = m[2]
+    #script_logger.info("#{noid}: using ISBN #{isbn} with format #{format}")
+
+    heb_tmm_list = heb_tmm_csv.find {|r| r['ISBN-13'] == isbn and r['ISBN format'] == format }
+    if heb_tmm_list.nil? or heb_tmm_list.empty?
+      #script_logger.warn("#{noid}: no row found for ISBN #{isbn} with format #{format}")
+      missing_isbn_row_list << { row: row, isbn: isbn, format: format }
+    else
+      #script_logger.info("#{noid}: row found for ISBN #{isbn} with format #{format}")
+    end
+  end
+end
+#missing_isbn_row_list = missing_isbn_row_list[0..1]
+
+add_isbn_row_list = []
+update_isbn_row_list = []
+missing_isbn_row_list.each do |item|
+  row = item[:row]
+  isbn = item[:isbn]
+  format = item[:format]
+  noid = row['NOID']
+
+  manifest = UMPTG::Fulcrum::Manifest::Document.new(
+                monograph_id: noid
+              )
+  if manifest.nil?
+    script_logger.error("Reading FMSL #{File.basename(csv_file)}.")
+    next
+  end
+  heb_id = manifest.monograph_row['identifier(s)'].split(';').find {|id| id.downcase.start_with?('heb_id:') }
+  heb_id = heb_id.delete_prefix('heb_id:').strip
+  #script_logger.info(heb_id)
+
+  heb_tmm_list = heb_tmm_csv.select {|r| r['HEBID'] == heb_id }
+  if heb_tmm_list.nil? or heb_tmm_list.empty?
+    script_logger.warn("#{heb_id}: no row found.")
+    next
+  end
+
+  script_logger.info("*** #{noid},#{heb_id} ***")
+  heb_tmm_format_list = heb_tmm_list.select {|r| r['ISBN format'] == format }
+  heb_tmm_format_list.each do |n|
+    #script_logger.warn("update #{n['ISBN-13']},#{n['ISBN format']} with #{isbn},#{format}")
+    update_isbn_row_list << {
+      row: row,
+      isbn: isbn,
+      format: format,
+      tmm_row: n
+    }
+  end
+  next unless heb_tmm_format_list.empty?
+
+  #script_logger.info("add new row #{isbn},#{format}")
+  new_tmm_row = heb_tmm_list.first.clone
+  add_isbn_row_list << {
+        row: row,
+        isbn: isbn,
+        format: format,
+        tmm_row: heb_tmm_list.first.clone
+  }
+end
+script_logger.info("updating #{update_isbn_row_list.count} rows.")
+script_logger.info("adding #{add_isbn_row_list.count} new rows.")
+
+new_heb_tmm_csv_file = File.join(File.dirname(heb_tmm_csv_file), \
+      File.basename(heb_tmm_csv_file, ".*") + "_merged" + File.extname(heb_tmm_csv_file))
+CSV.open(
+        new_heb_tmm_csv_file,
+        "w",
+        write_headers: true,
+        headers: heb_tmm_csv.headers
+      ) do |csv|
+
+  update_isbn_row_list.each do |r|
+    row = r[:row]
+    isbn = r[:isbn]
+    format = r[:format]
+    tmm_row = r[:tmm_row]
+
+    noid = row['NOID']
+    heb_id = tmm_row['HEBID']
+
+    script_logger.info("*** #{noid},#{heb_id} ***")
+    script_logger.info("update row #{isbn},#{format}")
+    tmm_row['ISBN-13'] = isbn
+    tmm_row['ISBN format'] = format
+  end
+
+  heb_tmm_csv.each {|r| csv << r }
+
+  add_isbn_row_list.each do |r|
+    row = r[:row]
+    isbn = r[:isbn]
+    format = r[:format]
+    tmm_row = r[:tmm_row]
+
+    noid = row['NOID']
+    heb_id = tmm_row['HEBID']
+
+    script_logger.info("*** #{noid},#{heb_id} ***")
+    script_logger.info("add new row #{isbn},#{format}")
+    tmm_row['ISBN-13'] = isbn
+    tmm_row['ISBN format'] = format
+
+    csv << tmm_row
+  end
+end
+
+=begin
+csv_file_list.each do |csv_file|
+  csv_file = File.expand_path(csv_file)
+  unless File.file?(csv_file)
+    script_logger.error("invalid CSV file #{csv_file}.")
+    next
+  end
+  script_logger.info("processing CSV file #{File.basename(csv_file)}.")
+
+  manifest = CSVFile.read(csv_path: csv_file)
+  #csv = UMPTG::Fulcrum::Manifest::Document.new(csv_file: csv_file)
+  if manifest.nil?
+    script_logger.error("Reading FMSL #{File.basename(csv_file)}.")
+    next
+  end
+
+  manifest.select do |row|
+    heb_id = row['Identifier'][7..-1].strip
+
+    output_dir = File.join(File.dirname(csv_file), heb_id)
+    FileUtils.mkdir_p output_dir
+    path = File.join(output_dir, heb_id + ".csv")
+    script_logger.info(path)
+
+    headers = manifest.headers - [ 'Press', 'Status' ]
+    CSV.open(
+            path,
+            "w",
+            :write_headers=> true,
+            :headers => [ 'File Name' ] + headers
+          ) do |csv|
+      # Make sure the blank row exists, otherwise
+      # first resource will not be loaded by
+      # the importer.
+      script_logger.info("No blank row found. Inserting one.")
+      csv << {
+          'File Name' => UMPTG::Fulcrum::Manifest.BLANK_ROW_FILE_NAME
+        }
+
+      new_row = {
+            'File Name' => UMPTG::Fulcrum::Manifest.MONOGRAPH_FILE_NAME
+          }
+      row.each do |key,value|
+        next if [ 'Press', 'Status'].include?(key)
+        new_row[key] = value.force_encoding("UTF-8") if value != nil
+      end
+      csv << new_row
+    end
+  end
+end
+=end
