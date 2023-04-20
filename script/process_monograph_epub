@@ -85,6 +85,7 @@ service = UMPTG::Services::Heliotrope.new(
 
 # Provide the directory path for adding the stylesheet link.
 fulcrum_css_name = 'fulcrum_default.css'
+#fulcrum_css_name = 'fulcrum_enhanced.css'
 fulcrum_css_file = File.join(root_dir, 'lib', 'css', fulcrum_css_name)
 
 monograph_loggers = {}
