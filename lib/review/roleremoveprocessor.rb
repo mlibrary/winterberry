@@ -8,7 +8,7 @@ module UMPTG::Review
     and @role
     ] |
     //*[
-    (local-name()='section' and @role)
+    (local-name()='section' and @role='doc-cover')
     or (local-name()='li' and (@role='doc-endnotes' or @role='doc-endnote'))
     ]
     HRXPATH

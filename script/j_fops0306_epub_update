@@ -43,7 +43,7 @@ option_parser = OptionParser.new do |opts|
   opts.on('-c', '--css [css_file]', 'CSS replacement') do |css_file|
     options.css_file_list << css_file
   end
-  opts.on('-f', '--css [css_file]', 'CSS replacement') do |css_file|
+  opts.on('-f', '--force', 'Force update') do |css_file|
     options.force_update = true
   end
   opts.on_tail('-h', '--help', 'Print this help message') do
@@ -61,9 +61,7 @@ epub_file_list = ARGV
 require_relative File.join(root_dir, 'lib', 'review')
 require_relative File.join(root_dir, 'lib', 'epubcheck')
 
-epub_updater = UMPTG::Review::EPUBUpdater.new(
-      logger: script_logger
-      )
+epub_updater = UMPTG::Review::EPUBUpdater.new
 
 # Travese the list of EPUB files to update.
 epub_file_list.each do |epub_file|
@@ -78,20 +76,21 @@ epub_file_list.each do |epub_file|
   epub = UMPTG::EPUB::Archive.new(epub_file: epub_file)
 
   # Log the processing into a file for this monograph.
-  epub_log_file = File.join(File.dirname(epub_file), File.basename(epub_file, ".*") + "_review.log")
+  epub_log_file = File.join(File.dirname(epub_file), \
+        File.basename(epub_file, ".*") + "_epub_update" + ".log")
 
   # Process the epub and generate the image information.
   epub_reviewer = UMPTG::Review::EPUBReviewer.new(
         epub: epub,
         logger_file: epub_log_file
       )
-  epub_log = epub_reviewer.review_logger
 
   epub_reviewer.review(
         review_options: options.reviews,
         normalize: options.normalize[:resources]
       )
 
+  epub_updater.logger = epub_reviewer.review_logger
   epub_updater.update(
       epub: epub,
       css_file_list: options.css_file_list,

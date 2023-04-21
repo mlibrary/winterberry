@@ -3,20 +3,20 @@ module UMPTG::Review
 
     require 'css_parser'
 
-    attr_reader :review_logger
+    attr_accessor :logger
 
     def initialize(args = {})
       # Init log file. Use specified path or STDOUT.
       case
       when args.key?(:logger_file)
         logger_file = args[:logger_file]
-        @review_logger = Logger.new(File.open(logger_file, File::WRONLY | File::TRUNC | File::CREAT))
+        @logger = Logger.new(File.open(logger_file, File::WRONLY | File::TRUNC | File::CREAT))
       when args.key?(:logger)
-        @review_logger = args[:logger]
+        @logger = args[:logger]
       else
-        @review_logger = Logger.new(STDOUT)
+        @logger = Logger.new(STDOUT)
       end
-      @review_logger.formatter = proc do |severity, datetime, progname, msg|
+      @logger.formatter = proc do |severity, datetime, progname, msg|
         "#{severity}: #{msg}\n"
       end
 
@@ -36,7 +36,7 @@ module UMPTG::Review
 
       css_file_list = args[:css_file_list]
       if css_file_list.nil? or css_file_list.empty?
-        @review_logger.error("no CSS file(s) specified.")
+        @logger.error("no CSS file(s) specified.")
         return false
       end
       force_update = args[:css_force_update] || false
@@ -48,34 +48,34 @@ module UMPTG::Review
       css_parser.load_string!(css_content)
       css_version = fulcrum_css_version(css_content)
       if css_version.empty?
-        @review_logger.error("Fulcrum version not found for #{File.basename(css_file)}")
+        @logger.error("Fulcrum version not found for #{File.basename(css_file)}")
         return false
       end
-      @review_logger.info("version #{css_version} found for #{File.basename(css_file)}")
+      @logger.info("version #{css_version} found for #{File.basename(css_file)}")
       
       # Traverse the list of EPUB CSS files and attempt
       # to determine the one to replace.
       epub_css_entry_list = {}
       epub.css.each do |epub_css_entry|
-        @review_logger.info("considering CSS file #{epub_css_entry.name}")
+        @logger.info("considering CSS file #{epub_css_entry.name}")
   
         # Check to see if this is a Fulcrum CSS stylesheet.
         epub_css_version = fulcrum_css_version(epub_css_entry.content)
         if epub_css_version.empty?
           if force_update
-            @review_logger.warn("appears to not be a Fulcrum CSS stylesheet. Forcing update.")
+            @logger.warn("appears to not be a Fulcrum CSS stylesheet. Forcing update.")
           else
-            @review_logger.warn("appears to not be a Fulcrum CSS stylesheet. Skipping update.")
+            @logger.warn("appears to not be a Fulcrum CSS stylesheet. Skipping update.")
             next
           end
         end
         epub_css_entry_list[epub_css_version] = epub_css_entry
-        @review_logger.info("version #{epub_css_version} found.")
+        @logger.info("version #{epub_css_version} found.")
       end
 
       # Traverse the list of EPUB CSS files.
       epub_css_entry_list.each do |epub_css_version,epub_css_entry|
-        @review_logger.info("processing CSS file #{epub_css_entry.name}")
+        @logger.info("processing CSS file #{epub_css_entry.name}")
   
         # Parse the CSS stylesheet and attempt to determine
         # which classes are used in the EPUB instances,
@@ -90,7 +90,7 @@ module UMPTG::Review
         epub_css_parser.load_string!(epub_css_entry.content)
         rulesets_found = {}
         epub.spine.each do |epub_entry|
-          @review_logger.info("processing spine entry #{epub_entry.name}")
+          @logger.info("processing spine entry #{epub_entry.name}")
   
           xml_doc = UMPTG::XMLUtil.parse(xml_content: epub_entry.content)
   
@@ -171,12 +171,12 @@ module UMPTG::Review
         needed_rulesets = rulesets_found.select {|key,status| status == :epub_found}
         if needed_rulesets.empty?
           # None found.
-          @review_logger.info("no legacy definitions found for inclusion.")
+          @logger.info("no legacy definitions found for inclusion.")
         else
           # Found some. Update the new CSS file with these classes.
           css_content += "\n\n/* Legacy classes from version #{epub_css_version} */\n\n"
           needed_rulesets.each do |key,status|
-            @review_logger.info("adding definition #{key} to new CSS for inclusion.")
+            @logger.info("adding definition #{key} to new CSS for inclusion.")
             epub_css_ruleset = epub_css_parser.find_by_selector(key)
             css_content += "#{key} {\n\t#{epub_css_ruleset.join("\n")}\n}\n"
           end
@@ -185,7 +185,7 @@ module UMPTG::Review
         # Update the EPUB with the new CSS file.
         # Use the basename of the new CSS file as
         # the name of the updated EPUB CSS file.
-        @review_logger.info("replacing CSS stylesheet #{epub_css_entry.name} version #{epub_css_version} with #{css_version}.")
+        @logger.info("replacing CSS stylesheet #{epub_css_entry.name} version #{epub_css_version} with #{css_version}.")
         #epub.add(entry_name: epub_css_entry.name, entry_content: css_content)
         epub.remove(entry_name: epub_css_entry.name)
         new_entry_name = File.join(File.dirname(epub_css_entry.name), css_file_name)
@@ -204,14 +204,14 @@ module UMPTG::Review
 
             node['href'] = File.join(File.dirname(href), css_file_name)
             node['id'] = node['href'].gsub(/[\.\/]+/, '_')
-            @review_logger.info("EPUB OPF entry #{href} updated to #{node['href']}.")
+            @logger.info("EPUB OPF entry #{href} updated to #{node['href']}.")
           end
         end
         epub.add(
               entry_name: epub.opf.name,
               entry_content: UMPTG::XMLUtil.doc_to_xml(opf_doc)
               )
-        @review_logger.info("EPUB OPF updated")
+        @logger.info("EPUB OPF updated")
       end
       return true
     end
