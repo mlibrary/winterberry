@@ -5,7 +5,7 @@ module UMPTG::Fulcrum::Manifest
   @@MONOGRAPH_FILE_NAME = '://:MONOGRAPH://:'
 
   class Document < UMPTG::Object
-    attr_reader :name, :noid, :csv, :monograph_row, :isbn
+    attr_reader :name, :noid, :csv, :monograph_row, :isbn, :headers
 
     def initialize(args = {})
       super(args)
@@ -39,6 +39,17 @@ module UMPTG::Fulcrum::Manifest
 
       csv_body.each do |key,manifest_list|
         manifest_list.each do |manifest_body|
+          begin
+            tcsv = CSV.parse(
+                      manifest_body,
+                      :headers => true,
+                      :return_headers => false
+                      )
+          rescue Exception => e
+            raise e.message
+          end
+          @headers = tcsv.headers
+
           begin
             @csv = CSV.parse(
                       manifest_body,

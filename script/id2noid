@@ -45,8 +45,14 @@ monograph_id_list.each do |monograph_id|
   #STDOUT.flush
 
   monograph_noid = service.monograph_noid(identifier: monograph_id)
-  noid_list << monograph_noid
-  id_noid_list << "#{monograph_id}:#{monograph_noid}"
+  noid_list << monograph_noid[monograph_id]
+  id_noid_list << "#{monograph_noid[monograph_id].first},#{monograph_id}"
 end
-puts noid_list.join(' ')
-puts id_noid_list.join(' ')
+#puts noid_list.join(' ')
+#puts id_noid_list.join(' ')
+puts "NOID,ISBN"
+id_noid_list.each do |k|
+  #puts "#{k},#{v.first}"
+  puts k
+end
+
