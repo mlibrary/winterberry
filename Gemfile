@@ -71,6 +71,8 @@ gem 'os', '~> 1.1', '>= 1.1.1'
 gem 'htmlentities'
 gem 'nokogiri', '> 1.10.9'
 
+gem 'origami'
+
 # Adds support for processing ZIP files.
 gem "rubyzip", ">= 1.3.0"
 
@@ -81,7 +83,7 @@ gem 'turnsole', :git => 'https://github.com/mlibrary/turnsole'
 gem "image_size", "~> 2.0"
 gem "yaml_db"
 gem 'json'
-gem 'hexapdf'
+#gem 'hexapdf'
 gem 'rmagick'
 gem 'ruby-rtf'
 gem 'parslet'

@@ -1,0 +1,67 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Script inputs a list of EPUBs/PDFs and
+# an output directory
+# and performs the following:
+# 1. Creates a monograph directory in the
+#    specified output directory, if necessary.
+# 2. Moves the EPUB/PDF into the new directory.
+
+require 'optparse'
+require 'ostruct'
+require 'os'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+# Process the script parameters.
+options = OpenStruct.new
+options.output_dir = Dir.pwd
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-o <output_dir>] <ebook_file> [<ebook_file>..]"
+  opts.on('-o', '--output_dir <output_dir>', 'Output directory') do |output_dir|
+    options.output_dir = output_dir
+  end
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    script_logger.info(opts)
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  script_logger.info(option_parser.help)
+  exit 0
+end
+
+ebook_file_list = ARGV
+
+require 'fileutils'
+
+output_dir = File.expand_path(options.output_dir)
+unless Dir.exist?(output_dir)
+  script_logger.error("output directory \"#{output_dir}\" does not exist.")
+  exit(1)
+end
+
+ebook_file_list.each do |ebook_file|
+  ebook_file = File.expand_path(ebook_file)
+  unless File.file?(ebook_file)
+    script_logger.error("file \"#{File.basename(ebook_file)}\" does not exist.")
+    next
+  end
+  script_logger.info("processing file \"#{File.basename(ebook_file)}\"")
+  STDOUT.flush
+
+  monograph_name = File.basename(ebook_file, ".*")
+
+  monograph_dir = File.join(output_dir, monograph_name)
+  Dir.mkdir(monograph_dir) unless Dir.exist?(monograph_dir)
+
+  FileUtils.copy(ebook_file, monograph_dir)
+end
