@@ -45,12 +45,15 @@ require 'csv'
 require_relative File.join(root_dir, 'lib', 'fulcrum', 'manifest')
 
 MONOGRAPH_HEADERS = UMPTG::Fulcrum::Manifest::Validation::CollectionSchema.headers()
+monograph_headers = MONOGRAPH_HEADERS
+=begin
 monograph_headers = MONOGRAPH_HEADERS \
       - [ "File Name" ] - [ "Representative Kind" ] - [ "Resource Type" ] \
       - [ "Alternative Text" ] - [ "Caption" ] - [ "Content Type" ] \
       - [ "Exclusive to Fulcrum" ] - [ "External Resource URL" ] - [ "NOID" ] \
       - [ "Section" ] - [ "Redirect to" ] - [ "Transcript" ] \
       - [ "Translation" ] - [ "Link" ] - [ "Sort Date" ]
+=end
 
 csv_file = File.expand_path(csv_file)
 unless File.exists?(csv_file)
@@ -60,7 +63,7 @@ end
 script_logger.info("*** processing #{File.basename(csv_file)} ***")
 STDOUT.flush
 
-#=begin
+=begin
 # This should be removed once the metadata
 # is updated.
 isbn_map = {
@@ -68,12 +71,6 @@ isbn_map = {
         "9780299150839" => "9780299150891",
         "9780299311186" => "9780299311193"
     }
-=begin
-    I believe the ISBN in row 22 is incorrect. Should it be 9780299316983 instead of 9780299316990?
-
-    I believe the ISBN in row 15 is incorrect. Should it be 9780299150839 instead of 9780299150891?
-
-    I believe the ISBN in row 3 is incorrect. Should it be 9780299311186 instead of 9780299311193?
 =end
 
 fulcrum_body = File.read(csv_file)
@@ -93,7 +90,7 @@ monograph_dir_list.each do |monograph_dir|
   script_logger.info("processing directory \"#{File.basename(monograph_dir)}\"")
 
   isbn = File.basename(monograph_dir)[0..12]
-  isbn = isbn_map[isbn] if isbn_map.include?(isbn)
+  #isbn = isbn_map[isbn] if isbn_map.include?(isbn)
 
   # Search CSV for monograph metadata. Directory name
   # is the search key. First, search HEBID field (HEBID).
