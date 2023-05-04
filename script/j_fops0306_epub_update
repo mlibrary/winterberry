@@ -24,6 +24,7 @@ options.reviews = {
         package: true,
         link: false,
         list: false,
+        move_coverrole: true,
         resources: true,
         role_remove: true,
         table: true
@@ -33,6 +34,7 @@ options.default_actions = {
         resources: :embed
     }
 options.normalize = {
+        move_coverrole: true,
         resources: true,
         role_remove: true
     }

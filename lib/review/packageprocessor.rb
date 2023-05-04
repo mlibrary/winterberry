@@ -40,6 +40,28 @@ module UMPTG::Review
     ]
     LCXPATH
 
+    COVERITEM_XPATH = <<-CIXPATH
+    //*[
+    local-name()='manifest'
+    ]/*[
+    local-name()='item' and contains(concat(' ',@properties,' '),'cover-image')
+    ]
+    CIXPATH
+
+    COVERMETA_XPATH = <<-CMXPATH
+    ./*[
+    local-name()='meta' and @name='cover'
+    ]
+    CMXPATH
+
+    COVERID_XPATH = <<-CDXPATH
+    //*[
+    local-name()='manifest'
+    ]/*[
+    local-name()='item' and @id='%s'
+    ]
+    CDXPATH
+
     def initialize(args = {})
       args[:container_elements] = [ 'metadata' ]
       args[:child_elements] = [ 'dc:title', 'dc:creator', 'dc:language', 'dc:rights', 'dc:publisher', 'dc:identifier' , 'dc:source' ]
@@ -127,6 +149,26 @@ module UMPTG::Review
                    attribute_name: "href",
                    warning_message: "Metadata: link/@dcterms:conformsTo has @href value with leading spaces."
                )
+          end
+        end
+      end
+      node_list = xml_doc.xpath(COVERITEM_XPATH)
+      if node_list.empty?
+        # No cover item. See if the metadata indicates the cover item.
+        node_list = metadata_list.first.xpath(COVERMETA_XPATH)
+        unless node_list.empty?
+          # Get cover id.
+          cover_id = node_list.first['content']
+          node_list = xml_doc.xpath(sprintf(COVERID_XPATH,cover_id))
+          unless node_list.empty?
+            # Found the cover item. Add the 'cover-image' prooperty.
+            action_list << SetAttributeValueAction.new(
+                    name: name,
+                    reference_node: node_list.first,
+                    attribute_name: 'properties',
+                    attribute_value: 'cover-image',
+                    attribute_append: true
+                  )
           end
         end
       end

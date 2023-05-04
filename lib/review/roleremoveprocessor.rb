@@ -8,8 +8,7 @@ module UMPTG::Review
     and @role
     ] |
     //*[
-    (local-name()='section' and @role='doc-cover')
-    or (local-name()='li' and (@role='doc-endnotes' or @role='doc-endnote'))
+    (local-name()='li' and (@role='doc-endnotes' or @role='doc-endnote'))
     ]
     HRXPATH
 
@@ -20,14 +19,6 @@ module UMPTG::Review
       super(args)
     end
 
-    def action_list(args = {})
-      name = args[:name]
-      xml_doc = args[:xml_doc]
-
-      action_list = super(args)
-      return action_list
-    end
-
     def new_action(args = {})
       a = args.clone
       a[:attribute_name] = "role"
@@ -35,8 +26,5 @@ module UMPTG::Review
           RemoveAttributeAction.new(a)
           ]
     end
-
-    private
-
   end
 end
