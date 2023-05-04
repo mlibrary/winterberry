@@ -276,6 +276,13 @@
             <xs:attribute name="active" type="xs:boolean" fixed="false"/>
         </xs:complexType>
     </xs:element>
+    <xs:element name="license_creative_commons_cc0_1.0_universal">
+        <xs:complexType>
+            <xs:attribute name="id" type="type_string_url" fixed="https://creativecommons.org/share-your-work/public-domain/cc0/"/>
+            <xs:attribute name="term" type="xs:string" fixed="Creative Commons CC0 1.0 Universal"/>
+            <xs:attribute name="active" type="xs:boolean" fixed="true"/>
+        </xs:complexType>
+    </xs:element>
     <xs:element name="license_creative_commons_zero_license_implies_pd">
         <xs:complexType>
             <xs:attribute name="id" type="type_string_url" fixed="https://creativecommons.org/publicdomain/zero/1.0/"/>
@@ -949,6 +956,7 @@
             <xs:element ref="license_creative_commons_attribution_noncommercial_noderivatives_license_3.0_unported"/>
             <xs:element ref="license_creative_commons_attribution_sharealike_2.1_japan"/>
             <xs:element ref="license_creative_commons_attribution_2.0_generic_license"/>
+            <xs:element ref="license_creative_commons_cc0_1.0_universal"/>
             <xs:element ref="license_creative_commons_zero_license_implies_pd"/>
             <xs:element ref="license_creative_commons_public_domain_mark_1.0"/>
             <xs:element ref="license_creative_commons_attribution_noderivatives_license_3.0_unported"/>
