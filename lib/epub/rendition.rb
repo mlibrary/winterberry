@@ -72,6 +72,17 @@ module UMPTG::EPUB
       return find_media_type('text/css')
     end
 
+    def cover_name
+      node_list = @opf_doc.root.xpath("./*[local-name()='metadata']/*[local-name()='meta' and @name='cover']")
+      cover_id = node_list.first['content'] unless node_list.empty?
+      if cover_id.nil?
+        node_list = @opf_doc.root.xpath("./*[local-name()='manifest']/*[local-name()='item' and contains(concat(' ',@properties,' '),' cover-image ')]")
+      else
+        node_list = @opf_doc.root.xpath("./*[local-name()='manifest']/*[local-name()='item' and @id='#{cover_id}']")
+      end
+      return node_list.first['href']
+    end
+
     private
 
     def manifest_map

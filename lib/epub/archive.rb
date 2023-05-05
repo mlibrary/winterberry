@@ -138,6 +138,12 @@ module UMPTG::EPUB
       return item_list(rend.css_items, File.dirname(label))
     end
 
+    def cover(args = {})
+      label, rend = rendition(args)
+      cover_name = rend.cover_name
+      return entry(File.join(File.dirname(label), cover_name))
+    end
+
     def load(args = {})
       @epub_file = args[:epub_file]
       @modified = false

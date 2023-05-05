@@ -1,0 +1,86 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Script inputs a Fulcrum monograph metadata CSV file and a
+# list of ebooks and validates the title text found
+# within the ebook with the title in the metadata.
+
+require 'optparse'
+require 'ostruct'
+require 'os'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+# Process the script parameters.
+options = OpenStruct.new
+options.extract_cover = false
+options.page_num_list = []
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-c] [-p <page_num>] <ebook_file> [<ebook_file>..]"
+  opts.on('-c', '--cover', 'Extract cover') do |c|
+    options.extract_cover = true
+  end
+  opts.on('-p', '--page <page_num>', 'Extract page number') do |page_num|
+    options.page_num_list << page_num
+  end
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    script_logger.info(opts)
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  script_logger.info(option_parser.help)
+  exit 0
+end
+ebook_file_list = ARGV
+
+unless options.extract_cover or options.page_num_list.count > 0
+  script_logger.info("no pages specified to extract")
+  exit(0)
+end
+
+require 'fileutils'
+require 'csv'
+require 'origami'
+
+require_relative File.join(root_dir, 'lib', 'epub')
+
+ebook_file_list.each do |ebook_file|
+  ebook_file = File.expand_path(ebook_file)
+  unless File.file?(ebook_file)
+    script_logger.error("file \"#{File.basename(ebook_file)}\" does not exist.")
+    next
+  end
+  script_logger.info("processing file \"#{File.basename(ebook_file)}\"")
+
+  case File.extname(ebook_file)
+  when '.epub'
+    epub = UMPTG::EPUB::Archive.new(epub_file: ebook_file)
+    if options.extract_cover
+      if epub.cover.nil?
+        script_logger.warn("no cover found.")
+      else
+        cover_file = File.join(File.dirname(ebook_file), File.basename(ebook_file, ".*") + File.extname(epub.cover.name))
+        FileUtils.remove(cover_file) if File.exist?(cover_file)
+        epub.cover.extract(cover_file)
+        script_logger.info("wrote cover #{cover_file}")
+      end
+    end
+    unless options.page_num_list.empty?
+      script_logger.info("EPUB page extraction not implemented.")
+    end
+  when '.pdf'
+    pdf = Origami::PDF.read(ebook_file, lazy: true)
+  else
+    script_logger.error("unknown ebook type #{}. Skipping.")
+    next
+  end
+  STDOUT.flush
+end
