@@ -40,10 +40,14 @@ options.normalize = {
     }
 options.css_file_list = []
 options.force_update = false
+options.epubcheck = false
 option_parser = OptionParser.new do |opts|
-  opts.banner = "Usage: #{File.basename(__FILE__)} [-f] [-c css_file] epub_file [epub_file...]"
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-e] [-f] [-c css_file] epub_file [epub_file...]"
   opts.on('-c', '--css [css_file]', 'CSS replacement') do |css_file|
     options.css_file_list << css_file
+  end
+  opts.on('-e', '--epubcheck', 'Invoke EPUBCheck') do |ec|
+    options.epubcheck = true
   end
   opts.on('-f', '--force', 'Force update') do |css_file|
     options.force_update = true
@@ -106,11 +110,13 @@ epub_file_list.each do |epub_file|
     epub.save(epub_file: new_epub_file)
     STDOUT.flush
 
-    log_file = File.join(File.dirname(new_epub_file), File.basename(new_epub_file, ".*") + "_epubcheck.xml")
-    UMPTG::EpubCheck.check_file(
-        epub_file: new_epub_file,
-        :logfile => log_file
-        )
+    if options.epubcheck
+      log_file = File.join(File.dirname(new_epub_file), File.basename(new_epub_file, ".*") + "_epubcheck.xml")
+      UMPTG::EpubCheck.check_file(
+          epub_file: new_epub_file,
+          :logfile => log_file
+          )
+    end
   else
     # No EPUB updates.
     script_logger.info("no updates for EPUB file #{File.basename(epub_file)}")
