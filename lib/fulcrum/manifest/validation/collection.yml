@@ -124,6 +124,14 @@
   :metadata_name: date_created
   :field_name: Pub Year
   :multivalued: :yes
+- :object: :monograph
+  :metadata_name: date_modified
+  :field_name: Date Modified
+  :multivalued: :no
+- :object: :monograph
+  :metadata_name: date_uploaded
+  :field_name: Date Uploaded
+  :multivalued: :no
 - :object: :universal
   :metadata_name: description
   :field_name: Description

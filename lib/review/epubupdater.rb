@@ -68,6 +68,13 @@ module UMPTG::Review
             @logger.warn("appears to not be a Fulcrum CSS stylesheet. Skipping update.")
             next
           end
+        elsif epub_css_version == css_version
+          if force_update
+            @logger.warn("CSS stylesheet appears to be version #{css_version}. Forcing update.")
+          else
+            @logger.warn("CSS stylesheet appears to be version #{css_version}. Skipping update.")
+            next
+          end
         end
         epub_css_entry_list[epub_css_version] = epub_css_entry
         @logger.info("version #{epub_css_version} found.")

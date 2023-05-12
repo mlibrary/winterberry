@@ -94,7 +94,8 @@ module UMPTG::Review
                         present: "Metadata: meta/@schema:accessMode='visual' is present.",
                         not_present: "Metadata: meta/@schema:accessMode='visual' is not present.",
                         remove: "Metadata: extra meta/@schema:accessMode='visual' should be removed."
-                    }
+                    },
+                  "<meta property=\"schema:accessMode\">visual</meta>"
                )
 
         # Remove duplicate <meta property="schema:accessibilityFeature">structuralNavigation</meta>.
@@ -118,7 +119,8 @@ module UMPTG::Review
                         present: "Metadata: meta/@schema:accessibilityFeature='displayTransformability' is present.",
                         not_present: "Metadata: meta/@schema:accessibilityFeature='displayTransformability' is not present.",
                         remove: "Metadata: extra meta/@schema:accessibilityFeature='displayTransformability' should be removed."
-                    }
+                    },
+                  "<meta property=\"schema:accessibilityFeature\">displayTransformability</meta>"
                )
 
         # Remove duplicate <meta property="schema:accessibilityFeature">readingOrder</meta>.
@@ -177,15 +179,17 @@ module UMPTG::Review
 
     private
 
-    def remove_duplicates(name, context_node, xpath, msgs)
+    def remove_duplicates(name, context_node, xpath, msgs, markup = "")
       action_list = []
 
       node_list = context_node.xpath(xpath)
       if node_list.empty?
-        action_list << Action.new(
+        reference_node = context_node.xpath("./*[local-name()='meta' and starts-with(@property,'schema:access')]")
+        action_list << NormalizeInsertMarkupAction.new(
                name: name,
-               reference_node: context_node,
-               warning_message: msgs[:not_present]
+               reference_node: reference_node.first,
+               warning_message: msgs[:not_present],
+               markup: markup
            )
       else
         node_list.each_with_index do |node,ndx|

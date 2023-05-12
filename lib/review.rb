@@ -17,6 +17,7 @@ module UMPTG
   require_relative File.join('review', 'normalizefigureiframeaction')
   require_relative File.join('review', 'normalizefigurenestaction')
   require_relative File.join('review', 'normalizeimagecontaineraction')
+  require_relative File.join('review', 'normalizeinsertmarkupaction')
   require_relative File.join('review', 'normalizemarkeraction')
   require_relative File.join('review', 'removeattributeaction')
   require_relative File.join('review', 'removeelementaction')
