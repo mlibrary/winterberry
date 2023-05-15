@@ -112,6 +112,7 @@ monograph_date = {}
 monograph_id_list.each do |monograph_id|
   # Process monograph ID.
   script_logger.info("*" * 10 + " #{monograph_id} " + "*" * 10)
+  STDOUT.flush
 
   # Find the directory using the monograph id.
   monograph_dir_list = Dir.glob(File.join(monograph_dept_dir, monograph_id + "*"))
@@ -196,15 +197,12 @@ monograph_id_list.each do |monograph_id|
     pub_date = Date.strptime(pub_date_str, '%Y')
   end
 
-  open_access = ""
-=begin
-  # This is not for OA, but for Free to Read.
+  # Determine whether title is OA.
   unless monograph_row['open_access?'].nil? or monograph_row['open_access?'].downcase == 'no'
     open_access = "open_access"
   else
     open_access = ""
   end
-=end
 
   minfo = {
        monograph_noid: monograph_noid,
@@ -267,7 +265,7 @@ else
         product += "_int"
       end
     when :ebc, :elt, :ummaa
-      product = "ebc_backlist"
+      product = "ebc_complete"
     end
     if component_product.key?(product)
       component_product[product] << minfo
@@ -278,7 +276,7 @@ else
     unless minfo[:monograph_open_access].empty?
       case options.press
       when :ebc, :elt, :ummaa, :amherst
-        product = "ebc_open"
+        product = "ebc_oa"
       else
         raise "Found open access for press #{options.press}"
       end
