@@ -19,7 +19,7 @@ script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
 # Process the script parameters.
 options = OpenStruct.new
 option_parser = OptionParser.new do |opts|
-  opts.banner = "Usage: #{File.basename(__FILE__)} doi_report_file isbn [isbn...]"
+  opts.banner = "Usage: #{File.basename(__FILE__)} doi_report_file monograph_id [monograph_id...]"
   opts.on_tail('-h', '--help', 'Print this help message') do
     script_logger.info(opts)
     exit 0
@@ -33,7 +33,7 @@ end
 
 # Process the command line parameters.
 doi_report_file = File.expand_path(ARGV[0])
-isbn_list = ARGV[1..-1]
+monograph_id_list = ARGV[1..-1]
 
 doi_report_file = File.expand_path(doi_report_file)
 if !File.file?(doi_report_file)
@@ -44,7 +44,7 @@ script_logger.info("processing DOI Report file #{File.basename(doi_report_file)}
 
 require 'nokogiri'
 
-require_relative File.join(root_dir, "lib", "services")
+require_relative File.join(root_dir, "lib", "fulcrum")
 require_relative File.join(root_dir, 'lib', 'xslt')
 
 doi_report_doc = Nokogiri::XML(File.open(doi_report_file))
@@ -55,36 +55,42 @@ service = UMPTG::Services::Heliotrope.new(
               )
 
 book_node_list = []
-isbn_list.each do |isbn|
-  script_logger.info("*" * 10 + " #{isbn} " + "*" * 10)
+monograph_id_list.each do |monograph_id|
+  script_logger.info("*" * 10 + " #{monograph_id} " + "*" * 10)
+  STDOUT.flush
 
-  bnode_list = doi_report_doc.xpath("//*[local-name()='eISBN' and string()='#{isbn}']/ancestor::*[local-name()='book'][1]")
-  if bnode_list.empty?
-    script_logger.warn("no ebook nodes found for ISBN #{isbn}.")
-    bnode_list = doi_report_doc.xpath("//*[local-name()='printISBN' and string()='#{isbn}']/ancestor::*[local-name()='book'][1]")
-    if bnode_list.empty?
-      script_logger.warn("no print nodes found for ISBN #{isbn}.")
+  manifest = UMPTG::Fulcrum::Manifest::Document.new(
+                monograph_id: monograph_id
+              )
+  monograph_link = manifest.monograph_row['link'][12..-3]
+
+  bnode_list = []
+  manifest.isbn.each do |format,isbn|
+    isbn = isbn.gsub(/\-/,'')
+    script_logger.info("format #{format} ISBN #{isbn}.")
+    case format
+    when 'ebook','open access'
+      bnode_list = doi_report_doc.xpath("//*[local-name()='eISBN' and string()='#{isbn}']/ancestor::*[local-name()='book'][1]")
+    else
+      bnode_list = doi_report_doc.xpath("//*[local-name()='printISBN' and string()='#{isbn}']/ancestor::*[local-name()='book'][1]")
     end
+    break unless bnode_list.empty?
+
+    script_logger.warn("no #{format} nodes found for ISBN #{isbn}.")
+    STDOUT.flush
   end
+
   if bnode_list.empty?
-    noid_map = service.monograph_noid(identifier: isbn)
-    noid_list = noid_map[isbn]
-    if noid_list.empty?
-      script_logger.warn("no NOIDs found for ISBN #{isbn}.")
-      next
-    end
-    script_logger.info("found #{noid_list.count} NOIDs (#{noid_list.join(',')}) for ISBN #{isbn}.")
-    noid_list.each do |noid|
-      blist = doi_report_doc.xpath("//*[local-name()='resource' and contains(string(),'" + noid + "')]/ancestor::*[local-name()='book'][1]")
-      blist.each do |n|
-        bnode_list << n
-      end
-    end
+    bnode_list = doi_report_doc.xpath("//*[local-name()='resource' and contains(string(),'" + manifest.noid + "')]/ancestor::*[local-name()='book'][1]")
   end
   bnode_list.each do |bn|
+    res_node_list = bn.xpath(".//*[local-name()='resource']")
+    unless res_node_list.empty?
+      #res_node_list.first.content = monograph_link
+    end
     book_node_list << bn
   end
-  script_logger.info("found #{bnode_list.count} book nodes for ISBN #{isbn}.")
+  script_logger.info("found #{bnode_list.count} book nodes for ISBN #{monograph_id}.")
 end
 
 crossref_doc = Nokogiri::XML('<?xml version="1.0" encoding="utf-8"?><root></root>')

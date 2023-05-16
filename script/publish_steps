@@ -198,7 +198,9 @@ monograph_id_list.each do |monograph_id|
   end
 
   # Determine whether title is OA.
-  unless monograph_row['open_access?'].nil? or monograph_row['open_access?'].downcase == 'no'
+  unless options.press == :bar \
+        or monograph_row['open_access?'].nil? \
+        or monograph_row['open_access?'].downcase == 'no'
     open_access = "open_access"
   else
     open_access = ""
@@ -278,7 +280,7 @@ else
       when :ebc, :elt, :ummaa, :amherst
         product = "ebc_oa"
       else
-        raise "Found open access for press #{options.press}"
+        raise "Found open access for press #{options.press}, #{minfo}"
       end
       if component_product.key?(product)
         component_product[product] << minfo
