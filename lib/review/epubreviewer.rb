@@ -8,6 +8,7 @@ module UMPTG::Review
           package: PackageProcessor.new,
           resources: ResourceProcessor.new,
           role_remove: RoleRemoveProcessor.new,
+          media_convert: MediaConvertProcessor.new,
           move_coverrole: MoveCoverRoleProcessor.new,
           table: TableProcessor.new,
           url_wrap: URLWrapProcessor.new

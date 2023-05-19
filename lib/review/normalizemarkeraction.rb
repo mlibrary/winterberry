@@ -10,12 +10,23 @@ module UMPTG::Review
       # spaces. But it may be awhile before authors and vendors
       # will implement this.
       #rp = @resource_path.gsub(/[ ]+/,'_')
-      rp = @resource_path
-      #markup = "<figure class=\"enhanced-media-display\" data-fulcrum-embed-filename=\"#{rp}\"/>"
-      markup = "<figure style=\"display:none\" data-fulcrum-embed-filename=\"#{rp}\"><figcaption/></figure>"
-      fragment = Nokogiri::XML.fragment(markup)
+      #rp = @resource_path
+      rp = File.basename(@resource_path)
 
-      reference_node.add_previous_sibling(fragment)
+      reference_container = reference_node.xpath("./ancestor::*[local-name()='figure'][1]").first
+      if reference_container.nil?
+        #markup = "<figure class=\"enhanced-media-display\" data-fulcrum-embed-filename=\"#{rp}\"/>"
+        markup = "<figure style=\"display:none\" data-fulcrum-embed-filename=\"#{rp}\"><figcaption/></figure>"
+        fragment = Nokogiri::XML.fragment(markup)
+
+        reference_node.add_previous_sibling(fragment)
+      else
+        reference_container["data-fulcrum-embed-filename"] = rp
+        style = reference_container["style"]
+        style = style.nil? ? "display:none" : style + ";display:none"
+        reference_container["style"] = style
+      end
+
       add_info_msg("marker: converted marker \"#{@resource_path}\".") if rp == @resource_path
       add_info_msg("marker: converted marker, path converted \"#{@resource_path}\" to \"#{rp}\".") unless rp == @resource_path
 

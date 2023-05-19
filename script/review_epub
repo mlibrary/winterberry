@@ -17,13 +17,14 @@ require 'ostruct'
 # Process the script parameters.
 options = OpenStruct.new
 options.reviews = {
-        package: true,
-        keyword: true,
+        package: false,
+        keyword: false,
         link: false,
         list: false,
-        resources: true,
+        media_convert: true,
+        resources: false,
         role_remove: false,
-        table: true,
+        table: false,
         url_wrap: false
     }
 options.vendor = :default
@@ -32,6 +33,7 @@ options.default_actions = {
     }
 options.generate_map = false
 options.normalize = {
+        media_convert: true,
         resources: false,
         role_remove: false
     }

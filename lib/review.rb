@@ -33,6 +33,7 @@ module UMPTG
   require_relative File.join('review', 'linkprocessor')
   require_relative File.join('review', 'listprocessor')
   require_relative File.join('review', 'packageprocessor')
+  require_relative File.join('review', 'mediaconvertprocessor')
   require_relative File.join('review', 'movecoverroleprocessor')
   require_relative File.join('review', 'resourceprocessor')
   require_relative File.join('review', 'roleremoveprocessor')
