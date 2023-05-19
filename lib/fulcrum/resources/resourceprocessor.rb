@@ -3,6 +3,15 @@ module UMPTG::Fulcrum::Resources
   # Class processes each resource reference found within XML content.
   class ResourceProcessor < UMPTG::EPUB::EntryProcessor
 
+    RESOURCEOBJ_XPATH = <<-ROBJPATH
+    .//*[
+    local-name()='img'
+    ]|.//*[
+    local-name()='audio'
+    or local-name()='video'
+    ]
+    ROBJPATH
+
     # Processing parameters:
     #   :default_action         Default resource action, embed|link|none
     #   :resource_metadata      Monograph resource metadata
@@ -88,17 +97,23 @@ module UMPTG::Fulcrum::Resources
       reference_container = args[:reference_container]
 
       # Select references within container
-      node_list = reference_container.xpath(".//*[local-name()='img']")
+      node_list = reference_container.xpath(RESOURCEOBJ_XPATH)
 
       # For each reference, create an action.
       reference_action_list = []
       node_list.each do |node|
         # Determine the resource name from the reference node
-        src_attr = node.attribute("src")
+        case node.name
+        when "audio", "video"
+          attr_node_list = node.xpath(".//*[local-name()='source']")
+          src_attr = attr_node_list.first["src"] unless attr_node_list.first.nil?
+        else
+          src_attr = node["src"]
+        end
         next if src_attr.nil?
 
         # Determine the assigned action for this reference
-        spath = src_attr.value.strip
+        spath = src_attr.strip
         reference_action_def_list = @reference_action_defs[spath]
         if reference_action_def_list.nil?
           @logger.warn("Reference #{spath} has no action definition.")

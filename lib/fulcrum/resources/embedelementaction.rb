@@ -45,6 +45,13 @@ module UMPTG::Fulcrum::Resources
 
       def_container.add_next_sibling(emb_container)
 
+=begin
+      # TODO: add option for this? For globally enhanced
+      # EPUBs, remove the default container leaving only
+      # the enhanched container.
+      def_container.remove
+=end
+
       # Action completed.
       @status = Action.COMPLETED
     end

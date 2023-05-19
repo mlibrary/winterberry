@@ -8,6 +8,7 @@ module UMPTG::Fulcrum::Metadata
   .//*[
   local-name()='img'
   or local-name()='figcaption'
+  or local-name()='audio'
   or local-name()='video'
   or @class='caption'
   or @class='figcap'

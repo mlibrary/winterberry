@@ -53,7 +53,7 @@ module UMPTG::Fulcrum::Metadata
       # Find all caption nodes, ignoring the image nodes.
       captions_list = []
       nodes.each do |n|
-        captions_list << n unless n.name == 'img' or n.name == 'video'
+        captions_list << n unless n.name == 'img' or n.name == 'video' or n.name == 'audio'
       end
 
       # As the nodes within figure are traversed, a caption
@@ -64,13 +64,13 @@ module UMPTG::Fulcrum::Metadata
       # to be below the image. If only one caption, then
       # that caption is associated with each image.
       caption_ndx = -1
-      if captions_list.count > 0 and (nodes.first.name =='img' or nodes.first.name == 'video')
+      if captions_list.count > 0 and (nodes.first.name =='img' or nodes.first.name == 'video' or nodes.first.name == 'audio')
         caption_ndx = 0
       end
 
       img_list = []
       nodes.each do |node|
-        if node.name == 'img' or node.name == 'video'
+        if node.name == 'img' or node.name == 'video' or node.name == 'audio'
           caption = caption_ndx == -1 ? nil : captions_list[caption_ndx]
           img_list << FigureObject.new(
                   :node=> node,

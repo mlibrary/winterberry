@@ -19,7 +19,7 @@ module UMPTG::Fulcrum::Metadata
       case @node.name
       when 'img'
         @resource_name = @node['src']
-      when 'video'
+      when 'audio', 'video'
         nl = @node.xpath(".//*[local-name()='source' and @src]")
         @resource_name = nl.first['src'] unless nl.empty?
       end

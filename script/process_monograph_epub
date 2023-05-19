@@ -117,6 +117,7 @@ monograph_id_list.each do |monograph_id|
 =end
   if options.manifest_file.nil?
     manifest = UMPTG::Fulcrum::Manifest::Document.new(
+                  fulcrum_host: options.fulcrum_host,
                   monograph_id: monograph_id
                 )
   else
@@ -130,8 +131,8 @@ monograph_id_list.each do |monograph_id|
   ebook_isbn = manifest.isbn["open access"]
   ebook_isbn = manifest.isbn["ebook"] if ebook_isbn.nil?
   if ebook_isbn.nil?
-    script_logger.error("Error: no ebook ISBN found for ID #{monograph_id}.")
-    next
+    script_logger.warn("Error: no ebook ISBN found. Using ID #{monograph_id}.")
+    ebook_isbn = monograph_id
   end
 
   # Find the ebook source folder. First look for a directory
@@ -181,10 +182,14 @@ monograph_id_list.each do |monograph_id|
   end
 
   # Find the epub file name and determine whether it exists.
-  epub_row = manifest.representative_row(:kind => "epub")
+  epub_row = manifest.representative_row(kind: "epub")
+  if epub_row.nil?
+    monograph_loggers[monograph_id].error("Error: no EPUB row found in manifest for id #{monograph_id}")
+    next
+  end
   epub_file_name = epub_row['file_name']
   epub_file = File.join(monograph_dir, epub_file_name)
-  if !File.exist?(epub_file)
+  unless File.exist?(epub_file)
     monograph_loggers[monograph_id].error("Error: #{epub_file_name} not found in manifest for id #{monograph_id}")
     next
   end
