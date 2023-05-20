@@ -25,7 +25,7 @@ options.default_actions = {
         resources: :embed
         }
 option_parser = OptionParser.new do |opts|
-  opts.banner = "Usage: #{File.basename(__FILE__)} [-f production|preview|staging] [-d <publisher_dir>] [-r disable|embed|link|none|update_alt] [-k disable|link|none] <monograph_id> [<monograph_id>..]"
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-c default|enhanced] [-f production|preview|staging] [-d <publisher_dir>] [-r disable|embed|link|none|update_alt] [-k disable|link|none] <monograph_id> [<monograph_id>..]"
   opts.on('-c', '--resource_css [default|enhanced]', 'Resource CSS styling') do |type|
     options.resource_css = type
   end

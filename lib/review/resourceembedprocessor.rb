@@ -1,12 +1,13 @@
 module UMPTG::Review
 
   # Class processes each resource reference found within XML content.
-  class MediaConvertProcessor < EntryProcessor
+  class ResourceEmbedProcessor < EntryProcessor
+    attr_accessor :manifest
 
     RESOURCE_REFERENCE_XPATH = <<-SXPATH
     //*[
-    local-name()='audio'
-    or local-name()='video'
+    local-name()='img'
+    or (local-name()='figure' and @data-fulcrum-embed-filename)
     ]
     SXPATH
 
@@ -28,20 +29,21 @@ module UMPTG::Review
       reference_node = args[:reference_node]
 
       reference_action_list = []
-      source_node = reference_node.xpath(".//*[local-name()='source']").first
-      if source_node.nil? or source_node["src"].nil? or source_node["src"].strip.empty?
-        reference_action_list << Action.new(
-                   name: name,
-                   reference_node: reference_node,
-                   warning_message: "#{reference_node.name}: resource path missing"
-                )
-      else
-        reference_action_list << NormalizeMarkerAction.new(
-                   name: name,
-                   reference_node: reference_node,
-                   resource_path: source_node["src"].strip
-                )
+      case reference_node.name
+      when 'img'
+        resource_path = reference_node['src']
+        msg = "#{reference_node.name}: found resource reference #{resource_path}"
+      when 'figure'
+        resource_path = reference_node['data-fulcrum-embed-filename']
+        msg = "#{reference_node.name}: found additional resource reference #{resource_path}"
       end
+      reference_action_list << EmbedElementAction.new(
+                   name: name,
+                   reference_node: reference_node,
+                   resource_path: resource_path,
+                   manifest: @manifest,
+                   info_message: msg
+                )
       return reference_action_list
     end
   end
