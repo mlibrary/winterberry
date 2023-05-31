@@ -1,8 +1,27 @@
 module UMPTG::Fulcrum::Manifest
+  require 'htmlentities'
+
   @@BLANK_ROW_FILE_NAME = "***row left intentionally blank***"
   #@@BLANK_ROW_FILE_NAME = "*** row intentionally left blank ***"
 
   @@MONOGRAPH_FILE_NAME = '://:MONOGRAPH://:'
+
+  EMPTY_FILESET = {
+          "noid" => "",
+          "file_name" => "",
+          "resource_name" => "",
+          "link" => "",
+          "embed_code" => ""
+       }
+
+  RESOURCE_EMBED_MARKUP = <<-REMARKUP
+  <link href="%s/downloads/%s?file=embed_css" rel="stylesheet" type="text/css"/>
+  <div id="fulcrum-embed-outer-%s">
+  <div id="fulcrum-embed-inner-%s">
+  <iframe id="fulcrum-embed-iframe-%s" src="%s" title="%s" allowfullscreen="true"/>
+  </div>
+  </div>
+  REMARKUP
 
   class Document < UMPTG::Object
     attr_reader :name, :noid, :csv, :monograph_row, :isbn, :headers
@@ -91,13 +110,7 @@ module UMPTG::Fulcrum::Manifest
         return fileset_row unless fileset_row.nil?
       end
 
-      return {
-                "noid" => "",
-                "file_name" => "",
-                "resource_name" => "",
-                "link" => "",
-                "embed_code" => ""
-             }
+      return EMPTY_FILESET
     end
 
     def fileset_from_noid(noid)
@@ -106,13 +119,7 @@ module UMPTG::Fulcrum::Manifest
         return fileset_row unless fileset_row.nil?
       end
 
-      return {
-                "noid" => "",
-                "file_name" => "",
-                "resource_name" => "",
-                "link" => "",
-                "embed_code" => ""
-             }
+      return EMPTY_FILESET
     end
 
     def filesets()
@@ -128,6 +135,60 @@ module UMPTG::Fulcrum::Manifest
               or row['resource_type'].downcase.start_with?("translation missing:")
            )
         }
+    end
+
+    # Method generates XML markup to link a resource.
+    #
+    # Parameter:
+    #   descr           Text to include within the link
+    def fileset_link_markup(file_name, descr = nil)
+      descr = "View resource." if descr == nil
+
+      link_markup = ""
+      fileset = fileset(file_name)
+      noid = fileset["noid"]
+      unless noid.empty?
+        link = fileset["doi"]
+        link = fileset["link"] if link.empty?
+        link_markup = "<a href=\"#{link}\" target=\"_blank\">#{descr}</a>"
+      end
+      return link_markup
+    end
+
+    # Method generates the XML markup for embedding
+    # a specific resource.
+    def fileset_embed_markup(file_name)
+      fileset = fileset(file_name)
+      #emb_markup = fileset["embed_code"] unless fileset["noid"].empty?
+      noid = fileset["noid"]
+      embed_markup = ""
+      unless noid.empty?
+        # Found fileset. Determine the embed link from the
+        # "Embed Code" property. This will give the correct host.
+        # If fileset has no property, then it can't be embedded.
+        external_res = fileset['external_resource_url']
+        fmarkup = fileset['embed_code']
+        unless fmarkup.nil? or fmarkup.empty?
+          if external_res.nil? or external_res.strip.empty?
+            embed_doc = Nokogiri::XML::DocumentFragment.parse(fmarkup)
+            iframe_node = embed_doc.xpath("descendant-or-self::*[local-name()='iframe']").first
+            embed_link = iframe_node['src']
+            ititle = iframe_node['title']
+            title = HTMLEntities.new.encode(ititle)
+
+            href = fileset['link'][12..-3]
+            #title = fileset['title'].nil? ? "" : fileset['title']
+
+            link_uri = URI(embed_link)
+            link_scheme_host = link_uri.scheme + "://" + link_uri.host
+
+            embed_markup = sprintf(RESOURCE_EMBED_MARKUP, link_scheme_host, noid, noid, noid, noid, embed_link, title)
+          else
+            embed_markup = fmarkup
+          end
+        end
+      end
+      return embed_markup
     end
 
     private

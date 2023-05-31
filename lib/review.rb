@@ -9,6 +9,7 @@ module UMPTG
   require_relative File.join('review', 'monographdirreviewer')
   require_relative File.join('review', 'imageaction')
   require_relative File.join('review', 'normalizeaction')
+  require_relative File.join('review', 'embedaction')
   require_relative File.join('review', 'embedelementaction')
   require_relative File.join('review', 'linkkeywordaction')
   require_relative File.join('review', 'normalizefigureaction')

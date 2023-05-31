@@ -8,6 +8,8 @@ module UMPTG::Review
     def initialize(args = {})
       super(args)
       @manifest = args[:manifest]
+      @resource_map = args[:resource_map]
+      @reference_actions = nil
     end
 
     def embed(args = {})
@@ -16,8 +18,16 @@ module UMPTG::Review
 
       update_css = !(css_file.nil? or css_file.empty?)
 
+      @reference_actions = UMPTG::Fulcrum::ReferenceActions.new(
+                resource_map: @resource_map,
+                resource_metadata: @manifest,
+                logger: @logger
+                )  \
+            if @reference_actions.nil?
       processors = @@PROCESSORS.select {|key,proc| embed_options[key] == true }
       processors[:resources_embed].manifest = @manifest if processors.key?(:resources_embed)
+      processors[:resources_embed].reference_actions = @reference_actions \
+              if processors.key?(:resources_embed)
 
       # Process the epub and generate the image information.
       @epub_modified = false

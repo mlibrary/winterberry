@@ -7,6 +7,8 @@ module UMPTG
   require_relative File.join('fulcrum', 'manifest')
   require_relative File.join('fulcrum', 'metadata')
   require_relative File.join('fulcrum', 'monographdir')
+  require_relative File.join('fulcrum', 'referenceactions')
+  require_relative File.join('fulcrum', 'referenceactiondef')
   require_relative File.join('fulcrum', 'resourcemap')
   require_relative File.join('fulcrum', 'keywords')
   require_relative File.join('fulcrum', 'resources')

@@ -22,10 +22,14 @@ script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
 # Process the script parameters.
 options = OpenStruct.new
 options.fulcrum_host = nil
+options.resource_map_file_list = []
 options.resource_css = :default
 options.manifest_file_list = []
 option_parser = OptionParser.new do |opts|
   opts.banner = "Usage: #{File.basename(__FILE__)} [-f production|preview|staging] [-m manifest_file] epub_file [epub_file...]"
+  opts.on('-a', '--resource_map <resource_map_file>', 'Resource Map File') do |resource_map_file|
+    options.resource_map_file_list << resource_map_file
+  end
   opts.on('-c', '--resource_css [default|enhanced]', 'Resource CSS styling') do |type|
     options.resource_css = type
   end
@@ -79,9 +83,13 @@ epub_file_list.each_index do |ndx|
         csv_file: manifest_file
       )
 
+  resource_map_file = options.resource_map_file_list[ndx]
+  resource_map = UMPTG::Fulcrum::ResourceMap::Map.new(xml_path: resource_map_file)
+
   epub_embedder = UMPTG::Review::EPUBEmbedder.new(
         epub: epub,
         manifest: manifest,
+        resource_map: resource_map,
         logger_file: logger_file
         )
   epub_embedder.embed(
