@@ -8,7 +8,7 @@ module UMPTG::Fulcrum::Metadata
       # then use it value. Otherwise use the
       # element content.
       rnames = []
-      if @fragment.node.name == "figure" and @fragment.node.key?("data-fulcrum-embed-filename")
+      if (@fragment.node.name == "figure" or @fragment.node.name == "span") and @fragment.node.key?("data-fulcrum-embed-filename")
         rnames << @fragment.node["data-fulcrum-embed-filename"]
       else
         comment = @fragment.node.xpath(".//comment()")

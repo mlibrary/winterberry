@@ -8,7 +8,7 @@ module UMPTG::Fulcrum::Metadata::Processors
       when 'p'
         pclass = attrs.to_h['class']
         return true if pclass == 'rb' or pclass == 'rbi'
-      when 'figure'
+      when 'figure', 'span'
         attrs_h = attrs.to_h
         return true if attrs_h.key?('data-fulcrum-embed-filename') \
                       and !attrs_h['data-fulcrum-embed-filename'].empty?

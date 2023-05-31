@@ -149,7 +149,7 @@ module UMPTG::Fulcrum::Manifest
       noid = fileset["noid"]
       unless noid.empty?
         link = fileset["doi"]
-        link = fileset["link"] if link.empty?
+        link = fileset["link"][12..-3] if link.nil? or link.empty?
         link_markup = "<a href=\"#{link}\" target=\"_blank\">#{descr}</a>"
       end
       return link_markup

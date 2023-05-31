@@ -7,7 +7,7 @@ module UMPTG::Review
     RESOURCE_REFERENCE_XPATH = <<-SXPATH
     //*[
     local-name()='img'
-    or (local-name()='figure' and @data-fulcrum-embed-filename)
+    or ((local-name()='figure' or local-name()='span') and @data-fulcrum-embed-filename)
     ]
     SXPATH
 
@@ -30,11 +30,12 @@ module UMPTG::Review
       reference_node = args[:reference_node]
 
       reference_action_list = []
+      msg = ""
       case reference_node.name
       when 'img'
         resource_path = reference_node['src']
         msg = "#{reference_node.name}: found resource reference #{resource_path}"
-      when 'figure'
+      when 'figure', 'span'
         resource_path = reference_node['data-fulcrum-embed-filename']
         msg = "#{reference_node.name}: found additional resource reference #{resource_path}"
       end
@@ -65,13 +66,24 @@ module UMPTG::Review
                       )
           end
         when :link
-          #reference_action = LinkMarkerAction.new(args)
+          link_markup = @manifest.fileset_link_markup(reference_action_def.resource_name, \
+                    reference_node.content)
+          reference_action_list << LinkElementAction.new(
+                       name: name,
+                       reference_node: reference_node,
+                       resource_path: resource_path,
+                       link_fragment: link_markup,
+                       manifest: @manifest,
+                       info_message: msg
+                    )
+=begin
         when :remove
           #reference_action = RemoveElementAction.new(args)
         when :none
           #reference_action = NoneAction.new(args)
+=end
         else
-          raise "Invalid marker action #{reference_action_def.action_str}"
+          raise "Action #{reference_action_def.action_str} not implemented"
         end
       end
       return reference_action_list
