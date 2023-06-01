@@ -10,16 +10,14 @@ module UMPTG::Review
 
       # Generate the link XML fragment.
       link_fragment = Nokogiri::XML.fragment(link_markup)
-      if link_fragment == nil
+      if link_fragment.nil?
         @message = "Warning: error creating embed markup document"
         @status = Action.FAILED
+        return
       end
 
-      reference_node.children.each {|n| n.remove }
-      reference_node.add_child(link_fragment)
-
-      reference_node.remove_attribute("data-fulcrum-embed-filename") \
-          if reference_node.has_attribute?("data-fulcrum-embed-filename")
+      reference_node.inner_html = link_fragment
+      reference_node.remove_attribute("data-fulcrum-embed-filename")
 
       add_info_msg("link resource for #{resource_path}")
 

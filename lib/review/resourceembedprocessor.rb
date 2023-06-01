@@ -44,9 +44,7 @@ module UMPTG::Review
       reference_action_def_list.each do |reference_action_def|
         case reference_action_def.action_str
         when :embed
-          #embed_fragment = @manifest.fileset_embed_markup(resource_path)
           embed_fragment = @manifest.fileset_embed_markup(reference_action_def.resource_name)
-          #embed_fragment = reference_action_def.fileset_embed_markup()
           if embed_fragment.nil? or embed_fragment.empty?
             a = Action.new(
                          name: name,
@@ -67,7 +65,7 @@ module UMPTG::Review
           end
         when :link
           link_markup = @manifest.fileset_link_markup(reference_action_def.resource_name, \
-                    reference_node.content)
+                    reference_node.inner_html)
           reference_action_list << LinkElementAction.new(
                        name: name,
                        reference_node: reference_node,
