@@ -40,6 +40,12 @@ module UMPTG::EPUB
       return ver
     end
 
+    def metadata
+      meta = {}
+      @opf_doc.root.xpath("./*[local-name()='metadata']/*").each {|n| meta[n.name]= n.content }
+      return meta
+    end
+
     def manifest
       return @opf_doc.root.xpath("./*[local-name()='manifest']/*[local-name()='item']")
     end

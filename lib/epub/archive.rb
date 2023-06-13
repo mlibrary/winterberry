@@ -113,6 +113,11 @@ module UMPTG::EPUB
       return rend.opf_doc
     end
 
+    def metadata(args = {})
+      label, rend = rendition(args)
+      return rend.metadata
+    end
+
     def manifest(args = {})
       label, rend = rendition(args)
       return item_list(rend.manifest, File.dirname(label))

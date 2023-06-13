@@ -40,6 +40,7 @@ module UMPTG::Review
         return false
       end
       force_update = args[:css_force_update] || false
+      update_navigation = args[:update_navigation] || false
       
       css_file = css_file_list.first
       css_file_name = File.basename(css_file)
@@ -96,7 +97,9 @@ module UMPTG::Review
         epub_css_parser = CssParser::Parser.new
         epub_css_parser.load_string!(epub_css_entry.content)
         rulesets_found = {}
-        epub.spine.each do |epub_entry|
+
+        entry_list = update_navigation ? epub.navigation + epub.spine : epub.spine
+        entry_list.each do |epub_entry|
           @logger.info("processing spine entry #{epub_entry.name}")
   
           xml_doc = UMPTG::XMLUtil.parse(xml_content: epub_entry.content)

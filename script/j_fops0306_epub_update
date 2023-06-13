@@ -41,16 +41,20 @@ options.normalize = {
 options.css_file_list = []
 options.force_update = false
 options.epubcheck = false
+options.update_navigation = false
 option_parser = OptionParser.new do |opts|
-  opts.banner = "Usage: #{File.basename(__FILE__)} [-e] [-f] [-c css_file] epub_file [epub_file...]"
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-e] [-f] [-c css_file] [-v] epub_file [epub_file...]"
   opts.on('-c', '--css [css_file]', 'CSS replacement') do |css_file|
     options.css_file_list << css_file
   end
   opts.on('-e', '--epubcheck', 'Invoke EPUBCheck') do |ec|
     options.epubcheck = true
   end
-  opts.on('-f', '--force', 'Force update') do |css_file|
+  opts.on('-f', '--force', 'Force update') do |flag|
     options.force_update = true
+  end
+  opts.on('-v', '--navigation', 'Update navigation CSS') do |flag|
+    options.update_navigation = true
   end
   opts.on_tail('-h', '--help', 'Print this help message') do
     script_logger.info(opts)
@@ -100,7 +104,8 @@ epub_file_list.each do |epub_file|
   epub_updater.update(
       epub: epub,
       css_file_list: options.css_file_list,
-      css_force_update: options.force_update
+      css_force_update: options.force_update,
+      update_navigation: options.update_navigation
       )
 
   if epub.modified

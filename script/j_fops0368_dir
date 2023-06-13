@@ -1,0 +1,128 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Script takes a list of UMP OA ISBNs and creates
+# a directory in the UMP shared folder area with its
+# contents. It is possible that the folders exists in
+# the UMP archive area using the Ebook ISBN.
+
+require 'optparse'
+require 'ostruct'
+require 'os'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+logger_fp = STDOUT
+script_logger = UMPTG::Logger.create(logger_fp: logger_fp)
+
+# Process the script parameters.
+options = OpenStruct.new
+options.fulcrum_host = nil
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-f production|preview|staging]"
+  opts.on('-f', '--fulcrum_host host', 'Fulcrum environment') do |fulcrum_host|
+    options.fulcrum_host = fulcrum_host
+  end
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    script_logger.info(opts)
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 0
+  script_logger.info(option_parser.help)
+  return
+end
+isbn_list = ARGV
+
+UMP_dir = File.expand_path("S:/Information Management/Fulcrum/UMP")
+UMP_archive_dir = File.expand_path("S:/Information Management/Fulcrum/Archive_UMP")
+test_UMP_dir = File.expand_path("~/Documents/FOPS0368_test")
+
+require 'fileutils'
+
+require_relative File.join(root_dir, "lib", "fulcrum")
+
+# Create the serivce for retrieving the manifest.
+service = UMPTG::Services::Heliotrope.new(
+                :fulcrum_host => options.fulcrum_host
+              )
+
+isbn_list = [
+=begin
+        { isbn_ebook: "9780472028757", isbn_oa: "9780472904129"},
+        { isbn_ebook: "9780472122950", isbn_oa: "9780472904051"},
+        { isbn_ebook: "9780472021932", isbn_oa: "9780472904075"},
+        { isbn_ebook: "9780472120598", isbn_oa: "9780472904082"},
+        { isbn_ebook: "9780472028320", isbn_oa: "9780472904105"},
+        { isbn_ebook: "9780472120529", isbn_oa: "9780472904112"},
+        { isbn_ebook: "9780472024896", isbn_oa: "9780472904136"},
+        { isbn_ebook: "9780472122066", isbn_oa: "9780472904143"},
+        { isbn_ebook: "9780472028917", isbn_oa: "9780472904150"},
+        { isbn_ebook: "9780472022748", isbn_oa: "9780472904181"},
+        { isbn_ebook: "9780472904211", isbn_oa: "9780472904211"},
+        { isbn_ebook: "9780472026968", isbn_oa: "9780472904044"},
+=end
+        { isbn_ebook: "9780472022762", isbn_oa: "9780472904174"},
+    ]
+
+isbn_list.each do |isbn_set|
+  vlist = isbn_set.values.join(',')
+  script_logger.info("*** processing ISBNs #{vlist} ***")
+
+  manifest = UMPTG::Fulcrum::Manifest::Document.new(
+                monograph_id: isbn_set[:isbn_oa]
+              )
+  if manifest.nil?
+    script_logger.error("no manifest for OA ISBN #{isbn_set[:isbn_oa]}")
+    next
+  end
+  noid = manifest.monograph_row['noid']
+
+  isbn_list = (isbn_set.values + manifest.isbn.values).collect {|b| b.gsub(/\-/,'') }
+  isbn_str = isbn_list.uniq.join(',')
+  script_logger.info("searching ISBNs #{isbn_str}")
+
+  # Search the UMP archive dir for the directory
+  path = File.join(UMP_archive_dir, "*", "{#{isbn_str}}*")
+  archive_dir_list = Dir.glob(path)
+
+  # Search UMP dir
+  path = File.join(UMP_dir, "{#{isbn_str}}*")
+  ump_dir_list = Dir.glob(path)
+
+  script_logger.info("Archive count:#{archive_dir_list.count}, UMP count:#{ump_dir_list.count}")
+
+  if archive_dir_list.count > 1
+    script_logger.warn("multiple archive directories found. Skipping")
+    script_logger.warn(archive_dir_list)
+    next
+  end
+  if ump_dir_list.count > 1
+    script_logger.warn("multiple UMP directories found. Skipping")
+    script_logger.warn(ump_dir_list)
+    next
+  end
+
+  if archive_dir_list.count > 0 and ump_dir_list.count > 0
+    script_logger.info("both archive and UMP directories found.")
+  elsif archive_dir_list.count > 0
+    script_logger.info("archive directory found.")
+    FileUtils.cp_r(archive_dir_list.first, File.join(test_UMP_dir, \
+        noid + "_" + isbn_set[:isbn_ebook] + "_" + isbn_set[:isbn_oa] + File.basename(archive_dir_list.first)[13..-1]), preserve: true)
+  elsif ump_dir_list.count > 0
+    script_logger.info("UMP directory found.")
+    FileUtils.cp_r(ump_dir_list.first, File.join(test_UMP_dir, \
+        noid + "_" + isbn_set[:isbn_ebook] + "_" + isbn_set[:isbn_oa] + File.basename(ump_dir_list.first)[13..-1]), preserve: true)
+  else
+    script_logger.info("neither archive nor UMP directories found.")
+    creator = manifest.monograph_row['creator(s)'].split(';').first.strip.split(',')[0]
+    FileUtils.mkdir(File.join(test_UMP_dir, noid + "_" + isbn_set[:isbn_ebook] + "_" + isbn_set[:isbn_oa] + "_" + creator))
+  end
+
+  logger_fp.flush
+end
