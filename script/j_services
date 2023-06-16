@@ -1,0 +1,78 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# This script tests the Heliotrope service.
+
+require 'optparse'
+require 'ostruct'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+# Process the script parameters.
+options = OpenStruct.new
+options.fulcrum_host = nil
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-f production|preview|staging] [press...]"
+  opts.on('-f', '--fulcrum_host [production|preview|staging]', 'Fulcrum environment') do |fulcrum_host|
+    options.fulcrum_host = fulcrum_host
+  end
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    script_logger.info(opts)
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 0
+  script_logger.info(option_parser.help)
+  exit 0
+end
+press_list = ARGV
+
+=begin
+require 'turnsole'
+
+turnsole = Turnsole::Heliotrope::Service.new(
+        base: UMPTG::Services::Heliotrope.FULCRUM_API,
+        token: UMPTG::Services::Heliotrope.FULCRUM_TOKEN
+      )
+=end
+
+require_relative File.join(root_dir, 'lib', 'services')
+
+# Create the serivce for retrieving the manifest.
+service = UMPTG::Services::Heliotrope.new(
+                fulcrum_host: options.fulcrum_host
+              )
+
+result = service.monographs(press_list: press_list)
+
+=begin
+puts service.presses
+puts service.presses(press_list: press_list)
+puts service.connection.get("presses").body
+
+noid_list = []
+press_list.each do |press|
+  monographs = service.connection.get("presses/#{press}/monographs").body
+  puts "#{press}:#{monographs.count},#{monographs.first}"
+  noid_list += monographs.collect {|m| m['id']}
+end
+puts noid_list.count
+puts noid_list.join(" ")
+
+#puts turnsole.find_noid_by_isbn(isbn: monograph_id)
+#puts "products:     #{turnsole.products.count}"
+#puts "institutions: #{turnsole.institutions.count}"
+components = turnsole.components
+puts "components:   #{components.count}"
+components[0..5].each do |c|
+  puts c
+end
+=end
+

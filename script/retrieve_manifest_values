@@ -35,7 +35,7 @@ option_parser = OptionParser.new do |opts|
   opts.on('-o', '--output_file <output_file>', 'Output file path') do |output_file|
     options.output_file = output_file
   end
-  opts.on('-', '--press [bar|ebc|heb]', 'Fulcrum environment') do |press|
+  opts.on('-p', '--press [bar|ebc|heb]', 'Fulcrum environment') do |press|
     options.press = press.to_sym
   end
   opts.on_tail('-h', '--help', 'Print this help message') do

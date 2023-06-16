@@ -1,0 +1,103 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# This script takes a list of
+# NOID directories containing
+# monograph covers and creates copies and
+# assign each a monograph ISBN
+
+require 'optparse'
+require 'ostruct'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+# Process the script parameters.
+options = OpenStruct.new
+options.fulcrum_host = nil
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)}  [-f production|preview|staging] dir_path [dir_path...]"
+  opts.on('-f', '--fulcrum_host [production|preview|staging]', 'Fulcrum environment') do |fulcrum_host|
+    options.fulcrum_host = fulcrum_host
+  end
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    script_logger.info(opts)
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  script_logger.info(option_parser.help)
+  exit 0
+end
+dir_path_list = ARGV
+
+require 'fileutils'
+
+require_relative File.join(root_dir, 'lib', 'fulcrum')
+
+# Create the serivce for retrieving the manifest.
+service = UMPTG::Services::Heliotrope.new(
+                :fulcrum_host => options.fulcrum_host
+              )
+
+noid_list = []
+dir_path_list.each do |dir_path|
+  dir_path = File.expand_path(dir_path)
+  unless File.exists?(dir_path)
+    script_logger.error("invalid directory path #{dir_path}.")
+    next
+  end
+  script_logger.info("*** processing #{File.basename(dir_path)} ***")
+  STDOUT.flush
+
+  noid = File.basename(dir_path, ".*")
+  manifest = UMPTG::Fulcrum::Manifest::Document.new(
+                monograph_id: noid
+              )
+  if manifest.monograph_row['published?'].downcase != 'true'
+    script_logger.info("monograph not published, skipping.")
+    next
+  end
+
+  cover_file_list = Dir.glob(File.join(dir_path, "*.{jpg,png}"))
+  if cover_file_list.empty?
+    script_logger.warn("no covers found for #{File.basename(dir_path)}")
+    next
+  end
+  if cover_file_list.count > 1
+    script_logger.warn("multiple covers found for #{File.basename(dir_path)}")
+    next
+  end
+  cover_file = cover_file_list.first
+
+  isbns = manifest.isbn
+  if isbns.empty?
+    script_logger.warn("no isbns for noid #{noid}")
+    next
+  end
+  puts isbns
+
+  oa_isbn = isbns.select {|key,val| ['open access', 'oa access', 'oa', 'open-access'].include?(key.downcase) }
+  if oa_isbn.count != 1
+    script_logger.warn("found #{oa_isbn.count} OA ISBN(s). Skipping")
+    next
+  end
+  next
+
+  isbn_dir = File.join(File.expand_path(File.join(File.dirname(dir_path), "..", "..")), "isbn_covers")
+  FileUtils.mkdir_p(File.join(isbn_dir, noid))
+
+  isbns.values.each do |v|
+    v.gsub!(/\-/,'')
+    isbn_file = File.join(isbn_dir, noid, v + File.extname(cover_file))
+    puts "#{cover_file} ==> #{isbn_file}"
+    FileUtils.cp(cover_file, isbn_file)
+  end
+end
+

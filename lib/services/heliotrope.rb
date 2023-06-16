@@ -13,6 +13,7 @@ module UMPTG::Services
 
     @@DOI_PREFIX = "https://doi.org/"
 
+     attr_reader :connection
     #
     # Configuration
     #
@@ -112,6 +113,41 @@ module UMPTG::Services
       return id2manifest_list
     end
 
+    def presses(args = {})
+      press_list = args[:press_list]
+      press_list = [] if press_list.nil?
+
+      begin
+        response = connection.get("presses")
+      rescue StandardError => e
+        puts e.message
+      end
+      full_press_list = response.body
+      return full_press_list if press_list.empty?
+
+      result_list = []
+      full_press_list.each {|p| result_list << p if press_list.include?(p["subdomain"].downcase)}
+      return result_list
+    end
+
+    def monographs(args = {})
+      press_list = args[:press_list]
+      press_list = [] if press_list.nil?
+
+      monographs = []
+      begin
+        case
+        when press_list.empty?
+          #monographs = connection.get("monographs").body
+        else
+          press_list.each {|p| monographs += connection.get("presses/#{p}/monographs").body }
+        end
+      rescue StandardError => e
+        puts e.message
+      end
+      return monographs
+    end
+
     def self.FULCRUM_API
       @@FULCRUM_API
     end
@@ -140,7 +176,7 @@ module UMPTG::Services
       @@DOI_PREFIX
     end
 
-    private
+    #private
 
     #
     # Connection
