@@ -131,21 +131,52 @@ module UMPTG::Services
     end
 
     def monographs(args = {})
-      press_list = args[:press_list]
-      press_list = [] if press_list.nil?
+      case
+      when args.key?(:press_list)
+        press_list = args[:press_list]
+      when args.key?(:press)
+        press_list = [args[:press]]
+      else
+        press_list = []
+      end
 
       monographs = []
       begin
         case
         when press_list.empty?
-          #monographs = connection.get("monographs").body
+          monographs = connection.get("monographs").body
         else
           press_list.each {|p| monographs += connection.get("presses/#{p}/monographs").body }
         end
       rescue StandardError => e
-        puts e.message
+        raise e.message
       end
       return monographs
+    end
+
+    def products(args = {})
+      products = []
+      begin
+        products = connection.get("products").body
+      rescue StandardError => e
+        raise e.message
+      end
+      return products
+    end
+
+    def product_components(args = {})
+      case
+      when args.key?(:product_list)
+        product_list = args[:product_list]
+      when args.key?(:product)
+        product_list = [args[:product]]
+      else
+        raise "either :product_list or :product parameter must be set"
+      end
+
+      components = []
+      product_list.each {|p| components += connection.get("products/#{p['id']}/components").body}
+      return components
     end
 
     def self.FULCRUM_API
