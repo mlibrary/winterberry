@@ -34,6 +34,8 @@ if ARGV.count < 0
 end
 press_list = ARGV
 
+require 'csv'
+
 =begin
 require 'turnsole'
 
@@ -56,15 +58,47 @@ result = service.monographs(press_list: press_list)
 puts service.presses
 puts service.presses(press_list: press_list)
 puts service.connection.get("presses").body
+=end
 
 noid_list = []
+url_list = []
 press_list.each do |press|
   monographs = service.connection.get("presses/#{press}/monographs").body
-  puts "#{press}:#{monographs.count},#{monographs.first}"
-  noid_list += monographs.collect {|m| m['id']}
+  puts "#{press}:#{monographs.count}"
+  unless monographs.empty?
+
+    # Write CSV file.
+    url_file = File.join(Dir.pwd, press + "_urls.csv")
+    CSV.open(
+            url_file,
+            "w",
+            headers: ["Title", "Link"],
+            write_headers: true
+          ) do |csv|
+      monographs.each do |m|
+        url = m['url'].delete_suffix('.json')
+        title = m['title'].join(': ').gsub(/\"/,'""')
+        csv << {
+              "Title" => "=HYPERLINK(\"#{url}\",\"#{title}\")",
+              "Link" => url
+              }
+      end
+    end
+    script_logger.info("Saved URLs #{url_file}")
+  end
+=begin
+    nlist = monographs.collect {|m| m['id']}
+    ulist = monographs.collect {|m| m['url'].delete_suffix('.json')}
+    File.write(url_file, ulist.join("\n"))
+
+    noid_list += nlist
+    url_list += ulist
+  end
+=end
 end
-puts noid_list.count
-puts noid_list.join(" ")
+=begin
+#puts noid_list.count
+#puts noid_list.join(" ")
 
 #puts turnsole.find_noid_by_isbn(isbn: monograph_id)
 #puts "products:     #{turnsole.products.count}"

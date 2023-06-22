@@ -90,6 +90,20 @@ module UMPTG::Fulcrum::Manifest
       end
     end
 
+    def representatives()
+      r = {}
+      @csv.each do |row|
+        next unless ['false','true'].include?(row['published?'].downcase)
+
+        noid = row['noid']
+        kind = row['representative_kind']
+        unless noid.nil? or noid.empty? or kind.nil? or kind.empty?
+          r[kind] = row
+        end
+      end
+      return r
+    end
+
     def representative_row(args = {})
       return nil unless args.has_key?(:kind)
 

@@ -248,8 +248,10 @@ else
     end
 
     case options.press
-    when :ebc, :elt, :ummaa
+    when :ebc, :ummaa
       product = "ebc_" + perd
+    when :elt
+      product = "michelt"
     else
       product = options.press.to_s + "_" + perd
     end
@@ -259,33 +261,35 @@ else
       component_product[product] = [minfo]
     end
 
-    case options.press
-    when :bar
-      if minfo[:monograph_series][0].downcase == 'b'
-        product += "_brit"
-      else
-        product += "_int"
-      end
-    when :ebc, :elt, :ummaa
-      product = "ebc_complete"
-    end
-    if component_product.key?(product)
-      component_product[product] << minfo
-    else
-      component_product[product] = [minfo]
-    end
-
-    unless minfo[:monograph_open_access].empty?
+    unless options.press == :elt
       case options.press
-      when :ebc, :elt, :ummaa, :amherst
-        product = "ebc_oa"
-      else
-        raise "Found open access for press #{options.press}, #{minfo}"
+      when :bar
+        if minfo[:monograph_series][0].downcase == 'b'
+          product += "_brit"
+        else
+          product += "_int"
+        end
+      when :ebc, :ummaa
+        product = "ebc_complete"
       end
       if component_product.key?(product)
         component_product[product] << minfo
       else
         component_product[product] = [minfo]
+      end
+
+      unless minfo[:monograph_open_access].empty?
+        case options.press
+        when :ebc, :ummaa, :amherst
+          product = "ebc_oa"
+        else
+          raise "Found open access for press #{options.press}, #{minfo}"
+        end
+        if component_product.key?(product)
+          component_product[product] << minfo
+        else
+          component_product[product] = [minfo]
+        end
       end
     end
   end

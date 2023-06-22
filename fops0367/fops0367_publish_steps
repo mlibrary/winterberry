@@ -1,0 +1,143 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# This script produces a CSV containing
+# the non-EBC Big Ten Fulcrum URLs
+
+require 'optparse'
+require 'ostruct'
+require 'os'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+# Process the script parameters.
+options = OpenStruct.new
+options.bulleit1_dir = "/mnt/umptmm"
+options.fulcrum_dir = OS.windows? ? "s:/Information\ Management/Fulcrum" : options.bulleit1_dir
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-d <fulcrum_dir>] press [press...]"
+  opts.on('-d', '--directory [DIRECTORY]', 'Fulcrum directory') do |fulcrum_dir|
+    options.fulcrum_dir = fulcrum_dir
+  end
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    script_logger.info(opts)
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  script_logger.info(option_parser.help)
+  exit 0
+end
+press_list = ARGV
+
+# Verify existence of the source/project root directories.
+fulcrum_dir = File.expand_path(options.fulcrum_dir)
+unless File.directory?(fulcrum_dir)
+  script_logger.fatal("source directory #{fulcrum_dir} does not exist.")
+  exit 1
+end
+
+require 'csv'
+
+require_relative File.join(root_dir, 'lib', 'fulcrum')
+
+# Create the serivce for retrieving the manifest.
+service = UMPTG::Services::Heliotrope.new(
+                fulcrum_host: options.fulcrum_host
+              )
+
+press_list.each do |press|
+  #monographs = service.connection.get("presses/#{press}/monographs").body
+  monographs = service.monographs(press_list: [press])
+  script_logger.info("#{press}:#{monographs.count}")
+  STDOUT.flush
+
+  components = {
+     ebc_oa: [],
+     bigten: [],
+     bigten_gender_and_sexuality_studies: []
+  }
+
+  publish_noid_list = []
+  bt_publish_noid_list = []
+  total_noid_list = []
+  monographs.each do |m|
+    bt_noid = m['id']
+
+    manifest = {}
+    manifest[bt_noid] = UMPTG::Fulcrum::Manifest::Document.new(
+                  monograph_id: bt_noid
+                )
+
+    isbn = manifest[bt_noid].isbn.values.first.gsub(/\-/, '')
+
+    noid_list = service.monograph_noid(identifier: isbn)
+    script_logger.info("*** #{isbn} count:#{noid_list[isbn].count} ***")
+    noid_list[isbn].each do |n|
+      unless n == bt_noid
+        manifest[n] = UMPTG::Fulcrum::Manifest::Document.new(
+                      monograph_id: n
+                    )
+      end
+      doi = manifest[n].monograph_row['doi']
+      p = manifest[n].monograph_row['press']
+      u = manifest[n].monograph_row['published?']
+      script_logger.info("#{n},#{p},#{u},#{doi}")
+
+      total_noid_list << n unless p.downcase == 'heb'
+      publish_noid_list << n unless u.downcase == 'true'
+      bt_publish_noid_list << n if n == bt_noid and u.downcase != 'true'
+    end
+    STDOUT.flush
+
+    #doi = manifest[bt_noid].monograph_row['doi']
+    noid_list[isbn].each do |n|
+      p = manifest[n].monograph_row['press'].downcase
+      next if p.downcase == 'heb'
+
+      title = manifest[n].monograph_row['title']
+      doi = manifest[n].monograph_row['doi']
+      entry = "#{n},#{doi}"
+      if n == bt_noid
+        components[:bigten] << entry
+        components[:bigten_gender_and_sexuality_studies] << entry
+      end
+      components[:ebc_oa] << entry unless n == bt_noid
+    end
+  end
+
+  pub_dir = File.join(fulcrum_dir, "PTG","PublishingSteps", "MPS", "FULCRUMOPS-0367_bigten_publishing_steps")
+  bulleit1_dir = File.join(options.bulleit1_dir, "PTG","PublishingSteps", "MPS", "FULCRUMOPS-0367_bigten_publishing_steps")
+  cmd_list = []
+  components.each do |product,list|
+    fname = File.join(pub_dir, "noid_" + product.to_s + ".csv")
+    sfname = File.join(bulleit1_dir, "noid_" + product.to_s + ".csv")
+    lname = File.join(bulleit1_dir, "restrict_items_" + product.to_s + ".log")
+    File.write(fname, list.join("\n"))
+    script_logger.info("Saved #{product.to_s} products to #{fname}")
+
+    cmd_list << "bundle exec ruby bin/restrict_items.rb -f #{sfname} -p #{product.to_s} >& #{lname}"
+    cmd_list << ""
+  end
+
+  script_logger.info("total:#{total_noid_list.count},topublish:#{publish_noid_list.count},bt_topublish:#{bt_publish_noid_list.count}")
+  cmd_list << "# Publish BT + EBC"
+  cmd_list << "%w[#{publish_noid_list.join(' ')}].each {|noid| PublishJob.perform_now(Monograph.find(noid)) };0"
+  cmd_list << ""
+  cmd_list << "# Publish BT"
+  cmd_list << "%w[#{bt_publish_noid_list.join(' ')}].each {|noid| PublishJob.perform_now(Monograph.find(noid)) };0"
+  cmd_list << ""
+  cmd_list << "# Publish EBC"
+  cmd_list << "%w[#{publish_noid_list.difference(bt_publish_noid_list).join(' ')}].each {|noid| PublishJob.perform_now(Monograph.find(noid)) };0"
+
+  fname = File.join(pub_dir, press + "_cmds.txt")
+  File.write(fname, cmd_list.join("\n"))
+  script_logger.info("Saved cmds to #{fname}")
+end

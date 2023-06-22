@@ -1,0 +1,73 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# This script retrieves one or more monograph manifest files from Fulcrum
+# and returns the specified metadata field values. If no fields are
+# specified, then all are returned.
+#
+# Invoke this script without any parameters to display the usage.
+
+require 'optparse'
+require 'ostruct'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+# Process the script parameters.
+options = OpenStruct.new
+options.fulcrum_host = nil
+options.press = :ebc
+options.output_file = File.join(Dir.pwd, "monograph_representatives.csv")
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-f production|preview|staging] [-o <output_file>] [-p bar|ebc|heb] <monograph_id> [<monograph_id>..]"
+  opts.on('-f', '--fulcrum_host [production|preview|staging]', 'Fulcrum environment') do |fulcrum_host|
+    options.fulcrum_host = fulcrum_host
+  end
+  opts.on('-o', '--output_file <output_file>', 'Output file path') do |output_file|
+    options.output_file = output_file
+  end
+  opts.on('-p', '--press [bar|ebc|heb]', 'Fulcrum environment') do |press|
+    options.press = press.to_sym
+  end
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    script_logger.info(opts)
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  script_logger.info(option_parser.help)
+  exit 0
+end
+
+require_relative File.join(root_dir, 'lib', 'fulcrum')
+
+# Rest of the parameters is a list of monograph identifiers.
+monograph_id_list = ARGV
+
+monograph_rep_rows = []
+monograph_id_list.each do |monograph_id|
+  script_logger.info("*** #{monograph_id} **")
+  STDOUT.flush
+
+  # Attempt to download the monograph manifest.
+  case options.press
+  when :bar
+    identifier = "bar_number:#{monograph_id}"
+  when :heb
+    identifier = "heb_id:#{monograph_id}"
+  else
+    identifier = monograph_id
+  end
+  manifest = UMPTG::Fulcrum::Manifest::Document.new(
+                monograph_id: identifier
+              )
+  manifest.representatives.each do |kind,rep|
+    puts "kind:#{kind}"
+  end
+end
