@@ -56,7 +56,7 @@ script_logger.info("Processing resources #{options.default_actions[:resources].t
 
 # Determine if this is a manifest file or monograph ID.
 manifest_file = File.expand_path(resource_file)
-if File.exists?(manifest_file)
+if File.exist?(manifest_file)
   # Have a manifest file
   manifest = UMPTG::Fulcrum::Manifest::Document.new(
                 csv_file: manifest_file
@@ -76,7 +76,7 @@ script_logger.info("manifest retrieved from file #{resource_file}")
 # Process all inputs specified specified.
 epub_file_list.each do |epub_file|
   epub_file = File.expand_path(epub_file)
-  unless File.exists?(epub_file)
+  unless File.exist?(epub_file)
     script_logger.error("EPUB file not found #{epub_file}")
     next
   end

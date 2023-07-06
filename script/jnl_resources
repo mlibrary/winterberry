@@ -91,7 +91,7 @@ jats2html_xsl_file = File.join(root_dir, "lib", "journal", "xsl", "janeway.xsl")
 manifests = {}
 jats_file_list.each do |jats_file|
   jats_file = File.expand_path(jats_file)
-  unless File.exists?(jats_file)
+  unless File.exist?(jats_file)
     script_logger.error("invalid EPUB file path #{jats_file}.")
     next
   end

@@ -49,7 +49,7 @@ service = UMPTG::Services::Heliotrope.new(
 noid_list = []
 dir_path_list.each do |dir_path|
   dir_path = File.expand_path(dir_path)
-  unless File.exists?(dir_path)
+  unless File.exist?(dir_path)
     script_logger.error("invalid directory path #{dir_path}.")
     next
   end

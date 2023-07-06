@@ -42,7 +42,7 @@ require_relative File.join(root_dir, "lib", "review")
 require_relative File.join(root_dir, "lib", "fulcrum")
 
 manifest_file = File.expand_path(manifest_file)
-unless File.exists?(manifest_file)
+unless File.exist?(manifest_file)
   script_logger.error("manifest file #{manifest_file} does not exist.")
   exit 1
 end
@@ -56,7 +56,7 @@ end
 
 epub_file_list.each do |epub_file|
   epub_file = File.expand_path(epub_file)
-  unless File.exists?(epub_file)
+  unless File.exist?(epub_file)
     script_logger.error("invalid EPUB file path #{epub_file}.")
     next
   end

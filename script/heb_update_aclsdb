@@ -36,7 +36,7 @@ Rake.load_rakefile File.join(root_dir, "lib", "hebdevel", "tasks", "aclsdb.rake"
 
 metadata_file_list.each do |metadata_file|
   metadata_file = File.expand_path(metadata_file)
-  if !File.exists?(metadata_file)
+  if !File.exist?(metadata_file)
     puts "Error: #{File.basename(metadata_file)} does not exist."
     next
   end

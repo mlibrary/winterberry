@@ -133,7 +133,7 @@ monograph_id_list.each do |monograph_id|
   # Determine if the resource map file exists. If not,
   # then one needs to be generated.
   resource_map_file = File.join(processing_dir, "resource_map.xml")
-  resource_map_exists = File.exists?(resource_map_file) && use_map
+  resource_map_exists = File.exist?(resource_map_file) && use_map
 
   # If a resource map exists, use it. Otherwise,
   # it should be generated and saved.

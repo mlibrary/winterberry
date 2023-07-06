@@ -151,10 +151,10 @@ monograph_id_list.each do |monograph_id|
   # to avoid it from being overwritten
   new_hdl_file = File.join(output_dir, bname + "_#{monograph_noid}" + ".hdl")
   new_log_file = File.join(output_dir, bname + "_#{monograph_noid}" + ".log")
-  if File.exists?(hdl_file)
+  if File.exist?(hdl_file)
     FileUtils.mv(hdl_file, new_hdl_file)
   end
-  if File.exists?(log_file)
+  if File.exist?(log_file)
     FileUtils.mv(log_file, new_log_file)
   end
 end

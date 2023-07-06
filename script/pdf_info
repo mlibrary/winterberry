@@ -29,7 +29,7 @@ require 'hexapdf'
 
 pdf_file_list.each do |pdf_file|
   pdf_file = File.expand_path(pdf_file)
-  unless File.exists?(pdf_file)
+  unless File.exist?(pdf_file)
     puts "Error: invalid EPUB file path #{pdf_file}."
     next
   end

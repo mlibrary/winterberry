@@ -66,7 +66,7 @@ fulcrum_css_file = File.join(root_dir, 'lib', 'css', fulcrum_css_name)
 epub_file_list.each_index do |ndx|
 
   epub_file = File.expand_path(epub_file_list[ndx])
-  unless File.exists?(epub_file)
+  unless File.exist?(epub_file)
     script_logger.error("invalid EPUB file path #{epub_file}.")
     next
   end

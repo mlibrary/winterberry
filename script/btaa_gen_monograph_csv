@@ -44,7 +44,7 @@ MONOGRAPH_HEADERS = UMPTG::Fulcrum::Manifest::Validation::CollectionSchema.heade
 
 btaa_tmm_csv_file_list.each do |btaa_tmm_csv_file|
   btaa_tmm_csv_file = File.expand_path(btaa_tmm_csv_file)
-  unless File.exists?(btaa_tmm_csv_file)
+  unless File.exist?(btaa_tmm_csv_file)
     script_logger.error("invalid CSV file path #{btaa_tmm_csv_file}.")
     next
   end

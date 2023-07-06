@@ -276,7 +276,7 @@ JDT
           end
 
           # Have a JATS file. Make sure it exists.
-          unless File.exists?(jats_file)
+          unless File.exist?(jats_file)
             @logger.error("JATS file #{jats_file} does not exist.")
             return nil
           end

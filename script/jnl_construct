@@ -35,7 +35,7 @@ option_parser = OptionParser.new do |opts|
 end
 option_parser.parse!(ARGV)
 
-# Journal directory exists?
+# Journal directory exist?
 journal_dir = File.expand_path(options.journal_dir)
 unless File.directory?(journal_dir)
   script_logger.error("journal directory not found \"#{journal_dir}.")
@@ -137,7 +137,7 @@ end
 encoder = HTMLEntities.new
 journal_name_list.each do |journal_name|
   dlxs_file = File.join(dlxs_dir, journal_name + ".xml")
-  if !File.exists?(dlxs_file)
+  if !File.exist?(dlxs_file)
     script_logger.error("#{journal_name}: no DLXS file.")
     next
   end

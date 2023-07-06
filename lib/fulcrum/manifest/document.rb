@@ -38,7 +38,7 @@ module UMPTG::Fulcrum::Manifest
       when @properties.key?(:csv_file)
         csv_file = @properties[:csv_file]
         raise "Error: invalid CSV file path #{csv_file}" \
-              if csv_file.nil? or csv_file.strip.empty? or !File.exists?(csv_file)
+              if csv_file.nil? or csv_file.strip.empty? or !File.exist?(csv_file)
         csv_body = { csv_file => [File.read(csv_file)] }
       when @properties.key?(:monograph_id)
         service = UMPTG::Services::Heliotrope.new(

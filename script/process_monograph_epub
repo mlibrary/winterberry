@@ -62,13 +62,13 @@ require_relative File.join(root_dir, 'lib', 'services')
 
 # Verify existence of the source/project root directories.
 publisher_dir = File.expand_path(options.publisher_dir)
-unless File.exists?(publisher_dir)
+unless File.exist?(publisher_dir)
   script_logger.error("source directory #{publisher_dir} does not exist.")
   exit 1
 end
 
 # If manifest file is specified, verify its existence.
-unless options.manifest_file.nil? or File.exists?(options.manifest_file)
+unless options.manifest_file.nil? or File.exist?(options.manifest_file)
   script_logger.error("manifest file #{options.manifest_file} does not exist.")
   exit 1
 end
@@ -159,7 +159,7 @@ monograph_id_list.each do |monograph_id|
   process_dir = File.join(monograph_dir, "resource_processing")
 
   # Verify that the resource_processing directory exists.
-  unless File.exists?(process_dir) and File.directory?(process_dir)
+  unless File.exist?(process_dir) and File.directory?(process_dir)
     script_logger.error("Error: directory #{File.basename(process_dir)} is not a valid directory.")
     next
   end
@@ -176,7 +176,7 @@ monograph_id_list.each do |monograph_id|
 
   # Determine if the resources directory exists.
   resources_dir = File.join(monograph_dir, "resources")
-  if !File.exists?(resources_dir) or !File.directory?(resources_dir)
+  if !File.exist?(resources_dir) or !File.directory?(resources_dir)
     monograph_loggers[monograph_id].error("Error: #{File.basename(resources_dir)} is not a valid directory.")
     next
   end
@@ -205,7 +205,7 @@ monograph_id_list.each do |monograph_id|
 
   # Determine if the resource map file exists.
   resource_map_file = File.join(process_dir, "resource_map.xml")
-  if !File.exists?(resource_map_file)
+  if !File.exist?(resource_map_file)
     monograph_loggers[monograph_id].error("Error: resource map file #{File.basename(resource_map_file)} must exist.")
     next
   end

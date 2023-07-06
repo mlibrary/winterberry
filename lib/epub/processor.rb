@@ -6,7 +6,7 @@ module UMPTG::EPUB
       case
       when args.key?(:epub_file)
         epub_file = File.expand_path(args[:epub_file])
-        logger.fatal("Error: invalid EPUB file.") unless File.exists?(epub_file)
+        logger.fatal("Error: invalid EPUB file.") unless File.exist?(epub_file)
         epub = UMPTG::EPUB::Archive.new(:epub_file => epub_file) if epub.nil?
       when args.key?(:epub)
         epub = args[:epub]

@@ -56,7 +56,7 @@ monograph_headers = MONOGRAPH_HEADERS \
 =end
 
 csv_file = File.expand_path(csv_file)
-unless File.exists?(csv_file)
+unless File.exist?(csv_file)
   script_logger.error("invalid CSV file path #{csv_file}.")
   exit 1
 end

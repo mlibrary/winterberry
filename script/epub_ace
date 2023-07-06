@@ -38,7 +38,7 @@ require 'json'
 ace_json_file_list.each do |ace_json_file|
   script_logger.info("*" * 10 + " #{ace_json_file} " + "*" * 10)
   ace_json_file = File.expand_path(ace_json_file)
-  unless File.exists?(ace_json_file)
+  unless File.exist?(ace_json_file)
     script_logger.error("invalid EPUB file path #{ace_json_file}.")
     next
   end

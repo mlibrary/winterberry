@@ -37,7 +37,7 @@ require_relative File.join(root_dir, "lib", "epub")
 
 epub_file_list.each do |epub_file|
   epub_file = File.expand_path(epub_file)
-  unless File.exists?(epub_file)
+  unless File.exist?(epub_file)
     script_logger.error("invalid EPUB file path #{epub_file}.")
     next
   end

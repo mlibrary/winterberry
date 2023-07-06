@@ -36,7 +36,7 @@ rtf_listener = UMPTG::RTF::HTMLEventListener.new
 rtf_file_list.each do |rtf_file|
   rtf_file = File.expand_path(rtf_file)
   script_logger.info(rtf_file)
-  unless File.exists?(rtf_file)
+  unless File.exist?(rtf_file)
     script_logger.error("Error: RTF file \"#{File.basename(rtf_file)}\" does not exist.")
     next
   end

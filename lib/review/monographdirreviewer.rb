@@ -66,14 +66,14 @@ module UMPTG::Review
       if review_resources
         @review_logger.info("*** Review monograph resources ***")
 
-        unless Dir.exists?(@monograph_dir.resources_dir)
+        unless Dir.exist?(@monograph_dir.resources_dir)
           @review_logger.warn("no resources directory for id #{@monograph_dir.monograph_id}")
           return
         end
 
         resources_manifest = nil
         csv_path = File.join(@monograph_dir.resources_dir, "manifest.csv")
-        unless File.exists?(csv_path)
+        unless File.exist?(csv_path)
           if @monograph_dir.isbn.nil?
             @review_logger.error("no ISBN for id #{@monograph_dir.monograph_id}.")
             return
