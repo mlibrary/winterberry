@@ -188,6 +188,10 @@ monograph_id_list.each do |monograph_id|
       end
     end
   end
+  if series_id.nil? or series_id.strip.empty?
+    script_logger.error("series ID not specified for id #{monograph_id}. Skipping.")
+    next
+  end
 
   pub_date_str = monograph_row['pub_year']
   if pub_date_str.nil?
