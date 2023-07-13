@@ -18,8 +18,12 @@ script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
 
 # Process the script parameters.
 options = OpenStruct.new
+options.use_monograph_link = false
 option_parser = OptionParser.new do |opts|
-  opts.banner = "Usage: #{File.basename(__FILE__)} doi_report_file monograph_id [monograph_id...]"
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-m] doi_report_file monograph_id [monograph_id...]"
+  opts.on('-m', '--monograph_link', 'Use monograph link as resource') do |flag|
+    options.use_monograph_link = true
+  end
   opts.on_tail('-h', '--help', 'Print this help message') do
     script_logger.info(opts)
     exit 0
@@ -84,9 +88,11 @@ monograph_id_list.each do |monograph_id|
     bnode_list = doi_report_doc.xpath("//*[local-name()='resource' and contains(string(),'" + manifest.noid + "')]/ancestor::*[local-name()='book'][1]")
   end
   bnode_list.each do |bn|
-    res_node_list = bn.xpath(".//*[local-name()='resource']")
-    unless res_node_list.empty?
-      #res_node_list.first.content = monograph_link
+    if options.use_monograph_link
+      res_node_list = bn.xpath(".//*[local-name()='resource']")
+      unless res_node_list.empty?
+        res_node_list.first.content = monograph_link
+      end
     end
     book_node_list << bn
   end
