@@ -154,7 +154,7 @@ module UMPTG::EPUB
       @modified = false
 
       raise "Error: missing file path" if @epub_file.strip.empty?
-      raise "Error: invalid file path" unless File.exist?(@epub_file)
+      raise "Error: invalid file path #{@epub_file}" unless File.exist?(@epub_file)
 
       fragment_processor = UMPTG::Fragment::Processor.new
       fragment_selector = UMPTG::Fragment::ContainerSelector.new
