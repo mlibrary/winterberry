@@ -1,0 +1,112 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Script inputs a Crossref submission XML file
+# and a Crossref submission report XML file
+# and generates a new XML that contains the
+# records that failed.
+
+require 'optparse'
+require 'ostruct'
+require 'os'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+# Process the script parameters.
+options = OpenStruct.new
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} cr_submit_file cr_report_file"
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    script_logger.info(opts)
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 2
+  script_logger.info(option_parser.help)
+  return
+end
+
+# Process the command line parameters.
+cr_submit_file = File.expand_path(ARGV[0])
+cr_report_file = File.expand_path(ARGV[1])
+
+require 'nokogiri'
+
+require_relative File.join(root_dir, 'lib', 'xmlutil')
+
+XREF_MARKUP = <<-XMARK
+<?xml version="1.0" encoding="utf-8"?>
+<doi_batch xmlns="http://www.crossref.org/schema/5.3.1"
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+version="5.3.1"
+xsi:schemaLocation="http://www.crossref.org/schema/5.3.1 http://www.crossref.org/schema/deposit/crossref5.3.1.xsd">
+<head>
+<doi_batch_id>umpre-update-%s-submission</doi_batch_id>
+<timestamp>%s</timestamp>
+<depositor>
+<depositor_name>scpo</depositor_name>
+<email_address>mpub.xref@gmail.com</email_address>
+</depositor>
+<registrant>MPublishing</registrant>
+</head>
+<body>
+</body>
+XMARK
+
+cr_submit_doc = UMPTG::XMLUtil.parse(xml_content: File.read(cr_submit_file))
+cr_report_doc = UMPTG::XMLUtil.parse(xml_content: File.read(cr_report_file))
+
+time_now = Time.now
+tz = time_now.gmt_offset / 3600
+time_id = time_now.strftime('%Y-%m-%dT%H:%M:%S') + sprintf("0%d:00", tz)
+time_stamp = time_now.strftime('%Y%m%d%H%M%S') + '00000'
+
+result_doc = Nokogiri::XML(sprintf(XREF_MARKUP, time_id, time_stamp))
+body_node = result_doc.xpath("//*[local-name()='body']").first
+
+cr_report_doc.xpath("//*[@msg_id]").each_with_index do |node,ndx|
+  msg_id = node["msg_id"]
+  #script_logger.info(node["msg_id"])
+
+  case msg_id
+  when "24"
+    msg = node.xpath(".//*[local-name()='msg']").first.content
+    isbn = msg[6..18]
+    xp = "//*[local-name()='isbn' and string()='#{isbn}']/ancestor::*[local-name()='book']"
+    submit_node = cr_submit_doc.xpath(xp).first
+    if submit_node.nil?
+      script_logger.warn("ISBN #{isbn} not found, #{ndx-1}")
+      next
+    end
+    script_logger.info("ISBN #{isbn} has been added.")
+    body_node.add_child(submit_node)
+  when "55"
+    doi = node.xpath(".//*[local-name()='doi']").first.content
+    xp = "//*[local-name()='doi' and string()='#{doi}']/ancestor::*[local-name()='book']"
+    submit_node_list = cr_submit_doc.xpath(xp)
+
+    case submit_node_list.count
+    when 0
+      script_logger.warn("DOI #{doi} not found, #{ndx-1}")
+    when 1
+      script_logger.warn("DOI #{doi} only one found")
+    else
+      script_logger.warn("DOI #{doi} multiple found")
+    end
+    next
+  else
+    script_logger.warn("msg id #{msg_id} not implemented.")
+    next
+  end
+end
+
+result_path = File.join(File.dirname(cr_submit_file), \
+        File.basename(cr_submit_file, ".*") + "_result" + File.extname(cr_submit_file))
+UMPTG::XMLUtil.save(result_doc, result_path)
