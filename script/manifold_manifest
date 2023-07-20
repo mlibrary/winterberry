@@ -1,0 +1,74 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Script inputs a list of manifest files
+# and modifies each for Manifold.
+
+require 'optparse'
+require 'ostruct'
+require 'os'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+# Process the script parameters.
+options = OpenStruct.new
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} manifest_file [manifest_file..]"
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    script_logger.info(opts)
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  script_logger.info(option_parser.help)
+  return
+end
+
+manifest_file_list = ARGV
+
+require_relative File.join(root_dir, 'lib', 'fulcrum', 'manifest')
+
+manifest_file_list.each do |manifest_file|
+  manifest_file = File.expand_path(manifest_file)
+  unless File.exist?(manifest_file)
+    script_logger.error("missing manifest file #{manifest_file}")
+    next
+  end
+  script_logger.info("processing manifest file #{manifest_file}")
+
+  # NOTE: Requires that manifest headers NOT be converted to lowercase.
+  manifest = UMPTG::Fulcrum::Manifest::Document.new(
+                csv_file: manifest_file
+              )
+
+  # Write CSV file.
+  new_manifest_file = File.join(File.dirname(manifest_file), \
+        File.basename(manifest_file, ".*") + "_manifold" + File.extname(manifest_file))
+  #new_headers = manifest.headers - ["Embed Code", "External Resource URL"]
+  new_headers = manifest.headers
+  CSV.open(
+          new_manifest_file,
+          "w",
+          write_headers: true,
+          headers: new_headers,
+          universal_newline: true,
+        ) do |csv|
+    manifest.csv.each do |fs|
+      next if fs['Representative Kind'] == 'pdf_ebook'
+      #next unless fs['External Resource URL'].nil? or fs['External Resource URL'].strip.empty?
+      row = {}
+      fs.each do |key,value|
+        row[key] = value
+      end
+      csv << row
+    end
+  end
+  script_logger.info("saved CSV file #{new_manifest_file}")
+end
