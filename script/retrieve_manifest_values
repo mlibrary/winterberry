@@ -57,16 +57,6 @@ monograph_id_list = ARGV
 if options.fulcrum_column_list.empty?
   script_logger.info("using all manifest metadata fields.")
 else
-  # Metadata fields specified. Determine if list is valid.
-  # Prepend the NOID field.
-  fheaders = UMPTG::Fulcrum::Manifest::Validation::CollectionSchema.HEADERS.collect {|h| h.downcase}
-
-  options.fulcrum_column_list.each do |col|
-    unless fheaders.include?(col.downcase)
-      script_logger.error("invalid Fulcrum metadata field")
-      exit 1
-    end
-  end
   options.fulcrum_column_list.prepend('Monograph ID')
   script_logger.info("using Fulcrum metadata field(s) #{options.fulcrum_column_list.join(',')}")
 end
@@ -89,7 +79,10 @@ monograph_id_list.each do |monograph_id|
   manifest = UMPTG::Fulcrum::Manifest::Document.new(
                 monograph_id: identifier
               )
-  manifest_h = manifest.monograph_row.to_h
+  if manifest.csv.nil?
+    script_logger.error("no manifest found for identifier #{identifier}")
+    next
+  end
 
   field_values = []
   manifest_headers = manifest.headers if manifest_headers.empty?
@@ -100,7 +93,11 @@ monograph_id_list.each do |monograph_id|
     end
 
     new_h = h.strip.downcase.gsub(' ', '_')
-    field_values << manifest_h[new_h]
+    unless manifest.monograph_row.key?(new_h)
+      script_logger.error("invalid metadata field \"#{h}\".")
+      next
+    end
+    field_values << manifest.monograph_row[new_h]
   end
   monograph_manifest_rows << field_values
 end

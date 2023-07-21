@@ -54,7 +54,7 @@ module UMPTG::Fulcrum::Manifest
       end
 
       #raise "Error: manifest is empty" if csv_body.nil? or csv_body.empty?
-      return "" if csv_body.nil? or csv_body.empty?
+      return if csv_body.nil? or csv_body.empty?
 
       csv_body.each do |key,manifest_list|
         manifest_list.each do |manifest_body|
