@@ -1,0 +1,86 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Script inputs a TMM DOI Generation XML file
+# and generates a Readerbound redirection map.
+
+require 'optparse'
+require 'ostruct'
+require 'os'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+# Process the script parameters.
+options = OpenStruct.new
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} tmm_xml_file [tmm_xml_file...]"
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    script_logger.info(opts)
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  script_logger.info(option_parser.help)
+  return
+end
+
+# Process the command line parameters.
+tmm_xml_file_list = ARGV
+
+require 'nokogiri'
+require 'csv'
+
+require_relative File.join(root_dir, 'lib', 'xmlutil')
+
+XREF_MARKUP = <<-XMARK
+XMARK
+
+CSV_HEADERS = [
+      "Book Key",
+      "Print ISBN",
+      "Title",
+      "BISAC",
+      "Format",
+      "Child BISAC",
+      "Child Format"
+    ]
+
+tmm_xml_file_list.each do |tmm_xml_file|
+  tmm_xml_file = File.expand_path(tmm_xml_file)
+  tmm_xml_doc = UMPTG::XMLUtil.parse(xml_content: File.read(tmm_xml_file))
+
+  # Write CSV file.
+  tmm_csv_file = File.join(File.dirname(tmm_xml_file), \
+        File.basename(tmm_xml_file, ".*") + "_rb.csv")
+  CSV.open(
+          tmm_csv_file,
+          "w",
+          write_headers: true,
+          headers: CSV_HEADERS
+        ) do |csv|
+    tmm_xml_doc.xpath("//*[local-name()='book']").each do |bnode|
+      sub_bisac = bnode.xpath("./*[local-name()='subbisac']").first
+      sub_bisac_text = sub_bisac.nil? ? "" : sub_bisac.content
+      child_format = bnode.xpath("./*[local-name()='childformat']").first
+      child_format_text = child_format.nil? ? "" : child_format.content
+      row = {
+        "Book Key" => bnode.xpath("./*[local-name()='bookkey']").first.content,
+        "Print ISBN" => bnode.xpath("./*[local-name()='printISBN']").first.content,
+        "Title" => bnode.xpath("./*[local-name()='titleprefixandtitle']").first.content,
+        "BISAC" => bnode.xpath("./*[local-name()='bisac']").first.content,
+        "Format" => bnode.xpath("./*[local-name()='format']").first.content,
+        "Child BISAC" => sub_bisac,
+        "Child Format" => child_format_text
+      }
+      csv << row
+    end
+  end
+  script_logger.info("saved CSV file #{tmm_csv_file}")
+end
