@@ -20,7 +20,7 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
                 doctype-public="-//NLM//DTD JATS (Z39.96) Journal Publishing DTD v1.2 20190208//EN"
                 doctype-system="http://jats.nlm.nih.gov/publishing/1.2/JATS-journalpublishing1-mathml3.dtd"
                 xpath-default-namespace=""
-                indent="yes"/>
+                indent="no"/>
 
     <xsl:param name="image_list" required="no"/>
     <xsl:param name="language" select="'en'"/>
@@ -587,7 +587,7 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
                     <xsl:apply-templates select="./*"/>
                 </xsl:element>
             </xsl:when>
-            <xsl:when test="not(exists(./HEAD)) and not(exists(./TABLE))">
+            <xsl:when test="not(exists(./HEAD)) and not(exists(./TABLE)) and not(local-name(preceding-sibling::*[1])=local-name(.))">
                 <xsl:apply-templates select="./*[not(@TYPE='prelim' or @TYPE='author')]"/>
             </xsl:when>
             <xsl:otherwise>
@@ -845,6 +845,19 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
                 </xsl:choose>
             </xsl:otherwise>
         </xsl:choose>
+    </xsl:template>
+
+    <xsl:template match="L/REF">
+        <xsl:variable name="image_info" select="mlibxsl:make-resource(@FILENAME)"/>
+        <xsl:element name="styled-content">
+            <xsl:element name="ext-link">
+                <xsl:call-template name="set-reference-attributes">
+                    <xsl:with-param name="refNode" select="."/>
+                    <xsl:with-param name="image_info" select="$image_info"/>
+                </xsl:call-template>
+                <xsl:apply-templates select="@*[name()!='TYPE' and name()!='URL' and name()!='ENTITY' and name()!='FILENAME']|node()"/>
+            </xsl:element>
+        </xsl:element>
     </xsl:template>
 
     <xsl:template match="Q1">
@@ -1190,8 +1203,10 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
         </xsl:call-template>
     </xsl:template>
 
-    <xsl:template match="TABLE/CAPTION|TABLE/HEAD">
-        <xsl:apply-templates/>
+    <xsl:template match="TABLE/HEAD">
+        <xsl:element name="title">
+            <xsl:apply-templates/>
+        </xsl:element>
         <!--
         <xsl:apply-templates select="@*"/>
 
@@ -1206,6 +1221,12 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
             </xsl:otherwise>
         </xsl:choose>
         -->
+    </xsl:template>
+
+    <xsl:template match="TABLE/CAPTION">
+        <xsl:element name="p">
+            <xsl:apply-templates/>
+        </xsl:element>
     </xsl:template>
 
     <xsl:template match="ROW">
@@ -1229,9 +1250,7 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
                     <xsl:attribute name="content-type" select="@TYPE"/>
                 </xsl:when>
             </xsl:choose>
-            <xsl:if test="exists(@REND)">
-                <xsl:attribute name="align" select="@REND"/>
-            </xsl:if>
+            <xsl:apply-templates select="@REND"/>
             <xsl:apply-templates select="@*[name()!='ROLE' and name()!='REND' and name()!='TYPE']|node()"/>
         </xsl:element>
     </xsl:template>
@@ -1323,6 +1342,17 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
         </xsl:element>
     </xsl:template>
 
+    <xsl:template match="CELL/@REND">
+        <xsl:choose>
+            <xsl:when test="lower-case(.)='middle'">
+                <xsl:attribute name="align" select="'center'"/>
+            </xsl:when>
+            <xsl:otherwise>
+                <xsl:attribute name="align" select="@REND"/>
+            </xsl:otherwise>
+        </xsl:choose>
+    </xsl:template>
+
     <xsl:template match="NOTE1/@ID">
         <xsl:attribute name="{lower-case(local-name())}" select="lower-case(.)"/>
     </xsl:template>
@@ -1345,7 +1375,6 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
 
         <xsl:variable name="headingList" select="$divNode/*[local-name()='HEAD' and lower-case(string())!='abstract']"/>
         <xsl:variable name="bodyList" select="$divNode/*[local-name()!='HEAD' and not(@TYPE='prelim' or @TYPE='author')]"/>
-
         <xsl:choose>
             <xsl:when test="count($headingList) > 0 or count($bodyList) > 0">
                 <xsl:element name="sec">
@@ -1498,7 +1527,7 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
                                         <xsl:apply-templates select="$node/*[position()>1 and local-name()='HEAD']/*"/>
                                     </xsl:element>
                                 </xsl:if>
-                                <xsl:apply-templates select="$node/*[position()>1 and local-name()!='HEAD' and local-name()!='ROW']"/>
+                                <xsl:apply-templates select="$node/*[position()>1 and local-name()!='CAPTION' and local-name()!='HEAD' and local-name()!='ROW']"/>
                             </xsl:element>
                         </xsl:if>
                     </xsl:when>
@@ -1531,7 +1560,9 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
             </xsl:element>
             <xsl:if test="exists($node/CAPTION)">
                 <xsl:element name="table-wrap-foot">
-                    <xsl:apply-templates select="$node/CAPTION"/>
+                    <xsl:for-each select="$node/CAPTION">
+                        <xsl:apply-templates select="."/>
+                    </xsl:for-each>
                 </xsl:element>
             </xsl:if>
         </xsl:element>

@@ -6,7 +6,6 @@ require 'ostruct'
 
 # Process the script parameters.
 options = OpenStruct.new
-options.gen_html = false
 option_parser = OptionParser.new do |opts|
   opts.banner = "Usage: #{File.basename(__FILE__)} [-h] xsl_file xml_file [xml_file...]"
   opts.on_tail('-h', '--help', 'Print this help message') do
@@ -24,12 +23,16 @@ end
 script_dir = File.expand_path(File.dirname(__FILE__))
 root_dir = File.dirname(script_dir)
 
-require 'uri'
-require 'fileutils'
-
 require_relative File.join(root_dir, 'lib', 'xslt')
+require_relative File.join(root_dir, 'lib', 'xmlutil')
 
 xsl_file = ARGV[0]
+
+# Determine the output file extension from the
+# XSL output method.
+xml_doc = UMPTG::XMLUtil.parse(xml_file: xsl_file)
+xsl_output_node = xml_doc.xpath("/*[local-name()='stylesheet']/*[local-name()='output']").first
+xsl_output = xsl_output_node.nil? ? :xml : xsl_output_node["method"].to_sym
 
 xml_file_list = ARGV[1..-1]
 xml_file_list.each do |xml_file|
@@ -39,10 +42,8 @@ xml_file_list.each do |xml_file|
       next
   end
 
-  #output_file = File.join(File.dirname(xml_file), File.basename(xml_file, ".*") + "_transformed.xml")
-  output_file = File.join(File.dirname(xml_file), File.basename(xml_file, ".*") + "_transformed.html")
+  output_file = File.join(File.dirname(xml_file), File.basename(xml_file, ".*") + "_transformed." + xsl_output.to_s)
 
-  #output_uri = URI(output_file)
   UMPTG::XSLT.transform(
           xslpath: xsl_file,
           srcpath: xml_file,
