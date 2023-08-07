@@ -1,0 +1,116 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Script inputs EBC backlist CSV and
+# determines the titles to be processed.
+
+require 'optparse'
+require 'ostruct'
+require 'os'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+# Process the script parameters.
+options = OpenStruct.new
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} csv_file"
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    script_logger.info(opts)
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  script_logger.info(option_parser.help)
+  return
+end
+
+csv_file_list = ARGV
+
+require 'find'
+
+require_relative File.join(root_dir, 'lib', 'csvfile')
+
+base_dir = File.expand_path('I:/MPublishing/ump2ht')
+=begin
+phase_dirs = [
+      File.join(base_dir, "phase 1", "originals from Trigonix"),
+      File.join(base_dir, "phase 2", "b1b2", "originals"),
+      File.join(base_dir, "phase 2", "b3", "originals"),
+      File.join(base_dir, "phase 2", "b4", "originals"),
+      File.join(base_dir, "phase 2", "b5", "originals"),
+      File.join(base_dir, "phase 2", "b6", "originals"),
+      File.join(base_dir, "phase 2", "b7", "originals"),
+      File.join(base_dir, "phase 2", "b8", "originals"),
+      File.join(base_dir, "phase 2", "b9", "originals"),
+      File.join(base_dir, "phase 2", "b10", "originals"),
+      File.join(base_dir, "phase 2", "b11", "originals"),
+      File.join(base_dir, "phase 2", "b12", "originals"),
+      File.join(base_dir, "phase 2", "b13", "originals"),
+      File.join(base_dir, "phase 2", "b14", "originals"),
+      File.join(base_dir, "phase 2", "b15", "originals"),
+      File.join(base_dir, "phase 2", "b16", "originals"),
+      File.join(base_dir, "phase 3")
+  ]
+=end
+
+process_rows = []
+csv_file_list.each do |csv_file|
+  csv_file = File.expand_path(csv_file)
+  unless File.exist?(csv_file)
+    script_logger.error("missing manifest file #{csv_file}")
+    next
+  end
+  script_logger.info("processing manifest file #{csv_file}")
+
+  csv = UMPTG::CSVFile.read(csv_path: csv_file)
+
+  csv.each do |row|
+    unless row['Process'].nil? or row['Process'].downcase != 'yes'
+      process_rows << row
+    end
+  end
+end
+
+idents = []
+idents_map = {}
+process_rows.each do |row|
+  isbn = row['ISBN']
+  bar_code = row['Barcode']
+  script_logger.info("#{isbn},#{bar_code}")
+  idents << isbn unless isbn.nil? or isbn.strip.empty?
+  idents << bar_code unless bar_code.nil? or bar_code.strip.empty?
+  idents_map[isbn] = row
+  idents_map[bar_code] = row
+end
+#script_logger.info(idents)
+
+#search_dir = File.join(base_dir, "Fulcrum Bookmarking", "Ready for Fulcrum", "3*.pdf")
+search_dir = File.join(base_dir, "phase_2_PDFs")
+script_logger.info("*** search_dir:#{search_dir} ***")
+Find.find(search_dir) do |f|
+  next if File.directory?(f)
+  b = File.basename(f)
+  #script_logger.info(b[0..13])
+  row = idents_map[b[0..13]]
+  script_logger.info("#{b},#{row['ISBN']}") unless row.nil?
+end
+
+=begin
+Find.find(base_dir) do |f|
+  if File.directory?(f)
+    #script_logger.info(File.basename(f, ".*"))
+    if idents.include?(File.basename(f, ".*"))
+      script_logger.info(f)
+      Find.prune
+    end
+    STDOUT.flush
+  end
+end
+=end
