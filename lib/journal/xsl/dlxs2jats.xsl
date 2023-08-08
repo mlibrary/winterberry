@@ -223,7 +223,14 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
                     </xsl:element>
                 </xsl:element>
                 <xsl:element name="title-group">
-                    <xsl:apply-templates select="FILEDESC/TITLESTMT/TITLE[@TYPE='main' or not(exists(@TYPE))]"/>
+                    <xsl:choose>
+                        <xsl:when test="exists(/DLPSTEXTCLASS/TEXT/FRONT//P[@TYPE='title'])">
+                            <xsl:apply-templates select="/DLPSTEXTCLASS/TEXT/FRONT//P[@TYPE='title']" mode="header"/>
+                        </xsl:when>
+                        <xsl:otherwise>
+                            <xsl:apply-templates select="FILEDESC/TITLESTMT/TITLE[@TYPE='main' or not(exists(@TYPE))]"/>
+                        </xsl:otherwise>
+                    </xsl:choose>
                 </xsl:element>
                 <xsl:variable name="authorList"
                               select="/DLPSTEXTCLASS/TEXT//DIV1/P[@TYPE='author']"/>
@@ -616,6 +623,12 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
     </xsl:template>
 
     <xsl:template match="P[@TYPE='title' or @TYPE='author' or @TYPE='author-notes']"/>
+
+    <xsl:template match="P[@TYPE='title']" mode="header">
+        <xsl:element name="article-title">
+            <xsl:apply-templates select="text()|node()"/>
+        </xsl:element>
+    </xsl:template>
 
     <xsl:template match="P">
         <xsl:element name="p">
