@@ -9,8 +9,9 @@ require 'os'
 
 # Process the script parameters.
 options = OpenStruct.new
-options.bulleit1_dir = "/mnt/umptmm"
-options.fulcrum_dir = OS.windows? ? "s:/Information\ Management/Fulcrum" : options.bulleit1_dir
+options.greensub_dir = "/mnt/umptmm"
+options.application_dir = "/fulcrum/data/tmm"
+options.fulcrum_dir = OS.windows? ? "s:/Information\ Management/Fulcrum" : options.application_dir
 #options.fulcrum_dir = "c:/Users/tbelc/Documents/Fulcrum"
 options.press = :ebc
 option_parser = OptionParser.new do |opts|
@@ -83,7 +84,9 @@ unless File.directory?(publish_dir)
   script_logger.fatal("processing directory #{publish_dir} does not exist.")
   exit 1
 end
-bulleit1_publish_dir = File.join(options.bulleit1_dir, "PTG", "PublishingSteps", \
+application_publish_dir = File.join(options.application_dir, "PTG", "PublishingSteps", \
+                           press_dir[options.press])
+greensub_publish_dir = File.join(options.greensub_dir, "PTG", "PublishingSteps", \
                            press_dir[options.press])
 
 # Determine the Fulcrum monograph directory
@@ -99,7 +102,8 @@ end
 # Create the task processing directory.
 task_dir = File.join(publish_dir, task_id)
 FileUtils.mkdir_p task_dir
-bulleit1_task_dir = File.join(bulleit1_publish_dir, task_id)
+application_task_dir = File.join(application_publish_dir, task_id)
+greensub_task_dir = File.join(greensub_publish_dir, task_id)
 script_logger.info("Using task directory #{File.basename(task_dir)}")
 
 # Create the serivce for retrieving the NOID manifest.
@@ -128,9 +132,11 @@ monograph_id_list.each do |monograph_id|
     resources_dir_list = Dir.glob(File.join(monograph_dir, "[Rr]esources"))
     if resources_dir_list.empty?
       script_logger.warn("no resources directory found for #{File.basename(monograph_dir)}")
-      monograph_resources_dir = nil
+      monograph_resources_dir = fmsl_file = nil
     else
       monograph_resources_dir = resources_dir_list.first
+      fmsl_file = Dir.glob(File.join(monograph_resources_dir, "*.{xlsx,csv}")).first
+      script_logger.warn("no FMSL file found for  #{File.basename(monograph_dir)}") if fmsl_file.nil?
     end
   end
 
@@ -214,8 +220,10 @@ monograph_id_list.each do |monograph_id|
        monograph_noid: monograph_noid,
        monograph_dir: monograph_dir,
        monograph_resources_dir: monograph_resources_dir,
+       fmsl_file: fmsl_file,
        epub_noid: epub_noid,
        pdf_noid: pdf_noid,
+       monograph_url: monograph_row["link"][12..-3],
        monograph_doi: monograph_row["doi"],
        monograph_series: series_id,
        monograph_pub_date: pub_date,
@@ -236,8 +244,8 @@ when :heb
       fp.puts "#{minfo[:monograph_noid]},#{minfo[:monograph_series]}"
     end
   end
-  bulleit1_cfile = File.join(bulleit1_task_dir, File.basename(cfile))
-  components_files["heb"] = bulleit1_cfile
+  application_cfile = File.join(application_task_dir, File.basename(cfile))
+  components_files["heb"] = application_cfile
 else
   component_product = {}
   monograph_info.each do |monograph_id,minfo|
@@ -305,16 +313,34 @@ else
         fp.puts "#{minfo[:monograph_noid]},#{minfo[:monograph_series]}"
       end
     end
-    bulleit1_cfile = File.join(bulleit1_task_dir, File.basename(cfile))
-    components_files[product] = bulleit1_cfile
+    application_cfile = File.join(greensub_task_dir, File.basename(cfile))
+    components_files[product] = application_cfile
   end
 end
 
 # Write the commands file.
 cmds_file = File.join(task_dir, task_id + ".txt")
 File.open(cmds_file, "w") do |fp|
-  fp.puts "# Import resources"
+  fp.puts "# Server information fulcrum-21{1,2}"
+  fp.puts "[tbelc@tang:~]$ eval `ssh-agent -s`"
+  fp.puts "[tbelc@tang:~]$ ssh-add ~/.ssh/heliotrope-deploy"
+  fp.puts "Enter passphrase for /home/tbelc/.ssh/heliotrope-deploy: deploy"
+  fp.puts "Identity added: /home/tbelc/.ssh/heliotrope-deploy (/home/tbelc/.ssh/heliotrope-deploy)"
+  fp.puts "[tbelc@tang:~]$ ssh -A fulcrum@fulcrum-211"
+  fp.puts "[fulcrum@fulcrum-211:~]$ cd app/current"
+  fp.puts "[fulcrum@fulcrum-211:~/app/current]$ "
+  fp.puts
 
+  fp.puts "# Migrate FMSLs"
+  monograph_info.each do |monograph_id,minfo|
+    fmsl_file = minfo[:fmsl_file]
+    next if fmsl_file.nil?
+    f = File.join("/#{fmsl_file[0]}", fmsl_file[2..-1].gsub(' ', '\ '))
+    fp.puts "bundle exec ruby script/migrate_fmsl -c #{f}"
+  end
+  fp.puts
+
+  fp.puts "# Import resources"
   monograph_has_resources = false
   monograph_info.each do |monograph_id,minfo|
     noid = minfo[:monograph_noid]
@@ -324,19 +350,19 @@ File.open(cmds_file, "w") do |fp|
     unless monograph_dir.nil?
       monograph_resources_dir = minfo[:monograph_resources_dir]
 
-      bulleit1_monograph_dir = File.join(
-                  options.bulleit1_dir,
+      application_monograph_dir = File.join(
+                  options.application_dir,
                   sd_dir,
                   File.basename(monograph_dir)
                 )
       if monograph_resources_dir.nil?
-        resources_dir = File.join(bulleit1_monograph_dir, "Resources")
+        resources_dir = File.join(application_monograph_dir, "Resources")
         prefix = "#"
       else
-        resources_dir = File.join(bulleit1_monograph_dir, File.basename(monograph_resources_dir))
+        resources_dir = File.join(application_monograph_dir, File.basename(monograph_resources_dir))
         monograph_has_resources = true
       end
-      fp.puts "#{prefix}sudo -u heliotrope-production RAILS_ENV=production bundle exec script/import -m #{noid} -d #{resources_dir}"
+      fp.puts "#{prefix}bundle exec script/import -m #{noid} -d #{resources_dir}"
       fp.puts
     end
   end
@@ -371,14 +397,14 @@ File.open(cmds_file, "w") do |fp|
 
   fp.puts "# Create components (nectar)"
   components_files.each do |product,comp_file|
-    fp.puts "bundle exec ruby bin/restrict_items.rb -f #{comp_file} -p #{product} >& #{bulleit1_task_dir}/restrict_items_#{product}.log"
+    fp.puts "bundle exec ruby bin/restrict_items.rb -f #{comp_file} -p #{product} >& #{greensub_task_dir}/restrict_items_#{product}.log"
     fp.puts
   end
   fp.puts "# Rails console"
-  fp.puts "sudo -u heliotrope-production RAILS_ENV=production bundle exec rails console"
+  fp.puts "bundle exec rails console"
   fp.puts
 
-  fp.puts "# Publish monographs (bulleit-1)"
+  fp.puts "# Publish monographs (fulcrum-211)"
   fp.puts "%w[#{monograph_noid_list.join(' ')}].each do |noid|"
   fp.puts "\tPublishJob.perform_now(Monograph.find(noid))"
   fp.puts "end;0"
@@ -405,17 +431,18 @@ File.open(cmds_file, "w") do |fp|
 
   fp.puts "# Monograph information"
   fp.puts monograph_info.keys.join(' ')
+  fp.puts monograph_info.keys.select {|k| monograph_info[k][:fmsl_file] != nil }.join(' ')
   monograph_info.each do |monograph_id,minfo|
     mminfo = minfo.delete_if {|key,value| key == :monograph_dir or key == :monograph_resources_dir}
     fp.puts "#{monograph_id},#{mminfo.values.join(',')}"
   end
   fp.puts
   fp.puts "# Create monographs"
-  fp.puts "find /mnt/umptmm/<monograph_dir>/ -maxdepth 1 -mindepth 1 -type d -print0 | sort -zn | xargs -0 -I '{}' echo sudo -u heliotrope-production RAILS_ENV=production bundle exec script/import -d '{}' -p <heb|michigan|um-pccn> -v private -q"
+  fp.puts "find /mnt/umptmm/<monograph_dir>/ -maxdepth 1 -mindepth 1 -type d -print0 | sort -zn | xargs -0 -I '{}' echo bundle exec script/import -d '{}' -p <heb|michigan|um-pccn> -v private -q"
   fp.puts
   fp.puts "# Replace resources"
-  fp.puts "sudo -u heliotrope-production RAILS_ENV=production bundle exec rake \"heliotrope:replace_files[/mnt/umptmm/<directory>, noid]\""
+  fp.puts "bundle exec rake \"heliotrope:replace_files[#{File.join(options.application_dir, "PTG", "replace_files")}, noid]\""
   fp.puts
   fp.puts "# Retrieve NOIDs"
-  fp.puts "sudo -u heliotrope-production RAILS_ENV=production bundle exec rake \"heliotrope:qc_csv_heb[2018-06-08T00:00:00-04:00]\""
+  fp.puts "bundle exec rake \"heliotrope:qc_csv_heb[2018-06-08T00:00:00-04:00]\""
 end
