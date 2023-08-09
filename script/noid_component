@@ -1,0 +1,51 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Script displays a list of press monographs
+
+require 'optparse'
+require 'ostruct'
+require 'os'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+# Process the script parameters.
+options = OpenStruct.new
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} noid [noid..]"
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    script_logger.info(opts)
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  script_logger.info(option_parser.help)
+  return
+end
+
+noid_list = ARGV
+
+require_relative File.join(root_dir, 'lib', 'services')
+
+# Create the serivce for retrieving the NOID.
+service = UMPTG::Services::Heliotrope.new(
+                :fulcrum_host => options.fulcrum_host
+              )
+
+noid_list.each do |noid|
+  response = service.connection.get("component", noid: noid).body
+  if response.nil?
+    script_logger.info("#{noid}:nil")
+  else
+    component = service.connection.get("components/#{response['id']}/products").body
+    c_list = component.collect {|c| c['identifier'] }
+    script_logger.info("#{noid}:#{c_list.join(',')}")
+  end
+end
