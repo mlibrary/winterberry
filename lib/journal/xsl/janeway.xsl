@@ -3753,6 +3753,16 @@
         <xsl:apply-templates select="."/>
     </xsl:template>
 
+    <xsl:template match="email">
+        <xsl:element name="a">
+            <xsl:attribute name="href">
+                <xsl:value-of select="concat('mailto:',.)"/>
+            </xsl:attribute>
+            <xsl:attribute name="class">email</xsl:attribute>
+            <xsl:apply-templates/>
+        </xsl:element>
+    </xsl:template>
+
     <!-- nodes to remove -->
     <xsl:template match="aff/label"/>
     <xsl:template match="app/label"/>
@@ -3768,7 +3778,7 @@
     <xsl:template match="abstract/title"/>
     <xsl:template match="ref/label"/>
     <xsl:template match="fig/graphic"/>
-    <xsl:template match="fig-group//object-id | fig-group//graphic | fig//label"/>
+    <xsl:template match="fig-group//object-id | fig//label"/>
     <xsl:template match="ack/title"/>
     <xsl:template match="ref//year | ref//article-title | ref//fpage | ref//volume | ref//source | ref//pub-id | ref//lpage | ref//comment | ref//supplement | ref//person-group[@person-group-type='editor'] | ref//edition | ref//publisher-loc | ref//publisher-name | ref//ext-link"/>
     <xsl:template match="person-group[@person-group-type='author']"/>
