@@ -1,7 +1,8 @@
 module UMPTG
-  require_relative('logger')
-  require_relative('message')
-  require_relative('epub')
+  require_relative 'logger'
+  require_relative 'message'
+  require_relative 'epub'
+  require_relative 'xmlutil'
 
   require_relative File.join('review', 'action')
   require_relative File.join('review', 'figure')

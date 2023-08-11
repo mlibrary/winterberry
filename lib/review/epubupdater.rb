@@ -23,7 +23,7 @@ module UMPTG::Review
       @action_map = {}
     end
     
-    def update(args = {})
+    def update_css(args = {})
       # Determine the EPUB to use.
       case
       when args.key?(:epub_file)
@@ -225,7 +225,70 @@ module UMPTG::Review
       end
       return true
     end
-    
+
+    def add_item(args = {})
+      # Determine the EPUB to use.
+      case
+      when args.key?(:epub_file)
+        epub = UMPTG::EPUB::Archive.new(epub_file: args[:epub_file])
+      when args.key?(:epub)
+        epub = args[:epub]
+      else
+        raise "Error no EPUB specified"
+      end
+      raise "no manifest item file specified." unless args.key?(:item_file)
+
+      item_file = args[:item_file]
+      unless File.exist?(item_file)
+        @logger.error("manifest item file does not exist, #{item_file}")
+        return false
+      end
+
+      epub_manifest_node = epub.opf_doc.xpath("//*[local-name()='manifest']").first
+      raise "no manifest found for #{epub.epub_file}" if epub_manifest_node.nil?
+
+      # Determine file type. Handle file type we can easily
+      # recognize.
+      media_type = ''
+      media_type_pattern = ''
+      ext = File.extname(item_file)
+      case ext
+      when '.xhtml', '.html', '.xml'
+        media_type_pattern = media_type = 'application/xhtml+xml'
+      when '.bmp', '.png'
+        media_type_pattern = "image/"
+        media_type = "image/#{ext[1..-1]}"
+      when '.jpeg', '.jpg'
+        media_type_pattern = 'image/'
+        media_type = "image/jpeg"
+      else
+        @logger.error("manifest item file not supported, #{item_file}.")
+        return false
+      end
+
+      epub_manifest_node = epub.opf_doc.xpath("//*[local-name()='manifest']").first
+      raise "no manifest found for #{epub.epub_file}" if epub_manifest_node.nil?
+
+      last_item = epub.opf_doc.xpath(
+          "//*[local-name()='manifest']/*[local-name()='item' and starts-with(@media-type,'#{media_type_pattern}')]").last
+      if last_item.nil?
+        entry_name = File.dirname(epub.opf.name) + "/" + File.basename(manifest_item_file)
+      else
+        href_dir = File.dirname(last_item['href'])
+        entry_name = href_dir == "." ? \
+            File.dirname(epub.opf.name) + "/" + File.basename(item_file) : \
+            File.dirname(epub.opf.name) + "/" + File.dirname(last_item['href']) + "/" + File.basename(item_file)
+      end
+
+      content = media_type_pattern == "image/" ? File.binread(item_file) : File.read(item_file)
+      epub.add(
+          entry_name: entry_name,
+          entry_content: content,
+          media_type: media_type,
+          spine_loc: args[:spine_loc]
+        )
+    end
+
     private
     
     def fulcrum_css_version(css_content)

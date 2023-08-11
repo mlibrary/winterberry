@@ -62,6 +62,48 @@ module UMPTG::EPUB
       end
 
       @name2entry[entry.name] = entry
+
+      if args.key?(:media_type)
+        media_type = args[:media_type]
+
+        epub_manifest_node = opf_doc.xpath("//*[local-name()='manifest']").first
+        raise "no manifest found for #{epub_file}" if epub_manifest_node.nil?
+
+        entry_name = entry.name.delete_prefix(File.dirname(opf.name) + "/")
+        new_item_node = opf_doc.parse(
+            "<item id=\"#{File.basename(entry.name).gsub('[. ]+','_')}\" href=\"#{entry_name}\" media-type=\"#{media_type}\"/>"
+          ).first
+        epub_manifest_node.add_child(new_item_node)
+
+        if args.key?(:spine_loc) and !media_type.start_with?("image/")
+          spine_loc = args[:spine_loc]
+
+          epub_spine_node = opf_doc.xpath("//*[local-name()='spine']").first
+          raise "no spine found for #{epub_file}" if epub_spine_node.nil?
+
+          new_spine_node = opf_doc.parse(
+                 "<itemref idref=\"#{new_item_node['id']}\"/>"
+               ).first
+          case spine_loc
+          when 0
+            n = epub_spine_node.xpath("./*[first()]").first
+            n.before(new_spine_node)
+          when -1
+            n = epub_spine_node.xpath("./*[last()]").first
+            n.after(new_spine_node)
+          else
+            n = epub_spine_node.xpath("./*[#{spine_loc}]").first
+            n.before(new_spine_node)
+          end
+        end
+
+        add(
+            entry_name: opf.name,
+            entry_content: UMPTG::XMLUtil.doc_to_xml(opf_doc)
+          )
+      end
+
+      return entry
     end
 
     def remove(args = {})

@@ -20,11 +20,15 @@ script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
 # Process the script parameters.
 options = OpenStruct.new
 options.css_file_list = []
+options.manifest_item_file_list = []
 options.force_update = false
 option_parser = OptionParser.new do |opts|
-  opts.banner = "Usage: #{File.basename(__FILE__)} [-f] [-c css_file] epub_file [epub_file...]"
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-f] [-c css_file] [-m manifest_item] epub_file [epub_file...]"
   opts.on('-c', '--css [css_file]', 'CSS replacement') do |css_file|
     options.css_file_list << css_file
+  end
+  opts.on('-m', '--manifest_item item_file', 'Manifest item') do |item_file|
+    options.manifest_item_file_list << item_file
   end
   opts.on('-f', '--css [css_file]', 'CSS replacement') do |css_file|
     options.force_update = true
@@ -59,11 +63,23 @@ epub_file_list.each do |epub_file|
 
   epub = UMPTG::EPUB::Archive.new(epub_file: epub_file)
 
-  epub_updater.update(
-      epub: epub,
-      css_file_list: options.css_file_list,
-      css_force_update: options.force_update
-      )
+  unless options.css_file_list.empty?
+    epub_updater.update_css(
+        epub: epub,
+        css_file_list: options.css_file_list,
+        css_force_update: options.force_update,
+        )
+  end
+
+  options.manifest_item_file_list.each do |manifest_item_file|
+    manifest_item_file = File.expand_path(manifest_item_file)
+
+    epub_updater.add_item(
+        epub: epub,
+        item_file: manifest_item_file,
+        spine_loc: 2
+        )
+  end
 
   if epub.modified
     # EPUB updated. Save it to a new file.
