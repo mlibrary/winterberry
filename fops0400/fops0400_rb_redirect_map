@@ -47,9 +47,7 @@ CSV_HEADERS = [
       "ISBN",
       "Title",
       "BISAC",
-      "Format",
-      "Child BISAC",
-      "Child Format"
+      "Format"
     ]
 
 tmm_xml_file_list.each do |tmm_xml_file|
@@ -66,38 +64,37 @@ tmm_xml_file_list.each do |tmm_xml_file|
           headers: CSV_HEADERS
         ) do |csv|
     tmm_xml_doc.xpath("//*[local-name()='book']").each do |bnode|
-      title = bnode.xpath("./*[local-name()='titleprefixandtitle']").first.content
-      sub_bisac = bnode.xpath("./*[local-name()='subbisac']").first
-      sub_bisac_text = sub_bisac.nil? ? "" : sub_bisac.content
-      child_format = bnode.xpath("./*[local-name()='childformat']").first
-      child_format_text = child_format.nil? ? "" : child_format.content
+      bookkey_node = bnode.xpath("./*[local-name()='bookkey']").first
+      if bookkey_node.nil?
+        script_logger.error("no bookkey")
+        next
+      end
+      bookkey = bookkey_node.content
+
+      title_node = bnode.xpath("./*[local-name()='titleandtitleprefix']").first
+      if title_node.nil?
+        script_logger.error("no titleandtitleprefix for bookkey #{bookkey}")
+        title = ""
+      else
+        title = title_node.content
+      end
+
+      ean13_node = bnode.xpath("./*[local-name()='ean13']").first
+      if ean13_node.nil?
+        script_logger.error("no ean13_node for bookkey #{bookkey}")
+        title = ""
+      else
+        ean13 = ean13_node.content
+      end
 
       row = {
-        "Book Key" => bnode.xpath("./*[local-name()='bookkey']").first.content,
-        "ISBN" => bnode.xpath("./*[local-name()='printISBN']").first.content,
+        "Book Key" => bookkey,
+        "ISBN" => ean13,
         "Title" => title,
-        "BISAC" => bnode.xpath("./*[local-name()='bisac']").first.content,
+        "BISAC" => bnode.xpath("./*[local-name()='bisacstatus']").first.content,
         "Format" => bnode.xpath("./*[local-name()='format']").first.content,
-        "Child BISAC" => sub_bisac,
-        "Child Format" => child_format_text
       }
       csv << row
-
-      ebook_key = bnode.xpath("./*[local-name()='ebookkey']").first
-      unless ebook_key.nil?
-        ebook_isbn = bnode.xpath("./*[local-name()='eISBN']").first
-        ebook_isbn_text = ebook_isbn.nil? ? "" : ebook_isbn.content
-        eformat = bnode.xpath("./*[local-name()='eformat']").first
-        eformat_text = eformat.nil? ? "" : eformat.content
-        row = {
-          "Book Key" => ebook_key.content,
-          "ISBN" => ebook_isbn_text,
-          "Title" => title,
-          "BISAC" => "",
-          "Format" => eformat_text,
-        }
-        csv << row
-      end
     end
   end
   script_logger.info("saved CSV file #{tmm_csv_file}")

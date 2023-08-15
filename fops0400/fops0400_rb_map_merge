@@ -1,0 +1,79 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Script inputs a Readerbound redirection map CSV
+# and removes duplicate rows (duplicate bookkey
+# and ISBN) and generates a new CSV.
+
+require 'optparse'
+require 'ostruct'
+require 'os'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+# Process the script parameters.
+options = OpenStruct.new
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} rb_map_file [rb_map_file...]"
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    script_logger.info(opts)
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  script_logger.info(option_parser.help)
+  return
+end
+
+# Process the command line parameters.
+rb_map_file_list = ARGV
+
+require 'csv'
+
+rb_map_file_list.each do |rb_map_file|
+  rb_map_file = File.expand_path(rb_map_file)
+  unless File.exist?(rb_map_file)
+    script_logger.error("RB map file does not exist #{rb_map_file}")
+    next
+  end
+
+  rb_map_csv = CSV.parse(
+            File.read(rb_map_file),
+            headers: true,
+            return_headers: false
+         )
+  rb_row_map = {}
+  rb_map_csv.each do |row|
+    key = "#{row['Book Key']},#{row['ISBN']}"
+    if rb_row_map.key?(key)
+      rb_row_map[key] += 1
+    else
+      rb_row_map[key] = 1
+    end
+  end
+
+  # Write CSV file.
+  new_rb_map_file = File.join(File.dirname(rb_map_file), \
+        File.basename(rb_map_file, ".*") + "_new.csv")
+  CSV.open(
+          new_rb_map_file,
+          "w",
+          write_headers: true,
+          headers: rb_map_csv.headers
+        ) do |csv|
+    rb_map_csv.each do |row|
+      key = "#{row['Book Key']},#{row['ISBN']}"
+      if row['Version'] == "2" and rb_row_map.key?(key) and rb_row_map[key] == 1
+        csv << row
+      end
+    end
+  end
+  script_logger.info("saved CSV file #{new_rb_map_file}")
+end
