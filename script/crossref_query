@@ -1,0 +1,78 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Script performs a Crossref DOI query.
+
+require 'optparse'
+require 'ostruct'
+require 'os'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+# Process the script parameters.
+options = OpenStruct.new
+options.message_type = :works
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} doi [doi...]"
+  opts.on('-t', '--type [funders|works]', 'Message type [funders|works]') do |type|
+    options.message_type = type.to_sym
+  end
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    script_logger.info(opts)
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  script_logger.info(option_parser.help)
+  return
+end
+
+# Process the command line parameters.
+doi_list = ARGV
+
+require 'serrano'
+
+Serrano.configuration do |config|
+  config.base_url = "https://api.crossref.org"
+  config.mailto = "mpub.xref@gmail.com"
+end
+
+response_list = []
+
+case options.message_type
+when :funders
+  response_list = Serrano.funders(ids: doi_list)
+when :works
+  response_list = Serrano.works(ids: doi_list)
+else
+  script_logger.error("message type #{options.message_type} not supported.")
+  exit(1)
+end
+
+response_list.each do |response|
+  unless response["status"].downcase == "ok"
+    script_logger.error("#{options.message_type} request failed,#{response}")
+    next
+  end
+  script_logger.info("*** message-type:#{response['message-type']}, version:#{response['message-version']} ***")
+
+  response.each do |key,val|
+    case key
+    when "message"
+      script_logger.info("#{key}")
+      val.each do |k,v|
+        script_logger.info("#{k}:#{v}")
+      end
+    when "message-type", "message-version", "status"
+    else
+      script_logger.info("#{key}:#{val}")
+    end
+  end
+end
