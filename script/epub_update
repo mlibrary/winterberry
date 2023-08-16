@@ -22,10 +22,14 @@ options = OpenStruct.new
 options.css_file_list = []
 options.manifest_item_file_list = []
 options.force_update = false
+options.license = nil
 option_parser = OptionParser.new do |opts|
-  opts.banner = "Usage: #{File.basename(__FILE__)} [-f] [-c css_file] [-m manifest_item] epub_file [epub_file...]"
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-f] [-c css_file] [-l license] [-m manifest_item] epub_file [epub_file...]"
   opts.on('-c', '--css [css_file]', 'CSS replacement') do |css_file|
     options.css_file_list << css_file
+  end
+  opts.on('-l', '--license [license]', 'License') do |license|
+    options.license = license
   end
   opts.on('-m', '--manifest_item item_file', 'Manifest item') do |item_file|
     options.manifest_item_file_list << item_file
@@ -46,6 +50,18 @@ end
 epub_file_list = ARGV
 
 require_relative File.join(root_dir, 'lib', 'review')
+
+badge_file = nil
+unless options.license.nil?
+  # Determine is license badge is available
+  badge_file = Dir.glob(File.join(root_dir, "lib", "license", "cc_badges", options.license + ".*")).first
+  if badge_file.nil?
+    script_logger.error("CC badge #{options.license} is not found.")
+  else
+    script_logger.info("CC badge #{badge_file} found.")
+    options.manifest_item_file_list << badge_file
+  end
+end
 
 epub_updater = UMPTG::Review::EPUBUpdater.new(
       logger: script_logger
@@ -73,12 +89,28 @@ epub_file_list.each do |epub_file|
 
   options.manifest_item_file_list.each do |manifest_item_file|
     manifest_item_file = File.expand_path(manifest_item_file)
+    puts manifest_item_file
 
     epub_updater.add_item(
         epub: epub,
         item_file: manifest_item_file,
-        spine_loc: 2
+        #spine_loc: 2
         )
+  end
+
+  unless badge_file.nil?
+    # Process the epub and generate the image information.
+    epub_reviewer = UMPTG::Review::EPUBReviewer.new(
+          epub: epub,
+          logger: script_logger
+        )
+
+    epub_reviewer.review(
+          review_options: { add_license: true },
+          license_file: badge_file,
+          normalize: true
+        )
+    action_map = epub_reviewer.action_map
   end
 
   if epub.modified

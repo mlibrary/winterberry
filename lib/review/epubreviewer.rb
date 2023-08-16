@@ -3,6 +3,7 @@ module UMPTG::Review
 
     @@REVIEW_PROCESSORS = {
           keyword: KeywordProcessor.new,
+          add_license: LicenseProcessor.new,
           link: LinkProcessor.new,
           list: ListProcessor.new,
           package: PackageProcessor.new,
@@ -55,6 +56,13 @@ module UMPTG::Review
       @review_logger.info("Normalize caption classes:#{normalize_caption_class}")
 
       review_processors = @@REVIEW_PROCESSORS.select {|key,proc| review_options[key] == true }
+      review_processors.each {|key,proc| proc.epub = @epub}
+
+      if review_processors.key?(:add_license)
+        rp = review_processors[:add_license]
+        rp.license_file = args[:license_file]
+        #rp.epub = @epub
+      end
 
       # Process the epub and generate the image information.
       @action_map = UMPTG::EPUB::Processor.process(

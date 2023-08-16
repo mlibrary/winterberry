@@ -1,11 +1,12 @@
 module UMPTG::Review
 
   class EntryProcessor < UMPTG::EPUB::EntryProcessor
-    attr_accessor :normalize
+    attr_accessor :normalize, :epub
 
     def initialize(args = {})
       super(args)
 
+      @epub = @properties[:epub]
       @logger = @properties[:logger]
       @selector = @properties[:selector]
       @normalize = @properties.key?(:normalize) ? @properties[:normalize] : false
