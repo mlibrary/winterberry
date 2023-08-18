@@ -4,6 +4,7 @@ module UMPTG::Review
     @@REVIEW_PROCESSORS = {
           keyword: KeywordProcessor.new,
           add_license: LicenseProcessor.new,
+          fix_img_ref: FixImageReferenceProcessor.new,
           link: LinkProcessor.new,
           list: ListProcessor.new,
           package: PackageProcessor.new,

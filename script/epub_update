@@ -87,14 +87,49 @@ epub_file_list.each do |epub_file|
         )
   end
 
+  manifest_item_list = []
+  failed = false
   options.manifest_item_file_list.each do |manifest_item_file|
     manifest_item_file = File.expand_path(manifest_item_file)
-    puts manifest_item_file
+    unless File.exist?(manifest_item_file)
+      script_logger.info("manifest file does not exist #{manifest_item_file}")
+      next
+    end
+
+    unless File.extname(manifest_item_file) == ".xhtml"
+      manifest_item_list << manifest_item_file
+      next
+    end
+
+    xml_doc = Nokogiri::XML(File.read(manifest_item_file))
+    img_file_list = []
+    xml_doc.xpath("//*[local-name()='img']").each do |img_node|
+      src = img_node['src']
+      img_file = File.expand_path(src, File.dirname(manifest_item_file))
+      puts "img_file:#{img_file}"
+      unless File.exist?(img_file)
+        script_logger.error("image file #{img_file} not found in manifest item #{manifest_item_file}")
+        failed = true
+        next
+      end
+      img_file_list << img_file
+    end
+    next if failed
+
+    manifest_item_list << manifest_item_file
+    manifest_item_list += img_file_list
+    puts img_file_list
+  end
+  next if failed
+
+  manifest_item_list.each do |manifest_item_file|
+    manifest_item_file = File.expand_path(manifest_item_file)
+    script_logger.info("adding manifest item #{manifest_item_file}")
 
     epub_updater.add_item(
         epub: epub,
         item_file: manifest_item_file,
-        #spine_loc: 2
+        spine_loc: 2
         )
   end
 
@@ -114,6 +149,16 @@ epub_file_list.each do |epub_file|
   end
 
   if epub.modified
+    epub_reviewer = UMPTG::Review::EPUBReviewer.new(
+          epub: epub,
+          logger: script_logger
+        )
+
+    epub_reviewer.review(
+          review_options: { fix_img_ref: true },
+          normalize: true
+        )
+
     # EPUB updated. Save it to a new file.
     new_epub_file = File.join(File.dirname(epub_file), File.basename(epub_file, ".*") + "_replace" + File.extname(epub_file))
     script_logger.info("EPUB updated. Writing new EPUB file #{File.basename(new_epub_file)}")
