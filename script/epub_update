@@ -23,8 +23,9 @@ options.css_file_list = []
 options.manifest_item_file_list = []
 options.force_update = false
 options.license = nil
+options.section_type = false
 option_parser = OptionParser.new do |opts|
-  opts.banner = "Usage: #{File.basename(__FILE__)} [-f] [-c css_file] [-l license] [-m manifest_item] epub_file [epub_file...]"
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-f] [-c css_file] [-l license] [-m manifest_item] [-y] epub_file [epub_file...]"
   opts.on('-c', '--css [css_file]', 'CSS replacement') do |css_file|
     options.css_file_list << css_file
   end
@@ -34,8 +35,11 @@ option_parser = OptionParser.new do |opts|
   opts.on('-m', '--manifest_item item_file', 'Manifest item') do |item_file|
     options.manifest_item_file_list << item_file
   end
-  opts.on('-f', '--css [css_file]', 'CSS replacement') do |css_file|
+  opts.on('-f', '--force-update', 'CSS force update') do |flag|
     options.force_update = true
+  end
+  opts.on('-y', '--section-type', 'Section roles/types') do |flag|
+    options.section_type = true
   end
   opts.on_tail('-h', '--help', 'Print this help message') do
     script_logger.info(opts)
@@ -133,19 +137,27 @@ epub_file_list.each do |epub_file|
         )
   end
 
-  unless badge_file.nil?
+  unless badge_file.nil? and !options.section_type
     # Process the epub and generate the image information.
     epub_reviewer = UMPTG::Review::EPUBReviewer.new(
           epub: epub,
           logger: script_logger
         )
 
-    epub_reviewer.review(
-          review_options: { add_license: true },
-          license_file: badge_file,
-          normalize: true
-        )
-    action_map = epub_reviewer.action_map
+    unless badge_file.nil?
+      epub_reviewer.review(
+            review_options: { add_license: true },
+            license_file: badge_file,
+            normalize: true
+          )
+      action_map = epub_reviewer.action_map
+    end
+
+    if options.section_type
+      epub_reviewer.review(
+            review_options: { section_type: true }
+          )
+    end
   end
 
   if epub.modified

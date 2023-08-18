@@ -45,6 +45,7 @@ module UMPTG
   require_relative File.join('review', 'movecoverroleprocessor')
   require_relative File.join('review', 'resourceprocessor')
   require_relative File.join('review', 'roleremoveprocessor')
+  require_relative File.join('review', 'sectiontypeprocessor')
   require_relative File.join('review', 'tableprocessor')
   require_relative File.join('review', 'resourceembedprocessor')
   require_relative File.join('review', 'resourcesextractiframeprocessor')

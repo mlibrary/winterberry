@@ -41,23 +41,26 @@ service = UMPTG::Services::Heliotrope.new(
               )
 
 monographs_list = service.monographs(press_list: press_list)
+puts "count:#{monographs_list.count}"
 monographs_list.each do |monograph|
   noid = monograph["id"]
   manifest = UMPTG::Fulcrum::Manifest::Document.new(
                 monograph_id: noid
               )
   isbn = manifest.isbn['open access'] if manifest.isbn.key?('open access')
-  isbn = manifest.isbn['ebook'] if manifest.isbn.key?('ebook')
+  isbn = manifest.isbn['oa ebook'] if isbn.nil?
+  isbn = manifest.isbn['ebook'] if isbn.nil?
   if isbn.nil?
     script_logger.error("no ISBN for #{noid}")
     next
   end
+  puts "#{noid}:#{isbn},#{manifest.monograph_row['cc_license']}"
   nlist = service.monograph_noid(identifier: isbn)
   STDOUT.flush
   next unless nlist.count == 1
 
   #rep_list = manifest.representatives()
   #next if rep_list.key?('pdf_ebook')
-  puts noid
+
   STDOUT.flush
 end
