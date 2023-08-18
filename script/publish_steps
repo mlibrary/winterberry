@@ -154,13 +154,18 @@ monograph_id_list.each do |monograph_id|
                 monograph_id: identifier
               )
   monograph_row = manifest.monograph_row
+  if monograph_row.nil?
+    script_logger.error("manifest not found for #{identifier}")
+    next
+  end
   monograph_noid = monograph_row['noid']
+  script_logger.info("using NOID #{monograph_noid}")
 
   # Find EPUB representative NOID
   epub_noid = nil
   epub_row = manifest.representative_row(kind: "epub")
   if epub_row.nil?
-    script_logger.error("no EPUB row found for id #{monograph_id}")
+    script_logger.warn("no EPUB row found for id #{monograph_id}")
   else
     epub_noid = epub_row['noid']
     script_logger.info("using EPUB NOID #{epub_noid} for id #{monograph_id}")

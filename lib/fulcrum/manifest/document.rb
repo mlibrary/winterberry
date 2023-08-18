@@ -48,6 +48,9 @@ module UMPTG::Fulcrum::Manifest
         csv_body = service.monograph_export(identifier: @properties[:monograph_id]) \
                       if csv_body[@properties[:monograph_id]].empty?
         csv_body = nil if csv_body[@properties[:monograph_id]].empty?
+
+        raise "found #{csv_body[@properties[:monograph_id]].count} manifests for identifier #{@properties[:monograph_id]}" \
+            unless csv_body.nil? or csv_body[@properties[:monograph_id]].count < 2
       else
         # No content specified
         csv_body = nil
