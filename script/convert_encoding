@@ -1,0 +1,99 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Script converts file encodings,
+# from Windows-1252 to UTF8
+
+require 'optparse'
+require 'ostruct'
+require 'os'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+# Process the script parameters.
+options = OpenStruct.new
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} file1 file2"
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    script_logger.info(opts)
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 2
+  script_logger.info(option_parser.help)
+  return
+end
+
+# Process the command line parameters.
+f1_file = File.expand_path(ARGV[0])
+f2_file = File.expand_path(ARGV[1])
+unless File.file?(f1_file) and File.file?(f2_file)
+  script_logger.error("invalid path #{f1_file},#{f2_file}")
+  exit 1
+end
+
+require 'csv'
+
+SRC_STR = "Mao Zedong’s “Talks at the Yan’an Conference on Literature and Art”: A Translation of the 1943 Text with Commentary"
+script_logger.info(SRC_STR)
+script_logger.info(SRC_STR.encoding.name)
+
+win = SRC_STR.encode("windows-1252")
+script_logger.info(win)
+script_logger.info(win.encoding.name)
+
+re_win = win.encode("utf-8")
+script_logger.info(re_win)
+script_logger.info(re_win.encoding.name)
+
+script_logger.info(SRC_STR==re_win)
+
+SRC_STR2 = "Mao Zedong�s �Talks at the Yan�an Conference on Literature and Art�: A Translation of the 1943 Text with Commentary"
+script_logger.info(SRC_STR2)
+script_logger.info(SRC_STR2.encoding.name)
+
+win = SRC_STR.encode("windows-1252")
+script_logger.info(win)
+script_logger.info(win.encoding.name)
+
+re_win = win.encode("utf-8")
+script_logger.info(re_win)
+script_logger.info(re_win.encoding.name)
+
+script_logger.info(SRC_STR2==re_win)
+
+
+=begin
+script_logger.info("converting #{File.basename(f1_file)} to #{File.basename(f2_file)}")
+
+f1_fp = File.open(f1_file, "r")
+f2_fp = File.open(f2_file, "rb")
+
+f1 = f1_fp.read
+f2 = f2_fp.read
+
+script_logger.info("f1 Encoding:#{f1.encoding.name}")
+script_logger.info("f2 Encoding:#{f2.encoding.name}")
+
+w_f2 = f2.force_encoding("windows-1252")
+script_logger.info("w_f2 Encoding:#{w_f2.encoding.name}")
+
+new_f2 = w_f2.encode("UTF-8", "windows-1252")
+script_logger.info("new_f2 Encoding: #{new_f2.encoding.name}")
+
+puts new_f2.lines[0][-5..-1].bytes
+STDOUT.flush
+
+f1_fp.close
+f2_fp.close
+
+new_f2_file = File.join(File.dirname(f2_file), File.basename(f2_file, ".*") + "_converted_utf8" + File.extname(f2_file))
+#File.write(new_f2_file, new_f2)
+=end

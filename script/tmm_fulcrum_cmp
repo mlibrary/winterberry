@@ -1,0 +1,86 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Script compares 2 TMM to Fulcrum CSV files
+
+require 'optparse'
+require 'ostruct'
+require 'os'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+# Process the script parameters.
+options = OpenStruct.new
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} csv1_file csv2_file"
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    script_logger.info(opts)
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 2
+  script_logger.info(option_parser.help)
+  return
+end
+
+# Process the command line parameters.
+csv1_file = File.expand_path(ARGV[0])
+csv2_file = File.expand_path(ARGV[1])
+unless File.file?(csv1_file) and File.file?(csv2_file)
+  script_logger.error("invalid path #{csv1_file},#{csv2_file}")
+  exit 1
+end
+
+require 'csv'
+
+script_logger.info("comparing #{File.basename(csv1_file)} to #{File.basename(csv2_file)}")
+csv1 = CSV.parse(
+     File.read(csv1_file),
+     headers: true,
+     return_headers: false
+    )
+csv2 = CSV.parse(
+     File.read(csv2_file, encoding: 'bom|utf-8'),
+     headers: true,
+     return_headers: false
+    )
+
+diff1_rows = []
+diff2_rows = []
+diff_row = []
+for i in 0..csv1.count do
+  unless csv1[i].to_s == csv2[i].to_s
+    diff1_rows << csv1[i]
+    diff2_rows << csv2[i]
+    diff_row << (i+2)
+  end
+end
+
+puts "diff_cnt:#{diff1_rows.count},#{diff2_rows.count}"
+for i in 0..diff1_rows.count-1 do
+  row1 = diff1_rows[i]
+  row2 = diff2_rows[i]
+  row1.each do |key,val1|
+    #next unless key=="Title"
+    #next unless key=="Description"
+    #next unless key=="Creator(s)"
+
+    val2 = row2[key]
+    unless val1 == val2
+      puts "#{i},#{diff_row[i]},#{key}:len:#{val1.length},#{val2.length}"
+      puts "#{i},#{diff_row[i]},#{key}:equal #{val1==val2[0..val1.length-1]}"
+      #puts "#{i},#{diff_row[i]},#{key}"
+      #puts val1
+      #puts val2
+      #exit 0
+    end
+  end
+end
+
