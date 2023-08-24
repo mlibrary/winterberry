@@ -52,10 +52,13 @@ csv2 = CSV.parse(
      return_headers: false
     )
 
+puts "csv_count:#{csv1.count},#{csv2.count}"
+puts "csv_header_count:#{csv1.headers.count},#{csv2.headers.count}"
+
 diff1_rows = []
 diff2_rows = []
 diff_row = []
-for i in 0..csv1.count do
+for i in 0..csv1.count-1 do
   unless csv1[i].to_s == csv2[i].to_s
     diff1_rows << csv1[i]
     diff2_rows << csv2[i]
@@ -64,18 +67,22 @@ for i in 0..csv1.count do
 end
 
 puts "diff_cnt:#{diff1_rows.count},#{diff2_rows.count}"
+
 for i in 0..diff1_rows.count-1 do
   row1 = diff1_rows[i]
   row2 = diff2_rows[i]
-  row1.each do |key,val1|
-    #next unless key=="Title"
-    #next unless key=="Description"
-    #next unless key=="Creator(s)"
 
-    val2 = row2[key]
+  title1 = row1[csv1.headers[0]]
+  title2 = row2[csv2.headers[0]]
+  for j in 0..csv1.headers.count-1 do
+    #next unless j == 0
+
+    val1 = row1[csv1.headers[j]]
+    val2 = row2[csv2.headers[j]]
     unless val1 == val2
-      puts "#{i},#{diff_row[i]},#{key}:len:#{val1.length},#{val2.length}"
-      puts "#{i},#{diff_row[i]},#{key}:equal #{val1==val2[0..val1.length-1]}"
+      #puts "#{i},#{diff_row[i]},#{csv1.headers[j]}:len:#{val1.length},#{val2.length},#{title1}$$$#{title2}"
+      puts "#{i},#{diff_row[i]},#{csv1.headers[j]}:len:#{val1.length},#{val2.length},#{title1}"
+      #puts "#{i},#{diff_row[i]},#{key}:equal #{val1==val2[0..val1.length-1]}"
       #puts "#{i},#{diff_row[i]},#{key}"
       #puts val1
       #puts val2
@@ -83,4 +90,3 @@ for i in 0..diff1_rows.count-1 do
     end
   end
 end
-
