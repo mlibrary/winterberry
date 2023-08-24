@@ -63,6 +63,7 @@ module UMPTG::Review
       if review_processors.key?(:add_license)
         rp = review_processors[:add_license]
         rp.license_file = args[:license_file]
+        rp.license_fragment = args[:license_fragment]
         #rp.epub = @epub
       end
 

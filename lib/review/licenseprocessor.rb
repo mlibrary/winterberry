@@ -1,12 +1,13 @@
 module UMPTG::Review
   class LicenseProcessor < EntryProcessor
-    attr_accessor :license_file
+    attr_accessor :license_file, :license_fragment
 
     XPATH = <<-XP
     //*[
     local-name()='body'
     ]//*[
     @role='doc-credit'
+    or @epub:type='copyright-page'
     ]
     XP
 
@@ -20,6 +21,7 @@ module UMPTG::Review
     def new_action(args = {})
       a = args.clone
       a[:license_file] = @license_file
+      a[:license_fragment] = @license_fragment
       a[:epub] = @epub
 
       return [

@@ -13,11 +13,15 @@ module UMPTG::Review
       img_entry = epub.entries.select {|e| File.basename(e.name) == bname }
       img_dir = Pathname.new(File.dirname(img_entry.first.name)).relative_path_from(File.dirname(entry_name))
       img_path = File.join(img_dir, File.basename(img_entry.first.name))
-      unless src == img_path
-        reference_node['src'] = img_path
-        add_info_msg("updated reference #{src} to #{img_path}")
-        @status = NormalizeAction.NORMALIZED
+
+      if src == img_path
+        @status = Action.COMPLETED
+        return
       end
+
+      reference_node['src'] = img_path
+      add_info_msg("updated reference #{src} to #{img_path}")
+      @status = NormalizeAction.NORMALIZED
     end
   end
 end

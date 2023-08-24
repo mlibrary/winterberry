@@ -54,11 +54,21 @@ monographs_list.each do |monograph|
     script_logger.error("no ISBN for #{noid}")
     next
   end
-  puts "#{noid}:#{isbn},#{manifest.monograph_row['cc_license']}"
-  nlist = service.monograph_noid(identifier: isbn)
-  STDOUT.flush
-  next unless nlist.count == 1
 
+  nlist = service.monograph_noid(identifier: isbn)
+  nlist.each do |i,nl|
+    nl.each do |n|
+      if n == noid
+        man = manifest
+      else
+        man = UMPTG::Fulcrum::Manifest::Document.new(
+                      monograph_id: n
+                    )
+      end
+      puts "#{n}:#{isbn},#{man.monograph_row['press']},#{man.monograph_row['cc_license']}"
+    end
+  end
+  #next unless nlist.count == 1
   #rep_list = manifest.representatives()
   #next if rep_list.key?('pdf_ebook')
 

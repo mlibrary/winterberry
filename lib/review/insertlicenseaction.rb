@@ -8,6 +8,24 @@ module UMPTG::Review
       reference_node = @properties[:reference_node]
       epub = @properties[:epub]
       license_file = @properties[:license_file]
+      license_fragment = @properties[:license_fragment]
+
+      unless license_fragment.nil?
+        @status = Action.COMPLETED
+
+        # Insert license markup just before the first para.
+        firstpara_node = reference_node.document.xpath("//*[local-name()='body']//*[local-name()='p']").first
+        if firstpara_node.nil?
+          add_error_msg("unable to find license first para.")
+          return
+        end
+
+        license_fragment.xpath("./*").each {|n| firstpara_node.add_previous_sibling(n) }
+        add_info_msg("added license info")
+
+        @status = NormalizeAction.NORMALIZED
+        return
+      end
 
       # Locate the license file in the EPUB archive and
       # construct the relative to the file.
