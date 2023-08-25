@@ -109,7 +109,7 @@ doi_report_edit_file = File.join(File.dirname(doi_report_file), File.basename(do
 File.write(doi_report_edit_file, crossref_doc.to_xml)
 script_logger.info("wrote XML file #{File.basename(doi_report_edit_file)}.")
 
-crossref_xsl_file = File.join(root_dir, "lib", "xsl", "tmm_to_crossref_5_3_1.xsl")
+crossref_xsl_file = File.join(root_dir, "lib", "tmm", "xsl", "tmm_to_crossref_5_3_1.xsl")
 crossref_xml_file = File.join(File.dirname(doi_report_edit_file), File.basename(doi_report_edit_file, ".*") + "_crossref" + File.extname(doi_report_edit_file))
 
 script_logger.info("transforming XML file #{File.basename(doi_report_edit_file)} to #{File.basename(crossref_xml_file)} using XSL #{File.basename(crossref_xsl_file)}.")
