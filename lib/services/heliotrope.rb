@@ -43,17 +43,19 @@ module UMPTG::Services
     # Identifier may be HEB ID or BAR number.
     # DOI should not contain the prefix.
     def monograph_noid(args = {})
+      id2noid_list = {}
       case
       when args.include?(:identifier)
         identifier_list = [ args[:identifier] ]
       when args.include?(:identifier_list)
         identifier_list = args[:identifier_list]
+      when args.include?(:monograph_id)
+        identifier_list = [ args[:monograph_id] ]
       else
-        return ""
+        return id2noid_list
       end
 
       # Attempt to retrieve the NOID for the specified identifier
-      id2noid_list = {}
       identifier_list.each do |identifier|
         id2noid_list[identifier] = []
 
