@@ -43,7 +43,7 @@ require_relative File.join(root_dir, 'lib', 'review')
 require_relative File.join(root_dir, 'lib', 'fulcrum')
 
 # Determine is license file is available
-bname = options.license.to_s.gsub('_', '-')
+bname = options.license.to_s.gsub('-', '_')
 license_file = Dir.glob(File.join(root_dir, "lib", "license", "cc_badges", bname + ".xhtml")).first
 if license_file.nil?
   script_logger.error("CC badge #{options.license} is not found.")
