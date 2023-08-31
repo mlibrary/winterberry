@@ -18,7 +18,7 @@ script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
 
 # Process the script parameters.
 options = OpenStruct.new
-options.license = :cc_by_nc
+options.license = :cc_project
 option_parser = OptionParser.new do |opts|
   opts.banner = "Usage: #{File.basename(__FILE__)} [-l license] monograph_dir [<monograph_dir>..]"
   opts.on('-l', '--license [license]', 'License') do |license|
@@ -36,37 +36,60 @@ if ARGV.count < 1
 end
 monograph_dir_list = ARGV
 
-require 'csv'
-#require 'origami'
-
 require_relative File.join(root_dir, 'lib', 'review')
 require_relative File.join(root_dir, 'lib', 'fulcrum')
 
-# Determine is license file is available
-bname = options.license.to_s.gsub('-', '_')
-license_file = Dir.glob(File.join(root_dir, "lib", "license", "cc_badges", bname + ".xhtml")).first
-if license_file.nil?
-  script_logger.error("CC badge #{options.license} is not found.")
-  exit(1)
-end
-script_logger.info("CC badge #{options.license} found.")
+# Class containing CC license info.
+class CCLicense
+  attr_reader :badge, :license_file, :license_doc, :license_body_node, :img_file_list
 
-license_doc = Nokogiri::XML(File.read(license_file))
-license_body_node = license_doc.xpath("//*[local-name()='body']").first
-if license_body_node.nil?
-  script_logger.error("unable to find license body element.")
-  exit(1)
+  def initialize(args = {})
+    @badge = args[:badge]
+    @license_file = args[:license_file]
+    @license_doc = args[:license_doc]
+    @license_body_node = args[:license_body_node]
+    @img_file_list = args[:img_file_list]
+  end
 end
 
-img_file_list = []
-license_body_node.xpath(".//*[local-name()='img']").each do |img_node|
-  src = img_node['src']
-  img_file = File.expand_path(src, File.dirname(license_file))
-  unless File.exist?(img_file)
-    script_logger.error("image file #{img_file} not found in license file #{license_file}")
+# Create cache for the CC license files.
+license_file_list = Dir.glob(File.join(root_dir, "lib", "license", "cc_badges", "*.xhtml"))
+badge2license = {}
+license_file_list.each do |license_file|
+  script_logger.info("caching license file #{File.basename(license_file)}")
+
+  license_doc = Nokogiri::XML(File.read(license_file))
+  license_body_node = license_doc.xpath("//*[local-name()='body']").first
+  if license_body_node.nil?
+    script_logger.error("unable to find license body element.")
     next
   end
-  img_file_list << img_file
+
+  img_file_list = []
+  license_body_node.xpath(".//*[local-name()='img']").each do |img_node|
+    src = img_node['src']
+    img_file = File.expand_path(src, File.dirname(license_file))
+    unless File.exist?(img_file)
+      script_logger.error("image file #{img_file} not found in license file #{license_file}")
+      next
+    end
+    img_file_list << img_file
+  end
+
+  badge = File.basename(license_file, ".*").gsub('_', '-')
+
+  cc_license = CCLicense.new(
+          badge: badge,
+          license_file: license_file,
+          license_doc: license_doc,
+          license_body_node: license_body_node,
+          img_file_list: img_file_list
+        )
+  badge2license[badge] = cc_license
+end
+if badge2license.empty?
+  script_logger.error("no license files found.")
+  exit(1)
 end
 
 epub_updater = UMPTG::Review::EPUBUpdater.new(
@@ -90,6 +113,21 @@ monograph_dir_list.each do |monograph_dir|
   manifest = UMPTG::Fulcrum::Manifest::Document.new(
                 csv_file: manifest_file
               )
+  if manifest.monograph_row.nil?
+    script_logger.error("no monograph row found for monograph #{monograph_dir}")
+    next
+  end
+
+  # Determine the title CC license.
+  cc_license_id = manifest.monograph_row['cc_license']
+  # https://creativecommons.org/licenses/by-nc-nd/4.0/
+  badge = cc_license_id.split(/\//)[4]
+  cc_license = badge2license["cc-" + badge]
+  if cc_license.nil?
+    script_logger.error("no CC license found for badge #{badge}.")
+    next
+  end
+  script_logger.info("CC license found for badge #{badge}.")
 
   # Get the EPUB path.
   epub_row = manifest.representative_row(kind: "epub")
@@ -98,9 +136,10 @@ monograph_dir_list.each do |monograph_dir|
     next
   end
   epub_file = File.join(monograph_dir, epub_row['file_name'])
+  #epub_file = File.join(monograph_dir, File.basename(monograph_dir, ".*") + ".epub")
   epub = UMPTG::EPUB::Archive.new(epub_file: epub_file)
 
-  license_frag = license_body_node.dup
+  license_frag = cc_license.license_body_node.dup
 
 =begin
   funder_display = manifest.monograph_row['funder_display']
@@ -115,15 +154,16 @@ monograph_dir_list.each do |monograph_dir|
 
   oa_isbn = manifest.isbn['open access']
   oa_isbn = manifest.isbn['oa ebook'] if oa_isbn.nil?
+  #oa_isbn = File.basename(monograph_dir, ".*")
   isbn_oa_node = license_frag.xpath(".//*[@id='isbn_open_access']").first
   if isbn_oa_node.nil?
-    script_logger.warn("funder description node not found.")
+    script_logger.warn("OA ISBN node not found.")
   else
     isbn_oa_node.content = "ISBN: #{oa_isbn} (open access)"
     script_logger.info("OA ISBN inserted.")
   end
 
-  img_file_list.each do |img_file|
+  cc_license.img_file_list.each do |img_file|
     img_file = File.expand_path(img_file)
     script_logger.info("adding manifest item #{img_file}")
 

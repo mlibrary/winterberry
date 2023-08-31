@@ -8,6 +8,7 @@ module UMPTG::Review
     ]//*[
     @role='doc-credit'
     or @epub:type='copyright-page'
+    or @class="copyrightt"
     ]
     XP
 
@@ -20,7 +21,6 @@ module UMPTG::Review
 
     def new_action(args = {})
       a = args.clone
-      a[:license_file] = @license_file
       a[:license_fragment] = @license_fragment
       a[:epub] = @epub
 

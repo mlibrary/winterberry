@@ -1,0 +1,61 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Script
+
+require 'optparse'
+require 'ostruct'
+require 'os'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+# Process the script parameters.
+options = OpenStruct.new
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} pdf_file [<pdf_file>..]"
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    script_logger.info(opts)
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  script_logger.info(option_parser.help)
+  exit 0
+end
+pdf_file_list = ARGV
+
+require 'origami'
+
+#require_relative File.join(root_dir, 'lib', 'fulcrum')
+
+pdf_file_list.each do |pdf_file|
+  pdf_file = File.expand_path(pdf_file)
+  unless File.exist?(pdf_file)
+    script_logger.error("file \"#{File.basename(pdf_file)}\" does not exist.")
+    next
+  end
+  script_logger.info("processing file \"#{File.basename(pdf_file)}\"")
+
+  pdf = Origami::PDF.read(pdf_file)
+  script_logger.info("This document has #{pdf.pages.size} page(s)")
+
+  pdf.each_page do |page|
+      page.each_font do |name, font|
+          # ... only parse the necessary bits
+          puts font
+      end
+  end
+
+  pdf.each_object.select {|obj| obj.is_a?(Stream)}.each do |stream|
+    #puts stream
+  end
+
+  STDOUT.flush
+end
