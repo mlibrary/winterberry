@@ -1,0 +1,140 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Script inputs a XHTML file consisting of captions
+# and outputs a CSV with NOID,File Name, Caption
+# columns.
+
+require 'optparse'
+require 'ostruct'
+require 'os'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+# Process the script parameters.
+options = OpenStruct.new
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} caption_file [caption_file...]"
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    script_logger.info(opts)
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  script_logger.info(option_parser.help)
+  return
+end
+caption_file_list = ARGV
+
+require 'nokogiri'
+
+require_relative File.join(root_dir, "lib", "fulcrum")
+
+caption_file_list.each do |caption_file|
+  caption_file = File.expand_path(caption_file)
+  unless File.exist?(caption_file)
+    script_logger.error("invalid caption file path #{caption_file}.")
+    next
+  end
+  script_logger.info("*** processing #{File.basename(caption_file)} ***")
+  STDOUT.flush
+
+  caption_doc = Nokogiri::XML(File.open(caption_file))
+  puts caption_doc.xpath("/*[1]").first.name
+
+  # First assume the monograph ID is a book key.
+  section_node_list = caption_doc.xpath("//*[local-name()='section' and @class='Heading2']")
+  if section_node_list.empty?
+    script_logger.error("Caption sections not found for #{File.basename(caption_file)}.")
+    next
+  end
+  script_logger.info("Caption sections found for #{File.basename(caption_file)}.")
+
+  section_node_list.each do |section_node|
+    monograph_noid = section_node["role"]
+    if monograph_noid.nil? or monograph_noid.empty?
+      script_logger.error("NOID not found")
+      next
+    end
+
+    caption_node_list = section_node.xpath("./*[local-name()='p']")
+    manifest_file = File.join(File.dirname(caption_file), monograph_noid + ".csv")
+    unless File.exist?(manifest_file)
+      script_logger.error("manifest for NOID #{monograph_noid} not found.")
+      next
+    end
+
+    manifest = UMPTG::Fulcrum::Manifest::Document.new(
+                  csv_file: manifest_file
+                )
+
+    csv_file = File.join(File.dirname(caption_file), File.basename(caption_file, ".*") + "_captions.csv")
+    CSV.open(
+            csv_file,
+            "w",
+            :write_headers=> true,
+            #:force_quotes => true,
+            :headers => ["NOID", "File Name", "Title", "Caption"]
+          ) do |csv|
+
+      ndx = 0
+      manifest.filesets().each do |fs|
+        next if fs['file_name'].nil? or fs['file_name'].empty?
+
+        caption_node = caption_node_list[ndx]
+        caption = caption_node.nil? ? "" : caption_node.content.gsub(/\n/, ' ')
+        ndx += 1
+        csv << {
+                "NOID" => fs['noid'],
+                "File Name" => fs['file_name'],
+                "Title" => fs['title'],
+                "Caption" => caption
+              }
+      end
+    end
+    script_logger.info("Wrote file #{File.basename(csv_file)}.")
+  end
+
+=begin
+  csv_file = File.join(File.dirname(caption_file), File.basename(caption_file, ".*") + ".csv")
+  CSV.open(
+          csv_file,
+          "w",
+          :write_headers=> true,
+          #:force_quotes => true,
+          :headers => ["File Name", "Alternative Text"]
+        ) do |csv|
+
+    node_list.each do |node|
+      img_node = node.xpath("./*[local-name()='h4']").first
+      if img_node.nil?
+        script_logger.warn("img name not found for #{node}.")
+        next
+      end
+      img_name = img_node.text.gsub("\n"," ").strip
+
+      alt_text_node = node.xpath("./*[local-name()='p']").first
+      if alt_text_node.nil?
+        script_logger.warn("alt text not found for #{node}.")
+        next
+      end
+      alt_text = alt_text_node.text.gsub("\n"," ").strip
+
+      row = {
+          "File Name" => img_name,
+          "Alternative Text" => alt_text
+      }
+      csv << row
+      script_logger.info("#{img_name},#{alt_text}")
+    end
+  end
+  script_logger.info("Wrote file #{File.basename(csv_file)}.")
+=end
+end
