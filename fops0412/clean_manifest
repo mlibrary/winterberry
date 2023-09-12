@@ -1,0 +1,64 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Script
+
+require 'optparse'
+require 'ostruct'
+require 'os'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+# Process the script parameters.
+options = OpenStruct.new
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} csv_file [csv_file..]"
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    script_logger.info(opts)
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  script_logger.info(option_parser.help)
+  return
+end
+csv_file_list = ARGV
+
+#dest_dir = File.expand_path('s:/Information Management/Fulcrum/PTG/tickets/FOPS-0412/ummaa/')
+
+require 'csv'
+require 'fileutils'
+
+csv_file_list.each do |csv_file|
+  manifest_csv = CSV.parse(
+            File.read(csv_file),
+            :headers => true,
+            :return_headers => false
+            )
+
+  new_csv_file = File.join(File.dirname(csv_file), File.basename(csv_file, ".*") + "_mono" + File.extname(csv_file))
+  new_headers = manifest_csv.headers - ["NOID", "Embed Code"]
+  CSV.open(
+          new_csv_file,
+          "w",
+          :write_headers=> true,
+          :force_quotes => true,
+          :headers => new_headers
+        ) do |csv|
+    manifest_csv.each do |row|
+      next unless row['File Name'] == "://:MONOGRAPH://:"
+      new_row = {}
+      new_headers.each do |h|
+        new_row[h] = row[h]
+      end
+      csv << new_row
+    end
+  end
+end

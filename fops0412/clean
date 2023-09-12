@@ -1,0 +1,47 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Script
+
+require 'optparse'
+require 'ostruct'
+require 'os'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+# Process the script parameters.
+options = OpenStruct.new
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)}"
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    script_logger.info(opts)
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 0
+  script_logger.info(option_parser.help)
+  return
+end
+
+dest_dir = File.expand_path('s:/Information Management/Fulcrum/PTG/tickets/FOPS-0412/ummaa/')
+
+require 'fileutils'
+
+Dir.glob(File.join(dest_dir, "*")).each do |mdir|
+  next unless File.directory?(mdir)
+
+  f_list = Dir.glob(File.join(mdir, "*"))
+  puts "#{File.basename(mdir)}:#{f_list.count}" unless f_list.count == 2
+  f_list.each do |f|
+    ext = File.extname(f)
+    next if ext == '.csv' or ext == '.pdf'
+    puts f
+  end
+end
