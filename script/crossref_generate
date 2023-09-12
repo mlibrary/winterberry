@@ -78,7 +78,7 @@ monograph_id_list.each do |monograph_id|
     script_logger.info("book key #{monograph_id} found.")
   end
 
-  if bnode_list.empty?
+  if bnode_list.empty? or options.use_monograph_link
     # Query Fulcrum using as Identifer.
     manifest_body_list = service.monograph_export(
                   monograph_id: monograph_id
