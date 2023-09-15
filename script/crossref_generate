@@ -18,11 +18,11 @@ script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
 
 # Process the script parameters.
 options = OpenStruct.new
-options.use_monograph_link = false
+options.monograph_link = :default
 option_parser = OptionParser.new do |opts|
-  opts.banner = "Usage: #{File.basename(__FILE__)} [-m] doi_report_file monograph_id [monograph_id...]"
-  opts.on('-m', '--monograph_link', 'Use monograph link as resource') do |flag|
-    options.use_monograph_link = true
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-m default|fulcrum|ump] doi_report_file monograph_id [monograph_id...]"
+  opts.on('-l', '--link fulcrum|ump', 'Use monograph link as resource') do |link|
+    options.monograph_link = link.to_sym
   end
   opts.on_tail('-h', '--help', 'Print this help message') do
     script_logger.info(opts)
@@ -39,8 +39,13 @@ end
 doi_report_file = File.expand_path(ARGV[0])
 monograph_id_list = ARGV[1..-1]
 
+unless [:default,:fulcrum,:ump].include?(options.monograph_link)
+  script_logger.error("invalid link type #{options.monograph_link}")
+  exit 1
+end
+
 doi_report_file = File.expand_path(doi_report_file)
-if !File.file?(doi_report_file)
+unless File.file?(doi_report_file)
   script_logger.error("invalid DOI Report file #{doi_report_file}")
   exit 1
 end
@@ -78,7 +83,7 @@ monograph_id_list.each do |monograph_id|
     script_logger.info("book key #{monograph_id} found.")
   end
 
-  if bnode_list.empty? or options.use_monograph_link
+  if bnode_list.empty? or options.monograph_link == :fulcrum
     # Assume the monograph ID is a Fulcrum Identifer.
     manifest_body_list = service.monograph_export(
                   monograph_id: monograph_id
@@ -127,10 +132,21 @@ monograph_id_list.each do |monograph_id|
     bnode_list = doi_report_doc.xpath("//*[local-name()='resource' and contains(string(),'" + manifest.noid + "')]/ancestor::*[local-name()='book'][1]")
   end
   bnode_list.each do |bn|
-    if options.use_monograph_link and !monograph_link.nil?
+    case options.monograph_link
+    when :fulcrum
+      unless monograph_link.nil?
+        res_node_list = bn.xpath(".//*[local-name()='resource']")
+        unless res_node_list.empty?
+          res_node_list.first.content = monograph_link
+        end
+      end
+    when :ump
       res_node_list = bn.xpath(".//*[local-name()='resource']")
       unless res_node_list.empty?
-        res_node_list.first.content = monograph_link
+        isbn_node_list = bn.xpath(".//*[local-name()='printISBN']")
+        unless isbn_node_list.empty?
+          res_node_list.first.content = "https://press.umich.edu/isbn/#{isbn_node_list.first.content}"
+        end
       end
     end
     book_node_list << bn
