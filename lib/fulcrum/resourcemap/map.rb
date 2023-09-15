@@ -69,13 +69,13 @@ module UMPTG::Fulcrum::ResourceMap
     def add_reference(args = {})
       name = args[:name]
       id = args[:id]
-      id = ResourceMapObject.name_id(name) if id.nil?
+      id = ResourceMapObject.name_id("ref_" + name) if id.nil?
 
       reference = @references[id]
       if reference.nil?
         reference = Reference.new(
-                  :id => id,
-                  :name => name
+                  reference_id: id,
+                  name: name
                 )
         @references[id] = reference
       end
@@ -89,13 +89,13 @@ module UMPTG::Fulcrum::ResourceMap
       ename = @@encoder.encode(name)
       resource_properties = args[:resource_properties]
       id = args.has_key?(:id) ? args[:id] : \
-            ResourceMapObject.name_id(ename)
+            ResourceMapObject.name_id("res_" + ename)
 
       resource = @resources[id]
       if resource.nil?
         resource = Resource.new(
-                  :id => id,
-                  :name => ename
+                  resource_id: id,
+                  name: ename
                 )
         @resources[id] = resource
       end
