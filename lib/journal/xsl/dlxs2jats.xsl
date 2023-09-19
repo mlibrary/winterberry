@@ -24,6 +24,7 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
 
     <xsl:param name="image_list" required="no"/>
     <xsl:param name="language" select="'en'"/>
+    <xsl:param name="article_type" select="'research-article'"/>
 
     <xsl:variable name="TABLE_BORDER_THICK" select="'2'"/>
     <xsl:variable name="TABLE_BORDER_STYLE" select="concat($TABLE_BORDER_THICK,'px solid;')"/>
@@ -189,7 +190,7 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
             <xsl:namespace name="mml" select="'http://www.w3.org/1998/Math/MathML'"/>
             <xsl:namespace name="xsi" select="'http://www.w3.org/2001/XMLSchema-instance'"/>
 
-            <xsl:attribute name="article-type" select="'research-article'"/>
+            <xsl:attribute name="article-type" select="$article_type"/>
             <xsl:attribute name="dtd-version" select="'1.2'"/>
             <xsl:attribute name="xml:lang" select="$language"/>
 
@@ -1326,6 +1327,10 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
         </xsl:choose>
     </xsl:template>
 
+    <xsl:template match="CELL/LB">
+        <xsl:element name="break"/>
+    </xsl:template>
+
     <xsl:template match="FRONT|LB|MILESTONE"/>
 
     <xsl:template match="DIV1/@TYPE|TD/@TYPE|REF/@TARGET|@NODE"/>
@@ -1361,7 +1366,7 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
                 <xsl:attribute name="align" select="'center'"/>
             </xsl:when>
             <xsl:otherwise>
-                <xsl:attribute name="align" select="@REND"/>
+                <xsl:attribute name="align" select="."/>
             </xsl:otherwise>
         </xsl:choose>
     </xsl:template>

@@ -17,6 +17,7 @@ options = OpenStruct.new
 options.fulcrum_host = nil
 options.journal_dir = Dir.pwd
 options.generate_xhtml = false
+options.article_type = nil
 option_parser = OptionParser.new do |opts|
   opts.banner = "Usage: #{File.basename(__FILE__)} [-f production|preview|staging] [-d journal_dir] [-x] [journal_name...]"
   opts.on('-d', '--directory [DIRECTORY]', 'Journal directory') do |da|
@@ -24,6 +25,9 @@ option_parser = OptionParser.new do |opts|
   end
   opts.on('-f', '--fulcrum_host host', 'Fulcrum environment') do |fulcrum_host|
     options.fulcrum_host = fulcrum_host
+  end
+  opts.on('-t', '--article_type type', 'JATS Article Type') do |article_type|
+    options.article_type = article_type
   end
   opts.on('-x', '--xhtml', 'Generate XHTML') do |da|
     options.generate_xhtml = true
@@ -256,6 +260,7 @@ journal_name_list.each do |journal_name|
   params = {
               "image_list" => URI(rfile)
            }
+  params["article_type"] = options.article_type unless options.article_type.nil?
 
   rc = UMPTG::XSLT.transform(
           xslpath: dlxs2jats_xsl_file,
