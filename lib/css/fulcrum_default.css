@@ -3,6 +3,11 @@
   display: block;
 }
 
+/* Display default media inline */
+span.default-media-display {
+  display: inline;
+}
+
 /* Hide enhanced media blocks, such as Fulcrum embedded audio/video/images
    or links to Fulcrum resource pages. */
 .enhanced-media-display {
