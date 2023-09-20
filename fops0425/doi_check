@@ -1,0 +1,189 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Script inputs a list of DOIs and attempts
+# to see if they can be accessed.
+
+require 'optparse'
+require 'ostruct'
+require 'os'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+# Process the script parameters.
+options = OpenStruct.new
+options.monograph_link = :default
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} doi [doi...]"
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    script_logger.info(opts)
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  script_logger.info(option_parser.help)
+  return
+end
+
+# Process the command line parameters.
+doi_list = ARGV
+
+require 'relaton_doi'
+require 'faraday'
+require 'faraday_middleware'
+require 'json'
+require 'uri'
+require 'nokogiri'
+
+#require_relative File.join(root_dir, "lib", "fulcrum")
+
+def connection(base)
+  connection ||= Faraday.new(base) do |conn|
+    conn.headers = {
+      authorization: "Bearer #{@token}",
+      accept: "application/json, application/vnd.heliotrope.v1+json",
+      content_type: "application/json"
+    }
+    conn.request :json
+    conn.response :json, content_type: /\bjson$/
+    conn.adapter Faraday.default_adapter
+
+    conn.options[:open_timeout] = 60
+    conn.options[:timeout] = 600
+  end
+  return connection
+end
+
+def get(uri)
+  link_uri = URI(uri)
+  link_scheme_host = link_uri.scheme + "://" + link_uri.host
+
+  conn = connection(link_scheme_host)
+
+  begin
+    response = conn.get(link_uri.path)
+  rescue StandardError => e
+    e.message
+    return nil
+  end
+  return response
+end
+
+doi_update_list = []
+doi_list.each do |doi|
+  #script_logger.info("*" * 10 + " #{doi} " + "*" * 10)
+  STDOUT.flush
+
+=begin
+  # Uncomment this block if just checking URLs and
+  # not querying Crossref to resolve DOIs.
+  link = doi
+  loop do
+    response = get(link)
+    script_logger.info("#{response.status},success:#{response.success?},reason:#{response.reason_phrase}")
+
+    case response.status
+    when 200
+      script_logger.info("found")
+      break
+    when 301, 302
+      resp_doc = Nokogiri::XML(response.body)
+      new_link_node = resp_doc.xpath("//*[local-name()='a' or local-name()='A']").first
+      if new_link_node.nil?
+        new_link_node = resp_doc.xpath("//*[@HTTP-EQUIV='Location' or #@http-equiv='Location']").first
+      end
+      if new_link_node.nil?
+        script_logger.error("failed")
+        script_logger.info(response.body)
+        break
+      end
+
+      case new_link_node.name.downcase
+      when "a"
+        link = new_link_node['href']
+      when "meta"
+        link = new_link_node['Content']
+      else
+        script_logger.info("not supported #{new_link.node.name}")
+        break
+      end
+      script_logger.info("redirect #{link}")
+      #break if response.reason_phrase == 'Found'
+    when 404
+      script_logger.info(doi)
+      break
+    else
+      break
+    end
+  end
+  next
+=end
+
+  # RelatonDoi::Crossref.get "doi:10.1109/ACCESS.2017.2739804"
+  item = RelatonDoi::Crossref.get(doi.delete_prefix("https://doi.org/"))
+  if item.nil?
+    script_logger.error("no item")
+    next
+  end
+
+  item.link.each do |l|
+    next unless l.type == "src"
+    #script_logger.info(l.content)
+
+    link = l.content
+    loop do
+      response = get(link)
+      next if response.nil?
+
+      #script_logger.info("#{response.status},success:#{response.success?},reason:#{response.reason_phrase}")
+      #script_logger.info(response.body)
+      case response.status
+      when 200
+        #script_logger.info("found")
+        break
+      when 301, 302
+        resp_doc = Nokogiri::XML(response.body)
+        new_link_node = resp_doc.xpath("//*[local-name()='a' or local-name()='A']").first
+        if new_link_node.nil?
+          new_link_node = resp_doc.xpath("//*[@HTTP-EQUIV='Location' or #@http-equiv='Location']").first
+        end
+        if new_link_node.nil?
+          script_logger.error("failed")
+          script_logger.info(response.body)
+          break
+        end
+
+        case new_link_node.name.downcase
+        when "a"
+          link = new_link_node['href']
+        when "meta"
+          link = new_link_node['Content']
+        else
+          script_logger.info("not supported #{new_link.node.name}")
+          break
+        end
+        #script_logger.info("redirect #{link}")
+      when 404
+        doi_update_list << doi
+        #script_logger.info(doi)
+        break
+      else
+        break
+      end
+      STDOUT.flush
+    end
+  end
+end
+
+if doi_update_list.count > 0
+  doi_update_list_file = File.join(root_dir, "doi_update_list.txt")
+  File.write(doi_update_list_file, doi_update_list.join("\n"))
+  script_logger.info("save file #{File.basename(doi_update_list_file)}")
+end
