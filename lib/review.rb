@@ -15,6 +15,7 @@ module UMPTG
   require_relative File.join('review', 'insertlicenseaction')
   require_relative File.join('review', 'linkelementaction')
   require_relative File.join('review', 'linkkeywordaction')
+  require_relative File.join('review', 'noneaction')
   require_relative File.join('review', 'normalizefigureaction')
   require_relative File.join('review', 'normalizefigurecontaineraction')
   require_relative File.join('review', 'normalizefigurecaptionaction')

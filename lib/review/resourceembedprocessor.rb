@@ -77,9 +77,9 @@ module UMPTG::Review
 =begin
         when :remove
           #reference_action = RemoveElementAction.new(args)
-        when :none
-          #reference_action = NoneAction.new(args)
 =end
+        when :none
+          reference_action_list << NoneAction.new(args)
         else
           raise "Action #{reference_action_def.action_str} not implemented"
         end
