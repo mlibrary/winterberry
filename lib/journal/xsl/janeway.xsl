@@ -4,7 +4,7 @@
                 xmlns:tei="http://www.tei-c.org/ns/1.0"
                 exclude-result-prefixes="xsi xs xlink mml">
 
-    <!-- Version 1.4.3 2023-03-31 UMPTG -->
+    <!-- Version 1.4.3 2023-03-31 UMPTG 1.1 -->
     <xsl:output method="html" indent="yes" encoding="utf-8"/>
 
     <xsl:variable name="upperspecchars" select="'ÁÀÂÄÉÈÊËÍÌÎÏÓÒÔÖÚÙÛÜ'"/>
@@ -1433,7 +1433,18 @@
                 <div class="fig-expansion">
                     <div class="fig-inline-img">
                         <a href="{@xlink:href}" class="figure-expand-popup" title="{$caption}">
-				<img data-img="{$graphics}" src="{@xlink:href}" alt="{$caption}" class="responsive-img" />
+                            <img data-img="{$graphics}" src="{@xlink:href}" class="responsive-img">
+                                <xsl:attribute name="alt">
+                                    <xsl:choose>
+                                        <xsl:when test="../alt-text">
+                                            <xsl:value-of select="../alt-text/text()" />
+                                        </xsl:when>
+                                        <xsl:otherwise>
+                                            <xsl:value-of select="../label/text()" />
+                                        </xsl:otherwise>
+                                    </xsl:choose>
+                                </xsl:attribute>
+                            </img>
                         </a>
                     </div>
                 </div>
@@ -3778,6 +3789,7 @@
     <xsl:template match="abstract/title"/>
     <xsl:template match="ref/label"/>
     <xsl:template match="fig/graphic"/>
+    <xsl:template match="fig/alt-text"/>
     <xsl:template match="fig-group//object-id | fig//label"/>
     <xsl:template match="ack/title"/>
     <xsl:template match="ref//year | ref//article-title | ref//fpage | ref//volume | ref//source | ref//pub-id | ref//lpage | ref//comment | ref//supplement | ref//person-group[@person-group-type='editor'] | ref//edition | ref//publisher-loc | ref//publisher-name | ref//ext-link"/>
