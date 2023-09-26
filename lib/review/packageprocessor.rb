@@ -185,6 +185,8 @@ module UMPTG::Review
       node_list = context_node.xpath(xpath)
       if node_list.empty?
         reference_node = context_node.xpath("./*[local-name()='meta' and starts-with(@property,'schema:access')]")
+        reference_node = context_node.xpath("./*[local-name()='meta'][last()]") if reference_node.empty?
+        reference_node = context_node.xpath("./*[last()]") if reference_node.empty?
         action_list << NormalizeInsertMarkupAction.new(
                name: name,
                reference_node: reference_node.first,

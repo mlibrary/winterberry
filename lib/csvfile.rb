@@ -8,7 +8,7 @@ module UMPTG
         csv_path = File.expand_path(args[:csv_path])
         csv_body = File.read(csv_path)
       else
-        csv_body = options[:csv_body]
+        csv_body = args[:csv_body]
       end
       return nil if csv_body == nil or csv_body.empty?
 
