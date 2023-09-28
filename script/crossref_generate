@@ -20,8 +20,8 @@ script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
 options = OpenStruct.new
 options.monograph_link = :default
 option_parser = OptionParser.new do |opts|
-  opts.banner = "Usage: #{File.basename(__FILE__)} [-m default|fulcrum|ump] doi_report_file monograph_id [monograph_id...]"
-  opts.on('-l', '--link fulcrum|ump', 'Use monograph link as resource') do |link|
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-l default|fulcrum|ump] doi_report_file monograph_id [monograph_id...]"
+  opts.on('-l', '--link default|fulcrum|ump', 'Use monograph link as resource') do |link|
     options.monograph_link = link.to_sym
   end
   opts.on_tail('-h', '--help', 'Print this help message') do
