@@ -3,6 +3,8 @@
   <xsl:output method="xml" encoding="utf-8" omit-xml-declaration="no" indent="yes"/>
   <xsl:strip-space elements="*"/>
 
+<xsl:variable name="UMP_URL_PREFIX" select="'https://press.umich.edu/isbn/'"/>
+
 <xsl:template match="root">
 
 
@@ -49,13 +51,13 @@
             <xsl:variable name="resourceValue">
                 <xsl:choose>
                     <xsl:when test="lower-case(primaryBISAC)='out of print' and exists(secondaryISBN)">
-                        <xsl:value-of select="concat('https://press.umich.edu/isbn/', secondaryISBN)"/>
+                        <xsl:value-of select="concat($UMP_URL_PREFIX, secondaryISBN)"/>
                     </xsl:when>
                     <xsl:when test="exists(printISBN)">
-                        <xsl:value-of select="concat('https://press.umich.edu/isbn/', printISBN)"/>
+                        <xsl:value-of select="concat($UMP_URL_PREFIX, printISBN)"/>
                     </xsl:when>
                     <xsl:when test="exists(eISBN)">
-                        <xsl:value-of select="concat('https://press.umich.edu/isbn/', eISBN)"/>
+                        <xsl:value-of select="concat($UMP_URL_PREFIX, eISBN)"/>
                     </xsl:when>
                     <xsl:otherwise>
                         <xsl:value-of select="resource"/>
