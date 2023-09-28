@@ -45,7 +45,24 @@
               <xsl:when test="doi"><doi><xsl:value-of select="substring-after(doi,'https://doi.org/')"/></doi></xsl:when>
               <xsl:otherwise><doi>10.3998/mpub.<xsl:value-of select="workkey"/></doi></xsl:otherwise>
             </xsl:choose>
-            <resource><xsl:value-of select="resource"/></resource>
+            <!-- <resource><xsl:value-of select="resource"/></resource> -->
+            <xsl:variable name="resourceValue">
+                <xsl:choose>
+                    <xsl:when test="lower-case(primaryBISAC)='out of print' and exists(secondaryISBN)">
+                        <xsl:value-of select="concat('https://press.umich.edu/isbn/', secondaryISBN)"/>
+                    </xsl:when>
+                    <xsl:when test="exists(printISBN)">
+                        <xsl:value-of select="concat('https://press.umich.edu/isbn/', printISBN)"/>
+                    </xsl:when>
+                    <xsl:when test="exists(eISBN)">
+                        <xsl:value-of select="concat('https://press.umich.edu/isbn/', eISBN)"/>
+                    </xsl:when>
+                    <xsl:otherwise>
+                        <xsl:value-of select="resource"/>
+                    </xsl:otherwise>
+                </xsl:choose>
+            </xsl:variable>
+            <xsl:element name="resource"><xsl:value-of select="$resourceValue"/></xsl:element>
         </doi_data>
       </book_metadata>
     </xsl:element>
