@@ -157,7 +157,7 @@ JDT
 
           media_element['xlink:href'] = embed_link
           media_element['mimetype'] = fileset['resource_type']
-          media_element['mime-subtype'] = File.extname(fileset['file_name'])[1..-1]
+          media_element['mime-subtype'] = File.extname(fileset['file_name'])[1..-1].downcase
           media_element['position'] = 'anchor'
           media_element['specific-use'] = 'online'
 
