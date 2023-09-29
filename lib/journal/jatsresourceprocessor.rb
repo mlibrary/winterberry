@@ -31,7 +31,7 @@ JDT
     FULCRUM_RESOURCE_XPATH = <<-FRXPATH
     //*[
     local-name()='graphic'
-    and @*[local-name()='href']
+    and @*
     ] |
     //*[
     local-name()='fig'
@@ -94,8 +94,22 @@ JDT
             next
           end
 
-          href = fig_node['data-fulcrum-embed-filename'].nil? ? ref_node['xlink:href'] : \
-                fig_node['data-fulcrum-embed-filename']
+          href = fig_node['data-fulcrum-embed-filename']
+          if href.nil?
+            # Nokogiri having problems with namespaces?
+            # Can't find attribute xlink:href via hash.
+            ref_node.attributes.each do |k,v|
+              if k == "xlink:href"
+                href = v
+                break
+              end
+            end
+          end
+          if href.nil?
+            @logger.warn("no HREF found for reference #{ref_node}. Skipping.")
+            next
+          end
+
           fileset = nil
           unless resource_map.nil?
             resource = resource_map.reference_resource(href)
