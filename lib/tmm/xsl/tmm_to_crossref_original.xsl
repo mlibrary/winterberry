@@ -1,14 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <xsl:transform xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:date="http://exslt.org/dates-and-times" xmlns:doc="http://exslt.org/common" version="2.0" extension-element-prefixes="date doc">
-  <xsl:output method="xml" encoding="utf-8" omit-xml-declaration="no" indent="yes"/>
+  <xsl:output method="xml" encoding="utf-8" omit-xml-declaration="yes" indent="yes"/>
   <xsl:strip-space elements="*"/>
-
-<xsl:variable name="UMP_URL_PREFIX" select="'https://press.umich.edu/isbn/'"/>
 
 <xsl:template match="root">
 
 
-<doi_batch xmlns="http://www.crossref.org/schema/5.3.1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="5.3.1" xsi:schemaLocation="http://www.crossref.org/schema/5.3.1 http://www.crossref.org/schema/deposit/crossref5.3.1.xsd">
+<doi_batch xmlns="http://www.crossref.org/schema/4.3.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="4.3.0" xsi:schemaLocation="http://www.crossref.org/schema/4.3.0 http://www.crossref.org/schema/deposit/crossref4.3.0.xsd">
   <head >
     <!--
     <doi_batch_id>umpre-backlist-<xsl:value-of select="date:date-time()"/>-submission</doi_batch_id>
@@ -17,7 +15,7 @@
     <doi_batch_id>umpre-backlist-<xsl:value-of select="format-dateTime(current-dateTime(),'[Y0001]-[M01]-[D01]T[H01]:[m01]:[s01][Z]')"/>-submission</doi_batch_id>
     <timestamp><xsl:value-of select="concat(format-dateTime(current-dateTime(),'[Y0001][M01][D01][H01][m01][s01]'),'00000')"/></timestamp>
     <depositor>
-      <depositor_name>scpo</depositor_name>
+      <name>scpo</name>
       <email_address>mpub.xref@gmail.com</email_address>
     </depositor>
     <registrant>MPublishing</registrant>
@@ -29,7 +27,7 @@
 </xsl:template>
 
 <xsl:template match="book">
-  <xsl:element name="book" xmlns="http://www.crossref.org/schema/5.3.1">
+  <xsl:element name="book" xmlns="http://www.crossref.org/schema/4.3.0">
     <xsl:attribute name="book_type">monograph</xsl:attribute>
       <book_metadata language="en">
         <xsl:call-template name="contributors"/>
@@ -47,24 +45,7 @@
               <xsl:when test="doi"><doi><xsl:value-of select="substring-after(doi,'https://doi.org/')"/></doi></xsl:when>
               <xsl:otherwise><doi>10.3998/mpub.<xsl:value-of select="workkey"/></doi></xsl:otherwise>
             </xsl:choose>
-            <!-- <resource><xsl:value-of select="resource"/></resource> -->
-            <xsl:variable name="resourceValue">
-                <xsl:choose>
-                    <xsl:when test="lower-case(primaryBISAC)='out of print' and exists(secondaryISBN)">
-                        <xsl:value-of select="concat($UMP_URL_PREFIX, secondaryISBN)"/>
-                    </xsl:when>
-                    <xsl:when test="exists(printISBN)">
-                        <xsl:value-of select="concat($UMP_URL_PREFIX, printISBN)"/>
-                    </xsl:when>
-                    <xsl:when test="exists(eISBN)">
-                        <xsl:value-of select="concat($UMP_URL_PREFIX, eISBN)"/>
-                    </xsl:when>
-                    <xsl:otherwise>
-                        <xsl:value-of select="resource"/>
-                    </xsl:otherwise>
-                </xsl:choose>
-            </xsl:variable>
-            <xsl:element name="resource"><xsl:value-of select="$resourceValue"/></xsl:element>
+            <resource><xsl:value-of select="resource"/></resource>
         </doi_data>
       </book_metadata>
     </xsl:element>
@@ -73,7 +54,7 @@
 
 <xsl:template name="contributors">
   <xsl:if test="node()[starts-with(name(), 'authortype')][text()='Author' or contains(text(), 'Editor') or text()='Editor']">
-    <contributors xmlns="http://www.crossref.org/schema/5.3.1">
+    <contributors xmlns="http://www.crossref.org/schema/4.3.0">
         <xsl:for-each select="node()[starts-with(name(), 'authortype')]">
           <xsl:variable name="tmmRole">
               <xsl:value-of select="."/>
@@ -110,28 +91,28 @@
 </xsl:template>
 
 <xsl:template match="*[starts-with(name(), 'authorfirstname')][text()]">
-    <given_name xmlns="http://www.crossref.org/schema/5.3.1"><xsl:value-of select="substring(.,1,45)"/></given_name>
+    <given_name xmlns="http://www.crossref.org/schema/4.3.0"><xsl:value-of select="substring(.,1,45)"/></given_name>
 </xsl:template>
 
 <xsl:template match="*[starts-with(name(), 'authorlastname')][text()]">
-    <surname xmlns="http://www.crossref.org/schema/5.3.1"><xsl:value-of select="substring(.,1,45)"/></surname>
+    <surname xmlns="http://www.crossref.org/schema/4.3.0"><xsl:value-of select="substring(.,1,45)"/></surname>
 </xsl:template>
 
 
 
 <xsl:template name='titles'>
-  <titles xmlns="http://www.crossref.org/schema/5.3.1">
+  <titles xmlns="http://www.crossref.org/schema/4.3.0">
       <title><xsl:value-of select="titleprefixandtitle"/></title>
       <xsl:apply-templates select="subtitle"/>
   </titles>
 </xsl:template>
 
 <xsl:template match="subtitle[text()]">
-  <subtitle xmlns="http://www.crossref.org/schema/5.3.1"><xsl:value-of select="."/></subtitle>
+  <subtitle xmlns="http://www.crossref.org/schema/4.3.0"><xsl:value-of select="."/></subtitle>
 </xsl:template>
 
 <xsl:template match="printISBN|eISBN">
-  <xsl:element name="isbn" xmlns="http://www.crossref.org/schema/5.3.1">
+  <xsl:element name="isbn" xmlns="http://www.crossref.org/schema/4.3.0">
       <xsl:attribute name="media_type">
         <xsl:choose>
             <xsl:when test="name()='printISBN'">print</xsl:when>

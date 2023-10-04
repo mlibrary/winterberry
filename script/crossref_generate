@@ -30,7 +30,7 @@ option_parser = OptionParser.new do |opts|
   end
 end
 option_parser.parse!(ARGV)
-if ARGV.count < 2
+if ARGV.count < 1
   script_logger.info(option_parser.help)
   return
 end
@@ -64,99 +64,125 @@ service = UMPTG::Services::Heliotrope.new(
               )
 
 book_node_list = []
-monograph_id_list.each do |monograph_id|
-  script_logger.info("*" * 10 + " #{monograph_id} " + "*" * 10)
-  STDOUT.flush
+if monograph_id_list.empty?
+  book_node_list = doi_report_doc.xpath("//*[local-name()='book']")
+else
+  monograph_id_list.each do |monograph_id|
+    script_logger.info("*" * 10 + " #{monograph_id} " + "*" * 10)
+    STDOUT.flush
 
-  manifest = nil
+    manifest = nil
 
-  # Assume the monograph ID is a book key.
-  bnode_list = doi_report_doc.xpath("//*[local-name()='bookkey' and string()='#{monograph_id}']/ancestor::*[local-name()='book'][1]")
-  if bnode_list.empty?
-    script_logger.warn("book key #{monograph_id} not found.")
+    # Assume the monograph ID is a book key.
+    bnode_list = doi_report_doc.xpath("//*[local-name()='bookkey' and string()='#{monograph_id}']/ancestor::*[local-name()='book'][1]")
+    if bnode_list.empty?
+      script_logger.warn("book key #{monograph_id} not found.")
 
-    # Book key not found. Try it as ISBN
-    bnode_list = doi_report_doc.xpath("//*[(local-name()='eISBN' or local-name()='printISBN') and string()='#{monograph_id}']/ancestor::*[local-name()='book'][1]")
-    script_logger.warn("ISBN #{monograph_id} found.") unless bnode_list.empty?
-    script_logger.warn("ISBN #{monograph_id} not found.") if bnode_list.empty?
-  else
-    script_logger.info("book key #{monograph_id} found.")
-  end
-
-  if bnode_list.empty? or options.monograph_link == :fulcrum
-    # Assume the monograph ID is a Fulcrum Identifer.
-    manifest_body_list = service.monograph_export(
-                  monograph_id: monograph_id
-                )
-    if manifest_body_list[monograph_id].empty?
-      script_logger.warn("no manifest found for ID #{monograph_id}.")
+      # Book key not found. Try it as ISBN
+      bnode_list = doi_report_doc.xpath("//*[(local-name()='eISBN' or local-name()='printISBN') and string()='#{monograph_id}']/ancestor::*[local-name()='book'][1]")
+      script_logger.warn("ISBN #{monograph_id} found.") unless bnode_list.empty?
+      script_logger.warn("ISBN #{monograph_id} not found.") if bnode_list.empty?
     else
-      manifest = UMPTG::Fulcrum::Manifest::Document.new(
-                    csv_body: manifest_body_list[monograph_id].first
-                  )
-=begin
-      manifest = UMPTG::Fulcrum::Manifest::Document.new(
+      script_logger.info("book key #{monograph_id} found.")
+    end
+
+    if bnode_list.empty? or options.monograph_link == :fulcrum
+      # Assume the monograph ID is a Fulcrum Identifer.
+      manifest_body_list = service.monograph_export(
                     monograph_id: monograph_id
                   )
-      manifest = nil if manifest.monograph_row.nil?
+      if manifest_body_list[monograph_id].empty?
+        script_logger.warn("no manifest found for ID #{monograph_id}.")
+      else
+        manifest = UMPTG::Fulcrum::Manifest::Document.new(
+                      csv_body: manifest_body_list[monograph_id].first
+                    )
+=begin
+        manifest = UMPTG::Fulcrum::Manifest::Document.new(
+                      monograph_id: monograph_id
+                    )
+        manifest = nil if manifest.monograph_row.nil?
 =end
-      monograph_link = manifest.monograph_row['link'][12..-3]
-      script_logger.info("manifest found for ID #{monograph_id}, using link #{monograph_link}.")
+        monograph_link = manifest.monograph_row['link'][12..-3]
+        script_logger.info("manifest found for ID #{monograph_id}, using link #{monograph_link}.")
 
-      if bnode_list.empty?
-        script_logger.info("try using the ISBNs.")
-        manifest.isbn.each do |format,isbn|
-          isbn = isbn.gsub(/\-/,'')
-          script_logger.info("format #{format} ISBN #{isbn}.")
-          case format
-          when 'ebook','open access'
-            bnode_list = doi_report_doc.xpath("//*[local-name()='eISBN' and string()='#{isbn}']/ancestor::*[local-name()='book'][1]")
-          else
-            bnode_list = doi_report_doc.xpath("//*[local-name()='printISBN' and string()='#{isbn}']/ancestor::*[local-name()='book'][1]")
+        if bnode_list.empty?
+          script_logger.info("try using the ISBNs.")
+          manifest.isbn.each do |format,isbn|
+            isbn = isbn.gsub(/\-/,'')
+            script_logger.info("format #{format} ISBN #{isbn}.")
+            case format
+            when 'ebook','open access'
+              bnode_list = doi_report_doc.xpath("//*[local-name()='eISBN' and string()='#{isbn}']/ancestor::*[local-name()='book'][1]")
+            else
+              bnode_list = doi_report_doc.xpath("//*[local-name()='printISBN' and string()='#{isbn}']/ancestor::*[local-name()='book'][1]")
+            end
+            break unless bnode_list.empty?
+
+            script_logger.warn("no #{format} nodes found for ID #{isbn}.")
+            STDOUT.flush
           end
-          break unless bnode_list.empty?
-
-          script_logger.warn("no #{format} nodes found for ID #{isbn}.")
-          STDOUT.flush
+        end
+        if bnode_list.empty?
+          # Try using the monograph NOID.
+          script_logger.warn("manifest ISBNs not found for #{monograph_id}. Try using the monograph NOID #{manifest.noid}.")
+          bnode_list = doi_report_doc.xpath("//*[local-name()='resource' and contains(string(),'" + manifest.noid + "')]/ancestor::*[local-name()='book'][1]")
         end
       end
-      if bnode_list.empty?
-        # Try using the monograph NOID.
-        script_logger.warn("manifest ISBNs not found for #{monograph_id}. Try using the monograph NOID #{manifest.noid}.")
-        bnode_list = doi_report_doc.xpath("//*[local-name()='resource' and contains(string(),'" + manifest.noid + "')]/ancestor::*[local-name()='book'][1]")
-      end
     end
-  end
 
-  if bnode_list.empty? and !manifest.nil?
-    bnode_list = doi_report_doc.xpath("//*[local-name()='resource' and contains(string(),'" + manifest.noid + "')]/ancestor::*[local-name()='book'][1]")
-  end
-  bnode_list.each do |bn|
-    case options.monograph_link
-    when :fulcrum
-      unless monograph_link.nil?
+    if bnode_list.empty? and !manifest.nil?
+      bnode_list = doi_report_doc.xpath("//*[local-name()='resource' and contains(string(),'" + manifest.noid + "')]/ancestor::*[local-name()='book'][1]")
+    end
+    bnode_list.each do |bn|
+=begin
+      case options.monograph_link
+      when :fulcrum
+        unless monograph_link.nil?
+          res_node_list = bn.xpath(".//*[local-name()='resource']")
+          unless res_node_list.empty?
+            res_node_list.first.content = monograph_link
+          end
+        end
+      when :ump
         res_node_list = bn.xpath(".//*[local-name()='resource']")
         unless res_node_list.empty?
-          res_node_list.first.content = monograph_link
+          isbn_node_list = bn.xpath(".//*[local-name()='printISBN']")
+          unless isbn_node_list.empty?
+            res_node_list.first.content = "https://press.umich.edu/isbn/#{isbn_node_list.first.content}"
+          end
         end
       end
-    when :ump
-      res_node_list = bn.xpath(".//*[local-name()='resource']")
-      unless res_node_list.empty?
-        isbn_node_list = bn.xpath(".//*[local-name()='printISBN']")
-        unless isbn_node_list.empty?
-          res_node_list.first.content = "https://press.umich.edu/isbn/#{isbn_node_list.first.content}"
-        end
-      end
+=end
+      book_node_list << bn
     end
-    book_node_list << bn
+    script_logger.info("found #{bnode_list.count} book nodes for ID #{monograph_id}.")
   end
-  script_logger.info("found #{bnode_list.count} book nodes for ID #{monograph_id}.")
 end
 
 if book_node_list.empty?
   script_logger.warn("no book nodes found")
   exit 0
+end
+
+book_node_list.each do |bn|
+  case options.monograph_link
+  when :fulcrum
+    unless monograph_link.nil?
+      res_node_list = bn.xpath(".//*[local-name()='resource']")
+      unless res_node_list.empty?
+        res_node_list.first.content = monograph_link
+      end
+    end
+  when :ump
+    res_node_list = bn.xpath(".//*[local-name()='resource']")
+    unless res_node_list.empty?
+      isbn_node_list = bn.xpath(".//*[local-name()='printISBN']")
+      unless isbn_node_list.empty?
+        res_node_list.first.content = "https://press.umich.edu/isbn/#{isbn_node_list.first.content}"
+      end
+    end
+  end
 end
 
 crossref_doc = Nokogiri::XML('<?xml version="1.0" encoding="utf-8"?><root></root>')
@@ -169,12 +195,18 @@ doi_report_edit_file = File.join(File.dirname(doi_report_file), File.basename(do
 File.write(doi_report_edit_file, crossref_doc.to_xml)
 script_logger.info("wrote XML file #{File.basename(doi_report_edit_file)}.")
 
-crossref_xsl_file = File.join(root_dir, "lib", "tmm", "xsl", "tmm_to_crossref_5_3_1.xsl")
+#crossref_xsl_file = File.join(root_dir, "lib", "tmm", "xsl", "tmm_to_crossref_5_3_1.xsl")
+crossref_xsl_file = File.join(root_dir, "lib", "tmm", "xsl", "tmm_to_crossref_5_3_1_v11.xsl")
 crossref_xml_file = File.join(File.dirname(doi_report_edit_file), File.basename(doi_report_edit_file, ".*") + "_crossref" + File.extname(doi_report_edit_file))
 
 script_logger.info("transforming XML file #{File.basename(doi_report_edit_file)} to #{File.basename(crossref_xml_file)} using XSL #{File.basename(crossref_xsl_file)}.")
-UMPTG::XSLT.transform(
+xsl = Nokogiri::XSLT(File.read(crossref_xsl_file))
+crossref_xml = xsl.transform(crossref_doc)
+File.write(crossref_xml_file, crossref_xml)
+=begin
+  UMPTG::XSLT.transform(
         xslpath: crossref_xsl_file,
         srcpath: doi_report_edit_file,
         destpath: crossref_xml_file
         )
+=end

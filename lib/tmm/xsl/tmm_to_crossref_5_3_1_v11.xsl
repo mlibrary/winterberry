@@ -3,7 +3,7 @@
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
         xmlns:date="http://exslt.org/dates-and-times"
-        xmlns:mlibxsl="http://www.mlib.umich.edu/namespace/mlibxsl"
+        extension-element-prefixes="date"
         version="1.1"
   >
   <xsl:output method="xml" encoding="utf-8" omit-xml-declaration="no" indent="yes"/>
@@ -144,12 +144,12 @@
           </xsl:attribute>
           <xsl:if test="following-sibling::*[starts-with(local-name(),concat('authorfirstname',$ordinal)) and text()]">
             <xsl:element name="given_name" namespace="{$NAMESPACE_URL}">
-                <xsl:value-of select="following-sibling::*[starts-with(local-name(),concat('authorfirstname',$ordinal))][1]"/>
+                <xsl:value-of select="normalize-space(following-sibling::*[starts-with(local-name(),concat('authorfirstname',$ordinal))][1])"/>
             </xsl:element>
           </xsl:if>
           <xsl:if test="following-sibling::*[starts-with(local-name(),concat('authorlastname',$ordinal)) and text()]">
             <xsl:element name="surname" namespace="{$NAMESPACE_URL}">
-                <xsl:value-of select="following-sibling::*[starts-with(local-name(),concat('authorlastname',$ordinal))][1]"/>
+                <xsl:value-of select="normalize-space(following-sibling::*[starts-with(local-name(),concat('authorlastname',$ordinal))][1])"/>
             </xsl:element>
           </xsl:if>
         </xsl:element>
