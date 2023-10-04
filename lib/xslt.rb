@@ -1,5 +1,6 @@
 module UMPTG
   require 'open3'
+  require 'nokogiri'
 
   require_relative File.join("logger")
 
@@ -11,6 +12,7 @@ module UMPTG
 
     def self.transform(args)
       xsl_path = args[:xslpath]
+      src_doc = args[:srcdoc]
       src_path = args[:srcpath]
       dest_path = args[:destpath]
       logger = args[:logger]
@@ -23,36 +25,43 @@ module UMPTG
         do_flush = false
       end
 
-      parameters_str = ""
-      parameters.each { |key, val| parameters_str += " #{key}=\"#{val}\""} unless parameters == nil
-      if dest_path == nil or dest_path.strip.empty?
-        cmd_str = sprintf(@@CMD_STR, @@JAR_PATH, xsl_path, src_path, parameters_str)
-      else
-        cmd_str = sprintf(@@CMD_STR_DEST, @@JAR_PATH, xsl_path, src_path, dest_path, parameters_str)
-      end
-      logger.info(cmd_str)
+      xsl_body = File.read(xsl_path)
+      xsl_doc = Nokogiri::XML(xsl_body)
+      xsl_version = xsl_doc.xpath("/*[local-name()='stylesheet' or local-name()='transform']").first['version']
+      logger.info("XSLT version: #{xsl_version}")
 
-      Open3.popen3(cmd_str) do |stdin, stdout, stderr, thread|
-        unless stderr.closed?
-          st = stderr.read
-          logger.info(st) unless st.empty?
+      case
+      when xsl_version.start_with?('1.')
+        src_doc = Nokogiri::XML(File.read(src_path)) if src_doc.nil?
+        xsl = Nokogiri::XSLT(xsl_body)
+        dest_xml = xsl.transform(src_doc, parameters)
+        File.write(dest_path, dest_xml)
+      when xsl_version.start_with?('2.')
+        raise "srcpath parameter must be set" if src_path.nil? or src_path.empty?
+        parameters_str = ""
+        parameters.each { |key, val| parameters_str += " #{key}=\"#{val}\""} unless parameters == nil
+        if dest_path == nil or dest_path.strip.empty?
+          cmd_str = sprintf(@@CMD_STR, @@JAR_PATH, xsl_path, src_path, parameters_str)
+        else
+          cmd_str = sprintf(@@CMD_STR_DEST, @@JAR_PATH, xsl_path, src_path, dest_path, parameters_str)
         end
-        unless stdout.closed?
-          st = stdout.read
-          logger.info(st) unless st.empty?
+        logger.info(cmd_str)
+
+        Open3.popen3(cmd_str) do |stdin, stdout, stderr, thread|
+          unless stderr.closed?
+            st = stderr.read
+            logger.info(st) unless st.empty?
+          end
+          unless stdout.closed?
+            st = stdout.read
+            logger.info(st) unless st.empty?
+          end
         end
+      else
+        raise "unknown XSL stylesheet version #{xsl_version}."
+        return false
       end
       return true
-=begin
-      ok = system(cmd_str)
-      status = $?
-      case ok
-      when true
-      else
-        logger.error("Transform failed (status = #{ok})")
-      end
-      return ok
-=end
     end
 
     def self.XSL_DIR

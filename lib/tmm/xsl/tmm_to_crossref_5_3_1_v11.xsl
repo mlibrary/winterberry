@@ -60,7 +60,7 @@
         <xsl:if test="./*[starts-with(local-name(),'authortype') and (text()='Author' or text()='Editor' or contains(text(),'Editor'))]">
           <!-- QQQ: Restricted to author and editor. Should all roles be allowed? -->
           <xsl:element name="contributors" namespace="{$NAMESPACE_URL}">
-              <xsl:apply-templates select="./*[starts-with(local-name(),'authortype')]"/>
+              <xsl:apply-templates select="./*[starts-with(local-name(),'authortype') and text()!='Contributor']"/>
           </xsl:element>
         </xsl:if>
         <xsl:if test="./titleprefixandtitle or ./subittle">

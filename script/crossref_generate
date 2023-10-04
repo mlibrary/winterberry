@@ -19,10 +19,14 @@ script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
 # Process the script parameters.
 options = OpenStruct.new
 options.monograph_link = :default
+options.xsl_version_2 = false
 option_parser = OptionParser.new do |opts|
-  opts.banner = "Usage: #{File.basename(__FILE__)} [-l default|fulcrum|ump] doi_report_file monograph_id [monograph_id...]"
-  opts.on('-l', '--link default|fulcrum|ump', 'Use monograph link as resource') do |link|
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-l default|fulcrum|ump] [-v] doi_report_file monograph_id [monograph_id...]"
+  opts.on('-l', '--link default|fulcrum|ump', 'Use which link as resource') do |link|
     options.monograph_link = link.to_sym
+  end
+  opts.on('-v', '--version2.0', 'Use XSLT 2.0') do |flag|
+    options.xsl_version_2 = true
   end
   opts.on_tail('-h', '--help', 'Print this help message') do
     script_logger.info(opts)
@@ -97,12 +101,6 @@ else
         manifest = UMPTG::Fulcrum::Manifest::Document.new(
                       csv_body: manifest_body_list[monograph_id].first
                     )
-=begin
-        manifest = UMPTG::Fulcrum::Manifest::Document.new(
-                      monograph_id: monograph_id
-                    )
-        manifest = nil if manifest.monograph_row.nil?
-=end
         monograph_link = manifest.monograph_row['link'][12..-3]
         script_logger.info("manifest found for ID #{monograph_id}, using link #{monograph_link}.")
 
@@ -135,25 +133,6 @@ else
       bnode_list = doi_report_doc.xpath("//*[local-name()='resource' and contains(string(),'" + manifest.noid + "')]/ancestor::*[local-name()='book'][1]")
     end
     bnode_list.each do |bn|
-=begin
-      case options.monograph_link
-      when :fulcrum
-        unless monograph_link.nil?
-          res_node_list = bn.xpath(".//*[local-name()='resource']")
-          unless res_node_list.empty?
-            res_node_list.first.content = monograph_link
-          end
-        end
-      when :ump
-        res_node_list = bn.xpath(".//*[local-name()='resource']")
-        unless res_node_list.empty?
-          isbn_node_list = bn.xpath(".//*[local-name()='printISBN']")
-          unless isbn_node_list.empty?
-            res_node_list.first.content = "https://press.umich.edu/isbn/#{isbn_node_list.first.content}"
-          end
-        end
-      end
-=end
       book_node_list << bn
     end
     script_logger.info("found #{bnode_list.count} book nodes for ID #{monograph_id}.")
@@ -195,18 +174,19 @@ doi_report_edit_file = File.join(File.dirname(doi_report_file), File.basename(do
 File.write(doi_report_edit_file, crossref_doc.to_xml)
 script_logger.info("wrote XML file #{File.basename(doi_report_edit_file)}.")
 
-#crossref_xsl_file = File.join(root_dir, "lib", "tmm", "xsl", "tmm_to_crossref_5_3_1.xsl")
-crossref_xsl_file = File.join(root_dir, "lib", "tmm", "xsl", "tmm_to_crossref_5_3_1_v11.xsl")
-crossref_xml_file = File.join(File.dirname(doi_report_edit_file), File.basename(doi_report_edit_file, ".*") + "_crossref" + File.extname(doi_report_edit_file))
+crossref_xsl_file = options.xsl_version_2 ? \
+        File.join(root_dir, "lib", "tmm", "xsl", "tmm_to_crossref.xsl") : \
+        File.join(root_dir, "lib", "tmm", "xsl", "tmm_to_crossref_5_3_1_v11.xsl")
+crossref_xml_file = File.join(
+      File.dirname(doi_report_edit_file),
+      File.basename(doi_report_edit_file, ".*") + "_crossref" + File.extname(doi_report_edit_file)
+      )
 
 script_logger.info("transforming XML file #{File.basename(doi_report_edit_file)} to #{File.basename(crossref_xml_file)} using XSL #{File.basename(crossref_xsl_file)}.")
-xsl = Nokogiri::XSLT(File.read(crossref_xsl_file))
-crossref_xml = xsl.transform(crossref_doc)
-File.write(crossref_xml_file, crossref_xml)
-=begin
-  UMPTG::XSLT.transform(
-        xslpath: crossref_xsl_file,
-        srcpath: doi_report_edit_file,
-        destpath: crossref_xml_file
-        )
-=end
+
+UMPTG::XSLT.transform(
+      xslpath: crossref_xsl_file,
+      srcdoc: crossref_doc,
+      srcpath: doi_report_edit_file,
+      destpath: crossref_xml_file
+      )
