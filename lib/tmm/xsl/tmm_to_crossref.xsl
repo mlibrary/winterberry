@@ -53,6 +53,7 @@
     </xsl:template>
 
     <xsl:template match="book">
+        <xsl:variable name="pbisac" select="translate(./primaryBISAC, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz')"/>
         <xsl:element name="book" namespace="{$NAMESPACE_URL}">
             <xsl:attribute name="book_type"><xsl:value-of select="'monograph'"/></xsl:attribute>
             <xsl:element name="book_metadata" namespace="{$NAMESPACE_URL}">
@@ -69,7 +70,18 @@
                     </xsl:element>
                 </xsl:if>
                 <xsl:apply-templates select="./pubyear"/>
+                <!--
                 <xsl:apply-templates select="./printISBN|./eISBN"/>
+                -->
+                <xsl:choose>
+                    <xsl:when test="$pbisac='out of print' and ./secondaryISBN">
+                        <xsl:apply-templates select="./secondaryISBN"/>
+                    </xsl:when>
+                    <xsl:otherwise>
+                        <xsl:apply-templates select="./printISBN"/>
+                    </xsl:otherwise>
+                </xsl:choose>
+                <xsl:apply-templates select="./eISBN"/>
                 <xsl:apply-templates select="./groupentry3"/>
                 <xsl:element name="doi_data" namespace="{$NAMESPACE_URL}">
                     <xsl:element name="doi" namespace="{$NAMESPACE_URL}">
@@ -82,7 +94,6 @@
                             </xsl:otherwise>
                         </xsl:choose>
                     </xsl:element>
-                    <xsl:variable name="pbisac" select="translate(./primaryBISAC, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz')"/>
                     <xsl:variable name="resourceValue">
                         <xsl:choose>
                             <xsl:when test="$pbisac='out of print' and ./secondaryISBN">
@@ -176,7 +187,7 @@
         </xsl:element>
     </xsl:template>
 
-    <xsl:template match="printISBN">
+    <xsl:template match="printISBN|secondaryISBN">
         <xsl:element name="isbn" namespace="{$NAMESPACE_URL}">
             <xsl:attribute name="media_type">
                 <xsl:value-of select="'print'"/>

@@ -184,6 +184,7 @@ crossref_xml_file = File.join(
 
 script_logger.info("transforming XML file #{File.basename(doi_report_edit_file)} to #{File.basename(crossref_xml_file)} using XSL #{File.basename(crossref_xsl_file)}.")
 
+# parameters: { "UMP_REGISTRANT" => "'MPublishing10'" }
 UMPTG::XSLT.transform(
       xslpath: crossref_xsl_file,
       srcdoc: crossref_doc,
