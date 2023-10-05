@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <xsl:stylesheet
+        version="1.1"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
         xmlns:date="http://exslt.org/dates-and-times"
         extension-element-prefixes="date"
-        version="1.1"
         >
     <xsl:output method="xml" encoding="utf-8" omit-xml-declaration="no" indent="yes"/>
     <xsl:strip-space elements="*"/>
@@ -29,9 +29,17 @@
             </xsl:attribute>
             <xsl:element name="head" namespace="{$NAMESPACE_URL}">
                 <xsl:element name="doi_batch_id" namespace="{$NAMESPACE_URL}">
+                    <!-- XSLT 2.0
+                    <xsl:value-of select="concat('umpre-backlist-',format-dateTime(current-dateTime(),'[Y0001]-[M01]-[D01]T[H01]:[m01]:[s01][Z]'),'-submission')"/>
+                    -->
+                    <!-- XSLT 1.1 -->
                     <xsl:value-of select="concat('umpre-backlist-',date:date-time(),'-submission')"/>
                 </xsl:element>
                 <xsl:element name="timestamp" namespace="{$NAMESPACE_URL}">
+                    <!-- XSLT 2.0
+                    <xsl:value-of select="concat(format-dateTime(current-dateTime(),'[Y0001][M01][D01][H01][m01][s01]'),'00000')"/>
+                    -->
+                    <!-- XSLT 1.1 -->
                     <xsl:value-of select="concat(date:year(),format-number(date:month-in-year(),'00'),format-number(date:day-in-month(),'00'),format-number(date:hour-in-day(),'00'),format-number(date:minute-in-hour(),'00'),format-number(date:second-in-minute(),'00'),'00000')"/>
                 </xsl:element>
                 <xsl:element name="depositor" namespace="{$NAMESPACE_URL}">
@@ -96,6 +104,9 @@
                     </xsl:element>
                     <xsl:variable name="resourceValue">
                         <xsl:choose>
+                            <xsl:when test="starts-with(./resource, 'https://www.fulcrum.org/')">
+                                <xsl:value-of select="./resource"/>
+                            </xsl:when>
                             <xsl:when test="$pbisac='out of print' and ./secondaryISBN">
                                 <xsl:value-of select="concat($UMP_URL_PREFIX, ./secondaryISBN)"/>
                             </xsl:when>

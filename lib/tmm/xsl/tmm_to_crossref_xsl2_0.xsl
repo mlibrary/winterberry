@@ -37,6 +37,7 @@
     </xsl:template>
 
     <xsl:template match="book">
+        <xsl:variable name="pbisac" select="lower-case(./primaryBISAC)"/>
         <xsl:element name="book" xmlns="http://www.crossref.org/schema/5.3.1">
             <xsl:attribute name="book_type">monograph</xsl:attribute>
             <book_metadata language="en">
@@ -45,7 +46,18 @@
                 <publication_date>
                     <year><xsl:value-of select="pubyear"/></year>
                 </publication_date>
-                <xsl:apply-templates select="printISBN|eISBN"/>
+                <!--
+                <xsl:apply-templates select="./printISBN|./eISBN"/>
+                -->
+                <xsl:choose>
+                    <xsl:when test="$pbisac='out of print' and ./secondaryISBN">
+                        <xsl:apply-templates select="./secondaryISBN"/>
+                    </xsl:when>
+                    <xsl:otherwise>
+                        <xsl:apply-templates select="./printISBN"/>
+                    </xsl:otherwise>
+                </xsl:choose>
+                <xsl:apply-templates select="./eISBN"/>
                 <publisher>
                     <publisher_name><xsl:value-of select="groupentry3"/></publisher_name>
                     <publisher_place>Ann Arbor, MI</publisher_place>
@@ -55,7 +67,8 @@
                         <xsl:when test="doi"><doi><xsl:value-of select="substring-after(doi,'https://doi.org/')"/></doi></xsl:when>
                         <xsl:otherwise><doi>10.3998/mpub.<xsl:value-of select="workkey"/></doi></xsl:otherwise>
                     </xsl:choose>
-                    <!-- <resource><xsl:value-of select="resource"/></resource> -->
+                    <resource><xsl:value-of select="resource"/></resource>
+                    <!--
                     <xsl:variable name="resourceValue">
                         <xsl:choose>
                             <xsl:when test="lower-case(primaryBISAC)='out of print' and exists(secondaryISBN)">
@@ -73,6 +86,7 @@
                         </xsl:choose>
                     </xsl:variable>
                     <xsl:element name="resource"><xsl:value-of select="$resourceValue"/></xsl:element>
+                    -->
                 </doi_data>
             </book_metadata>
         </xsl:element>
@@ -117,15 +131,13 @@
         </xsl:if>
     </xsl:template>
 
-    <xsl:template match="*[starts-with(name(), 'authorfirstname')][text()]">
+    <xsl:template match="*[starts-with(name(), 'authorfirstname') and text()]">
         <given_name xmlns="http://www.crossref.org/schema/5.3.1"><xsl:value-of select="substring(.,1,45)"/></given_name>
     </xsl:template>
 
-    <xsl:template match="*[starts-with(name(), 'authorlastname')][text()]">
+    <xsl:template match="*[starts-with(name(), 'authorlastname') and text()]">
         <surname xmlns="http://www.crossref.org/schema/5.3.1"><xsl:value-of select="substring(.,1,45)"/></surname>
     </xsl:template>
-
-
 
     <xsl:template name='titles'>
         <titles xmlns="http://www.crossref.org/schema/5.3.1">
@@ -138,12 +150,12 @@
         <subtitle xmlns="http://www.crossref.org/schema/5.3.1"><xsl:value-of select="."/></subtitle>
     </xsl:template>
 
-    <xsl:template match="printISBN|eISBN">
+    <xsl:template match="printISBN|eISBN|secondaryISBN">
         <xsl:element name="isbn" xmlns="http://www.crossref.org/schema/5.3.1">
             <xsl:attribute name="media_type">
                 <xsl:choose>
-                    <xsl:when test="name()='printISBN'">print</xsl:when>
                     <xsl:when test="name()='eISBN'">electronic</xsl:when>
+                    <xsl:otherwise>print</xsl:otherwise>
                 </xsl:choose>
             </xsl:attribute>
             <xsl:value-of select="."/>
