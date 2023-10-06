@@ -24,8 +24,9 @@ options.fulcrum_column_list = []
 options.fulcrum_host = nil
 options.press = :ebc
 options.output_file = File.join(Dir.pwd, "monograph_manifest.csv")
+options.include_representatives = false
 option_parser = OptionParser.new do |opts|
-  opts.banner = "Usage: #{File.basename(__FILE__)} [-c <column_header>] [-f production|preview|staging] [-o <output_file>] [-p bar|ebc|heb] <monograph_id> [<monograph_id>..]"
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-c <column_header>] [-f production|preview|staging] [-o <output_file>] [-p bar|ebc|heb] [-r] <monograph_id> [<monograph_id>..]"
   opts.on('-c', '--manifest_column <column_header>', 'Fulcrum manifest metadata field') do |col|
     options.fulcrum_column_list << col
   end
@@ -37,6 +38,9 @@ option_parser = OptionParser.new do |opts|
   end
   opts.on('-p', '--press [bar|ebc|heb]', 'Fulcrum environment') do |press|
     options.press = press.to_sym
+  end
+  opts.on('-r', '--representatives', 'Include all representatives') do |flag|
+    options.include_representatives = true
   end
   opts.on_tail('-h', '--help', 'Print this help message') do
     script_logger.info(opts)
@@ -84,22 +88,45 @@ monograph_id_list.each do |monograph_id|
     next
   end
 
-  field_values = []
   manifest_headers = manifest.headers if manifest_headers.empty?
-  manifest_headers.each do |h|
-    if h == "Monograph ID"
-      field_values << monograph_id
-      next
-    end
 
-    new_h = h.strip.downcase.gsub(' ', '_')
-    unless manifest.monograph_row.key?(new_h)
-      script_logger.error("invalid metadata field \"#{h}\".")
-      next
+  if options.include_representatives
+    manifest.representatives().each do |kind,rep_row|
+      next unless ["epub","pdf","pdf_ebook"].include?(kind)
+
+      field_values = []
+      manifest_headers.each do |h|
+        if h == "Monograph ID"
+          field_values << rep_row['file_name']
+          next
+        end
+
+        new_h = h.strip.downcase.gsub(' ', '_')
+        unless manifest.monograph_row.key?(new_h)
+          script_logger.error("invalid metadata field \"#{h}\".")
+          next
+        end
+        field_values << manifest.monograph_row[new_h]
+      end
+      monograph_manifest_rows << field_values
     end
-    field_values << manifest.monograph_row[new_h]
+  else
+    field_values = []
+    manifest_headers.each do |h|
+      if h == "Monograph ID"
+        field_values << monograph_id
+        next
+      end
+
+      new_h = h.strip.downcase.gsub(' ', '_')
+      unless manifest.monograph_row.key?(new_h)
+        script_logger.error("invalid metadata field \"#{h}\".")
+        next
+      end
+      field_values << manifest.monograph_row[new_h]
+    end
+    monograph_manifest_rows << field_values
   end
-  monograph_manifest_rows << field_values
 end
 
 # Write CSV file.
