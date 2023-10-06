@@ -4,6 +4,8 @@ module UMPTG::Review
     @@REVIEW_PROCESSORS = {
           keyword: KeywordProcessor.new,
           add_license: LicenseProcessor.new,
+          section_type: SectionTypeProcessor.new,
+          fix_img_ref: FixImageReferenceProcessor.new,
           link: LinkProcessor.new,
           list: ListProcessor.new,
           package: PackageProcessor.new,
@@ -61,6 +63,7 @@ module UMPTG::Review
       if review_processors.key?(:add_license)
         rp = review_processors[:add_license]
         rp.license_file = args[:license_file]
+        rp.license_fragment = args[:license_fragment]
         #rp.epub = @epub
       end
 

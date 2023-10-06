@@ -23,8 +23,9 @@ options.css_file_list = []
 options.manifest_item_file_list = []
 options.force_update = false
 options.license = nil
+options.section_type = false
 option_parser = OptionParser.new do |opts|
-  opts.banner = "Usage: #{File.basename(__FILE__)} [-f] [-c css_file] [-l license] [-m manifest_item] epub_file [epub_file...]"
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-f] [-c css_file] [-l license] [-m manifest_item] [-y] epub_file [epub_file...]"
   opts.on('-c', '--css [css_file]', 'CSS replacement') do |css_file|
     options.css_file_list << css_file
   end
@@ -34,8 +35,11 @@ option_parser = OptionParser.new do |opts|
   opts.on('-m', '--manifest_item item_file', 'Manifest item') do |item_file|
     options.manifest_item_file_list << item_file
   end
-  opts.on('-f', '--css [css_file]', 'CSS replacement') do |css_file|
+  opts.on('-f', '--force-update', 'CSS force update') do |flag|
     options.force_update = true
+  end
+  opts.on('-y', '--section-type', 'Section roles/types') do |flag|
+    options.section_type = true
   end
   opts.on_tail('-h', '--help', 'Print this help message') do
     script_logger.info(opts)
@@ -87,33 +91,86 @@ epub_file_list.each do |epub_file|
         )
   end
 
+  manifest_item_list = []
+  failed = false
   options.manifest_item_file_list.each do |manifest_item_file|
     manifest_item_file = File.expand_path(manifest_item_file)
-    puts manifest_item_file
+    unless File.exist?(manifest_item_file)
+      script_logger.info("manifest file does not exist #{manifest_item_file}")
+      next
+    end
+
+    unless File.extname(manifest_item_file) == ".xhtml"
+      manifest_item_list << manifest_item_file
+      next
+    end
+
+    xml_doc = Nokogiri::XML(File.read(manifest_item_file))
+    img_file_list = []
+    xml_doc.xpath("//*[local-name()='img']").each do |img_node|
+      src = img_node['src']
+      img_file = File.expand_path(src, File.dirname(manifest_item_file))
+      puts "img_file:#{img_file}"
+      unless File.exist?(img_file)
+        script_logger.error("image file #{img_file} not found in manifest item #{manifest_item_file}")
+        failed = true
+        next
+      end
+      img_file_list << img_file
+    end
+    next if failed
+
+    manifest_item_list << manifest_item_file
+    manifest_item_list += img_file_list
+    puts img_file_list
+  end
+  next if failed
+
+  manifest_item_list.each do |manifest_item_file|
+    manifest_item_file = File.expand_path(manifest_item_file)
+    script_logger.info("adding manifest item #{manifest_item_file}")
 
     epub_updater.add_item(
         epub: epub,
         item_file: manifest_item_file,
-        #spine_loc: 2
+        spine_loc: 2
         )
   end
 
-  unless badge_file.nil?
+  unless badge_file.nil? and !options.section_type
     # Process the epub and generate the image information.
     epub_reviewer = UMPTG::Review::EPUBReviewer.new(
           epub: epub,
           logger: script_logger
         )
 
-    epub_reviewer.review(
-          review_options: { add_license: true },
-          license_file: badge_file,
-          normalize: true
-        )
-    action_map = epub_reviewer.action_map
+    unless badge_file.nil?
+      epub_reviewer.review(
+            review_options: { add_license: true },
+            license_file: badge_file,
+            normalize: true
+          )
+      action_map = epub_reviewer.action_map
+    end
+
+    if options.section_type
+      epub_reviewer.review(
+            review_options: { section_type: true }
+          )
+    end
   end
 
   if epub.modified
+    epub_reviewer = UMPTG::Review::EPUBReviewer.new(
+          epub: epub,
+          logger: script_logger
+        )
+
+    epub_reviewer.review(
+          review_options: { fix_img_ref: true },
+          normalize: true
+        )
+
     # EPUB updated. Save it to a new file.
     new_epub_file = File.join(File.dirname(epub_file), File.basename(epub_file, ".*") + "_replace" + File.extname(epub_file))
     script_logger.info("EPUB updated. Writing new EPUB file #{File.basename(new_epub_file)}")
