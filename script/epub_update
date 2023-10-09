@@ -23,11 +23,15 @@ options.css_file_list = []
 options.manifest_item_file_list = []
 options.force_update = false
 options.license = nil
+options.monograph_metadata_file = nil
 options.section_type = false
 option_parser = OptionParser.new do |opts|
-  opts.banner = "Usage: #{File.basename(__FILE__)} [-f] [-c css_file] [-l license] [-m manifest_item] [-y] epub_file [epub_file...]"
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-f] [-c css_file] [-l license] [-m manifest_item] [-r metadata_file] [-y] epub_file [epub_file...]"
   opts.on('-c', '--css [css_file]', 'CSS replacement') do |css_file|
     options.css_file_list << css_file
+  end
+  opts.on('-f', '--force-update', 'CSS force update') do |flag|
+    options.force_update = true
   end
   opts.on('-l', '--license [license]', 'License') do |license|
     options.license = license
@@ -35,8 +39,8 @@ option_parser = OptionParser.new do |opts|
   opts.on('-m', '--manifest_item item_file', 'Manifest item') do |item_file|
     options.manifest_item_file_list << item_file
   end
-  opts.on('-f', '--force-update', 'CSS force update') do |flag|
-    options.force_update = true
+  opts.on('-r', '--monograph_metadata_file [metadata_file]', 'Monograph metadata file') do |item_file|
+    options.monograph_metadata_file = item_file
   end
   opts.on('-y', '--section-type', 'Section roles/types') do |flag|
     options.section_type = true
@@ -54,17 +58,24 @@ end
 epub_file_list = ARGV
 
 require_relative File.join(root_dir, 'lib', 'review')
+require_relative File.join(root_dir, 'lib', 'csvfile')
 
 badge_file = nil
 unless options.license.nil?
   # Determine is license badge is available
-  badge_file = Dir.glob(File.join(root_dir, "lib", "license", "cc_badges", options.license + ".*")).first
+  badge_file = Dir.glob(File.join(root_dir, "lib", "license", "cc_badges", "cc_" + options.license + ".*")).first
   if badge_file.nil?
     script_logger.error("CC badge #{options.license} is not found.")
   else
     script_logger.info("CC badge #{badge_file} found.")
     options.manifest_item_file_list << badge_file
   end
+end
+
+metadata_csv = nil
+unless options.monograph_metadata_file.nil?
+  metadata_csv = UMPTG::CSVFile.read(csv_path: options.monograph_metadata_file)
+  script_logger.info("using metadata file #{options.monograph_metadata_file} found.")
 end
 
 epub_updater = UMPTG::Review::EPUBUpdater.new(
@@ -110,7 +121,6 @@ epub_file_list.each do |epub_file|
     xml_doc.xpath("//*[local-name()='img']").each do |img_node|
       src = img_node['src']
       img_file = File.expand_path(src, File.dirname(manifest_item_file))
-      puts "img_file:#{img_file}"
       unless File.exist?(img_file)
         script_logger.error("image file #{img_file} not found in manifest item #{manifest_item_file}")
         failed = true
@@ -120,7 +130,7 @@ epub_file_list.each do |epub_file|
     end
     next if failed
 
-    manifest_item_list << manifest_item_file
+    #manifest_item_list << manifest_item_file
     manifest_item_list += img_file_list
     puts img_file_list
   end
@@ -145,9 +155,46 @@ epub_file_list.each do |epub_file|
         )
 
     unless badge_file.nil?
+      license_fragment = nil
+
+      license_file = File.join(root_dir, "lib", "license", "cc_badges", "cc_" + options.license + ".xhtml")
+      if File.exist?(license_file)
+        script_logger.info("using CC license file #{File.basename(license_file)}.")
+        license_doc = Nokogiri::XML(File.read(license_file))
+        license_fragment = license_doc.xpath("//*[local-name()='body']").first
+
+        unless metadata_csv.nil?
+          bname = File.basename(epub_file)
+          mrow = metadata_csv.find {|r| r['Monograph ID'] == bname }
+          unless mrow.nil?
+=begin
+            doi = mrow['DOI']
+            frag = Nokogiri::XML::DocumentFragment.parse("<p id='doi'>DOI: <a href=\"#{doi}\">#{doi}</a></p>")
+            license_fragment.add_child(frag)
+=end
+
+            isbn_list = []
+            mrow['ISBN(s)'].split(';').each do |s|
+              s.strip!
+              m = s.match(/\(([^\)]+)\)/)
+              next if m.nil? or m[1].downcase != 'open access' or m[1].downcase.start_with?('oa ')
+              isbn_list << "ISBN: #{s}"
+            end
+            unless isbn_list.empty?
+              frag = Nokogiri::XML::DocumentFragment.parse("#{isbn_list.join('<br/>')}")
+              oa_node = license_fragment.xpath("//*[@id='isbn_open_access']").first
+              oa_node.add_child(frag) unless oa_node.nil?
+            end
+          end
+        end
+      else
+        script_logger.warn("CC license file #{File.basename(license_file)} does not exist.")
+      end
+
       epub_reviewer.review(
             review_options: { add_license: true },
             license_file: badge_file,
+            license_fragment: license_fragment,
             normalize: true
           )
       action_map = epub_reviewer.action_map

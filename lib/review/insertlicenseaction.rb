@@ -8,7 +8,6 @@ module UMPTG::Review
       reference_node = @properties[:reference_node]
       epub = @properties[:epub]
       license_fragment = @properties[:license_fragment]
-
       @status = Action.COMPLETED
       return if license_fragment.nil?
 
@@ -16,6 +15,7 @@ module UMPTG::Review
       firstpara_node = reference_node.document.xpath("//*[local-name()='body']//*[local-name()='p']").first
       if firstpara_node.nil?
         add_error_msg("unable to find license first para.")
+          @status = Action.FAILED
         return
       end
 
