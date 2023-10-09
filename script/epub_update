@@ -60,16 +60,14 @@ epub_file_list = ARGV
 require_relative File.join(root_dir, 'lib', 'review')
 require_relative File.join(root_dir, 'lib', 'csvfile')
 
-badge_file = nil
 unless options.license.nil?
   # Determine is license badge is available
-  badge_file = Dir.glob(File.join(root_dir, "lib", "license", "cc_badges", "cc_" + options.license + ".*")).first
-  if badge_file.nil?
+  lic_file = Dir.glob(File.join(root_dir, "lib", "license", "cc_badges", "cc_" + options.license + ".xhtml")).first
+  if lic_file.nil?
     script_logger.error("CC badge #{options.license} is not found.")
-  else
-    script_logger.info("CC badge #{badge_file} found.")
-    options.manifest_item_file_list << badge_file
+    exit(1)
   end
+  script_logger.info("CC badge #{options.license} found.")
 end
 
 metadata_csv = nil
@@ -136,6 +134,33 @@ epub_file_list.each do |epub_file|
   end
   next if failed
 
+  metadata_row = nil
+  unless metadata_csv.nil?
+    bname = File.basename(epub_file)
+    metadata_row = metadata_csv.find {|r| r['Monograph ID'] == bname }
+    if metadata_row.nil?
+      script_logger.warn("metadata row not found #{bname}.")
+    else
+      script_logger.info("metadata row found #{bname}.")
+    end
+  end
+
+  cc_lic = options.license
+  unless metadata_row.nil?
+    cc = metadata_row['CC License']
+    m = cc.match(/\/licenses\/([^\/]+)\//)
+    if m.nil?
+      script_logger.warn("license #{cc} not found.")
+    else
+      cc_lic = m[1].gsub(/\-/, '_')
+      script_logger.info("license #{cc_lic} found.")
+    end
+  end
+  unless cc_lic.nil?
+    license_badge_file = File.join(root_dir, "lib", "license", "cc_badges", "cc_" + cc_lic + ".png")
+    manifest_item_list << license_badge_file if File.exist?(license_badge_file)
+  end
+
   manifest_item_list.each do |manifest_item_file|
     manifest_item_file = File.expand_path(manifest_item_file)
     script_logger.info("adding manifest item #{manifest_item_file}")
@@ -147,17 +172,17 @@ epub_file_list.each do |epub_file|
         )
   end
 
-  unless badge_file.nil? and !options.section_type
+  unless cc_lic.nil? and !options.section_type
     # Process the epub and generate the image information.
     epub_reviewer = UMPTG::Review::EPUBReviewer.new(
           epub: epub,
           logger: script_logger
         )
 
-    unless badge_file.nil?
+    unless cc_lic.nil?
       license_fragment = nil
 
-      license_file = File.join(root_dir, "lib", "license", "cc_badges", "cc_" + options.license + ".xhtml")
+      license_file = File.join(root_dir, "lib", "license", "cc_badges", "cc_" + cc_lic + ".xhtml")
       if File.exist?(license_file)
         script_logger.info("using CC license file #{File.basename(license_file)}.")
         license_doc = Nokogiri::XML(File.read(license_file))
@@ -193,7 +218,7 @@ epub_file_list.each do |epub_file|
 
       epub_reviewer.review(
             review_options: { add_license: true },
-            license_file: badge_file,
+            license_file: license_badge_file,
             license_fragment: license_fragment,
             normalize: true
           )
