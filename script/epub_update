@@ -198,18 +198,34 @@ epub_file_list.each do |epub_file|
             license_fragment.add_child(frag)
 =end
 
-            isbn_list = []
+            oa_isbn_list = []
+            ebook_isbn_list = []
             mrow['ISBN(s)'].split(';').each do |s|
               s.strip!
               m = s.match(/\(([^\)]+)\)/)
-              next if m.nil? or m[1].downcase != 'open access' or m[1].downcase.start_with?('oa ')
-              isbn_list << "ISBN: #{s}"
+              next if m.nil?
+
+              m[1].downcase!
+              if m[1] == 'open access' or m[1].start_with?('oa ')
+                oa_isbn_list << "ISBN: #{s}"
+              elsif m[1].start_with?('ebook')
+                ebook_isbn_list << "ISBN: #{s}"
+              end
             end
-            unless isbn_list.empty?
-              frag = Nokogiri::XML::DocumentFragment.parse("#{isbn_list.join('<br/>')}")
-              oa_node = license_fragment.xpath("//*[@id='isbn_open_access']").first
-              oa_node.add_child(frag) unless oa_node.nil?
+
+            if !oa_isbn_list.empty?
+              script_logger.info("using OA ISBNs.")
+              isbn_markup = oa_isbn_list.join('<br/>')
+            elsif !ebook_isbn_list.empty?
+              script_logger.warn("using ebook ISBNs.")
+              isbn_markup = ebook_isbn_list.join('<br/>')
+            else
+              script_logger.warn("no OA/ebook ISBNs found.")
+              isbn_markup = ""
             end
+            frag = Nokogiri::XML::DocumentFragment.parse("#{isbn_markup}")
+            oa_node = license_fragment.xpath("//*[@id='isbn_open_access']").first
+            oa_node.add_child(frag) unless oa_node.nil?
           end
         end
       else
@@ -255,3 +271,4 @@ epub_file_list.each do |epub_file|
   script_logger.info()
   STDOUT.flush
 end
+script_logger.info("#{File.basename(__FILE__)} processing completed.")

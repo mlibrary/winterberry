@@ -86,6 +86,7 @@ else
       script_logger.info("book key #{monograph_id} found.")
     end
 
+    monograph_link = nil
     if bnode_list.empty? or options.monograph_link == :fulcrum
       # Assume the monograph ID is a Fulcrum Identifer.
       manifest_body_list = service.monograph_export(
@@ -130,6 +131,23 @@ else
     end
     bnode_list.each do |bn|
       book_node_list << bn
+        case options.monograph_link
+        when :fulcrum
+          unless monograph_link.nil?
+            res_node_list = bn.xpath(".//*[local-name()='resource']")
+            unless res_node_list.empty?
+              res_node_list.first.content = monograph_link
+            end
+          end
+        when :ump
+          res_node_list = bn.xpath(".//*[local-name()='resource']")
+          unless res_node_list.empty?
+            isbn_node_list = bn.xpath(".//*[local-name()='printISBN']")
+            unless isbn_node_list.empty?
+              res_node_list.first.content = "https://press.umich.edu/isbn/#{isbn_node_list.first.content}"
+            end
+          end
+        end
     end
     script_logger.info("found #{bnode_list.count} book nodes for ID #{monograph_id}.")
   end
@@ -138,26 +156,6 @@ end
 if book_node_list.empty?
   script_logger.warn("no book nodes found")
   exit 0
-end
-
-book_node_list.each do |bn|
-  case options.monograph_link
-  when :fulcrum
-    unless monograph_link.nil?
-      res_node_list = bn.xpath(".//*[local-name()='resource']")
-      unless res_node_list.empty?
-        res_node_list.first.content = monograph_link
-      end
-    end
-  when :ump
-    res_node_list = bn.xpath(".//*[local-name()='resource']")
-    unless res_node_list.empty?
-      isbn_node_list = bn.xpath(".//*[local-name()='printISBN']")
-      unless isbn_node_list.empty?
-        res_node_list.first.content = "https://press.umich.edu/isbn/#{isbn_node_list.first.content}"
-      end
-    end
-  end
 end
 
 crossref_doc = Nokogiri::XML('<?xml version="1.0" encoding="utf-8"?><root></root>')
