@@ -16,6 +16,7 @@ module UMPTG::Fulcrum::Metadata
   or @class='figCaption'
   or @class='figcap1'
   or @class='figh'
+  or @class='fign'
   or @class='image_caption'
   ]
   SXPATH
