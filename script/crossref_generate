@@ -181,10 +181,7 @@ script_logger.info("transforming XML file #{File.basename(doi_report_edit_file)}
 
 time = Time.now
 # [Y0001]-[M01]-[D01]T[H01]:[m01]:[s01][Z]
-batch_id = "#{time.strftime("%Y-%m-%dT%H:%M:%S")}#{time.utc_offset/3600}:00"
-#batch_id = "#{time.strftime("%Y-%m-%dT%H:%M:%S")}#{time.utc_offset/3600}:00"
 batch_id = "#{time.strftime("%Y-%m-%dT%H:%M:%S")}#{sprintf("%03d:00", time.utc_offset/3600)}"
-puts batch_id
 
 # [Y0001][M01][D01][H01][m01][s01]00000
 timestamp = time.strftime("%Y%m%d%H%M%S") + "00000"
