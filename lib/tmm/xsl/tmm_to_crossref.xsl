@@ -5,11 +5,13 @@
         xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
         xmlns:date="http://exslt.org/dates-and-times"
         extension-element-prefixes="date"
-        >
+>
     <xsl:output method="xml" encoding="utf-8" omit-xml-declaration="no" indent="yes"/>
     <xsl:strip-space elements="*"/>
 
     <!-- Defined paramters that can be overridden -->
+    <xsl:param name="BATCH_ID"/>
+    <xsl:param name="TIMESTAMP"/>
     <xsl:param name="UMP_URL_PREFIX" select="'https://press.umich.edu/isbn/'"/>
     <xsl:param name="UMP_DEPOSITOR" select="'scpo'"/>
     <xsl:param name="UMP_EMAIL" select="'mpub.xref@gmail.com'"/>
@@ -20,44 +22,50 @@
     <xsl:variable name="NAMESPACE_URL" select="'http://www.crossref.org/schema/5.3.1'"/>
 
     <xsl:template match="root">
-        <xsl:element name="doi_batch" namespace="{$NAMESPACE_URL}">
-            <xsl:attribute name="version">
-                <xsl:value-of select="'5.3.1'"/>
-            </xsl:attribute>
-            <xsl:attribute name="xsi:schemaLocation">
-                <xsl:value-of select="'http://www.crossref.org/schema/5.3.1 http://www.crossref.org/schema/deposit/crossref5.3.1.xsd'"/>
-            </xsl:attribute>
-            <xsl:element name="head" namespace="{$NAMESPACE_URL}">
-                <xsl:element name="doi_batch_id" namespace="{$NAMESPACE_URL}">
-                    <!-- XSLT 2.0
-                    <xsl:value-of select="concat('umpre-backlist-',format-dateTime(current-dateTime(),'[Y0001]-[M01]-[D01]T[H01]:[m01]:[s01][Z]'),'-submission')"/>
-                    -->
-                    <!-- XSLT 1.1 -->
-                    <xsl:value-of select="concat('umpre-backlist-',date:date-time(),'-submission')"/>
-                </xsl:element>
-                <xsl:element name="timestamp" namespace="{$NAMESPACE_URL}">
-                    <!-- XSLT 2.0
-                    <xsl:value-of select="concat(format-dateTime(current-dateTime(),'[Y0001][M01][D01][H01][m01][s01]'),'00000')"/>
-                    -->
-                    <!-- XSLT 1.1 -->
-                    <xsl:value-of select="concat(date:year(),format-number(date:month-in-year(),'00'),format-number(date:day-in-month(),'00'),format-number(date:hour-in-day(),'00'),format-number(date:minute-in-hour(),'00'),format-number(date:second-in-minute(),'00'),'00000')"/>
-                </xsl:element>
-                <xsl:element name="depositor" namespace="{$NAMESPACE_URL}">
-                    <xsl:element name="depositor_name" namespace="{$NAMESPACE_URL}">
-                        <xsl:value-of select="$UMP_DEPOSITOR"/>
+        <xsl:if test="normalize-space($BATCH_ID)!='' and normalize-space($TIMESTAMP)!=''">
+            <xsl:element name="doi_batch" namespace="{$NAMESPACE_URL}">
+                <xsl:attribute name="version">
+                    <xsl:value-of select="'5.3.1'"/>
+                </xsl:attribute>
+                <xsl:attribute name="xsi:schemaLocation">
+                    <xsl:value-of select="'http://www.crossref.org/schema/5.3.1 http://www.crossref.org/schema/deposit/crossref5.3.1.xsd'"/>
+                </xsl:attribute>
+                <xsl:element name="head" namespace="{$NAMESPACE_URL}">
+                    <xsl:element name="doi_batch_id" namespace="{$NAMESPACE_URL}">
+                        <!-- XSLT 2.0
+                        <xsl:value-of select="concat('umpre-backlist-',format-dateTime(current-dateTime(),'[Y0001]-[M01]-[D01]T[H01]:[m01]:[s01][Z]'),'-submission')"/>
+                        -->
+                        <!-- XSLT 1.1
+                        <xsl:value-of select="concat('umpre-backlist-',date:date-time(),'-submission')"/>
+                        -->
+                        <xsl:value-of select="concat('umpre-backlist-',$BATCH_ID,'-submission')"/>
                     </xsl:element>
-                    <xsl:element name="email_address" namespace="{$NAMESPACE_URL}">
-                        <xsl:value-of select="$UMP_EMAIL"/>
+                    <xsl:element name="timestamp" namespace="{$NAMESPACE_URL}">
+                        <!-- XSLT 2.0
+                        <xsl:value-of select="concat(format-dateTime(current-dateTime(),'[Y0001][M01][D01][H01][m01][s01]'),'00000')"/>
+                        -->
+                        <!-- XSLT 1.1
+                        <xsl:value-of select="concat(date:year(),format-number(date:month-in-year(),'00'),format-number(date:day-in-month(),'00'),format-number(date:hour-in-day(),'00'),format-number(date:minute-in-hour(),'00'),format-number(date:second-in-minute(),'00'),'00000')"/>
+                         -->
+                        <xsl:value-of select="$TIMESTAMP"/>
+                    </xsl:element>
+                    <xsl:element name="depositor" namespace="{$NAMESPACE_URL}">
+                        <xsl:element name="depositor_name" namespace="{$NAMESPACE_URL}">
+                            <xsl:value-of select="$UMP_DEPOSITOR"/>
+                        </xsl:element>
+                        <xsl:element name="email_address" namespace="{$NAMESPACE_URL}">
+                            <xsl:value-of select="$UMP_EMAIL"/>
+                        </xsl:element>
+                    </xsl:element>
+                    <xsl:element name="registrant" namespace="{$NAMESPACE_URL}">
+                        <xsl:value-of select="$UMP_REGISTRANT"/>
                     </xsl:element>
                 </xsl:element>
-                <xsl:element name="registrant" namespace="{$NAMESPACE_URL}">
-                    <xsl:value-of select="$UMP_REGISTRANT"/>
+                <xsl:element name="body" namespace="{$NAMESPACE_URL}">
+                    <xsl:apply-templates select="book"/>
                 </xsl:element>
             </xsl:element>
-            <xsl:element name="body" namespace="{$NAMESPACE_URL}">
-                <xsl:apply-templates select="book"/>
-            </xsl:element>
-        </xsl:element>
+        </xsl:if>
     </xsl:template>
 
     <xsl:template match="book">
