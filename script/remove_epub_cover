@@ -48,7 +48,7 @@ epub_file_list.each do |epub_file|
   epub = UMPTG::EPUB::Archive.new(epub_file: epub_file)
 
   opf_entry = epub.opf
-  opf_doc = UMPTG::XMLUtil.parse(xml_content: opf_entry.content)
+  opf_doc = UMPTG::XML.parse(xml_content: opf_entry.content)
 
 =begin
   node_list = opf_doc.xpath("//*[local-name()='metadata']/*[local-name()='meta' and @name='cover']")
@@ -66,7 +66,7 @@ epub_file_list.each do |epub_file|
   else
     node_list.first.unlink
     script_logger.info("Removed cover spine reference.")
-    epub.add(entry_name: opf_entry.name, entry_content: UMPTG::XMLUtil.doc_to_xml(opf_doc))
+    epub.add(entry_name: opf_entry.name, entry_content: UMPTG::XML.doc_to_xml(opf_doc))
   end
 
   toc_entry = epub.entry("OEBPS/toc_flow.xhtml")
@@ -74,7 +74,7 @@ epub_file_list.each do |epub_file|
     script_logger.warn("Unable to find TOC entry.")
   else
     script_logger.info("Found TOC entry.")
-    toc_doc = UMPTG::XMLUtil.parse(xml_content: toc_entry.content)
+    toc_doc = UMPTG::XML.parse(xml_content: toc_entry.content)
     node_list = toc_doc.xpath("//*[local-name()='li']/*[local-name()='a']/*[local-name()='h3']")
     if node_list.empty?
       script_logger.warn("Unable to find H3 within TOC entries.")
@@ -84,7 +84,7 @@ epub_file_list.each do |epub_file|
         node.replace(text)
       end
       script_logger.info("Removed H3 within TOC entries.")
-      epub.add(entry_name: toc_entry.name, entry_content: UMPTG::XMLUtil.doc_to_xml(toc_doc))
+      epub.add(entry_name: toc_entry.name, entry_content: UMPTG::XML.doc_to_xml(toc_doc))
     end
   end
 

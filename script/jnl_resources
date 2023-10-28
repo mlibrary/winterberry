@@ -48,7 +48,7 @@ jats_file_list = ARGV[1..-1]
 
 require_relative File.join(root_dir, 'lib', 'xslt')
 require_relative File.join(root_dir, "lib", "fulcrum", "manifest")
-require_relative File.join(root_dir, "lib", "xmlutil")
+require_relative File.join(root_dir, "lib", "xml", "util")
 require_relative File.join(root_dir, "lib", "services")
 require_relative File.join(root_dir, "lib", "journal")
 
@@ -99,7 +99,7 @@ jats_file_list.each do |jats_file|
   script_logger.info("*** processing #{File.basename(jats_file)} ***")
   STDOUT.flush
 
-  jats_doc = UMPTG::XMLUtil.parse(xml_file: jats_file)
+  jats_doc = UMPTG::XML.parse(xml_file: jats_file)
   next if jats_doc.nil?
 
   jats_doc = jats_processor.process(

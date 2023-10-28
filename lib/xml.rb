@@ -1,4 +1,5 @@
 module UMPTG
+  require_relative(File.join("xml", "util"))
   require_relative(File.join("xml", "action"))
   require_relative(File.join("xml", "actionresult"))
 

@@ -1,6 +1,6 @@
 module UMPTG
   require_relative 'logger'
-  require_relative 'xmlutil'
+  require_relative File.join("xml", "util")
   require_relative 'xslt'
   require_relative 'object'
   require_relative 'action'

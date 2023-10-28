@@ -39,7 +39,7 @@ xml_file_list = ARGV
 
 require 'nokogiri'
 
-require_relative File.join(root_dir, "lib", "xmlutil")
+require_relative File.join(root_dir, "lib", "xml", "util")
 require_relative File.join(root_dir, "lib", "xml", "reviewer")
 
 reviewer = UMPTG::XML::Reviewer::Processor.new(
@@ -77,7 +77,7 @@ xml_file_list.each do |xml_file|
             File.dirname(xml_file),
             File.basename(xml_file, ".*") + "_reviewed" + File.extname(xml_file)
             )
-    UMPTG::XMLUtil.save(xml_doc, new_xml_file)
+    UMPTG::XML.save(xml_doc, new_xml_file)
     script_logger.info("Saved #{new_xml_file}.")
   end
 end
