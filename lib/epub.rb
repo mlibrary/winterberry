@@ -8,9 +8,11 @@ module UMPTG
 
   require_relative File.join('epub', 'util')
   require_relative File.join('epub', 'entry')
+  require_relative File.join('epub', 'entryactions')
   require_relative File.join('epub', 'rendition')
   require_relative File.join('epub', 'archive')
   require_relative File.join('epub', 'migrator')
   require_relative File.join('epub', 'entryprocessor')
   require_relative File.join('epub', 'processor')
+  require_relative File.join('epub', 'xprocessor')
 end
