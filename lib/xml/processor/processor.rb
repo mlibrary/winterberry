@@ -8,7 +8,13 @@ module UMPTG::XML::Processor
       super(args)
 
       @logger = @properties.key?(:logger) ? @properties[:logger] : UMPTG::Logger.create(logger_fp: STDOUT)
-      @filters = @properties.key?(:filters) ? @properties[:filters] : []
+      m_filters = @properties.key?(:filters) ? @properties[:filters] : []
+
+      if @properties.key?(:options)
+        options = args[:options]
+        m_filters = m_filters.select {|key,proc| options[key] == true }
+      end
+      @filters = m_filters.values
     end
 
     def run(xml_doc, args = {})

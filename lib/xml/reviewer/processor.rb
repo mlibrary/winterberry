@@ -8,14 +8,7 @@ module UMPTG::XML::Reviewer
         }
 
     def initialize(args = {})
-      if args.key?(:options)
-        options = args[:options]
-        review_filters = @@REVIEW_FILTERS.select {|key,proc| options[key] == true }
-      else
-        review_filters = @@REVIEW_FILTERS
-      end
-
-      args[:filters] = review_filters.values
+      args[:filters] = @@REVIEW_FILTERS
       super(args)
     end
   end

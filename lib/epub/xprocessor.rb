@@ -26,7 +26,7 @@ module UMPTG::EPUB
       filters = @xml_processor.filters
       opf_filter = filters.select {|f| f.name == :package }.first
       unless opf_filter.nil?
-        xml_doc = UMPTG::XMLUtil.parse(xml_content: epub.opf.content)
+        xml_doc = UMPTG::XML.parse(xml_content: epub.opf.content)
         actions = opf_filter.run(xml_doc, args)
 
         run_args[:actions] = actions
@@ -44,7 +44,7 @@ module UMPTG::EPUB
         @xml_processor.filters = filters
 
         epub.spine.each do |entry|
-          xml_doc = UMPTG::XMLUtil.parse(xml_content: entry.content)
+          xml_doc = UMPTG::XML.parse(xml_content: entry.content)
           result = @xml_processor.run(xml_doc, args)
           entry_actions << EntryActions.new(
                     entry: entry,
@@ -67,7 +67,7 @@ module UMPTG::EPUB
         if ea.action_result.modified
           @logger.info("Updating entry #{ea.entry.name}")
           entry_xml_doc = ea.action_result.actions.first.reference_node.document
-          epub.add(entry_name: ea.entry.name, entry_content: UMPTG::XMLUtil.doc_to_xml(entry_xml_doc))
+          epub.add(entry_name: ea.entry.name, entry_content: UMPTG::XML.doc_to_xml(entry_xml_doc))
         end
       end
       return entry_actions

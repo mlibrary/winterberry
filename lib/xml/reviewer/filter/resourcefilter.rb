@@ -77,7 +77,7 @@ module UMPTG::XML::Reviewer::Filter
       name = args[:name]
       reference_node = args[:reference_node]
 
-      @resource_path_list[name] = []
+      @resource_path_list[name] = [] unless @resource_path_list.key?(name)
       reference_action_list = []
 
       case reference_node.name
