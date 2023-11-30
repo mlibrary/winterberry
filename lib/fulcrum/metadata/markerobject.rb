@@ -11,14 +11,17 @@ module UMPTG::Fulcrum::Metadata
     #   :node           XML fragment node
     #   :name           Fragment identifier, e.g. EPUB entry name.
     #   :resource_name  Resource name associated with fragment.
+    #   :caption        Resource caption.
     def initialize(args = {})
       super(args)
       @resource_name = @properties[:resource_name]
+      @caption = @properties[:caption]
     end
 
     def map
       row = super()
       row['resource_name'] = @resource_name
+      row['caption'] = @caption
       return row
     end
   end

@@ -2,6 +2,12 @@ module UMPTG::Fulcrum::Metadata
 
   class MarkerAction < Action
 
+  @@SELECTION_XPATH = <<-SXPATH
+  .//*[
+  local-name()='figcaption'
+  ]
+  SXPATH
+
     # Process an additional resource (Marker) action.
     def process(args = {})
       # Marker fragment. If there is a comment,
@@ -38,10 +44,15 @@ module UMPTG::Fulcrum::Metadata
       olist = []
       rnames.each do |r|
         next if r.nil? or r.strip.empty?
+        if fragment.node.name == "figure"
+          caption = @fragment.node.xpath(@@SELECTION_XPATH).first
+          #puts "caption:#{caption}"
+        end
         marker = MarkerObject.new(
                 node: fragment.node,
                 name: @properties[:name],
-                resource_name: r
+                resource_name: r,
+                caption: caption
               )
         olist << marker
       end
