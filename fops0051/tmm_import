@@ -1,0 +1,222 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Script parses ACLS HEB 2021 Status spreadsheet
+# and generates a TMM Import spreadsheet
+
+require 'optparse'
+require 'ostruct'
+require 'os'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+require_relative File.join(root_dir, "lib", "fulcrum")
+
+# Process the script parameters.
+options = OpenStruct.new
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} <heb_status_file> [<heb_status_file>...]"
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    script_logger.info(opts)
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  script_logger.info(option_parser.help)
+  return
+end
+
+# Process the command line parameters.
+heb_status_file_list = ARGV
+
+require 'csv'
+
+tmm_import_headers = [
+  "Long Handle",
+  "Short Handle",
+  "HEBID",
+  "DOI",
+  "BISAC",
+  "Status",
+  "Main title",
+  "Subtitle",
+  "Volume",
+  "Series",
+  "Edition statement",
+  "Copyright year",
+  "Copyright holder",
+  "Open access",
+  "License",
+  "Subject",
+  "Book description",
+  "Award",
+  "ISBN-13",
+  "ISBN format",
+  "ISBN is primary",
+  "Location published",
+  "Publisher",
+  "Date published",
+  "Creator display name",
+  "Author1 Identifier",
+  "Author1 ORCID",
+  "Author1 Alphabetical name",
+  "Author1 Family name",
+  "Author1 Given name",
+  "Author1 Role",
+  "Author2 identifier",
+  "Author2 ORCID",
+  "Author2 Alphabetical name",
+  "Author2 Family name",
+  "Author2 Given name",
+  "Author2 Role",
+  "Author3 Identifier",
+  "Author3 ORCID",
+  "Author3 Alphabetical name",
+  "Author3 Family name",
+  "Author3 Given name",
+  "Author3 Role",
+  "Author4 Identifier",
+  "Author4 ORCID",
+  "Author4 Alphabetical name",
+  "Author4 Family name",
+  "Author4 Given name",
+  "Author4 Role",
+  "Author5 Identifier",
+  "Author5 ORCID",
+  "Author5 Alphabetical name",
+  "Author5 Family name",
+  "Author5 Given name",
+  "Author5 Role",
+  "Author6 Identifier",
+  "Author6 Alphabetical name",
+  "Author6 Family name",
+  "Author6 Given name",
+  "Author6 Role",
+  "Author7 Identifier",
+  "Author7 Alphabetical name",
+  "Author7 Family name",
+  "Author7 Given name",
+  "Author7 Role",
+  "Author8 Identifier",
+  "Author8 Alphabetical name",
+  "Author8 Family name",
+  "Author8 Given name",
+  "Author8 Role"
+ ]
+
+heb_status_file_list.each do |heb_status_file|
+  heb_status_file = File.expand_path(heb_status_file)
+  unless File.exists?(heb_status_file)
+    script_logger.error("HEB status file does not exist (#{heb_status_file}).")
+    next
+  end
+
+  status_row_list = CSV.parse(File.read(heb_status_file), {:headers => true})
+
+  tmm_import_file = File.join(File.dirname(heb_status_file), File.basename(heb_status_file, ".*") + "_tmm_import.csv")
+  CSV.open(
+          tmm_import_file,
+          "w",
+          :write_headers=> true,
+          :headers => tmm_import_headers
+        ) do |tmm_csv|
+    status_row_list.each do |status_row|
+      #next unless status_row["Round"] == "18" and !status_row["Accepted/Rejected"].nil? and status_row["Accepted/Rejected"].downcase == "accepted"
+
+      if status_row["HEB ID"].nil? or status_row["HEB ID"].empty?
+        script_logger.warn("missing HEB ID: #{status_row}")
+        next
+      end
+
+      copyright_year = ""
+      copyright_year = status_row["Year"] unless status_row["Year"].nil? or status_row["Year"].empty?
+      copyright_year = status_row["Edition"] if status_row["Year"].nil? or status_row["Year"].empty?
+
+      author_list = []
+      author_list += status_row["Author"].split(" and ") unless status_row["Author"].nil?
+      #author_list += status_row["Author(s)"].split(" and ") unless status_row["Author(s)"].nil?
+      editor_list = []
+      editor_list += status_row["Editor"].split(" and ") unless status_row["Editor"].nil?
+      #editor_list += status_row["Editor(s)"].split(" and ") unless status_row["Editor(s)"].nil?
+
+      tmm_row =  {
+        "HEBID" => status_row["HEB ID"],
+        "Main title" => status_row["Title"],
+        "Subtitle" => status_row["Subtitle"],
+        #"Subtitle" => status_row["Sub-title"],
+        "Publisher" => status_row["Publisher"],
+        #"Publisher" => status_row["Content Provider"],
+        "Copyright year" => copyright_year,
+      }
+
+      ndx = 0
+      author_list.each do |author|
+        name_list = author.split(",")
+        if name_list.empty?
+          name_list = author.split(" ")
+          family_name = name_list[1]
+          given_name = name_list[0]
+        else
+          family_name = name_list[0]
+          given_name = name_list[1]
+        end
+        ndx += 1
+        tmm_row["Author#{ndx} Alphabetical name"] = author
+        tmm_row["Author#{ndx} Role"] = "author"
+        tmm_row["Author#{ndx} Family name"] = family_name.nil? ? "" : family_name.strip
+        tmm_row["Author#{ndx} Given name"] = given_name.nil? ? "" : given_name.strip
+      end
+      editor_list.each do |author|
+        name_list = author.split(",")
+        if name_list.empty?
+          name_list = author.split(" ")
+          family_name = name_list[1]
+          given_name = name_list[0]
+        else
+          family_name = name_list[0]
+          given_name = name_list[1]
+        end
+        ndx += 1
+        tmm_row["Author#{ndx} Alphabetical name"] = author
+        tmm_row["Author#{ndx} Role"] = "editor"
+        tmm_row["Author#{ndx} Family name"] = family_name.nil? ? "" : family_name.strip
+        tmm_row["Author#{ndx} Given name"] = given_name.nil? ? "" : given_name.strip
+      end
+
+      isbn_list = []
+      isbn_list << status_row["HC ISBN"].strip + " (hardcover)" \
+                                   unless status_row["HC ISBN"].nil? or status_row["HC ISBN"].empty?
+      isbn_list << status_row["PB ISBN"].strip + " (paperback)" \
+                                   unless status_row["PB ISBN"].nil? or status_row["PB ISBN"].empty?
+      isbn_list << status_row["Ebk ISBN"].strip + " (ebook)" \
+                                   unless status_row["Ebk ISBN"].nil? or status_row["Ebk ISBN"].empty?
+      tmm_row["ISBN-13"] = isbn_list.join(";")
+      tmm_csv << tmm_row
+=begin
+      unless status_row["HC ISBN"].nil? or status_row["HC ISBN"].empty?
+        tmm_row["ISBN-13"] = status_row["HC ISBN"].strip
+        tmm_row["ISBN format"] = "hardcover"
+        tmm_csv << tmm_row
+      end
+      unless status_row["PB ISBN"].nil? or status_row["PB ISBN"].empty?
+        tmm_row["ISBN-13"] = status_row["PB ISBN"].strip
+        tmm_row["ISBN format"] = "paperback"
+        tmm_csv << tmm_row
+      end
+      unless status_row["Ebk ISBN"].nil? or status_row["Ebk ISBN"].empty?
+        tmm_row["ISBN-13"] = status_row["Ebk ISBN"].strip
+        tmm_row["ISBN format"] = "ebook"
+        tmm_csv << tmm_row
+      end
+=end
+    end
+  end
+end
+

@@ -1,0 +1,58 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Script parses ACLS HEB 2021 Status spreadsheet
+# and generates a TMM Import spreadsheet
+
+require 'optparse'
+require 'ostruct'
+require 'os'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+require_relative File.join(root_dir, "lib", "fulcrum")
+
+# Process the script parameters.
+options = OpenStruct.new
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} <scan_file> [<scan_file>...]"
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    script_logger.info(opts)
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  script_logger.info(option_parser.help)
+  return
+end
+
+# Process the command line parameters.
+scan_file_list = ARGV
+
+require 'fileutils'
+
+scan_file_list.each do |scan_file|
+  scan_file = File.expand_path(scan_file)
+  unless File.exists?(scan_file)
+    script_logger.error("HEB status file does not exist (#{scan_file}).")
+    next
+  end
+  #script_logger.info("Processing scan file (#{File.basename(scan_file)}).")
+
+  scan_name = File.basename(scan_file)
+  pscan_file = File.join(File.dirname(scan_file), "p" + scan_name[1..-1])
+  if File.exists?(pscan_file)
+    script_logger.info("moving #{File.basename(pscan_file)} to #{File.basename(scan_file)}")
+    FileUtils.rm(scan_file)
+    FileUtils.mv(pscan_file, scan_file)
+  else
+    #script_logger.info("skipping #{File.basename(scan_file)}")
+  end
+end

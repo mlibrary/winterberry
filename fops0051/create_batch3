@@ -1,0 +1,64 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+require 'optparse'
+require 'ostruct'
+
+# Process the script parameters.
+options = OpenStruct.new
+options.fulcrum_host = nil
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} <heb_file> [<heb_file>...]"
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    script_logger.info(opts)
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  script_logger.info(option_parser.help)
+  return
+end
+
+heb_file_list = ARGV
+
+heb_file_list.each do |heb_file|
+  heb_file = File.expand_path(heb_file)
+  unless File.exists?(heb_file)
+    script_logger.error("PDF file \"#{File.basename(heb_file)}\" does not exist.")
+    next
+  end
+  #script_logger.info("processing PDF file \"#{File.basename(heb_file)}\"")
+
+  fulcrum_dir = File.expand_path(File.join(File.dirname(heb_file), "..", "Fulcrum"))
+
+  heb_id = File.basename(heb_file, ".*")[0..16]
+  new_heb_dir = File.expand_path(File.join(File.dirname(heb_file), "..", "Fulcrum_batch1_2022-03-09", heb_id))
+
+  cover_file_list = Dir.glob(File.join(fulcrum_dir, heb_id, "*.{tif,png,jpg}"))
+  if cover_file_list.empty?
+    script_logger.warn("no cover found for #{File.basename(heb_file)}.")
+    #next
+  end
+
+  script_logger.info("create HEB directory #{File.basename(new_heb_dir)}.")
+  FileUtils.mkdir_p(new_heb_dir)
+
+  pdf_file = File.join(new_heb_dir, heb_id + ".pdf")
+  script_logger.info("copy bookmark file #{File.basename(pdf_file)}.")
+  FileUtils.cp(heb_file, pdf_file)
+  cover_file_list.each do |cover_file|
+    script_logger.info("copy cover file #{File.basename(cover_file)}.")
+    FileUtils.cp(cover_file, new_heb_dir)
+  end
+  STDOUT.flush
+end
+

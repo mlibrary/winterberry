@@ -1,0 +1,166 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Script parses ACLS HEB 2021 Status spreadsheet
+# and generates a TMM Import spreadsheet
+
+require 'optparse'
+require 'ostruct'
+require 'os'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+require_relative File.join(root_dir, "lib", "fulcrum")
+
+# Process the script parameters.
+options = OpenStruct.new
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} <dir_path> [<dir_path>...]"
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    script_logger.info(opts)
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 2
+  script_logger.info(option_parser.help)
+  exit 0
+end
+
+# Process the command line parameters.
+dir_path_list = ARGV
+
+exist_heb_id_list = [
+"heb00692.0001.001",
+"heb06193.0001.001",
+"heb34581.0001.001",
+"heb34582.0001.001",
+"heb34583.0001.001",
+"heb34584.0001.001",
+"heb34585.0001.001",
+"heb34586.0001.001",
+"heb34587.0001.001",
+"heb34588.0001.001",
+"heb34589.0001.001",
+"heb34590.0001.001",
+"heb34591.0001.001",
+"heb34592.0001.001",
+"heb34593.0001.001",
+"heb34594.0001.001",
+"heb34595.0001.001",
+"heb34596.0001.001",
+"heb34599.0001.001",
+"heb34600.0001.001",
+"heb34602.0001.001",
+"heb34603.0001.001",
+"heb34604.0001.001",
+"heb34605.0001.001",
+"heb34606.0001.001",
+"heb34607.0001.001",
+"heb34608.0001.001",
+"heb34609.0001.001",
+"heb34610.0001.001",
+"heb34611.0001.001",
+"heb34612.0001.001",
+"heb34613.0001.001",
+"heb34614.0001.001",
+"heb34615.0001.001",
+"heb34616.0001.001",
+"heb34617.0001.001",
+"heb34618.0001.001",
+"heb34619.0001.001",
+"heb34620.0001.001",
+"heb34621.0001.001",
+"heb34622.0001.001",
+"heb34623.0001.001",
+"heb34624.0001.001",
+"heb34625.0001.001",
+"heb34626.0001.001",
+"heb34627.0001.001",
+"heb34628.0001.001",
+"heb34629.0001.001",
+"heb34630.0001.001",
+"heb34631.0001.001",
+"heb34632.0001.001",
+"heb34633.0001.001",
+"heb34634.0001.001",
+"heb34635.0001.001",
+"heb34636.0001.001",
+"heb34637.0001.001",
+"heb34638.0001.001",
+"heb34639.0001.001",
+"heb34640.0001.001",
+"heb34641.0001.001",
+"heb34642.0001.001",
+"heb34643.0001.001",
+"heb34644.0001.001",
+"heb34645.0001.001",
+"heb34646.0001.001",
+"heb34647.0001.001",
+"heb34648.0001.001",
+"heb34649.0001.001",
+"heb34650.0001.001",
+"heb34651.0001.001",
+"heb34652.0001.001",
+"heb34653.0001.001",
+"heb34654.0001.001",
+"heb34655.0001.001",
+"heb34656.0001.001",
+"heb34657.0001.001",
+"heb34658.0001.001",
+"heb34659.0001.001",
+"heb34660.0001.001",
+"heb34661.0001.001",
+"heb34662.0001.001",
+"heb34663.0001.001",
+"heb34664.0001.001",
+"heb34665.0001.001",
+"heb34666.0001.001",
+"heb34667.0001.001",
+"heb34668.0001.001",
+"heb34669.0001.001",
+"heb34670.0001.001",
+"heb34671.0001.001",
+"heb34672.0001.001",
+"heb34673.0001.001",
+"heb34674.0001.001",
+"heb34675.0001.001",
+"heb34676.0001.001"
+]
+
+heb_id_map = {}
+exist_heb_id_list.each {|heb_id| heb_id_map[heb_id] = false }
+
+dir_path_list.each do |dir_path|
+  dir_path = File.expand_path(dir_path)
+  unless Dir.exists?(dir_path)
+    script_logger.error("Directory path does not exist (#{dir_path}).")
+    next
+  end
+
+=begin
+  heb_id_list = Dir.glob(File.join(dir_path, "heb*"))
+  heb_id_list.each do |heb_id_path|
+    heb_id = File.basename(heb_id_path)
+    unless exist_heb_id_list.include?(heb_id)
+      script_logger.info("#{heb_id}=#(not found)")
+    end
+  end
+=end
+  exist_heb_id_list.each do |heb_id|
+    heb_id_path = File.join(dir_path, heb_id)
+    if Dir.exists?(heb_id_path)
+      heb_id_map[heb_id] = true
+    end
+  end
+end
+
+heb_id_map.each do |heb_id,exists|
+  script_logger.info("#{heb_id} not found") unless exists
+end

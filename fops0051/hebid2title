@@ -1,0 +1,87 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Script parses ACLS HEB 2021 Status spreadsheet
+# and generates a TMM Import spreadsheet
+
+require 'optparse'
+require 'ostruct'
+require 'os'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+require_relative File.join(root_dir, "lib", "fulcrum")
+
+# Process the script parameters.
+options = OpenStruct.new
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} <heb_status_file> [<heb_status_file>...]"
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    script_logger.info(opts)
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  script_logger.info(option_parser.help)
+  return
+end
+
+# Process the command line parameters.
+heb_status_file_list = ARGV
+
+require 'csv'
+
+heb_status_file_list.each do |heb_status_file|
+  heb_status_file = File.expand_path(heb_status_file)
+  unless File.exists?(heb_status_file)
+    script_logger.error("HEB status file does not exist (#{heb_status_file}).")
+    next
+  end
+
+  status_row_list = CSV.parse(File.read(heb_status_file), {:headers => true})
+
+  ingest_file = File.join(File.dirname(heb_status_file), File.basename(heb_status_file, ".*") + "_ingest.csv")
+  CSV.open(
+          ingest_file,
+          "w",
+          :write_headers=> false,
+          :headers => ["Status","HEB ID","Title"]
+        ) do |csv|
+    status_row_list.each do |status_row|
+      next if status_row["Round"] != "18" or status_row["Accepted/Rejected"].nil? or status_row["Accepted/Rejected"].downcase != "accepted"
+
+      identifier_list = [ "unknown" ]
+      hebid = status_row["HEB ID"]
+      if hebid.nil? or hebid.empty?
+        script_logger.warn("missing HEB ID: #{status_row}")
+        #next
+      end
+
+      identifier_list << "unknown_" + status_row["HC ISBN"].strip \
+                                   unless status_row["HC ISBN"].nil? or status_row["HC ISBN"].empty?
+      identifier_list << "unknown_" + status_row["PB ISBN"].strip \
+                                   unless status_row["PB ISBN"].nil? or status_row["PB ISBN"].empty?
+      identifier_list << "unknown_" + status_row["Ebk ISBN"].strip \
+                                   unless status_row["Ebk ISBN"].nil? or status_row["Ebk ISBN"].empty?
+      identifier_list << hebid.strip.downcase unless hebid.nil? or hebid.strip.empty?
+
+      title = status_row["Title"].strip
+      #subtitle = status_row['Sub-title']
+      subtitle = status_row['Subtitle']
+      title += ": #{subtitle.strip}" unless subtitle.nil? or subtitle.empty?
+
+      csv << {
+              "Status" => "",
+              "HEB ID" => identifier_list.last,
+              "Title" => title
+        }
+    end
+  end
+end
