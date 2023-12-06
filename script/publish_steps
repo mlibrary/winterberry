@@ -16,7 +16,7 @@ options.fulcrum_dir = OS.windows? ? "s:/Information\ Management/Fulcrum" : optio
 options.press = :ebc
 option_parser = OptionParser.new do |opts|
   opts.banner = "Usage: #{File.basename(__FILE__)} [-d <fulcrum_dir>] [-p press] <task_id> <monograph_id> [<monograph_id>..]"
-  opts.on('-p', '--press [press]', 'Press amherst|bar|ebc|heb|ummaa') do |press|
+  opts.on('-p', '--press [press]', 'Press amherst|aperio|bar|ebc|heb|lever|ummaa') do |press|
     options.press = press.to_sym
   end
   opts.on('-d', '--directory [DIRECTORY]', 'Fulcrum directory') do |fulcrum_dir|
@@ -57,6 +57,7 @@ end
 # Verify press, either UM Press or MPS services.
 press_dir = {
         amherst: "MPS",
+        aperio: "MPS",
         bar:   "MPS",
         ebc:   "UMP",
         elt:   "michelt",
@@ -67,6 +68,7 @@ press_dir = {
         }
 sub_dir = {
         amherst: "Amherst",
+        aperio: "Aperio",
         bar:   "BAR",
         heb:   "HEB",
         lever:   "Lever",
@@ -182,7 +184,7 @@ monograph_id_list.each do |monograph_id|
 
   series_id = ""
   case options.press
-  when :amherst, :ebc, :elt, :maize, :ummaa
+  when :amherst, :aperio, :ebc, :elt, :lever, :maize, :ummaa
     series_id = monograph_row["doi"].strip
   else
     id_list = monograph_row["identifier(s)"]
@@ -297,7 +299,7 @@ else
 
       unless minfo[:monograph_open_access].empty?
         case options.press
-        when :ebc, :ummaa, :amherst
+        when :amherst, :aperio, :ebc, :lever, :ummaa
           product = "ebc_oa"
         else
           raise "Found open access for press #{options.press}, #{minfo}"
