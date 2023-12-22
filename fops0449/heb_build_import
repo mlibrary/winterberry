@@ -1,0 +1,192 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Script builds HEB Round 20 Fulcrum import directories
+#
+
+require 'optparse'
+require 'ostruct'
+require 'os'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+# Process the script parameters.
+options = OpenStruct.new
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} heb_production_file [heb_production_file...]"
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    script_logger.info(opts)
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  script_logger.info(option_parser.help)
+  return
+end
+
+# Process the command line parameters.
+heb_production_file_list = ARGV
+
+require 'find'
+require 'fileutils'
+require 'csv'
+
+require_relative File.join(root_dir, "lib", "epub")
+
+ACLS_20_DIR = "I:/SPO/ACLS/Backlist\ Rounds/ACLS 20"
+MPS_20_DIR = "S:/Information Management/Fulcrum/MPS/HEB/Round20/Fulcrum"
+
+class HEBTitle
+  attr_accessor :is_scans, :cover_file_list, :epub_file_list, :pdf_file_list
+  attr_reader :heb_id
+
+  def initialize(heb_id)
+    @heb_id = heb_id
+    @is_scans = false
+    @cover_file_list = []
+    @epub_file_list = []
+    @pdf_file_list = []
+  end
+end
+
+heb_production_file_list.each do |heb_production_file|
+  heb_production_file = File.expand_path(heb_production_file)
+  unless File.exist?(heb_production_file)
+    script_logger.error("invalid HEB file list path #{heb_production_file}.")
+    next
+  end
+  script_logger.info("*** processing #{File.basename(heb_production_file)} ***")
+  STDOUT.flush
+
+  CSV::Converters[:strip_field] = ->(value) { value.strip rescue value }
+  begin
+    heb_production_csv = CSV.parse(
+              File.read(heb_production_file),
+              headers: true,
+              converters: :strip_field,
+              return_headers: false)
+   #          :header_converters => lambda { |h| h.downcase.gsub(' ', '_') })
+   #          :headers => true, :converters => :all,
+  rescue Exception => e
+    raise e.message
+  end
+
+  title_cnt = 0
+  file2hebid_title = {}
+  heb_title_list = []
+  heb_production_csv.each do |row|
+    heb_id = row['HEB ID']
+    next if heb_id.nil? or heb_id.strip.empty? or !heb_id.strip.downcase.start_with?("heb")
+    script_logger.info("** Processing #{heb_id} **")
+    title_cnt += 1
+    heb_title = HEBTitle.new(heb_id)
+    heb_title_list << heb_title
+
+    file2hebid_title[heb_id[0..7]] = heb_title
+
+    file_list_value = row['Files Provided']
+    if file_list_value.nil? or file_list_value.strip.empty?
+      script_logger.warn("empty file list")
+      next
+    end
+
+    file_list = file_list_value.split(";")
+    script_logger.info("found #{file_list.count} files.")
+    file_list.each do |f|
+      f.strip!
+      script_logger.info("#{f}")
+      file2hebid_title[f] = heb_title
+    end
+  end
+  script_logger.info("Title cnt:#{title_cnt}")
+
+  Find.find(ACLS_20_DIR) do |path|
+    #script_logger.info("path:#{path}")
+    if FileTest.directory?(path)
+      bname = File.basename(path)
+      if bname.start_with?('.') or  bname.start_with?("Trigonix_scans.sb")
+        Find.prune
+      elsif bname.start_with?("Trigonix_scans")
+        sub_dir = File.join(path, "R20_B01")
+        dir_path = Dir.exist?(sub_dir) ? sub_dir : path
+        Dir.glob(File.join(dir_path, "*")).each do |d|
+          bname = File.basename(d)
+          heb_title = file2hebid_title[bname]
+          heb_title.is_scans = true unless heb_title.nil?
+        end
+        Find.prune       # Don't look any further into this directory.
+      else
+        next
+      end
+    else
+      bname = File.basename(path)
+      heb_title = file2hebid_title[bname]
+      if heb_title.nil?
+        script_logger.warn("no HEB ID for path #{path}")
+        next
+      end
+      script_logger.info("found HEB ID for path #{path}")
+
+      case File.extname(path)
+      when ".epub"
+        heb_title.epub_file_list << path
+      when ".pdf"
+        heb_title.pdf_file_list << path
+      when ".jpg", ".jpeg", ".png"
+        heb_title.cover_file_list << path
+      else
+        script_logger.warn("no type for path #{path}")
+      end
+    end
+  end
+
+  do_copy = true
+  heb_title_list.each do |heb_title|
+    script_logger.info("** #{heb_title.heb_id} **")
+
+    title_dir = File.join(MPS_20_DIR, heb_title.heb_id)
+    FileUtils.mkdir_p(title_dir)
+    script_logger.info("created directory #{File.basename(title_dir)}")
+
+    script_logger.info("has scans") if heb_title.is_scans
+
+    heb_title.cover_file_list.each do |cover_file|
+      fulcrum_cover_file = File.join(title_dir, File.basename(cover_file))
+      FileUtils.copy_file(cover_file, fulcrum_cover_file) if do_copy
+      script_logger.info("Cover: #{fulcrum_cover_file}")
+    end
+
+    heb_title.epub_file_list.each do |epub_file|
+      fulcrum_epub_file = File.join(title_dir, File.basename(epub_file))
+      FileUtils.copy_file(epub_file, fulcrum_epub_file) if do_copy
+      script_logger.info("EPUB: #{fulcrum_epub_file}")
+
+      if heb_title.cover_file_list.empty?
+        epub = UMPTG::EPUB::Archive.new(epub_file: epub_file)
+        if epub.cover.nil?
+          script_logger.warn("no cover found.")
+        else
+          cover_file = File.join(File.dirname(fulcrum_epub_file), File.basename(fulcrum_epub_file, ".*") + File.extname(epub.cover.name))
+          FileUtils.remove(cover_file) if File.exist?(cover_file) and do_copy
+          epub.cover.extract(cover_file) if do_copy
+          script_logger.info("extracted cover #{cover_file}")
+          heb_title.cover_file_list << cover_file
+        end
+      end
+    end
+    script_logger.warn("no cover found") if heb_title.cover_file_list.empty?
+
+    heb_title.pdf_file_list.each do |pdf_file|
+      fulcrum_pdf_file = File.join(title_dir, File.basename(pdf_file))
+      FileUtils.copy_file(pdf_file, fulcrum_pdf_file) if do_copy
+      script_logger.info("PDF: #{fulcrum_pdf_file}")
+    end
+  end
+end

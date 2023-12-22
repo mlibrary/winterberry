@@ -1,0 +1,291 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Script inputs a HEB metadata spreadsheet and generates
+#
+
+require 'optparse'
+require 'ostruct'
+require 'os'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+# Process the script parameters.
+options = OpenStruct.new
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} heb_metadata_file [heb_metadata_file...]"
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    script_logger.info(opts)
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  script_logger.info(option_parser.help)
+  return
+end
+
+# Process the command line parameters.
+heb_metadata_file_list = ARGV
+
+require 'find'
+
+require_relative File.join(root_dir, "lib", "csvfile")
+
+HEB2FIT_HEADERS = {
+  "Long Handle" => "",
+  "Short Handle" => "",
+  "HEBID" => "",
+  "DOI" => "",
+  "BISAC Status" => "",
+  "Main title" => "Title",
+  "Subtitle" => "Subtitle",
+  "Volume" => "VolumeNumber",
+  "Series" => "Series",
+  "Edition statement" => "",
+  "Copyright year" => "CopyrightYear",
+  "Copyright holder" => "",
+  "Open access" => "",
+  "License" => "",
+  "Subject" => "",
+  "Book description" => "",
+  "Award" => "",
+  "ISBN-13" => "",
+  "ISBN format" => "",
+  "Location published" => "",
+  "Publisher" => "PublisherName",
+  "Date published" => "PubDate",
+  "Creator display name" => "",
+  "Author1 ORCID" => "",
+  "Author1 Alphabetical name" => "AuthorDisplayName1",
+  "Author1 Family name" => "AuthorLastName1",
+  "Author1 Given name" => "AuthorFirstName1",
+  "Author1 Role" => "AuthorType1",
+  "Author2 ORCID" => "",
+  "Author2 Alphabetical name" => "AuthorDisplayName2",
+  "Author2 Family name" => "AuthorLastName2",
+  "Author2 Given name" => "AuthorFirstName2",
+  "Author2 Role" => "AuthorType2",
+  "Author3 ORCID" => "",
+  "Author3 Alphabetical name" => "AuthorDisplayName3",
+  "Author3 Family name" => "AuthorLastName3",
+  "Author3 Given name" => "AuthorFirstName3",
+  "Author3 Role" => "AuthorType3",
+  "Author4 ORCID" => "",
+  "Author4 Alphabetical name" => "AuthorDisplayName4",
+  "Author4 Family name" => "AuthorLastName4",
+  "Author4 Given name" => "AuthorFirstName4",
+  "Author4 Role" => "AuthorType4",
+  "Author5 ORCID" => "",
+  "Author5 Alphabetical name" => "AuthorDisplayName5",
+  "Author5 Family name" => "AuthorLastName5",
+  "Author5 Given name" => "AuthorFirstName5",
+  "Author5 Role" => "AuthorType5",
+  }
+
+FIT_HEADERS = [
+  "TitlePrefix","Title","Subtitle","CompanyName","PublisherName","Imprint",
+  "Media","Format","ExclusiveForSaleCountries",
+  "NonExclusiveForSaleCountries","NotForSaleCountries","TerritoryTemplate",
+  "PubDate","ReleaseDate","OnSaleDate","CopyrightYear","Season",
+  "BISACStatus","ProductAvailabilityCode","EloquenceApproval",
+  "PrimaryLanguage","SecondaryLanguage","EAN","UPC","LCCN","DSMARC",
+  "ReplacesISBN","ReplacedByISBN","PrimaryISBN","PrintISBN",
+  "InsertsIllustrations","Pages","NumberOfAudioUnits","TotalRunTime",
+  "TrimLength","TrimWidth","TrimSizeUnitOfMeasure","BookWeight",
+  "BookWeightUnitOfMeasure","SpineSize","SpineSizeUnitOfMeasure",
+  "Barcode1Type","Barcode1Position","Barcode2Type","Barcode2Position",
+  "Series","VolumeNumber","AuthorTitle1","AuthorLastName1",
+  "AuthorFirstName1","AuthorMiddleName1","AuthorSuffix1",
+  "AuthorDisplayName1","PrimaryAuthor1","AuthorType1",
+  "GroupOrMononymousInd1","AuthorBio1","AuthorTitle2","AuthorLastName2",
+  "AuthorFirstName2","AuthorMiddleName2","AuthorSuffix2",
+  "AuthorDisplayName2","PrimaryAuthor2","AuthorType2",
+  "GroupOrMononymousInd2","AuthorBio2","AuthorTitle3","AuthorLastName3",
+  "AuthorFirstName3","AuthorMiddleName3","AuthorSuffix3",
+  "AuthorDisplayName3","PrimaryAuthor3","AuthorType3",
+  "GroupOrMononymousInd3","AuthorBio3","AuthorTitle4","AuthorLastName4",
+  "AuthorFirstName4","AuthorMiddleName4","AuthorSuffix4",
+  "AuthorDisplayName4","PrimaryAuthor4","AuthorType4",
+  "GroupOrMononymousInd4","AuthorBio4","FullAuthorDisplayName",
+  "FullAuthorBiography","BISACCategory1","BISACCategory2","BISACCategory3",
+  "AgeLow","AgeHigh","AgeLowUpInd","AgeHighUpInd","GradeLow","GradeHigh",
+  "GradeLowUpInd","GradeHighUpInd","EditionType","EditionNumber",
+  "AdditionalEditionInfo","DiscountCode","CartonQty","Audience1","Audience2",
+  "Audience3","Returnable","ReturnRestrictions","ShortDescription",
+  "LongDescription","AppleDescription","Keywords","BackPanelCopy",
+  "InsideFlapCopy","Review1Quote","Review2Quote","Review3Quote",
+  "BookPrice_PriceType1","BookPrice_CurrType1","BookPrice_Final1",
+  "BookPrice_PriceType2","BookPrice_CurrType2","BookPrice_Final2",
+  "BookPrice_PriceType3","BookPrice_CurrType3","BookPrice_Final3",
+  "BookPrice_PriceType4","BookPrice_CurrType4","BookPrice_Final4",
+  "California_65_Prop","Harmonized_Code","Country_of_Manufacture",
+  "AppleReleaseType"
+  ]
+
+ACLS_20_DIR = "I:/SPO/ACLS/Backlist\ Rounds/ACLS 20"
+
+class HEBID
+  attr_reader :hebid, :hebid_short, :value, :dash, :nodash, :mtitle_list, :publisher
+  attr_accessor :path_list
+
+  def initialize(hebid, bname, mtitle, publisher)
+    @hebid = hebid
+    @hebid_short = hebid.downcase[0..7]
+    @value = bname
+    @nodash = []
+    @dash = []
+    bname.split(";").each do |b|
+      m = b.match(/^([^ ]+) /)
+      nd = m.nil? ? b : m[1]
+      nd = nd.gsub(/\-/, '')
+      @nodash << nd
+      @dash << "#{nd[0..2]}-#{nd[3]}-#{nd[4..6]}-#{nd[7..11]}-#{nd[12]}"
+      @dash << "#{nd[0..2]}-#{nd[3]}-#{nd[4..7]}-#{nd[8..11]}-#{nd[12]}"
+      @dash << "#{nd[0..2]}-#{nd[3]}-#{nd[4..8]}-#{nd[9..11]}-#{nd[12]}"
+    end
+
+    @mtitle_list = [ mtitle ]
+    @mtitle_list << mtitle.downcase.gsub(/[ \,]+/,'')
+
+    @publisher = publisher
+
+    @path_list = []
+  end
+
+  def match(bname)
+    return true if bname.start_with?(@hebid_short)
+    @nodash.each {|n| return true if bname.start_with?(n) }
+    #puts "#{bname}:#{@nodash}"
+    @dash.each {|n| return true if bname.start_with?(n) }
+    #puts "#{bname}:#{@dash}"
+
+    bn = bname.downcase.gsub(/[ \,]+/,'')
+    @mtitle_list.each {|t| return true if bn.start_with?(t) }
+
+    #puts "#{bname}:#{@mtitle_list}" if @hebid_short == "heb07957"
+    return false
+  end
+end
+
+heb_metadata_file_list.each do |heb_metadata_file|
+  heb_metadata_file = File.expand_path(heb_metadata_file)
+  unless File.exist?(heb_metadata_file)
+    script_logger.error("invalid HEB metadata file path #{heb_metadata_file}.")
+    next
+  end
+  script_logger.info("*** processing #{File.basename(heb_metadata_file)} ***")
+  STDOUT.flush
+
+  heb_metadata_csv = UMPTG::CSVFile.read(csv_path: heb_metadata_file)
+
+  hebid_list = []
+  heb_metadata_csv.each do |row|
+    hebid = row['HEBID']
+    if hebid.nil? or hebid.empty?
+      script_logger.error("empty HEB ID")
+      script_logger.info(row)
+      next
+    end
+    #script_logger.info("** processing HEB ID #{hebid} **")
+    #next unless hebid == "heb40269.0001.001"
+
+    row_bname = row['Basename']
+    if row_bname.nil? or row_bname.empty?
+      script_logger.error("empty ISBN")
+      next
+    end
+
+    hebid_list << HEBID.new(hebid, row_bname, row['Main title'], row['Publisher'])
+  end
+
+  #Find.find(File.join(ACLS_20_DIR, "Colorado")) do |path|
+  Find.find(ACLS_20_DIR) do |path|
+    if FileTest.directory?(path)
+      bname = File.basename(path)
+      if bname.start_with?('.') or  bname.start_with?("Trigonix_scans.sb")
+        Find.prune
+      elsif bname.start_with?("Trigonix_scans")
+        sub_dir = File.join(path, "R20_B01")
+        dir_path = Dir.exist?(sub_dir) ? sub_dir : path
+        Dir.glob(File.join(dir_path, "*")).each do |d|
+          bn = File.basename(d)
+          hebid_list.each do |o|
+            if o.match(bn)
+              o.path_list << path
+              break
+            end
+          end
+        end
+        Find.prune       # Don't look any further into this directory.
+      else
+        next
+      end
+    else
+      bname = File.basename(path, ".*")
+      #script_logger.info("** processing #{bname} **")
+      hebid_list.each do |o|
+        if o.match(bname)
+          #script_logger.info("found #{path}")
+          o.path_list << path
+          break
+        end
+      end
+    end
+  end
+
+  cnt_found = cnt_notfound = 0
+  hebid_list.each do |o|
+    if o.path_list.empty?
+      script_logger.warn("NOT FOUND: #{o.hebid} #{o.publisher}")
+      cnt_notfound += 1
+    else
+      #script_logger.info("#{o.hebid} found")
+      cnt_found += 1
+    end
+  end
+  script_logger.info("Found:#{cnt_found},Not found:#{cnt_notfound}")
+
+=begin
+  ht = "[\n"
+  heb_metadata_csv.headers.each do |h|
+    ht += "\"#{h}\" => \"\",\n"
+  end
+  ht += "]\n"
+  puts ht
+  FIT_HEADERS.each do |h|
+    puts "#{h}: no mapping" unless HEB2FIT_HEADERS.value?(h)
+  end
+  HEB2FIT_HEADERS.each do |h,v|
+    puts "#{h}: no mapping" if v.nil? or v.empty?
+  end
+
+  fit_metadata_file = File.join(
+          File.dirname(heb_metadata_file),
+          File.basename(heb_metadata_file, ".*") + "_fit" + File.extname(heb_metadata_file)
+          )
+  CSV.open(
+          fit_metadata_file,
+          "w",
+          :write_headers=> true,
+          :force_quotes => true,
+          :headers => FIT_HEADERS
+        ) do |csv|
+    heb_metadata_csv.each do |row|
+      fit_row = {}
+      row.each do |h,v|
+        fit_h = HEB2FIT_HEADERS[h]
+        fit_row[fit_h] = v unless fit_h.nil? or fit_h.strip.empty?
+      end
+      csv << fit_row
+    end
+  end
+  puts "Saved #{File.basename(fit_metadata_file)}."
+=end
+end
