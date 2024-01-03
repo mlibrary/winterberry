@@ -1,6 +1,6 @@
 module UMPTG::XML::Reviewer
 
-  class Processor < UMPTG::XML::Processor::Processor
+  class Processor < UMPTG::XML::Pipeline::Processor
     @@REVIEW_FILTERS = {
           link: UMPTG::XML::Reviewer::Filter::LinkFilter.new,
           package: UMPTG::XML::Reviewer::Filter::PackageFilter.new,

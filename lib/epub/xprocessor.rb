@@ -20,6 +20,12 @@ module UMPTG::EPUB
 
       run_args = args.clone()
 
+      # Set XML processor logger to be this logger.
+      @xml_processor.logger = @logger
+
+      # Indicate the options selected for this run.
+      @xml_processor.display_options()
+
       entry_actions = []
 
       # Process the EPUB OPF if that filter is provided.
@@ -30,7 +36,7 @@ module UMPTG::EPUB
         actions = opf_filter.run(xml_doc, args)
 
         run_args[:actions] = actions
-        result = UMPTG::XML::Processor::Action.process_actions(run_args)
+        result = UMPTG::XML::Pipeline::Action::Action.process_actions(run_args)
         entry_actions << EntryActions.new(
                   entry: epub.opf,
                   action_result: result
@@ -58,7 +64,7 @@ module UMPTG::EPUB
         @logger.info("Entry: #{ea.entry.name}")
 
         # Report results
-        UMPTG::XML::Processor::Action.report_actions(
+        UMPTG::XML::Pipeline::Action::Action.report_actions(
               actions: ea.action_result.actions,
               logger: @logger
               )
@@ -70,6 +76,34 @@ module UMPTG::EPUB
           epub.add(entry_name: ea.entry.name, entry_content: UMPTG::XML.doc_to_xml(entry_xml_doc))
         end
       end
+
+      type_cnt = {
+            UMPTG::Message.INFO => 0,
+            UMPTG::Message.WARNING => 0,
+            UMPTG::Message.ERROR => 0,
+            UMPTG::Message.FATAL => 0
+      }
+      entry_actions.each do |ea|
+        ea.action_result.actions.each do |action|
+          action.messages.each do |msg|
+            type_cnt[msg.level] += 1
+          end
+        end
+      end
+
+      case
+      when type_cnt[UMPTG::Message.FATAL] > 0
+        logger.fatal("Fatal:#{type_cnt[UMPTG::Message.FATAL]}  Error:#{type_cnt[UMPTG::Message.ERROR]}  Warning:#{type_cnt[UMPTG::Message.WARNING]}")
+      when type_cnt[UMPTG::Message.ERROR] > 0
+        logger.error("Error:#{type_cnt[UMPTG::Message.ERROR]}  Warning:#{type_cnt[UMPTG::Message.WARNING]}")
+      when type_cnt[UMPTG::Message.WARNING] > 0
+        logger.warn("Warning:#{type_cnt[UMPTG::Message.WARNING]}")
+      else
+        logger.info("Error: 0")
+      end
+
+      @logger.info("Normalization not necessary.") unless epub.modified
+
       return entry_actions
     end
   end

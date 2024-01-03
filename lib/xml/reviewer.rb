@@ -1,5 +1,5 @@
 module UMPTG::XML
-  require_relative("processor")
+  require_relative("pipeline")
 
   require_relative(File.join("reviewer", "action"))
   require_relative(File.join("reviewer", "elementselector"))

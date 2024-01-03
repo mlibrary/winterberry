@@ -1,4 +1,4 @@
-module UMPTG::XML::Processor::Action
+module UMPTG::XML::Pipeline::Action
 
   class RemoveElementAction < NormalizeAction
     def process(args = {})

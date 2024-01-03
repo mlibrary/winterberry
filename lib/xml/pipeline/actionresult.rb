@@ -1,4 +1,4 @@
-module UMPTG::XML::Processor
+module UMPTG::XML::Pipeline
 
   class ActionResult < UMPTG::Object
 

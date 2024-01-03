@@ -1,4 +1,4 @@
-module UMPTG::XML::Processor::Filter
+module UMPTG::XML::Pipeline::Filter
 
   class Filter < UMPTG::Object
 
@@ -31,7 +31,7 @@ module UMPTG::XML::Processor::Filter
     end
 
     def create_actions(args = {})
-      act = UMPTG::XML::Processor::Action::Action.new(args)
+      act = UMPTG::XML::Pipeline::Action::Action.new(args)
       return [ act ]
     end
   end

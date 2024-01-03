@@ -1,4 +1,4 @@
-module UMPTG::XML::Processor::Filter
+module UMPTG::XML::Pipeline::Filter
 
   require 'nokogiri'
 
@@ -15,7 +15,6 @@ module UMPTG::XML::Processor::Filter
     end
 
     def reference_type(node)
-      return :marker if node.comment? or (node.name == 'p' and (node['class'] == 'rb' or node['class'] == 'rbi'))
       return :element
     end
   end

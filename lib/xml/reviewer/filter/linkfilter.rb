@@ -1,6 +1,6 @@
 module UMPTG::XML::Reviewer::Filter
 
-  class LinkFilter < UMPTG::XML::Processor::Filter::Filter
+  class LinkFilter < UMPTG::XML::Pipeline::Filter::Filter
 
     LINK_XPATH = <<-SXPATH
     //*[
@@ -20,7 +20,7 @@ module UMPTG::XML::Reviewer::Filter
       name = args[:name]
       reference_node = args[:reference_node]
 
-      action = UMPTG::XML::Processor::Action::Action.new(args)
+      action = UMPTG::XML::Pipeline::Action::Action.new(args)
       id = reference_node['id']
       target = reference_node['target']
       title = reference_node['title']

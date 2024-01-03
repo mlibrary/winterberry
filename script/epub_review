@@ -50,8 +50,7 @@ reviewer = UMPTG::XML::Reviewer::Processor.new(
     )
 
 epub_processor = UMPTG::EPUB::XProcessor.new(
-      xml_processor: reviewer,
-      logger: script_logger
+      xml_processor: reviewer
     )
 
 epub_file_list.each do |epub_file|
@@ -63,6 +62,12 @@ epub_file_list.each do |epub_file|
 
   epub = UMPTG::EPUB::Archive.new(epub_file: epub_file)
 
+  logger_file =  File.join(
+            File.dirname(epub_file),
+            File.basename(epub_file, ".*") + "_" + File.basename(__FILE__) + ".log"
+            )
+  epub_processor.logger = UMPTG::Logger.create(logger_file: logger_file)
+  epub_processor.logger.info("Processing EPUB file #{File.basename(epub_file)}")
   entry_actions = epub_processor.run(
         epub,
         {

@@ -1,19 +1,17 @@
-module UMPTG::XML::Processor
+module UMPTG::XML::Pipeline
 
   class Processor < UMPTG::Object
 
-    attr_accessor :logger, :filters
+    attr_accessor :logger, :filters, :options
 
     def initialize(args = {})
       super(args)
 
       @logger = @properties.key?(:logger) ? @properties[:logger] : UMPTG::Logger.create(logger_fp: STDOUT)
-      m_filters = @properties.key?(:filters) ? @properties[:filters] : []
+      @options = @properties.key?(:options) ? @properties[:options] : {}
 
-      if @properties.key?(:options)
-        options = args[:options]
-        m_filters = m_filters.select {|key,proc| options[key] == true }
-      end
+      m_filters = @properties.key?(:filters) ? @properties[:filters] : []
+      m_filters = m_filters.select {|key,proc| @options[key] == true }
       @filters = m_filters.values
     end
 
@@ -25,12 +23,16 @@ module UMPTG::XML::Processor
 
       # Return XML::ActionResult
       args[:actions] = actions
-      return UMPTG::XML::Processor::Action.process_actions(args)
+      return UMPTG::XML::Pipeline::Action::Action.process_actions(args)
     end
 
     def filter(filter_name)
       f_list = @filters.select {|f| f.name == filter_name }
       return f_list.first
+    end
+
+    def display_options()
+      @options.each {|o,v| @logger.info("#{o}:#{v}") }
     end
   end
 end

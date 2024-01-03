@@ -1,6 +1,6 @@
 module UMPTG::XML::Reviewer::Action
 
-  class NormalizeFigureAction < UMPTG::XML::Processor::Action::NormalizeAction
+  class NormalizeFigureAction < UMPTG::XML::Pipeline::Action::NormalizeAction
     def self.normalize_caption_class(args = {})
       node = args[:caption_node]
       normalize_caption_class = args[:normalize_caption_class]

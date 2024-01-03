@@ -1,4 +1,4 @@
-module UMPTG::XML::Processor::Action
+module UMPTG::XML::Pipeline::Action
 
   class StripAttributeValueAction < NormalizeAction
     def process(args = {})

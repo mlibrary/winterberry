@@ -1,6 +1,6 @@
 module UMPTG::XML::Reviewer::Filter
 
-  class ResourceFilter < UMPTG::XML::Processor::Filter::Filter
+  class ResourceFilter < UMPTG::XML::Pipeline::Filter::Filter
 
     RESOURCE_REFERENCE_XPATH = <<-SXPATH
     //*[
@@ -82,15 +82,12 @@ module UMPTG::XML::Reviewer::Filter
 
       case reference_node.name
       when "img"
+        reference_action_list << ResourceFilter.add_image_action(args)
+
         resource_path = reference_node["src"]
-        reference_action_list << UMPTG::XML::Reviewer::Action::ImageAction.new(
-                name: name,
-                reference_node: reference_node,
-                resource_path: resource_path
-            )
         @resource_path_list[name] << resource_path
 
-        reference_action_list << UMPTG::XML::Processor::Action::Action.new(
+        reference_action_list << UMPTG::XML::Pipeline::Action::Action.new(
                  name: name,
                  reference_node: reference_node,
                  warning_message: "image: \"#{resource_path}\" unable to determine figure container element."
@@ -101,14 +98,14 @@ module UMPTG::XML::Reviewer::Filter
           resource_path = reference_node["data-fulcrum-embed-filename"].strip
           if resource_path.empty?
             # Give warning, but shouldn't be an issue.
-            reference_action_list << UMPTG::XML::Processor::Action::Action.new(
+            reference_action_list << UMPTG::XML::Pipeline::Action::Action.new(
                      name: name,
                      reference_node: reference_node,
                      warning_message: "image: has element #{reference_node.name} as figure container and @data-fulcrum-embed-filename is empty."
                  )
           else
             @resource_path_list[name] << resource_path
-            reference_action_list << UMPTG::XML::Processor::Action::Action.new(
+            reference_action_list << UMPTG::XML::Pipeline::Action::Action.new(
                      name: name,
                      reference_node: reference_node,
                      info_message: "image: \"#{resource_path}\" has element #{reference_node.name} as figure container and @data-fulcrum-embed-filename is set."
@@ -128,7 +125,7 @@ module UMPTG::XML::Reviewer::Filter
             container_child_list = reference_node.xpath(@@IMGCAPTION_XPATH)
             if container_child_list.empty?
               # Give warning, but shouldn't be an issue.
-              reference_action_list << UMPTG::XML::Processor::Action::Action.new(
+              reference_action_list << UMPTG::XML::Pipeline::Action::Action.new(
                        name: name,
                        reference_node: reference_node,
                        warning_message: "image: has element #{reference_node.name} as figure container and is empty."
@@ -182,14 +179,13 @@ module UMPTG::XML::Reviewer::Filter
 
                   img_container = img_obj.container_node
 
-                  reference_action_list << UMPTG::XML::Reviewer::Action::ImageAction.new(
-                          name: name,
-                          reference_node: reference_node,
-                          resource_path: resource_path
-                      )
+                  reference_action_list << ResourceFilter.add_image_action(
+                            name: name,
+                            reference_node: reference_node
+                            )
 
                   if img_obj.within_caption
-                    reference_action_list << UMPTG::XML::Processor::Action::Action.new(
+                    reference_action_list << UMPTG::XML::Pipeline::Action::Action.new(
                              name: name,
                              reference_node: reference_node,
                              warning_message: "image: #{resource_path} is found within a figure caption."
@@ -198,7 +194,7 @@ module UMPTG::XML::Reviewer::Filter
                   end
 
                   if container_normalized
-                    reference_action_list << UMPTG::XML::Processor::Action::Action.new(
+                    reference_action_list << UMPTG::XML::Pipeline::Action::Action.new(
                              name: name,
                              reference_node: reference_node,
                              info_message: "image: \"#{resource_path}\" has element #{figure_container.name} as figure container."
@@ -229,7 +225,7 @@ module UMPTG::XML::Reviewer::Filter
                   end
 
                   if caption_list.count == 1 and caption_list.first.name == "figcaption"
-                    reference_action_list << UMPTG::XML::Processor::Action::Action.new(
+                    reference_action_list << UMPTG::XML::Pipeline::Action::Action.new(
                              name: name,
                              reference_node: caption_list.first,
                              info_message: "image: #{figure_obj.img_list.count} \"#{resource_path}\" has element #{caption_list.first.name} as figure caption container."
@@ -261,7 +257,7 @@ module UMPTG::XML::Reviewer::Filter
 
               figure_obj_list.each do |figure_obj|
                 if figure_obj.img_list.empty?
-                  reference_action_list << UMPTG::XML::Processor::Action::Action.new(
+                  reference_action_list << UMPTG::XML::Pipeline::Action::Action.new(
                            name: name,
                            reference_node: figure_obj.container_node,
                            error_message: "image: figure object with no image node."
@@ -305,6 +301,29 @@ module UMPTG::XML::Reviewer::Filter
         end
       end
       return reference_action_list
+    end
+
+    def self.add_image_action(args = {})
+      name = args[:name]
+      reference_node = args[:reference_node]
+
+      act = UMPTG::XML::Pipeline::Action::Action.new(
+              name: name,
+              reference_node: reference_node
+              )
+      rpath = reference_node['src']
+      if rpath.nil? or rpath.strip.empty?
+        rpath = "(not specified)"
+        act.add_error_msg("image: \"\" has no src path")
+      else
+        act.add_info_msg(   "image: \"#{rpath}\" has src path")
+      end
+
+      alt = reference_node['alt']
+      act.add_info_msg(   "image: \"#{rpath}\" has alt text") unless alt.nil? or alt.empty?
+      act.add_warning_msg("image: \"#{rpath}\" has no alt text") if alt.nil? or alt.empty?
+
+      return act
     end
   end
 end
