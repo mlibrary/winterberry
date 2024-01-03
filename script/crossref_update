@@ -39,7 +39,7 @@ cr_report_file = File.expand_path(ARGV[1])
 
 require 'nokogiri'
 
-require_relative File.join(root_dir, 'lib', 'xmlutil')
+require_relative File.join(root_dir, 'lib', 'xml', 'util')
 
 XREF_MARKUP = <<-XMARK
 <?xml version="1.0" encoding="utf-8"?>
@@ -60,8 +60,8 @@ xsi:schemaLocation="http://www.crossref.org/schema/5.3.1 http://www.crossref.org
 </body>
 XMARK
 
-cr_submit_doc = UMPTG::XMLUtil.parse(xml_content: File.read(cr_submit_file))
-cr_report_doc = UMPTG::XMLUtil.parse(xml_content: File.read(cr_report_file))
+cr_submit_doc = UMPTG::XML.parse(xml_content: File.read(cr_submit_file))
+cr_report_doc = UMPTG::XML.parse(xml_content: File.read(cr_report_file))
 
 time_now = Time.now
 tz = time_now.gmt_offset / 3600
@@ -109,4 +109,4 @@ end
 
 result_path = File.join(File.dirname(cr_submit_file), \
         File.basename(cr_submit_file, ".*") + "_result" + File.extname(cr_submit_file))
-UMPTG::XMLUtil.save(result_doc, result_path)
+UMPTG::XML.save(result_doc, result_path)

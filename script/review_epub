@@ -195,7 +195,7 @@ epub_file_list.each do |epub_file|
     if update_entry
       epub_log.info("Updating entry #{entry_name}")
       xml_doc = proc_map[:xml_doc]
-      epub.add(entry_name: entry_name, entry_content: UMPTG::XMLUtil.doc_to_xml(xml_doc))
+      epub.add(entry_name: entry_name, entry_content: UMPTG::XML.doc_to_xml(xml_doc))
     end
   end
 

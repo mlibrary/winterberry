@@ -82,13 +82,13 @@ epub_file_list.each do |epub_file|
     # Update the entry in the EPUB. Replace old entry with
     # the new one.
     if update_entry
-      epub.add(entry_name: entry_name, entry_content: UMPTG::XMLUtil.doc_to_xml(xml_doc))
+      epub.add(entry_name: entry_name, entry_content: UMPTG::XML.doc_to_xml(xml_doc))
     end
   end
 
   # Fix toc.ncx
   toc_entry = epub.entry("OEBPS/toc.ncx")
-  toc_doc = UMPTG::XMLUtil.parse(xml_content: toc_entry.content)
+  toc_doc = UMPTG::XML.parse(xml_content: toc_entry.content)
   n_list = toc_doc.xpath("//*[local-name()='navPoint']/*[local-name()='content']")
 
   update_entry = false
@@ -105,12 +105,12 @@ epub_file_list.each do |epub_file|
     end
   end
   if update_entry
-    epub.add(entry_name: toc_entry.name, entry_content: UMPTG::XMLUtil.doc_to_xml(toc_doc))
+    epub.add(entry_name: toc_entry.name, entry_content: UMPTG::XML.doc_to_xml(toc_doc))
   end
 
   # Fix toc.xhtml
   toc_entry = epub.entry("OEBPS/toc.xhtml")
-  toc_doc = UMPTG::XMLUtil.parse(xml_content: toc_entry.content)
+  toc_doc = UMPTG::XML.parse(xml_content: toc_entry.content)
   n_list = toc_doc.xpath("//*[local-name()='a']")
 
   update_entry = false
@@ -127,7 +127,7 @@ epub_file_list.each do |epub_file|
     end
   end
   if update_entry
-    epub.add(entry_name: toc_entry.name, entry_content: UMPTG::XMLUtil.doc_to_xml(toc_doc))
+    epub.add(entry_name: toc_entry.name, entry_content: UMPTG::XML.doc_to_xml(toc_doc))
   end
 
   fixed_epub_file = File.join(File.dirname(epub_file), File.basename(epub_file, ".*") + "_fixed.epub")

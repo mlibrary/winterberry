@@ -40,7 +40,7 @@ end
 monograph_id = ARGV[0]
 xhtml_file_list = ARGV[1..-1]
 
-require_relative File.join(root_dir, "lib", "xmlutil")
+require_relative File.join(root_dir, "lib", "xml", "util")
 require_relative File.join(root_dir, "lib", "services")
 require_relative File.join(root_dir, "lib", "fulcrum", "manifest")
 
@@ -69,7 +69,7 @@ xhtml_file_list.each do |xhtml_file|
   end
   script_logger.info("processing XHTML #{File.basename(xhtml_file)}")
 
-  xml_doc = UMPTG::XMLUtil.parse(xml_content: File.read(xhtml_file))
+  xml_doc = UMPTG::XML.parse(xml_content: File.read(xhtml_file))
   if xml_doc.nil?
     script_logger.error("unable to parse XHTML #{File.basename(xhtml_file)}")
     next

@@ -24,13 +24,13 @@ script_dir = File.expand_path(File.dirname(__FILE__))
 root_dir = File.dirname(script_dir)
 
 require_relative File.join(root_dir, 'lib', 'xslt')
-require_relative File.join(root_dir, 'lib', 'xmlutil')
+require_relative File.join(root_dir, 'lib', 'xml', 'util')
 
 xsl_file = ARGV[0]
 
 # Determine the output file extension from the
 # XSL output method.
-xml_doc = UMPTG::XMLUtil.parse(xml_file: xsl_file)
+xml_doc = UMPTG::XML.parse(xml_file: xsl_file)
 xsl_output_node = xml_doc.xpath("/*[local-name()='stylesheet']/*[local-name()='output']").first
 xsl_output = xsl_output_node.nil? ? :xml : xsl_output_node["method"].to_sym
 
