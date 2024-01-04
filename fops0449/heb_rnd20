@@ -54,6 +54,7 @@ def convert_isbn(isbn, row_format = nil, format_default = nil)
   else
     format = row_format.strip.downcase.gsub(/\-/, '')
     format = 'ebook' if format.downcase == 'ebk'
+    format = 'paper' if format.downcase == 'paperback'
   end
   return isbn, format
 end
@@ -133,11 +134,16 @@ monograph_dir_list.each do |monograph_dir|
     monograph_row['ISBN(s)'] = isbn_list.join(';')
 
     author_list = []
-    author_list << fm_row['Author1 Alphabetical name']
-    author_list << fm_row['Author2 Alphabetical name'] unless fm_row['Author2 Alphabetical name'].nil? or fm_row['Author2 Alphabetical name'].empty?
-    author_list << fm_row['Author3 Alphabetical name'] unless fm_row['Author3 Alphabetical name'].nil? or fm_row['Author3 Alphabetical name'].empty?
-    author_list << fm_row['Author4 Alphabetical name'] unless fm_row['Author4 Alphabetical name'].nil? or fm_row['Author4 Alphabetical name'].empty?
-    author_list << fm_row['Author5 Alphabetical name'] unless fm_row['Author5 Alphabetical name'].nil? or fm_row['Author5 Alphabetical name'].empty?
+    5.times do |i|
+      author_name = fm_row["Author#{i} Alphabetical name"]
+      author_name = author_name.nil? ? "" : author_name.strip
+      unless author_name.empty?
+        author_role = fm_row["Author#{i} Role"]
+        author_role = author_role.nil? ? "" : author_role.strip
+        author_entry = author_role.empty? ? author_name : "#{author_name} (#{author_role})"
+        author_list << author_entry
+      end
+    end
     monograph_row['Creator(s)'] = author_list.join(';')
 
     monograph_row['Title'] = fm_row['Main title']
@@ -168,6 +174,8 @@ monograph_dir_list.each do |monograph_dir|
         monograph_row['Rightsholder'] = val
       when 'Creator display name'
         monograph_row['Creator Display'] = val
+      when 'Edition statement'
+        monograph_row['Edition Name'] = val
       when 'Handle Prefix'
       when 'ISBN-13'
       when 'ISBN Format', 'ISBN format'

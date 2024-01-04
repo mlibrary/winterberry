@@ -278,6 +278,10 @@
   :metadata_name: location
   :field_name: Pub Location
   :multivalued: :no
+- :object: :monograph
+  :metadata_name: edition_name
+  :field_name: Edition Name
+  :multivalued: :no
 - :object: :universal
   :metadata_name: noid
   :field_name: NOID
