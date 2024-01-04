@@ -1,6 +1,6 @@
-module UMPTG::XML::Reviewer::Filter
+module UMPTG::XML::Review::Filter
 
-  class PackageFilter < UMPTG::XML::Pipeline::Filter::Filter
+  class PackageFilter < UMPTG::XML::Pipeline::Filter
 
     PACKAGE_XPATH = <<-PCKXPATH
     //*[
@@ -77,7 +77,7 @@ module UMPTG::XML::Reviewer::Filter
 
       @child_elements = [ 'dc:title', 'dc:creator', 'dc:language', 'dc:rights', 'dc:publisher', 'dc:identifier' , 'dc:source' ]
       xpath = sprintf(PACKAGE_XPATH, @child_elements.collect {|x| "name()='#{x}'"}.join(' or '))
-      args[:selector] = UMPTG::XML::Reviewer::ElementSelector.new(
+      args[:selector] = UMPTG::XML::Review::ElementSelector.new(
               selection_xpath: xpath
             )
       super(args)
@@ -97,10 +97,10 @@ module UMPTG::XML::Reviewer::Filter
           element_name == elem
         end
         if alist.empty?
-          new_act = UMPTG::XML::Pipeline::Action::Action.new(reference_node: metadata_node)
+          new_act = UMPTG::XML::Pipeline::Action.new(reference_node: metadata_node)
           new_act.add_warning_msg("#{metadata_node.name} #1: element #{elem} not found.")
         else
-          new_act = UMPTG::XML::Pipeline::Action::Action.new(reference_node: alist.first)
+          new_act = UMPTG::XML::Pipeline::Action.new(reference_node: alist.first)
           new_act.add_info_msg("#{metadata_node.name} #1: element #{elem} found.")
         end
         actions << new_act
@@ -159,14 +159,14 @@ module UMPTG::XML::Reviewer::Filter
       # Remove any leading spaces in <link rel="dcterms:conformsTo" href=" http://www.idpf.org/epub/a11y/accessibility-20170105.html#wcag-aa"/>.
       node_list = metadata_node.xpath(LINKCONFORMS_XPATH)
       if node_list.empty?
-        actions << UMPTG::XML::Pipeline::Action::Action.new(
+        actions << UMPTG::XML::Pipeline::Action.new(
                name: @name,
                reference_node: metadata_node,
                info_message: "Metadata: link/@dcterms:conformsTo has @href value without leading spaces."
            )
       else
         node_list.each_with_index do |node,ndx|
-          actions << UMPTG::XML::Pipeline::Action::StripAttributeValueAction.new(
+          actions << UMPTG::XML::Pipeline::Actions::StripAttributeValueAction.new(
                  name: @name,
                  reference_node: node,
                  attribute_name: "href",
@@ -185,7 +185,7 @@ module UMPTG::XML::Reviewer::Filter
           node_list = xml_doc.xpath(sprintf(COVERID_XPATH,cover_id))
           unless node_list.empty?
             # Found the cover item. Add the 'cover-image' prooperty.
-            actions << UMPTG::XML::Pipeline::Action::SetAttributeValueAction.new(
+            actions << UMPTG::XML::Pipeline::Actions::SetAttributeValueAction.new(
                     name: @name,
                     reference_node: node_list.first,
                     attribute_name: 'properties',
@@ -208,7 +208,7 @@ module UMPTG::XML::Reviewer::Filter
         reference_node = context_node.xpath("./*[local-name()='meta' and starts-with(@property,'schema:access')]")
         reference_node = context_node.xpath("./*[local-name()='meta'][last()]") if reference_node.empty?
         reference_node = context_node.xpath("./*[last()]") if reference_node.empty?
-        actions << UMPTG::XML::Pipeline::Action::NormalizeInsertMarkupAction.new(
+        actions << UMPTG::XML::Pipeline::Actions::NormalizeInsertMarkupAction.new(
                name: name,
                reference_node: reference_node.first,
                warning_message: msgs[:not_present],
@@ -218,13 +218,13 @@ module UMPTG::XML::Reviewer::Filter
         node_list.each_with_index do |node,ndx|
           case ndx
           when 0
-            actions << UMPTG::XML::Pipeline::Action::Action.new(
+            actions << UMPTG::XML::Pipeline::Action.new(
                    name: name,
                    reference_node: node,
                    info_message: msgs[:present]
                )
           else
-            actions << UMPTG::XML::Pipeline::Action::RemoveElementAction.new(
+            actions << UMPTG::XML::Pipeline::Actions::RemoveElementAction.new(
                       name: name,
                       reference_node: node,
                       action_node: node,

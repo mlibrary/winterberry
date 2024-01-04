@@ -1,6 +1,6 @@
-module UMPTG::XML::Reviewer::Action
+module UMPTG::XML::Review::Actions
 
-  class ImageAction < UMPTG::XML::Pipeline::Action::Action
+  class ImageAction < UMPTG::XML::Pipeline::Action
     def initialize(args = {})
       super(args)
 

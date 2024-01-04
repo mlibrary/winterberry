@@ -36,7 +36,7 @@ module UMPTG::EPUB
         actions = opf_filter.run(xml_doc, args)
 
         run_args[:actions] = actions
-        result = UMPTG::XML::Pipeline::Action::Action.process_actions(run_args)
+        result = UMPTG::XML::Pipeline::Action.process_actions(run_args)
         entry_actions << EntryActions.new(
                   entry: epub.opf,
                   action_result: result
@@ -64,7 +64,7 @@ module UMPTG::EPUB
         @logger.info("Entry: #{ea.entry.name}")
 
         # Report results
-        UMPTG::XML::Pipeline::Action::Action.report_actions(
+        UMPTG::XML::Pipeline::Action.report_actions(
               actions: ea.action_result.actions,
               logger: @logger
               )

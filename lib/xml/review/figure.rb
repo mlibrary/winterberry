@@ -1,4 +1,4 @@
-module UMPTG::XML::Reviewer
+module UMPTG::XML::Review
 
   class Figure < UMPTG::Object
     attr_reader :container_node

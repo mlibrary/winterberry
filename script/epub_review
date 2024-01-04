@@ -38,9 +38,9 @@ end
 epub_file_list = ARGV
 
 require_relative File.join(root_dir, "lib", "epub")
-require_relative File.join(root_dir, "lib", "xml", "reviewer")
+require_relative File.join(root_dir, "lib", "xml", "review")
 
-reviewer = UMPTG::XML::Reviewer::Processor.new(
+reviewer = UMPTG::XML::Review::Processor.new(
       name: "ReviewProcessor",
       options: {
         link: false,

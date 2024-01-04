@@ -1,4 +1,4 @@
-module UMPTG::XML::Pipeline::Filter
+module UMPTG::XML::Pipeline
 
   require 'nokogiri'
 

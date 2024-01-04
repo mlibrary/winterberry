@@ -1,4 +1,4 @@
-module UMPTG::XML::Reviewer
+module UMPTG::XML::Review
 
   class Image < UMPTG::Object
     attr_reader :container_node, :img_node, :within_caption

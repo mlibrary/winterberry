@@ -23,7 +23,7 @@ module UMPTG::XML::Pipeline
 
       # Return XML::ActionResult
       args[:actions] = actions
-      return UMPTG::XML::Pipeline::Action::Action.process_actions(args)
+      return UMPTG::XML::Pipeline::Action.process_actions(args)
     end
 
     def filter(filter_name)

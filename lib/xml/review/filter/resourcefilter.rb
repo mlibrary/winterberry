@@ -1,6 +1,6 @@
-module UMPTG::XML::Reviewer::Filter
+module UMPTG::XML::Review::Filter
 
-  class ResourceFilter < UMPTG::XML::Pipeline::Filter::Filter
+  class ResourceFilter < UMPTG::XML::Pipeline::Filter
 
     RESOURCE_REFERENCE_XPATH = <<-SXPATH
     //*[
@@ -65,7 +65,7 @@ module UMPTG::XML::Reviewer::Filter
 
     def initialize(args = {})
       args[:name] = :resources
-      args[:selector] = UMPTG::XML::Reviewer::ElementSelector.new(
+      args[:selector] = UMPTG::XML::Review::ElementSelector.new(
               selection_xpath: RESOURCE_REFERENCE_XPATH
             )
       super(args)
@@ -87,7 +87,7 @@ module UMPTG::XML::Reviewer::Filter
         resource_path = reference_node["src"]
         @resource_path_list[name] << resource_path
 
-        reference_action_list << UMPTG::XML::Pipeline::Action::Action.new(
+        reference_action_list << UMPTG::XML::Pipeline::Action.new(
                  name: name,
                  reference_node: reference_node,
                  warning_message: "image: \"#{resource_path}\" unable to determine figure container element."
@@ -98,14 +98,14 @@ module UMPTG::XML::Reviewer::Filter
           resource_path = reference_node["data-fulcrum-embed-filename"].strip
           if resource_path.empty?
             # Give warning, but shouldn't be an issue.
-            reference_action_list << UMPTG::XML::Pipeline::Action::Action.new(
+            reference_action_list << UMPTG::XML::Pipeline::Action.new(
                      name: name,
                      reference_node: reference_node,
                      warning_message: "image: has element #{reference_node.name} as figure container and @data-fulcrum-embed-filename is empty."
                  )
           else
             @resource_path_list[name] << resource_path
-            reference_action_list << UMPTG::XML::Pipeline::Action::Action.new(
+            reference_action_list << UMPTG::XML::Pipeline::Action.new(
                      name: name,
                      reference_node: reference_node,
                      info_message: "image: \"#{resource_path}\" has element #{reference_node.name} as figure container and @data-fulcrum-embed-filename is set."
@@ -125,13 +125,13 @@ module UMPTG::XML::Reviewer::Filter
             container_child_list = reference_node.xpath(@@IMGCAPTION_XPATH)
             if container_child_list.empty?
               # Give warning, but shouldn't be an issue.
-              reference_action_list << UMPTG::XML::Pipeline::Action::Action.new(
+              reference_action_list << UMPTG::XML::Pipeline::Action.new(
                        name: name,
                        reference_node: reference_node,
                        warning_message: "image: has element #{reference_node.name} as figure container and is empty."
                    )
             else
-              figure_obj = UMPTG::XML::Reviewer::Figure.new(container_node: reference_node)
+              figure_obj = UMPTG::XML::Review::Figure.new(container_node: reference_node)
               figure_obj_list << figure_obj
 
               caption_found = false
@@ -141,20 +141,20 @@ module UMPTG::XML::Reviewer::Filter
                   within_caption = !child.xpath(IMGPARENT_XPATH).empty?
 
                   if caption_found and !within_caption
-                    figure_obj = UMPTG::XML::Reviewer::Figure.new(container_node: reference_node)
+                    figure_obj = UMPTG::XML::Review::Figure.new(container_node: reference_node)
                     caption_found = false
                     figure_obj_list << figure_obj
                   end
                   img_container_list = child.xpath(IMGCONTAINER_XPATH)
                   if img_container_list.empty?
-                    figure_obj.img_list << UMPTG::XML::Reviewer::Image.new(
+                    figure_obj.img_list << UMPTG::XML::Review::Image.new(
                                 container_node: child,
                                 img_node: child,
                                 within_caption: within_caption
                               )
                   else
                     img_container_list.each do |img_container|
-                      figure_obj.img_list << UMPTG::XML::Reviewer::Image.new(
+                      figure_obj.img_list << UMPTG::XML::Review::Image.new(
                                   container_node: img_container,
                                   img_node: child,
                                   within_caption: within_caption
@@ -185,7 +185,7 @@ module UMPTG::XML::Reviewer::Filter
                             )
 
                   if img_obj.within_caption
-                    reference_action_list << UMPTG::XML::Pipeline::Action::Action.new(
+                    reference_action_list << UMPTG::XML::Pipeline::Action.new(
                              name: name,
                              reference_node: reference_node,
                              warning_message: "image: #{resource_path} is found within a figure caption."
@@ -194,13 +194,13 @@ module UMPTG::XML::Reviewer::Filter
                   end
 
                   if container_normalized
-                    reference_action_list << UMPTG::XML::Pipeline::Action::Action.new(
+                    reference_action_list << UMPTG::XML::Pipeline::Action.new(
                              name: name,
                              reference_node: reference_node,
                              info_message: "image: \"#{resource_path}\" has element #{figure_container.name} as figure container."
                          )
                   else
-                    reference_action_list << UMPTG::XML::Reviewer::Action::NormalizeFigureContainerAction.new(
+                    reference_action_list << UMPTG::XML::Review::Actions::NormalizeFigureContainerAction.new(
                              name: name,
                              reference_node: reference_node,
                              resource_path: resource_path,
@@ -225,13 +225,13 @@ module UMPTG::XML::Reviewer::Filter
                   end
 
                   if caption_list.count == 1 and caption_list.first.name == "figcaption"
-                    reference_action_list << UMPTG::XML::Pipeline::Action::Action.new(
+                    reference_action_list << UMPTG::XML::Pipeline::Action.new(
                              name: name,
                              reference_node: caption_list.first,
                              info_message: "image: #{figure_obj.img_list.count} \"#{resource_path}\" has element #{caption_list.first.name} as figure caption container."
                          )
                   else
-                    reference_action_list << UMPTG::XML::Reviewer::Action::NormalizeFigureCaptionAction.new(
+                    reference_action_list << UMPTG::XML::Review::Actions::NormalizeFigureCaptionAction.new(
                              name: name,
                              figure_container: figure_obj.container_node,
                              #resource_path: resource_path,
@@ -243,7 +243,7 @@ module UMPTG::XML::Reviewer::Filter
                     figure_obj.caption_list.each do |caption_node|
                       if caption_node.key?("style")
                         # Report @style on caption blocks.
-                        reference_action_list << UMPTG::XML::Reviewer::Action::NormalizeFigureCaptionStyleAction.new(
+                        reference_action_list << UMPTG::XML::Review::Actions::NormalizeFigureCaptionStyleAction.new(
                                  name: name,
                                  reference_node: caption_node,
                                  resource_path: resource_path,
@@ -257,7 +257,7 @@ module UMPTG::XML::Reviewer::Filter
 
               figure_obj_list.each do |figure_obj|
                 if figure_obj.img_list.empty?
-                  reference_action_list << UMPTG::XML::Pipeline::Action::Action.new(
+                  reference_action_list << UMPTG::XML::Pipeline::Action.new(
                            name: name,
                            reference_node: figure_obj.container_node,
                            error_message: "image: figure object with no image node."
@@ -270,7 +270,7 @@ module UMPTG::XML::Reviewer::Filter
                   unless img_obj.within_caption or img_container.name == "div"
                     reference_node = img_obj.img_node
                     resource_path = reference_node["src"]
-                    reference_action_list << UMPTG::XML::Reviewer::Action::NormalizeImageContainerAction.new(
+                    reference_action_list << UMPTG::XML::Review::Actions::NormalizeImageContainerAction.new(
                              name: name,
                              reference_node: img_container,
                              #xpath: xpath_base + "/" + @@DIV_XPATH,
@@ -285,7 +285,7 @@ module UMPTG::XML::Reviewer::Filter
                 figure_obj_list.each do |figure_obj|
                   next if figure_obj.img_list.empty?
                   #next if figure_obj.container_node.name.downcase == "figure"
-                  reference_action_list << UMPTG::XML::Reviewer::Action::NormalizeFigureNestAction.new(
+                  reference_action_list << UMPTG::XML::Review::Actions::NormalizeFigureNestAction.new(
                            name: name,
                            reference_node: figure_obj.container_node,
                            #resource_path: resource_path,
@@ -307,7 +307,7 @@ module UMPTG::XML::Reviewer::Filter
       name = args[:name]
       reference_node = args[:reference_node]
 
-      act = UMPTG::XML::Pipeline::Action::Action.new(
+      act = UMPTG::XML::Pipeline::Action.new(
               name: name,
               reference_node: reference_node
               )

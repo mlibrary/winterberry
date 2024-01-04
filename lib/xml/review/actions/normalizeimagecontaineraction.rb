@@ -1,6 +1,6 @@
-module UMPTG::XML::Reviewer::Action
+module UMPTG::XML::Review::Actions
 
-  class NormalizeImageContainerAction < UMPTG::XML::Pipeline::Action::NormalizeAction
+  class NormalizeImageContainerAction < UMPTG::XML::Pipeline::Actions::NormalizeAction
 
     def process(args = {})
       super(args)

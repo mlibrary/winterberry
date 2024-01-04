@@ -1,4 +1,4 @@
-module UMPTG::XML::Reviewer::Action
+module UMPTG::XML::Review::Actions
 
   class NormalizeFigureNestAction < NormalizeFigureAction
 

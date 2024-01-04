@@ -1,4 +1,4 @@
-module UMPTG::XML::Pipeline::Action
+module UMPTG::XML::Pipeline::Actions
 
   class EmbedAction < NormalizeAction
 
