@@ -1,0 +1,63 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Script fixes HEB Round 20 representative file names.
+#
+
+require 'optparse'
+require 'ostruct'
+require 'os'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+# Process the script parameters.
+options = OpenStruct.new
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} dpath [dpath...]"
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    script_logger.info(opts)
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  script_logger.info(option_parser.help)
+  return
+end
+
+# Process the command line parameters.
+dpath_list = ARGV
+
+require 'fileutils'
+
+dpath_list.each do |dpath|
+  dpath = File.expand_path(dpath)
+  unless Dir.exist?(dpath)
+    script_logger.error("invalid HEB directory path #{dpath}.")
+    next
+  end
+  script_logger.info("*** processing #{File.basename(dpath)} ***")
+  STDOUT.flush
+
+  Dir.glob(File.join(dpath, "*")).each do |f|
+    b1 = File.basename(f, ".*")
+    next if b1.length == 13 and b1.match?(/^[0-9]{13}$/)
+
+    script_logger.info("Found #{File.basename(f)}")
+    b2 = b1.gsub(/\-/, '')[0..12]
+    if b2.length == 13 and b2.match?(/^[0-9]{13}$/)
+      new_f = File.join(File.dirname(f), b2 + File.extname(f))
+      #FileUtils.mv(f, new_f)
+      script_logger.info("mv #{File.basename(f)} #{File.basename(new_f)}")
+      next
+    end
+
+    script_logger.warn("Still #{File.basename(f)}")
+  end
+end

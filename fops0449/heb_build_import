@@ -151,12 +151,22 @@ heb_production_file_list.each do |heb_production_file|
   heb_title_list.each do |heb_title|
     script_logger.info("** #{heb_title.heb_id} **")
 
-    title_dir = File.join(MPS_20_DIR, heb_title.heb_id)
-    FileUtils.mkdir_p(title_dir)
-    script_logger.info("created directory #{File.basename(title_dir)}")
-
     script_logger.info("has scans") if heb_title.is_scans
 
+    if heb_title.cover_file_list.count == 0 \
+          and heb_title.epub_file_list.count == 0 \
+          and heb_title.pdf_file_list.count == 0
+      script_logger.warn("no files found. Skipping")
+      next
+    end
+
+    title_dir = File.join(MPS_20_DIR, heb_title.heb_id)
+    if do_copy
+      FileUtils.mkdir_p(title_dir)
+      script_logger.info("created directory #{File.basename(title_dir)}")
+    end
+
+    script_logger.warn("multiple cover files found.") if heb_title.cover_file_list.count > 1
     heb_title.cover_file_list.each do |cover_file|
       fulcrum_cover_file = File.join(title_dir, File.basename(cover_file))
       FileUtils.copy_file(cover_file, fulcrum_cover_file) if do_copy
