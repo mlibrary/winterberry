@@ -176,6 +176,9 @@ monograph_dir_list.each do |monograph_dir|
         monograph_row['Creator Display'] = val
       when 'Edition statement'
         monograph_row['Edition Name'] = val
+      when 'Subject Description'
+        puts "subject:#{val}"
+        monograph_row['Subject'] = val
       when 'Handle Prefix'
       when 'ISBN-13'
       when 'ISBN Format', 'ISBN format'
