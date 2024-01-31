@@ -1,0 +1,160 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Script compares the proposed Crossref submission
+# with current DOI registrations
+
+require 'optparse'
+require 'ostruct'
+require 'os'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+# Process the script parameters.
+options = OpenStruct.new
+options.message_type = :works
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} submission_file [doi...]"
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    script_logger.info(opts)
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  script_logger.info(option_parser.help)
+  return
+end
+
+# Process the command line parameters.
+submission_file = ARGV[0]
+doi_list = ARGV[1..-1]
+
+DOI_DATA_XPATH = <<-SXPATH
+//*[
+local-name()='book' and @book_type='monograph'
+]/*[
+local-name()='book_metadata'
+]
+SXPATH
+
+require 'nokogiri'
+require 'serrano'
+require 'uri'
+
+class DOIRecord
+  attr_reader :doi_data_node, :doi, :pub_year, :doi_prefixed, :url_proposed
+  attr_accessor :url_actual
+
+  def initialize(args = {})
+    @doi_data_node = args[:doi_data_node]
+    @pub_year = @doi_data_node.xpath("./*[local-name()='publication_date']/*[local-name()='year']").first.text
+    @doi = @doi_data_node.xpath("./*[local-name()='doi_data']/*[local-name()='doi']").first.text
+    @doi_prefixed = "http://doi.org/" + @doi
+
+    @url_proposed = @doi_data_node.xpath("./*[local-name()='doi_data']/*[local-name()='resource']").first.text
+    @url_actual = ""
+  end
+end
+
+submission_file = File.expand_path(submission_file)
+unless File.exist?(submission_file)
+  script_logger.error("Submission file doesn't exist, #{submission_file}")
+  exit(1)
+end
+submission_doc = Nokogiri::XML(File.open(submission_file))
+
+DOI_SKIP_LIST = [
+        "10.3998/mpub.12742154",
+        "10.3998/mpub.12411836",
+        "10.3998/mpub.12667826",
+        "10.3998/mpub.12705344",
+        "10.3998/mpub.12761544",
+        "10.3998/mpub.12805341"
+    ]
+doi_records = {}
+doi_data_node_list = submission_doc.xpath(DOI_DATA_XPATH)
+doi_data_node_list.each do |doi_data_node|
+  doi_record = DOIRecord.new(
+                      doi_data_node: doi_data_node
+                      )
+  next if DOI_SKIP_LIST.include?(doi_record.doi)
+  doi_records[doi_record.doi] = doi_record
+end
+
+if doi_list.empty?
+  doi_records.each do |doi,record|
+    next if record.pub_year.to_i > 2023
+    doi_list << record.doi_prefixed
+  end
+end
+#puts doi_list
+#exit(0)
+
+Serrano.configuration do |config|
+  config.base_url = "https://api.crossref.org"
+  config.mailto = "mpub.xref@gmail.com"
+end
+
+response_list = []
+
+case options.message_type
+when :funders
+  response_list = Serrano.funders(ids: doi_list)
+when :works
+  begin
+    response_list = Serrano.works(ids: doi_list)
+  rescue StandardError => e
+    script_logger.error(e.message)
+  end
+else
+  script_logger.error("message type #{options.message_type} not supported.")
+  exit(1)
+end
+
+response_list.each do |response|
+  unless response["status"].downcase == "ok"
+    script_logger.error("#{options.message_type} request failed,#{response}")
+    next
+  end
+  script_logger.info("*** message-type:#{response['message-type']}, version:#{response['message-version']} ***")
+
+  message = response["message"]
+  doi = message["DOI"]
+  if doi.nil?
+    script_logger.warn("no DOI")
+    next
+  end
+  resource = message["resource"]
+  if resource.nil?
+    script_logger.warn("no resource")
+    next
+  end
+  url = resource["primary"]["URL"]
+
+  doi_record = doi_records[doi]
+  if doi_record.nil?
+    script_logger.warn("no DOI record found #{doi}")
+    next
+  end
+  doi_record.url_actual = url
+end
+
+doi_records.each do |doi,record|
+  #next if record.url_actual == record.url_proposed
+  #script_logger.info("#{record.url_actual},#{record.url_proposed}")
+  uri_actual_host = URI(record.url_actual).host
+  uri_actual_host.delete_prefix!('www.') unless uri_actual_host.nil?
+  uri_proposed_host = URI(record.url_proposed).host
+  uri_proposed_host.delete_prefix!('www.') unless uri_proposed_host.nil?
+  next if uri_actual_host == uri_proposed_host
+  next if uri_actual_host == "hdl.handle.net"
+  #script_logger.warn("#{uri_actual_host},#{uri_proposed_host}")
+  script_logger.info("#{record.url_actual},#{record.url_proposed}")
+end
