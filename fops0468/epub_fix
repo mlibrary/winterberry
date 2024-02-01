@@ -47,10 +47,17 @@ class CaptionURLAction < UMPTG::XML::Pipeline::Actions::NormalizeAction
     reference_node = @properties[:reference_node]
     href = reference_node['href']
     parent_node = reference_node.parent
+
+    new_fragment = parent_node.fragment("<a href=\"#{href}\">Fullscreen video and transcript</a>")
+    parent_node.inner_html = ""
+    parent_node.add_child(new_fragment)
+
+=begin
     reference_node.content = parent_node.text[0..9]
     reference_node.remove
     parent_node.inner_html = parent_node.inner_html[10..-3] + "."
     parent_node.prepend_child(reference_node)
+=end
 
     add_info_msg("content action: #{parent_node.inner_html}")
 
