@@ -28,7 +28,7 @@ module UMPTG::EPUB
     end
 
     def opf_to_s
-      return UMPTG::XMLUtil.doc_to_xml(@opf_doc)
+      return UMPTG::XML.doc_to_xml(@opf_doc)
     end
 
     def version(ver = '')
