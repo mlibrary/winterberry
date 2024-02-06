@@ -267,7 +267,7 @@ else
     end
 
     case options.press
-    when :ebc, :ummaa
+    when :ebc, :ummaa, :amherst
       product = "ebc_" + perd
     when :elt
       product = "michelt"
@@ -288,7 +288,7 @@ else
         else
           product += "_int"
         end
-      when :ebc, :ummaa
+      when :ebc, :ummaa, :amherst
         product = "ebc_complete"
       end
       if component_product.key?(product)
