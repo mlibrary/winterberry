@@ -271,6 +271,8 @@ else
       product = "ebc_" + perd
     when :elt
       product = "michelt"
+    when :amherst
+      product = options.press.to_s
     else
       product = options.press.to_s + "_" + perd
     end
@@ -280,7 +282,7 @@ else
       component_product[product] = [minfo]
     end
 
-    unless options.press == :elt
+    unless options.press == :elt or options.press == :amherst
       case options.press
       when :bar
         if minfo[:monograph_series][0].downcase == 'b'
@@ -299,7 +301,7 @@ else
 
       unless minfo[:monograph_open_access].empty?
         case options.press
-        when :amherst, :aperio, :ebc, :lever, :ummaa
+        when :aperio, :ebc, :lever, :ummaa
           product = "ebc_oa"
         else
           raise "Found open access for press #{options.press}, #{minfo}"

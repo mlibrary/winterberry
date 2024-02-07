@@ -39,6 +39,9 @@ service = UMPTG::Services::Heliotrope.new(
                 :fulcrum_host => options.fulcrum_host
               )
 
+products = service.products
+c_list = products.collect {|c| c['identifier'] }
+script_logger.info("products:#{c_list.join(',')}")
 noid_list.each do |noid|
   response = service.connection.get("component", noid: noid).body
   if response.nil?
