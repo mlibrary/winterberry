@@ -26,7 +26,10 @@ whti.primaryeditionworkkey 'workkey',doi.textvalue 'doi', currentOA.textvalue 'O
 ptitle.bisacstatus 'primaryBISAC',
 subtitle.bisacstatus 'secondaryBISAC',
 subtitle.ean13 'secondaryISBN',
-case when whtc.groupentry2 = 'distributed' then whtc.groupentry3 end 'distClient'
+case when whtc.groupentry2 = 'distributed' then whtc.groupentry3 end 'distClient',
+dbo.rpt_get_misc_value_check(whti.bookkey, 243, 'Y') 'fullTextOnFulcrum',
+dbo.rpt_get_misc_value(ebook.bookkey,286,'L') 'ebookStatus',
+dbo.rpt_get_misc_value(currentOA.bookkey,286,'L') 'currentOAStatus'
 from ptitle inner join whtitleinfo whti on ptitle.bookkey = whti.bookkey
 left outer join ebook on ebook.pbookkey = ptitle.bookkey
 inner join whauthor wha on whti.bookkey = wha.bookkey
