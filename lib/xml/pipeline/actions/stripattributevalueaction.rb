@@ -10,7 +10,7 @@ module UMPTG::XML::Pipeline::Actions
       reference_node[attribute_name] = reference_node[attribute_name].strip
       add_info_msg("stripped attribute #{attribute_name} for element #{reference_node.name}")
 
-      @status = Action.COMPLETED
+      @status = UMPTG::Action.COMPLETED
     end
   end
 end

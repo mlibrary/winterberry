@@ -99,7 +99,7 @@ module UMPTG::EPUB
 
         add(
             entry_name: opf.name,
-            entry_content: UMPTG::XMLUtil.doc_to_xml(opf_doc)
+            entry_content: UMPTG::XML.doc_to_xml(opf_doc)
           )
       end
 

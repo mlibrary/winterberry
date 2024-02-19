@@ -15,8 +15,9 @@ module UMPTG::XML::Pipeline::Actions
 
         add_info_msg("#{reference_node.name}: inserted next sibling markup #{markup}.")
 
-        @status = Action.COMPLETED
+        @status = UMPTG::Action.COMPLETED
       end
+      @status = UMPTG::Action.COMPLETED
     end
   end
 end

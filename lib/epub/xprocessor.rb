@@ -18,6 +18,8 @@ module UMPTG::EPUB
     def run(epub, args = {})
       raise "No XML processor specified" if @xml_processor.nil?
 
+      spine_entries = args[:spine_entries]
+
       run_args = args.clone()
 
       # Set XML processor logger to be this logger.
@@ -49,7 +51,8 @@ module UMPTG::EPUB
         sv_filters = @xml_processor.filters
         @xml_processor.filters = filters
 
-        epub.spine.each do |entry|
+        spine_entries = epub.spine if spine_entries.nil?
+        spine_entries.each do |entry|
           xml_doc = UMPTG::XML.parse(xml_content: entry.content)
           result = @xml_processor.run(xml_doc, args)
           entry_actions << EntryActions.new(
