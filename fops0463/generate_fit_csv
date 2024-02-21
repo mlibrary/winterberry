@@ -1,0 +1,193 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Script inputs a HEB metadata CSV file
+# and generates a TMM FIT CSV file.
+
+require 'optparse'
+require 'ostruct'
+require 'os'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+# Process the script parameters.
+options = OpenStruct.new
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} <heb_csv_file> [<heb_csv_file>..]"
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    script_logger.info(opts)
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  script_logger.info(option_parser.help)
+  exit 0
+end
+
+heb_csv_file_list = ARGV
+
+FIT2HEB_HEADER = {
+  "Title" => "Main title",
+  "Subtitle" => "Subtitle",
+  "Format" => "ISBN format",
+  "EAN" => "ISBN-13",
+  "VolumeNumber" => "Volume",
+  "Series" => "Series",
+  "CopyrightYear" => "Copyright year",
+  "CompanyName" => "Publisher",
+  "Imprint" => "Publisher",
+  "LongDescription" => "Book description",
+  "PrimaryISBN" => "ISBN-13",
+  "PrintISBN" => "ISBN-13",
+  "PublisherName" => "Publisher",
+  "PubDate" => "Date published",
+  "AuthorDisplayName1" => "Author1 Alphabetical name",
+  "AuthorLastName1" => "Author1 Family name",
+  "AuthorFirstName1" => "Author1 Given name",
+  "AuthorType1" => "Author1 Role",
+  "AuthorDisplayName2" => "Author2 Alphabetical name",
+  "AuthorLastName2" => "Author2 Family name",
+  "AuthorFirstName2" => "Author2 Given name",
+  "AuthorType2" => "Author2 Role",
+  "AuthorDisplayName3" => "Author3 Alphabetical name",
+  "AuthorLastName3" => "Author3 Family name",
+  "AuthorFirstName3" => "Author3 Given name",
+  "AuthorType3" => "Author3 Role",
+  "AuthorDisplayName4" => "Author4 Alphabetical name",
+  "AuthorLastName4" => "Author4 Family name",
+  "AuthorFirstName4" => "Author4 Given name",
+  "AuthorType4" => "Author4 Role",
+  "AuthorDisplayName5" => "Author5 Alphabetical name",
+  "AuthorLastName5" => "Author5 Family name",
+  "AuthorFirstName5" => "Author5 Given name",
+  "AuthorType5" => "Author5 Role",
+}
+
+require 'csv'
+require 'rubyXL'
+
+class FitHeader
+  attr_reader :fit_header, :heb_header, :col, :required
+
+  def initialize(fh, hh, c, r)
+    @fit_header = fh
+    @heb_header = (hh.nil? or hh.strip.empty?) ? "" : hh
+    @col = c
+    @required = r
+  end
+end
+
+# Load FIT Import template
+FIT_IMPORT_FILE = File.join(root_dir, "fops0463", "FIT_Import_template.xlsx")
+fit_workbook = RubyXL::Parser.parse(FIT_IMPORT_FILE)
+fit_data_sheet = fit_workbook["ENTER DATA HERE"]
+if fit_data_sheet.nil?
+  script_logger.error("sheet 'ENTER DATA HERE' not found.")
+  exit(1)
+end
+
+fit_headers = []
+for i in 0..(fit_data_sheet[1].size-1) do
+  fh = fit_data_sheet[1][i].value
+  hh = FIT2HEB_HEADER[fh]
+  r = fit_data_sheet[0][i].value.strip.downcase
+  case
+  when r.start_with?("required if sending to "), \
+       r.start_with?("required for children"), \
+       r.start_with?("required for physical audio"), \
+       r.start_with?("required for audio")
+    required = false
+  else
+    required = r.start_with?("required")
+  end
+  fit_h = FitHeader.new(fh, hh, i, required)
+  fit_headers << fit_h
+end
+
+heb_csv_file_list.each do |heb_csv_file|
+  heb_csv_file = File.expand_path(heb_csv_file)
+  unless File.exist?(heb_csv_file)
+    script_logger.error("invalid CSV file path #{heb_csv_file}.")
+    next
+  end
+  script_logger.info("*** processing #{File.basename(heb_csv_file)} ***")
+  STDOUT.flush
+
+  heb_csv = CSV.parse(
+            File.read(heb_csv_file),
+            :headers => true,
+            #:header_converters=> lambda {|f| fm_header_convert(f)},
+            :return_headers => false
+          )
+
+  frow_ndx = 3
+  heb_csv.each do |hrow|
+    fit_data_sheet.add_row(frow_ndx) if fit_data_sheet[frow_ndx].nil?
+
+    fit_headers.each do |fh|
+      heb_value = hrow[fh.heb_header]
+      heb_value = heb_value.nil? ? "" : heb_value.strip
+      if heb_value.empty?
+        next unless fh.required
+
+        heb_value = "(required)"
+      end
+
+      case fh.fit_header
+      when "Audience1"
+        heb_value = "Adult education"
+      when "BISACCategory1"
+        heb_value = "REL054000"
+      when "BISACStatus"
+        heb_value = "Not Yet Published"
+      when "BookPrice_CurrType1"
+        heb_value = "USD"
+      when "BookPrice_Final1"
+        heb_value = "0.00"
+      when "BookPrice_PriceType1"
+        heb_value = "USD"
+      when "ExclusiveForSaleCountries"
+        heb_value = "World"
+      when "Format"
+        heb_value = heb_value.downcase == "ebk" ? "Other" : heb_value
+      when "Media"
+        heb_value = "Book"
+      when "Pages"
+        heb_value = "0"
+      when "PrimaryAuthor1"
+        heb_value = "Y"
+      when "PrimaryLanguage"
+        heb_value = "English"
+      when "ProductAvailabilityCode"
+        heb_value = "Not Yet Available"
+      when "PubDate"
+        heb_value = Date.new(heb_value.to_i).strftime
+      end
+
+      fit_data_sheet.add_cell(frow_ndx, fh.col, heb_value, nil, true)
+      cell = fit_data_sheet[frow_ndx][fh.col]
+=begin
+      cell = fit_data_sheet[frow_ndx][fh.col]
+      cell = fit_data_sheet.add_cell(frow_ndx, fh.col) if cell.nil?
+      cell.raw_value = heb_value
+=end
+      script_logger.info("#{frow_ndx},#{fh.col},#{fh.fit_header},#{fh.heb_header},#{fh.required},#{cell.value},#{cell.nil?}")
+    end
+    frow_ndx += 1
+  end
+
+  # Save the FIT CSV file.
+  fit_file = File.join(
+        File.dirname(heb_csv_file),
+        File.basename(heb_csv_file, ".*") + "_fit.xlsx"
+        )
+  script_logger.info("Creating metadata file #{fit_file}")
+  fit_workbook.write(fit_file)
+end
