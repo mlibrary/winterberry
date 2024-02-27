@@ -91,7 +91,7 @@ CSV.open(
 
     # Use the monograph NOID to retrieve the monograph manifest from Fulcrum.
     id2csv_body_list = service.monograph_export(identifier: identifier)
-    if id2csv_body_list.empty?
+    if id2csv_body_list[identifier].empty?
       script_logger.error("no manifest found for id #{monograph_id}")
       next
     end

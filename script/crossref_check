@@ -49,12 +49,13 @@ require 'serrano'
 require 'uri'
 
 class DOIRecord
-  attr_reader :doi_data_node, :doi, :pub_year, :doi_prefixed, :url_proposed
+  attr_reader :doi_data_node, :doi, :print_isbn, :pub_year, :doi_prefixed, :url_proposed
   attr_accessor :url_actual
 
   def initialize(args = {})
     @doi_data_node = args[:doi_data_node]
     @pub_year = @doi_data_node.xpath("./*[local-name()='publication_date']/*[local-name()='year']").first.text
+    @print_isbn = @doi_data_node.xpath("./*[local-name()='isbn' and @media_type='print']").first.text
     @doi = @doi_data_node.xpath("./*[local-name()='doi_data']/*[local-name()='doi']").first.text
     @doi_prefixed = "http://doi.org/" + @doi
 
@@ -70,14 +71,33 @@ unless File.exist?(submission_file)
 end
 submission_doc = Nokogiri::XML(File.open(submission_file))
 
+Serrano.configuration do |config|
+  config.base_url = "https://api.crossref.org"
+  config.mailto = "mpub.xref@gmail.com"
+end
+
+def log_doi(script_logger, record)
+  if record.nil?
+    script_logger.warn("2,no DOI record found #{doi}")
+    return
+  end
+  uri_actual_host = URI(record.url_actual).host
+  uri_actual_host.delete_prefix!('www.') unless uri_actual_host.nil?
+  uri_proposed_host = URI(record.url_proposed).host
+  uri_proposed_host.delete_prefix!('www.') unless uri_proposed_host.nil?
+
+  return if uri_actual_host == uri_proposed_host
+  #return if uri_actual_host == "hdl.handle.net"
+
+  script_logger.info("#{record.doi}:#{record.print_isbn},#{record.url_actual},#{record.url_proposed}")
+end
+
 DOI_SKIP_LIST = [
+=begin
         "10.3998/mpub.12742154",
-        "10.3998/mpub.12411836",
-        "10.3998/mpub.12667826",
-        "10.3998/mpub.12705344",
-        "10.3998/mpub.12761544",
-        "10.3998/mpub.12805341"
+=end
     ]
+
 doi_records = {}
 doi_data_node_list = submission_doc.xpath(DOI_DATA_XPATH)
 doi_data_node_list.each do |doi_data_node|
@@ -88,22 +108,36 @@ doi_data_node_list.each do |doi_data_node|
   doi_records[doi_record.doi] = doi_record
 end
 
+doi_list_2024 = []
 if doi_list.empty?
   doi_records.each do |doi,record|
-    next if record.pub_year.to_i > 2023
-    doi_list << record.doi_prefixed
+    if record.pub_year.to_i > 2023
+      #doi_list_2024 << record.doi
+      doi_list << record.doi
+    else
+      doi_list << record.doi
+    end
   end
-end
-#puts doi_list
-#exit(0)
-
-Serrano.configuration do |config|
-  config.base_url = "https://api.crossref.org"
-  config.mailto = "mpub.xref@gmail.com"
 end
 
 response_list = []
 
+=begin
+doi_list_2024_failed = []
+doi_list_2024.each do |doi|
+  begin
+    response = Serrano.works(ids: [doi])
+    #script_logger.info(doi)
+  rescue StandardError => e
+    script_logger.error(e.message)
+    doi_list_2024_failed << doi
+  end
+end
+doi_list_2024_failed.each {|doi| log_doi(script_logger, doi_records[doi]) }
+exit(0)
+=end
+
+response_list = []
 case options.message_type
 when :funders
   response_list = Serrano.funders(ids: doi_list)
@@ -112,6 +146,7 @@ when :works
     response_list = Serrano.works(ids: doi_list)
   rescue StandardError => e
     script_logger.error(e.message)
+    exit(1)
   end
 else
   script_logger.error("message type #{options.message_type} not supported.")
@@ -146,6 +181,10 @@ response_list.each do |response|
   doi_record.url_actual = url
 end
 
+doi_list.each {|doi| log_doi(script_logger, doi_records[doi]) }
+#doi_list_2024.each {|doi| log_doi(script_logger, doi_records[doi]) }
+
+=begin
 doi_records.each do |doi,record|
   #next if record.url_actual == record.url_proposed
   #script_logger.info("#{record.url_actual},#{record.url_proposed}")
@@ -158,3 +197,4 @@ doi_records.each do |doi,record|
   #script_logger.warn("#{uri_actual_host},#{uri_proposed_host}")
   script_logger.info("#{record.url_actual},#{record.url_proposed}")
 end
+=end
