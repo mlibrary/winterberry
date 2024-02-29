@@ -14,7 +14,7 @@ module UMPTG::XML::Pipeline
 
     def process(args = {})
       super(args)
-      @status = Action.COMPLETED
+      @status = Action.PENDING
     end
 
     def self.process_actions(args = {})
