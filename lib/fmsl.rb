@@ -17,7 +17,8 @@ module UMPTG
             "exclusive_to_fulcrum?" => "Exclusive to Fulcrum",
             "persistent_id" => "DOI",
             "legacy_id" => "Identifier(s)",
-            "copyright_holder" => "Rightsholder"
+            "copyright_holder" => "Rightsholder",
+            "alt_text" => "Alternative Text"
         }
 
     def self.load(args = {})
