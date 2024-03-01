@@ -16,7 +16,7 @@ options.fulcrum_dir = OS.windows? ? "s:/Information\ Management/Fulcrum" : optio
 options.press = :ebc
 option_parser = OptionParser.new do |opts|
   opts.banner = "Usage: #{File.basename(__FILE__)} [-d <fulcrum_dir>] [-p press] <task_id> <monograph_id> [<monograph_id>..]"
-  opts.on('-p', '--press [press]', 'Press amherst|aperio|bar|ebc|heb|lever|ummaa') do |press|
+  opts.on('-p', '--press [press]', 'Press amherst|aperio|bar|ebc|heb|lever|michelt|ummaa') do |press|
     options.press = press.to_sym
   end
   opts.on('-d', '--directory [DIRECTORY]', 'Fulcrum directory') do |fulcrum_dir|
@@ -184,7 +184,7 @@ monograph_id_list.each do |monograph_id|
 
   series_id = ""
   case options.press
-  when :amherst, :aperio, :ebc, :elt, :lever, :maize, :ummaa
+  when :amherst, :aperio, :ebc, :michelt, :lever, :maize, :ummaa
     series_id = monograph_row["doi"].strip
   else
     id_list = monograph_row["identifier(s)"]
@@ -258,6 +258,16 @@ else
   monograph_info.each do |monograph_id,minfo|
     pub_year = minfo[:monograph_pub_date].year
 
+    case options.press
+    when :amherst, :michelt, :ummaa
+      product = options.press.to_s
+    end
+    if component_product.key?(product)
+      component_product[product] << minfo
+    else
+      component_product[product] = [minfo]
+    end
+
     if options.press == :ebc and pub_year <= 2011
       perd = "2011pre"
     elsif options.press == :bar and pub_year < 2020
@@ -269,10 +279,6 @@ else
     case options.press
     when :ebc, :ummaa
       product = "ebc_" + perd
-    when :elt
-      product = "michelt"
-    when :amherst
-      product = options.press.to_s
     else
       product = options.press.to_s + "_" + perd
     end
@@ -282,7 +288,7 @@ else
       component_product[product] = [minfo]
     end
 
-    unless options.press == :elt or options.press == :amherst
+    unless options.press == :michelt or options.press == :amherst
       case options.press
       when :bar
         if minfo[:monograph_series][0].downcase == 'b'
