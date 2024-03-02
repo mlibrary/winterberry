@@ -4,6 +4,7 @@ module UMPTG
   require_relative 'services'
   require_relative 'xmlutil'
 
+  require_relative File.join('fulcrum', 'filter')
   require_relative File.join('fulcrum', 'manifest')
   require_relative File.join('fulcrum', 'metadata')
   require_relative File.join('fulcrum', 'monographdir')
@@ -12,5 +13,6 @@ module UMPTG
   require_relative File.join('fulcrum', 'resourcemap')
   require_relative File.join('fulcrum', 'keywords')
   require_relative File.join('fulcrum', 'resources')
+  require_relative File.join('fulcrum', 'xresources')
   require_relative File.join('fulcrum', 'epubprocessor')
 end

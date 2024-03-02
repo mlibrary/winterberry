@@ -67,9 +67,10 @@ module UMPTG::EPUB
         @logger.info("Entry: #{ea.entry.name}")
 
         # Report results
-        UMPTG::XML::Pipeline::Action.report_actions(
+        UMPTG::XML::Pipeline::Action.process_actions(
               actions: ea.action_result.actions,
-              logger: @logger
+              logger: @logger,
+              normalize: false
               )
         #ea.action_result.actions.each {|a| @logger.info(a) }
 
