@@ -166,12 +166,14 @@ module UMPTG::Fulcrum::Manifest
       noid = fileset["noid"]
       doi = fileset["doi"]
 
+=begin
 # For testing with Fulcrum metadata CSV instead of mongraph manifest.
       if noid.nil?
         noid = File.basename(file_name, ".*") + "_noid"
         doi = "https://doi.org/10.3998/mpub.#{noid}"
       end
-# 
+#
+=end
       unless noid.empty?
         link = doi
         link = fileset["link"][12..-3] if link.nil? or link.empty?
