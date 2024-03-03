@@ -154,6 +154,15 @@ module UMPTG::Fulcrum::Manifest
         }
     end
 
+    # Method returns the caption for a resource.
+    def fileset_caption(file_name)
+      fileset = fileset(file_name)
+      caption = fileset['caption']
+      caption = fileset['title'] if caption.nil? or caption.strip.empty?
+      caption = "" if caption.nil? or caption.strip.empty?
+      return caption
+    end
+
     # Method generates XML markup to link a resource.
     #
     # Parameter:
