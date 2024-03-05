@@ -1544,6 +1544,16 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
                     <xsl:apply-templates select="$node/@*[name()!='REND' and name()!='TYPE']|node()"/>
                 </xsl:element>
             </xsl:when>
+            <xsl:when test="$style='sub'">
+                <xsl:element name="sub">
+                    <xsl:apply-templates select="$node/@*[name()!='REND' and name()!='TYPE']|node()"/>
+                </xsl:element>
+            </xsl:when>
+            <xsl:when test="$style='sup'">
+                <xsl:element name="sup">
+                    <xsl:apply-templates select="$node/@*[name()!='REND' and name()!='TYPE']|node()"/>
+                </xsl:element>
+            </xsl:when>
             <!--
             <xsl:when test="$style='center' or $style='right' or $style='left' or $style='indent5' or $style='alignright' or $style='alignleft'">
                 <xsl:message>Style ignored: <xsl:value-of select="$style"/></xsl:message>

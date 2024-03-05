@@ -1,0 +1,84 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Search JATS instance for abstract elements.
+
+require 'optparse'
+require 'ostruct'
+require 'os'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+# Process the script parameters.
+options = OpenStruct.new
+options.manifest_file = nil
+options.normalize = false
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} jats_file [jats_file...]"
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    script_logger.info(opts)
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  script_logger.info(option_parser.help)
+  return
+end
+
+# Process the command line parameters.
+jats_file_list = ARGV
+
+require_relative File.join(root_dir, "lib", "xml", "pipeline")
+
+JATS_XPATH = <<-SXPATH
+//*[
+local-name()='abstract'
+]//*
+SXPATH
+
+class JATSAbstractFilter < UMPTG::XML::Pipeline::Filter
+  def create_actions(args = {})
+    # abstract/*
+    reference_node = args[:reference_node]
+
+    action_list = [
+              UMPTG::XML::Pipeline::Action.new(
+                    name: args[:name],
+                    reference_node: reference_node,
+                    info_message: "found element #{reference_node.name}"
+                  )
+          ]
+    return action_list
+  end
+end
+
+jats_processor = UMPTG::XML::Pipeline::Processor.new(
+      name: "jats_elements",
+      filters: {
+        jats_elements: JATSAbstractFilter.new(
+                  name: :jats_elements,
+                  xpath: JATS_XPATH,
+               )
+      },
+      options: {
+        jats_elements: true
+      }
+    )
+
+jats_file_list.each do |jats_file|
+  unless File.file?(jats_file)
+    script_logger.error("invalid JATS file #{jats_file}")
+    exit 1
+  end
+  script_logger.info("processing JATS file #{File.basename(jats_file)}")
+
+  jats_doc = Nokogiri::XML(File.read(jats_file))
+  jats_processor.run(jats_doc)
+end
