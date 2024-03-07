@@ -54,6 +54,15 @@ monographs_list.each do |monograph|
     script_logger.error("no ISBN for #{noid}")
     next
   end
+
+  doi = manifest.monograph_row['doi']
+  if doi.nil?
+    script_logger.error("no DOI for #{noid}")
+    next
+  end
+  noid_list << "#{doi.strip.delete_prefix("https://doi.org/")}\t#{manifest.monograph_row['link'][12..-3]}"
+  next
+
   nlist = service.monograph_noid(identifier: isbn)
   STDOUT.flush
   next unless nlist.count == 1
@@ -64,4 +73,4 @@ monographs_list.each do |monograph|
   #puts noid
   #STDOUT.flush
 end
-puts noid_list.join(' ')
+File.write("xref_list.tsv", noid_list.join("\n"))

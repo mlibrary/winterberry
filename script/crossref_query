@@ -19,7 +19,7 @@ script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
 options = OpenStruct.new
 options.message_type = :works
 option_parser = OptionParser.new do |opts|
-  opts.banner = "Usage: #{File.basename(__FILE__)} doi [doi...]"
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-t funders|works] doi [doi...]"
   opts.on('-t', '--type [funders|works]', 'Message type [funders|works]') do |type|
     options.message_type = type.to_sym
   end

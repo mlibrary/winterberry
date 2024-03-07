@@ -56,6 +56,7 @@ end
 
 # Verify press, either UM Press or MPS services.
 press_dir = {
+        aberdeen: "MPS",
         amherst: "MPS",
         aperio: "MPS",
         bar:   "MPS",
@@ -67,12 +68,13 @@ press_dir = {
         ummaa: "UMMAA"
         }
 sub_dir = {
+        aberdeen: "Aberdeen",
         amherst: "Amherst",
         aperio: "Aperio",
         bar:   "BAR",
         heb:   "HEB",
         lever:   "Lever",
-        maize: "maize"
+        maize: "Maize"
         }
 unless press_dir.key?(options.press)
   script_logger.fatal("invalid press #{options.press}")
@@ -184,8 +186,14 @@ monograph_id_list.each do |monograph_id|
 
   series_id = ""
   case options.press
-  when :amherst, :aperio, :ebc, :michelt, :lever, :maize, :ummaa
-    series_id = monograph_row["doi"].strip
+  when :aberdeen, :amherst, :aperio, :ebc, :michelt, :lever, :maize, :ummaa
+    series_id = monograph_row["doi"]
+    script_logger.info("series_id: DOI not found, using ISBN") if series_id.nil?
+
+    series_id = manifest.isbn['open access'] if series_id.nil?
+    series_id = manifest.isbn['ebook'] if series_id.nil?
+    series_id = manifest.isbn['oa ebook'] if series_id.nil?
+    series_id.strip! unless series_id.nil?
   else
     id_list = monograph_row["identifier(s)"]
     unless id_list.nil?
@@ -259,7 +267,7 @@ else
     pub_year = minfo[:monograph_pub_date].year
 
     case options.press
-    when :amherst, :michelt, :ummaa
+    when :aberdeen, :amherst, :michelt, :ummaa
       product = options.press.to_s
     end
     if component_product.key?(product)
@@ -268,27 +276,29 @@ else
       component_product[product] = [minfo]
     end
 
-    if options.press == :ebc and pub_year <= 2011
-      perd = "2011pre"
-    elsif options.press == :bar and pub_year < 2020
-      perd = "pre"
-    else
-      perd = pub_year.to_s
+    unless options.press == :aberdeen
+      if options.press == :ebc and pub_year <= 2011
+        perd = "2011pre"
+      elsif options.press == :bar and pub_year < 2020
+        perd = "pre"
+      else
+        perd = pub_year.to_s
+      end
+
+      case options.press
+      when :ebc, :ummaa
+        product = "ebc_" + perd
+      else
+        product = options.press.to_s + "_" + perd
+      end
+      if component_product.key?(product)
+        component_product[product] << minfo
+      else
+        component_product[product] = [minfo]
+      end
     end
 
-    case options.press
-    when :ebc, :ummaa
-      product = "ebc_" + perd
-    else
-      product = options.press.to_s + "_" + perd
-    end
-    if component_product.key?(product)
-      component_product[product] << minfo
-    else
-      component_product[product] = [minfo]
-    end
-
-    unless options.press == :michelt or options.press == :amherst
+    unless options.press == :michelt or options.press == :amherst or :aberdeen
       case options.press
       when :bar
         if minfo[:monograph_series][0].downcase == 'b'
