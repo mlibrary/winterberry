@@ -1,0 +1,185 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require 'optparse'
+require 'ostruct'
+
+# Process the script parameters.
+options = OpenStruct.new
+options.output_dir = Dir.pwd
+options.execute = false
+options.fulcrum_host = nil
+options.press = :heb
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-e] [-f production|preview|staging] [-d output_dir] [-p ebc|heb] monograph_id [monograph_id...]"
+  opts.on('-d', '--output_dir [DIRECTORY]', 'Output directory') do |output_dir|
+    options.output_dir = output_dir
+  end
+  opts.on('-e', '--execute', 'Execute making Fulcrum handles') do |execute|
+    options.execute = true
+  end
+  opts.on('-f', '--fulcrum_host [production|preview|staging]', 'Fulcrum environment') do |fulcrum_host|
+    options.fulcrum_host = fulcrum_host
+  end
+  opts.on('-p', '--press [press]', 'Press ebc|heb') do |press|
+    options.press = press.to_sym
+  end
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    puts opts
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  puts option_parser.help
+  exit 0
+end
+
+monograph_id_list = ARGV
+
+HOST="tang"
+if options.execute and !ENV['HOSTNAME'].start_with?(HOST)
+  puts "Hey, you must use #{HOST} to run this script!!"
+  #exit
+end
+
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+output_dir = File.expand_path(options.output_dir)
+fail "Error: output directory #{output_dir} is not valid." unless File.directory?(output_dir)
+
+require 'date'
+require 'fileutils'
+
+require_relative File.join(root_dir, 'lib', 'fulcrum')
+require_relative File.join(root_dir, 'lib', 'services')
+
+# Create the serivce for retrieving the NOID manifest.
+service = UMPTG::Services::Heliotrope.new(
+                :fulcrum_host => options.fulcrum_host
+              )
+
+row_list = []
+monograph_noid = nil
+monograph_id_list.each do |monograph_id|
+  puts "*" * 10 + " #{monograph_id} " + "*" * 10
+  STDOUT.flush
+
+  # For HEB and BAR, prefix the monograph_id
+  case options.press
+  when :bar
+    identifier = "bar_number:#{monograph_id.upcase}"
+  when :heb
+    identifier = "heb_id:#{monograph_id}"
+  else
+    identifier = monograph_id
+  end
+
+  # Use the monograph NOID to retrieve the monograph manifest from Fulcrum.
+  id2csv_body_list = service.monograph_export(identifier: identifier)
+  if id2csv_body_list.empty?
+    script_logger.error("no manifest found for id #{monograph_id}")
+    next
+  end
+  STDOUT.flush
+  id2csv_body_list.each do |id, csv_body_list|
+    if [:heb,:bar].include?(options.press)
+      identifier = id.split(':')[1]
+    else
+      identifier = id
+    end
+
+    csv_body_list.each do |csv_body|
+      manifest = UMPTG::Fulcrum::Manifest::Document.new(
+                    :csv_body => csv_body
+                  )
+      monograph_row = manifest.monograph_row
+      if monograph_row.nil?
+        puts "Error: no manifest monograph row found for ID #{monograph_id}."
+        next
+      end
+
+      monograph_noid = monograph_row['noid']
+      link = monograph_row['link'].match('^[^\(]+\(\"([^\"]+)\".*') {|m| m[1] }
+      link.delete_prefix!('https://www.fulcrum.org')
+
+      case options.press
+      when :heb
+        id_list = monograph_row["identifier(s)"]
+        unless id_list.nil?
+          #id_a = id_list.split(';')
+          #list = id_a.select {|id| id.strip.downcase.match?(/^heb[0-9]{5}\.[0-9]{4}\.[0-9]{3}/) }
+          #list = id_a.select {|id| id.strip.downcase.match?(/heb_id:[ ]*heb[0-9]{5}\.[0-9]{4}\.[0-9]{3}/) }
+          #series_id = list.first.strip unless list.empty?
+          series_id = id_list.match(/heb_id:[ ]*(heb[0-9]{5}\.[0-9]{4}\.[0-9]{3})/) {|m| m[1] }
+          puts "id_list:#{id_list},series_id:#{series_id}"
+        else
+          puts "Missing id for ID #{monograph_id}."
+        end
+        row_list <<  [
+                      "#{manifest.monograph_row['noid']},#{link},#{series_id}"
+                    ]
+      else
+        row_list <<  [
+                      "#{manifest.monograph_row['noid']},#{link},#{manifest.monograph_row['doi']}"
+                    ]
+      end
+
+      manifest.csv.each do |row|
+        next if row == manifest.monograph_row
+        next if row['noid'].downcase.start_with?('fulcrum dev-')
+
+        link = row['link'].match('^[^\(]+\(\"([^\"]+)\".*') {|m| m[1] }
+        link.delete_prefix!('https://www.fulcrum.org')
+        row_list << "#{row['noid']},#{link}"
+      end
+    end
+  end
+end
+
+# Write the temp file. system command may strip out the newlines
+resource_file = File.join(output_dir, "resources.csv")
+File.open(resource_file, "w") do |fp|
+  row_list.each do |row|
+    fp.puts row
+  end
+end
+
+# Making Fulcrum handles
+bname = "batch." + DateTime.now.strftime("%Y-%m-%d")
+hdl_file = File.join(output_dir,  bname + ".hdl")
+log_file = File.join(output_dir,  bname + ".log")
+
+ok = true
+if options.execute
+  # Actually make the handles
+  ok = system("cat \"#{resource_file}\" | /quod-dev/bin/f/fulcrum_helpers/makeFulcrumHandles.pl -h -d \"#{output_dir}\"")
+  status = $?
+  FileUtils.rm_f resource_file
+else
+  # Don't make the handles, but display the
+  # the system call for review.
+  puts "cat \"#{resource_file}\" | /quod-dev/bin/f/fulcrum_helpers/makeFulcrumHandles.pl -h -d \"#{output_dir}\""
+end
+
+# Evaluate the status of the return code.
+case ok
+when true
+else
+  puts "System call failed (status = #{status})"
+  #next
+end
+
+# Rename the output file from makeFulcrumHandles.pl
+# to avoid it from being overwritten
+new_hdl_file = File.join(output_dir, bname + "_#{monograph_noid}" + ".hdl")
+new_log_file = File.join(output_dir, bname + "_#{monograph_noid}" + ".log")
+if File.exist?(hdl_file)
+  FileUtils.mv(hdl_file, new_hdl_file)
+end
+if File.exist?(log_file)
+  FileUtils.mv(log_file, new_log_file)
+end

@@ -2,6 +2,7 @@ module UMPTG
   class Press
     # Press symbols and folder names
     @@PRESS_DIR = {
+            aberdeenunipress: "MPS",
             amherst: "MPS",
             bar:   "MPS",
             ebc:   "UMP",
@@ -9,6 +10,7 @@ module UMPTG
             ummaa: "UMMAA"
             }
     @@PRESS_SUB_DIR = {
+            aberdeenunipress: "Aberdeen",
             amherst: "Amherst",
             bar:   "BAR",
             heb:   "HEB",

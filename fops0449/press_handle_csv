@@ -1,0 +1,151 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Script displays a list of press monographs
+
+require 'optparse'
+require 'ostruct'
+require 'os'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+# Process the script parameters.
+options = OpenStruct.new
+options.output_dir = Dir.pwd
+options.fulcrum_host = nil
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-f production|preview|staging] press [press..]"
+  opts.on('-f', '--fulcrum_host host', 'Fulcrum environment') do |fulcrum_host|
+    options.fulcrum_host = fulcrum_host
+  end
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    script_logger.info(opts)
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  script_logger.info(option_parser.help)
+  return
+end
+
+press_list = ARGV
+
+output_dir = File.expand_path(options.output_dir)
+fail "Error: output directory #{output_dir} is not valid." unless File.directory?(output_dir)
+
+require_relative File.join(root_dir, "lib", "press")
+require_relative File.join(root_dir, 'lib', 'fulcrum')
+
+press_list.each do |press|
+  unless UMPTG::Press.press_list.include?(press)
+    script_logger.error("invalid press #{press}")
+    exit(1)
+  end
+end
+
+# Create the serivce for retrieving the NOID.
+service = UMPTG::Services::Heliotrope.new(
+                :fulcrum_host => options.fulcrum_host
+              )
+puts service.connection.options
+exit(0)
+
+monographs_list = service.monographs(press_list: press_list)
+puts "cnt:#{monographs_list.count}"
+
+row_list = []
+monograph_noid = nil
+monographs_list.each do |monograph|
+  noid = monograph["id"]
+  manifest = UMPTG::Fulcrum::Manifest::Document.new(
+                monograph_id: noid
+              )
+  monograph_row = manifest.monograph_row
+  if monograph_row.nil?
+    puts "Error: no manifest monograph row found for ID #{monograph_id}."
+    next
+  end
+
+  monograph_noid = monograph_row['noid']
+  link = monograph_row['link'].match('^[^\(]+\(\"([^\"]+)\".*') {|m| m[1] }
+  link.delete_prefix!('https://www.fulcrum.org')
+
+  case options.press
+  when :heb
+    id_list = monograph_row["identifier(s)"]
+    unless id_list.nil?
+      id_a = id_list.split(';')
+      list = id_a.select {|id| id.strip.downcase.match?(/^heb[0-9]{5}\.[0-9]{4}\.[0-9]{3}/) }
+      series_id = list.first.strip unless list.empty?
+    else
+      puts "Missing id for ID #{monograph_id}."
+    end
+    row_list <<  [
+                  "#{manifest.monograph_row['noid']},#{link},#{series_id}"
+                ]
+  else
+    row_list <<  [
+                  "#{manifest.monograph_row['noid']},#{link},#{manifest.monograph_row['doi']}"
+                ]
+  end
+
+  manifest.csv.each do |row|
+    next if row == manifest.monograph_row
+    next if row['noid'].downcase.start_with?('fulcrum dev-')
+
+    link = row['link'].match('^[^\(]+\(\"([^\"]+)\".*') {|m| m[1] }
+    link.delete_prefix!('https://www.fulcrum.org')
+    row_list << "#{row['noid']},#{link}"
+  end
+end
+
+# Write the temp file. system command may strip out the newlines
+resource_file = File.join(output_dir, "resources.csv")
+File.open(resource_file, "w") do |fp|
+  row_list.each do |row|
+    fp.puts row
+  end
+end
+
+# Making Fulcrum handles
+bname = "batch." + DateTime.now.strftime("%Y-%m-%d")
+hdl_file = File.join(output_dir,  bname + ".hdl")
+log_file = File.join(output_dir,  bname + ".log")
+
+ok = true
+if options.execute
+  # Actually make the handles
+  ok = system("cat \"#{resource_file}\" | /quod-dev/bin/f/fulcrum_helpers/makeFulcrumHandles.pl -h -d \"#{output_dir}\"")
+  status = $?
+  FileUtils.rm_f resource_file
+else
+  # Don't make the handles, but display the
+  # the system call for review.
+  puts "cat \"#{resource_file}\" | /quod-dev/bin/f/fulcrum_helpers/makeFulcrumHandles.pl -h -d \"#{output_dir}\""
+end
+
+# Evaluate the status of the return code.
+case ok
+when true
+else
+  puts "System call failed (status = #{status})"
+  #next
+end
+
+# Rename the output file from makeFulcrumHandles.pl
+# to avoid it from being overwritten
+new_hdl_file = File.join(output_dir, bname + "_#{monograph_noid}" + ".hdl")
+new_log_file = File.join(output_dir, bname + "_#{monograph_noid}" + ".log")
+if File.exist?(hdl_file)
+  FileUtils.mv(hdl_file, new_hdl_file)
+end
+if File.exist?(log_file)
+  FileUtils.mv(log_file, new_log_file)
+end

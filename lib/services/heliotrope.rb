@@ -148,7 +148,15 @@ module UMPTG::Services
         when press_list.empty?
           monographs = connection.get("monographs").body
         else
-          press_list.each {|p| monographs += connection.get("presses/#{p}/monographs").body }
+          press_list.each do |p|
+            pl = connection.get("presses/#{p}/monographs").body
+            if pl.class.name == "Array"
+              monographs += pl
+            else
+              puts "press:#{p},class:#{pl.class}"
+              puts pl
+            end
+          end
         end
       rescue StandardError => e
         raise e.message
