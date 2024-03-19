@@ -41,7 +41,7 @@ service = UMPTG::Services::Heliotrope.new(
 
 products = service.products
 c_list = products.collect {|c| c['identifier'] }
-script_logger.info("products:#{c_list.join(',')}")
+#script_logger.info("products:#{c_list.join(',')}")
 noid_list.each do |noid|
   response = service.connection.get("component", noid: noid).body
   if response.nil?
@@ -49,6 +49,6 @@ noid_list.each do |noid|
   else
     component = service.connection.get("components/#{response['id']}/products").body
     c_list = component.collect {|c| c['identifier'] }
-    script_logger.info("#{noid}:#{c_list.join(',')}")
+    script_logger.info("#{noid},#{response['id']},=HYPERLINK(\"https://www.fulcrum.org/greensub/components/#{response['id']}\",\"#{response['id']}\"):#{c_list.join(',')}")
   end
 end

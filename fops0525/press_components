@@ -1,0 +1,144 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Script displays a list of press monographs
+
+require 'optparse'
+require 'ostruct'
+require 'os'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+# Process the script parameters.
+options = OpenStruct.new
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} press [press..]"
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    script_logger.info(opts)
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  script_logger.info(option_parser.help)
+  return
+end
+
+press_list = ARGV
+
+#require_relative File.join(root_dir, 'lib', 'services')
+require_relative File.join(root_dir, 'lib', 'fulcrum')
+
+require 'csv'
+
+class MonComps
+  attr_reader :comp_id, :link, :noid, :title, :doi, :comp_list
+
+  def initialize(args = {})
+    @comp_id = args[:comp_id]
+    @doi = args[:doi]
+    @link = args[:link]
+    @noid = args[:noid]
+    @title = args[:title]
+    @comp_list = args[:comp_list]
+  end
+
+  def self.headers()
+    return [
+          "DOI",
+          "NOID",
+          "ebc_oa",
+          "ebc_XXXX",
+          "bigten",
+          "bigten_gender",
+          "Title"
+        ]
+  end
+
+  def csv_row()
+    gs_link = "https://www.fulcrum.org/greensub/components/#{comp_id}"
+    return {
+          "DOI" => doi,
+          #"NOID" => link,
+          "NOID" => "=HYPERLINK(\"#{gs_link}\",\"#{noid}\")",
+          "ebc_oa" => comp_list.key?('ebc_oa') ? "Yes" : "No",
+          "ebc_XXXX" => comp_list.keys.join(',').match?(/ebc_[12]/) ? "Yes" : "No",
+          #"ebc_XXXX" => "ebc_2021".match?(/ebc_[12]/) ? "Yes" : "No",
+          "bigten" => comp_list.key?('bigten') ? "Yes" : "No",
+          "bigten_gender" => comp_list.key?('bigten_gender_and_sexuality_studies') ? "Yes" : "No",
+          #"Title" => title
+          "Title" => "=HYPERLINK(\"#{link}\",\"#{title}\")"
+    }
+  end
+end
+
+# Create the serivce for retrieving the NOID.
+service = UMPTG::Services::Heliotrope.new(
+                :fulcrum_host => options.fulcrum_host
+              )
+
+monographs_list = service.monographs(press_list: press_list)
+moncomp_list = []
+monographs_list.each do |monograph|
+  noid = monograph["id"]
+  title = monograph["title"].first
+  link = monograph["url"].delete_suffix(".json")
+
+  response = service.connection.get("component", noid: noid).body
+
+  comp_id = ""
+  comp_list = {}
+  unless response.nil?
+    comp_id = response['id']
+    component = service.connection.get("components/#{response['id']}/products").body
+    #puts component
+    component.each {|c| comp_list[c['identifier']] = 1 }
+  end
+
+  manifest = UMPTG::Fulcrum::Manifest::Document.new(
+                monograph_id: noid
+              )
+
+  doi = manifest.monograph_row['doi']
+  doi = "none" if doi.nil?
+
+  #link = manifest.monograph_row['link']
+
+  isbn = manifest.isbn['open access'] if manifest.isbn.key?('open access')
+  isbn = manifest.isbn['ebook'] if isbn.nil?
+  isbn = manifest.isbn['oa ebook'] if isbn.nil?
+  if isbn.nil?
+    script_logger.error("no ISBN for #{noid}")
+  else
+    nlist = service.monograph_noid(identifier: isbn)
+  end
+
+  moncomp_list << MonComps.new(
+              comp_id: comp_id,
+              comp_list: comp_list,
+              doi: doi,
+              link: link,
+              noid: noid,
+              title: title
+          )
+  #next
+end
+
+if moncomp_list.count > 0
+  csv_file = File.join(Dir.pwd, "comp_list.csv")
+  CSV.open(
+          csv_file,
+          "w",
+          :force_quotes => true,
+          :write_headers=> true,
+          :headers => MonComps.headers
+        ) do |csv|
+    moncomp_list.each {|mc| csv << mc.csv_row }
+  end
+end

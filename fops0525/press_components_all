@@ -1,0 +1,161 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Script displays a list of press monographs
+
+require 'optparse'
+require 'ostruct'
+require 'os'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+# Process the script parameters.
+options = OpenStruct.new
+options.noids_all = false
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-n] press [press..]"
+  opts.on('-n', '--noids', 'Return all title NOIDs') do |flag|
+    options.noids_all = true
+  end
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    script_logger.info(opts)
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  script_logger.info(option_parser.help)
+  return
+end
+
+press_list = ARGV
+
+#require_relative File.join(root_dir, 'lib', 'services')
+require_relative File.join(root_dir, 'lib', 'fulcrum')
+
+require 'csv'
+
+class MonComps
+  attr_reader :manifest, :noid
+  attr_accessor :comp_id, :comp_list
+
+  def initialize(args = {})
+    @noid = args[:noid]
+    @manifest = args[:manifest]
+    @comp_id = nil
+    @comp_list = {}
+  end
+
+  def self.headers()
+    return [
+          "NOID",
+          "DOI",
+          "Press",
+          "Products",
+          "ebc_oa",
+          "ebc_XXXX",
+          "bigten",
+          "bigten_gender",
+          "Title",
+          "Component"
+        ]
+  end
+
+  def csv_row()
+    gs_link = "https://www.fulcrum.org/greensub/components/#{comp_id}"
+    fulcrum_link = manifest.monograph_row["link"][12..-3]
+    return {
+          "NOID" => noid,
+          "DOI" => manifest.monograph_row['doi'],
+          "Press" => manifest.monograph_row['press'],
+          "Products" => comp_list.keys.join(';'),
+          "ebc_oa" => comp_list.key?('ebc_oa') ? "Yes" : "No",
+          "ebc_XXXX" => comp_list.keys.join(',').match?(/ebc_[12]/) ? "Yes" : "No",
+          "bigten" => comp_list.key?('bigten') ? "Yes" : "No",
+          "bigten_gender" => comp_list.key?('bigten_gender_and_sexuality_studies') ? "Yes" : "No",
+          "Title" => "=HYPERLINK(\"#{fulcrum_link}\",\"#{manifest.monograph_row['title']}\")",
+          "Component" => "=HYPERLINK(\"#{gs_link}\",\"#{comp_id}\")"
+    }
+  end
+end
+
+# Create the serivce for retrieving the NOID.
+service = UMPTG::Services::Heliotrope.new(
+                :fulcrum_host => options.fulcrum_host
+              )
+
+monographs_list = service.monographs(press_list: press_list)
+moncomp_list = []
+monographs_list.each do |monograph|
+  noid = monograph["id"]
+
+  manifest = UMPTG::Fulcrum::Manifest::Document.new(
+                monograph_id: noid
+              )
+  moncomp_list << MonComps.new(
+          noid: noid,
+          manifest: manifest
+        )
+
+  if options.noids_all
+    isbn = manifest.isbn['open access'] if manifest.isbn.key?('open access')
+    isbn = manifest.isbn['oa ebook'] if isbn.nil?
+    isbn = manifest.isbn['ebook'] if isbn.nil?
+    isbn = manifest.isbn['e-book'] if isbn.nil?
+    if isbn.nil?
+      script_logger.error("no ISBN for #{noid}. Formats #{manifest.isbn.keys.join(',')}")
+      next
+    end
+    nlist = service.monograph_noid(identifier: isbn)
+    nlist.each do |i,nl|
+      nl.each do |n|
+        next if n == noid
+        m = UMPTG::Fulcrum::Manifest::Document.new(
+                      monograph_id: n
+                    )
+        moncomp_list << MonComps.new(
+                noid: n,
+                manifest: m
+              )
+      end
+    end
+  end
+  STDOUT.flush
+  #break
+end
+
+moncomp_list.each do |moncomp|
+  noid = moncomp.noid
+
+  response = service.connection.get("component", noid: noid).body
+
+  if response.nil?
+    script_logger.warn("no products for NOID #{noid}")
+    next
+  end
+  moncomp.comp_id = response['id']
+
+  component = service.connection.get("components/#{moncomp.comp_id}/products").body
+  comp_list = {}
+  component.each {|c| comp_list[c['identifier']] = 1 }
+  moncomp.comp_list = comp_list
+end
+
+if moncomp_list.count > 0
+  csv_file = File.join(script_dir, "comp_list.csv")
+  CSV.open(
+          csv_file,
+          "w",
+          :force_quotes => true,
+          :write_headers=> true,
+          :headers => MonComps.headers
+        ) do |csv|
+    moncomp_list.each {|mc| csv << mc.csv_row }
+  end
+end

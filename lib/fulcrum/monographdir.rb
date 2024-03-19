@@ -80,7 +80,13 @@ module UMPTG::Fulcrum
 
         # Find the epub file name and determine whether it exists.
         epub_row = @manifest.representative_row(kind: "epub")
-        epub_file_name = epub_row['file_name']
+        if epub_row.nil?
+          epub_list = Dir.glob(File.join(@monograph_dir, "*.epub"))
+          raise "no monograph EPUB found" if epub_list.empty?
+          epub_file_name = epub_list.first
+        else
+          epub_file_name = epub_row['file_name']
+        end
         @epub_file = File.join(@monograph_dir, epub_file_name)
         archive_dir = File.join(@monograph_dir, "archive")
         archived_epub_list = Dir.glob(File.join(archive_dir, "*.epub"))
