@@ -18,8 +18,12 @@ script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
 
 # Process the script parameters.
 options = OpenStruct.new
+options.max_level = 3
 option_parser = OptionParser.new do |opts|
-  opts.banner = "Usage: #{File.basename(__FILE__)} hs_xml_file [hs_xml_file...]"
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-l max_level] hs_xml_file [hs_xml_file...]"
+  opts.on('-l', '--level max_level', 'Max level') do |max_level|
+    options.max_level = max_level
+  end
   opts.on_tail('-h', '--help', 'Print this help message') do
     script_logger.info(opts)
     exit 0
@@ -65,10 +69,11 @@ HEADERS = [
 
 def add_categ(args = {})
   level = args[:level]
+  max_level = args[:max_level]
 
   # Comment this out to get
   # more than 3 levels.
-  return if level > 3
+  return if level > max_level
 
   csv = args[:csv]
   categ_list = args[:categ_list]
@@ -119,6 +124,7 @@ def add_categ(args = {})
         csv: csv,
         categ_list: categ.kids,
         level: (level+1),
+        max_level: max_level,
         data_code_list: dc_list,
       )
   end
@@ -173,20 +179,36 @@ hs_xml_file_list.each do |hs_xml_file|
       end
     end
   end
-
   script_logger.info("top: #{categ_list.count}")
+
   csv_file = File.join(script_dir, "hs.csv")
+  code_headers = (0..(options.max_level.to_i-1)).to_a.collect do |n|
+    case n
+    when 0
+      "Data Code"
+    when 1
+      "Data Sub Code"
+    else
+      "Data Sub#{n} Code"
+    end
+  end
+
+  headers = ["Level"] + \
+      code_headers + \
+      ["Description", "Externalcode", "Alternate Description 1"]
+
   CSV.open(
           csv_file,
           "w",
           :force_quotes => true,
           :write_headers=> true,
-          :headers => HEADERS
+          :headers => headers
         ) do |csv|
     add_categ(
         csv: csv,
         categ_list: categ_list,
         level: 1,
+        max_level: options.max_level.to_i,
         data_code_list: []
       )
   end
