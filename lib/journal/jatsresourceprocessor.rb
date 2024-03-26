@@ -264,7 +264,7 @@ JDT
       begin
         File.write(
             dest_path,
-            UMPTG::XMLUtil.XML_PI + "\n" +
+            UMPTG::XML.XML_PI + "\n" +
             JATS_DOCTYPE +
             xml_string
             )
