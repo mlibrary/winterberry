@@ -1,0 +1,194 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Script generates a CSV file from
+# the Homosaurus schema XML instance.
+
+require 'optparse'
+require 'ostruct'
+require 'os'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+# Process the script parameters.
+options = OpenStruct.new
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} hs_xml_file [hs_xml_file...]"
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    script_logger.info(opts)
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  script_logger.info(option_parser.help)
+  return
+end
+
+# Process the command line parameters.
+hs_xml_file_list = ARGV
+
+class Categ
+  attr_accessor :kids, :node, :parent_categ
+
+  def initialize(args = {})
+    @node = nil
+    @parent_categ = nil
+    @kids = []
+  end
+
+  def label
+    return @node.xpath("./*[local-name()='prefLabel']").first.text
+  end
+end
+
+require 'nokogiri'
+require 'csv'
+
+#require_relative File.join(root_dir, "lib", "fulcrum")
+
+HEADERS = [
+        "Level",
+        "Data Code",
+        "Data Sub Code",
+        "Data Sub2 Code",
+        "Description",
+        "Externalcode",
+        "Alternate Description 1"
+    ]
+
+def add_categ(args = {})
+  level = args[:level]
+
+  # Comment this out to get
+  # more than 3 levels.
+  return if level > 3
+
+  csv = args[:csv]
+  categ_list = args[:categ_list]
+  data_code_list = args[:data_code_list]
+
+  categ_list.sort! {|a,b| a.label <=> b.label }
+  categ_list.each_index do |ndx|
+    categ = categ_list[ndx]
+    dnode = categ.node.xpath("./*[local-name()='prefLabel']").first
+    raise "missing prefLabel element #{categ.node}" if dnode.nil?
+    descr = dnode.text[0..39]
+
+    cnode = categ.node.xpath("./*[local-name()='comment']").first
+    raise "missing comment element #{categ.node}" if cnode.nil?
+    comment = cnode.text[0..254]
+
+    code = ndx+1
+    dc_list = data_code_list + [code]
+
+    enode = categ.node.xpath("./*[local-name()='identifier']").first
+    raise "missing identifier element #{categ.node}" if enode.nil?
+    extcode = enode.text[0..29]
+=begin
+    extcode = "hs"
+=end
+    dc_list.each {|dc| extcode += "_#{dc}" unless dc.nil? }
+
+    row = {
+        "Level" => level,
+        "Description" => descr,
+        "Externalcode" => extcode,
+        "Alternate Description 1" => comment
+      }
+    dc_list.each_index do |ndx|
+      dc = dc_list[ndx]
+      case ndx
+      when 0
+        row["Data Code"] = dc
+      when 1
+        row["Data Sub Code"] = dc
+      else
+        row["Data Sub#{ndx} Code"] = dc
+      end
+    end
+    csv << row
+
+    add_categ(
+        csv: csv,
+        categ_list: categ.kids,
+        level: (level+1),
+        data_code_list: dc_list,
+      )
+  end
+end
+
+categ_list = []
+id2categ = {}
+hs_xml_file_list.each do |hs_xml_file|
+  hs_xml_file = File.expand_path(hs_xml_file)
+  unless File.exist?(hs_xml_file)
+    script_logger.error("XML file not found, #{hs_xml_file}")
+    next
+  end
+  script_logger.info("Processing XML file #{hs_xml_file}")
+
+  hs_xml_doc = Nokogiri::XML(File.open(hs_xml_file))
+
+  hs_xml_doc.xpath("//*[local-name()='record']").each do |node|
+    lnode = node.xpath("./*[local-name()='id']").first
+    raise "missing id element #{node}" if lnode.nil?
+
+    enode = node.xpath("./*[local-name()='identifier']").first
+    raise "missing identifier element #{node}" if enode.nil?
+
+    # Expecting new category. Hash it.
+    categ = id2categ[lnode.text]
+    if categ.nil?
+      categ = Categ.new
+      id2categ[lnode.text] = categ
+      script_logger.info("category id #{lnode.text} added")
+    else
+      script_logger.warn("category id #{lnode.text} exists")
+    end
+    categ.node = node
+
+    # Look for parent. If exists, add this child.
+    # If not, then this is a top level category.
+    pnode_list = node.xpath("./*[local-name()='broader']/*[local-name()='id']")
+    if pnode_list.empty?
+      categ_list << categ
+      script_logger.info("category id #{lnode.text} added as top level")
+    else
+      pnode_list.each do |pnode|
+        pcateg = id2categ[pnode.text]
+        if pcateg.nil?
+          pcateg = Categ.new
+          id2categ[pnode.text] = pcateg
+        end
+        categ.parent_categ = pcateg
+        pcateg.kids << categ
+        script_logger.info("category id #{lnode.text} added to parent category #{pnode.text}")
+      end
+    end
+  end
+
+  script_logger.info("top: #{categ_list.count}")
+  csv_file = File.join(script_dir, "hs.csv")
+  CSV.open(
+          csv_file,
+          "w",
+          :force_quotes => true,
+          :write_headers=> true,
+          :headers => HEADERS
+        ) do |csv|
+    add_categ(
+        csv: csv,
+        categ_list: categ_list,
+        level: 1,
+        data_code_list: []
+      )
+  end
+  script_logger.info("Saved file #{csv_file}")
+end

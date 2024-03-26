@@ -7,6 +7,8 @@ module UMPTG
             bar:   "MPS",
             ebc:   "UMP",
             heb:   "MPS",
+            leverpress: "MPS",
+            michigan: "UMP",
             ummaa: "UMMAA"
             }
     @@PRESS_SUB_DIR = {
@@ -14,6 +16,7 @@ module UMPTG
             amherst: "Amherst",
             bar:   "BAR",
             heb:   "HEB",
+            leverpress: "Lever"
             }
     @@DEFAULT = :ebc
 

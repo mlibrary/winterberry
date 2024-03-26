@@ -18,10 +18,14 @@ script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
 # Process the script parameters.
 options = OpenStruct.new
 options.noids_all = false
+options.noid_csv_file = nil
 option_parser = OptionParser.new do |opts|
-  opts.banner = "Usage: #{File.basename(__FILE__)} [-n] press [press..]"
-  opts.on('-n', '--noids', 'Return all title NOIDs') do |flag|
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-a] [-n noid_csv_file] press [press..]"
+  opts.on('-a', '--all_noids', 'Return all title NOIDs') do |flag|
     options.noids_all = true
+  end
+  opts.on('-n', '--noid_csv noid_csv_file', 'NOID CSV') do |noid_csv_file|
+    options.noid_csv_file = noid_csv_file
   end
   opts.on_tail('-h', '--help', 'Print this help message') do
     script_logger.info(opts)
@@ -33,17 +37,45 @@ if ARGV.count < 1
   script_logger.info(option_parser.help)
   return
 end
-
 press_list = ARGV
 
-#require_relative File.join(root_dir, 'lib', 'services')
-require_relative File.join(root_dir, 'lib', 'fulcrum')
+noid_csv_file = options.noid_csv_file
+unless noid_csv_file.nil?
+  noid_csv_file = File.expand_path(noid_csv_file)
+  unless File.exist?(noid_csv_file)
+    script_logger.error("invalid NOID CSV file #{noid_csv_file}")
+    exit(1)
+  end
+end
+
+require_relative File.join(root_dir, 'lib', 'press')
+
+ebc_press_included = false
+press_list.each do |press|
+  unless UMPTG::Press.valid(press)
+    script_logger.error("invalid press #{press}")
+    exit(1)
+  end
+  if press.downcase == "ebc" or press.downcase == "michigan"
+    ebc_press_included = true
+  end
+end
 
 require 'csv'
+require_relative File.join(root_dir, "lib", "services")
+require_relative File.join(root_dir, "lib", "fulcrum", "manifest")
 
 class MonComps
   attr_reader :manifest, :noid
   attr_accessor :comp_id, :comp_list
+
+  HEADERS = [
+          "NOID",
+          "DOI",
+          "Press",
+          "Component",
+          "Products"
+      ]
 
   def initialize(args = {})
     @noid = args[:noid]
@@ -53,35 +85,78 @@ class MonComps
   end
 
   def self.headers()
-    return [
-          "NOID",
-          "DOI",
-          "Press",
-          "Products",
+    return HEADERS + [
+          "Title"
+        ]
+  end
+
+  def self.ebc_headers()
+    return HEADERS + [
           "ebc_oa",
           "ebc_XXXX",
           "bigten",
           "bigten_gender",
-          "Title",
-          "Component"
+          "Title"
         ]
   end
 
+  def gs_link
+    return comp_id.nil? ? "" : "https://www.fulcrum.org/greensub/components/#{comp_id}"
+  end
+
+  def fulcrum_link
+    link = manifest.monograph_row.nil? ? "" : manifest.monograph_row["link"][12..-3]
+    return link
+  end
+
+  def component
+
+    if manifest.monograph_row.nil?
+      tombstone = false
+      published = false
+    else
+      t = manifest.monograph_row["tombstone?"]
+      tombstone = t.nil? ? false : (t.downcase == "true" or t.downcase == "yes")
+      p = manifest.monograph_row["published?"]
+      published = p.nil? ? false : (p.downcase == "true" or t.downcase == "yes")
+    end
+    if comp_id.nil?
+      return "Tombstone" if tombstone
+      return published ? "forthcoming?" : "draft"
+    end
+    txt = comp_id.to_s
+    if tombstone
+      txt += " Tombstone"
+    elsif !published
+      txt += " Draft"
+    end
+    puts "comp_id:#{comp_id},tombstone:#{tombstone},published:#{published}"
+    return "=HYPERLINK(\"#{gs_link()}\",\"#{txt}\")"
+  end
+
   def csv_row()
-    gs_link = "https://www.fulcrum.org/greensub/components/#{comp_id}"
-    fulcrum_link = manifest.monograph_row["link"][12..-3]
+    doi = manifest.monograph_row.nil? ? "" : manifest.monograph_row['doi']
+    press = manifest.monograph_row.nil? ? "" : manifest.monograph_row['press']
+    title = manifest.monograph_row.nil? ? "" : manifest.monograph_row['title']
+    title.gsub!(/"/, '""')
     return {
           "NOID" => noid,
-          "DOI" => manifest.monograph_row['doi'],
-          "Press" => manifest.monograph_row['press'],
+          "DOI" => doi,
+          "Press" => press,
+          "Component" => component(),
           "Products" => comp_list.keys.join(';'),
-          "ebc_oa" => comp_list.key?('ebc_oa') ? "Yes" : "No",
-          "ebc_XXXX" => comp_list.keys.join(',').match?(/ebc_[12]/) ? "Yes" : "No",
-          "bigten" => comp_list.key?('bigten') ? "Yes" : "No",
-          "bigten_gender" => comp_list.key?('bigten_gender_and_sexuality_studies') ? "Yes" : "No",
-          "Title" => "=HYPERLINK(\"#{fulcrum_link}\",\"#{manifest.monograph_row['title']}\")",
-          "Component" => "=HYPERLINK(\"#{gs_link}\",\"#{comp_id}\")"
+          "Title" => "=HYPERLINK(\"#{fulcrum_link}\",\"#{title}\")"
     }
+  end
+
+  def ebc_csv_row
+    row = csv_row()
+    row["ebc_oa"] = comp_list.key?('ebc_oa') ? "Yes" : "No"
+    row["ebc_XXXX"] = comp_list.keys.join(',').match?(/ebc_[12]/) ? "Yes" : "No"
+    row["bigten"] = comp_list.key?('bigten') ? "Yes" : "No"
+    row["bigten_gender"] = comp_list.key?('bigten_gender_and_sexuality_studies') ? "Yes" : "No"
+
+    return row
   end
 end
 
@@ -90,21 +165,48 @@ service = UMPTG::Services::Heliotrope.new(
                 :fulcrum_host => options.fulcrum_host
               )
 
-monographs_list = service.monographs(press_list: press_list)
+if noid_csv_file.nil?
+  monographs_list = service.monographs(press_list: press_list)
+else
+  csv_data = CSV.parse(
+            File.read(noid_csv_file),
+            headers: true,
+            return_headers: false
+          )
+  monographs_list = []
+  csv_data.each {|row| monographs_list << { "id" => row['NOID'] } }
+  #monographs_list = monographs_list[6000..-1]
+=begin
+  monographs_list = [
+{ "id" => "qb98mf98m" }
+    ]
+=end
+end
+script_logger.info("reviewing #{monographs_list.count} monographs.")
+
 moncomp_list = []
 monographs_list.each do |monograph|
   noid = monograph["id"]
+  script_logger.info("monograph #{noid}")
+  STDOUT.flush
 
+  manifest_body_list = service.monograph_export(noid: noid)
+  if manifest_body_list[noid].nil? or manifest_body_list[noid].empty?
+    script_logger.warn("no monograph manifest found for NOID #{noid}")
+    next
+  end
   manifest = UMPTG::Fulcrum::Manifest::Document.new(
-                monograph_id: noid
+                csv_body: manifest_body_list[noid].first
               )
+  script_logger.warn("no monograph info for NOID #{noid}") if manifest.monograph_row.nil?
+
   moncomp_list << MonComps.new(
           noid: noid,
           manifest: manifest
         )
 
   if options.noids_all
-    isbn = manifest.isbn['open access'] if manifest.isbn.key?('open access')
+    isbn = manifest.isbn['open access'] unless manifest.isbn.nil? or !manifest.isbn.key?('open access')
     isbn = manifest.isbn['oa ebook'] if isbn.nil?
     isbn = manifest.isbn['ebook'] if isbn.nil?
     isbn = manifest.isbn['e-book'] if isbn.nil?
@@ -137,14 +239,13 @@ moncomp_list.each do |moncomp|
 
   if response.nil?
     script_logger.warn("no products for NOID #{noid}")
-    next
+  else
+    moncomp.comp_id = response['id']
+    component = service.connection.get("components/#{moncomp.comp_id}/products").body
+    comp_list = {}
+    component.each {|c| comp_list[c['identifier']] = 1 }
+    moncomp.comp_list = comp_list
   end
-  moncomp.comp_id = response['id']
-
-  component = service.connection.get("components/#{moncomp.comp_id}/products").body
-  comp_list = {}
-  component.each {|c| comp_list[c['identifier']] = 1 }
-  moncomp.comp_list = comp_list
 end
 
 if moncomp_list.count > 0
@@ -154,8 +255,13 @@ if moncomp_list.count > 0
           "w",
           :force_quotes => true,
           :write_headers=> true,
-          :headers => MonComps.headers
+          :headers => ebc_press_included ? \
+                   MonComps.ebc_headers : MonComps.headers
         ) do |csv|
-    moncomp_list.each {|mc| csv << mc.csv_row }
+    moncomp_list.each do |mc|
+      row = ebc_press_included ? mc.ebc_csv_row : mc.csv_row
+      csv << row
+    end
   end
+  script_logger.info("Saved file #{csv_file}")
 end

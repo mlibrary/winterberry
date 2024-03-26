@@ -266,14 +266,17 @@ else
   monograph_info.each do |monograph_id,minfo|
     pub_year = minfo[:monograph_pub_date].year
 
+    product = ""
     case options.press
     when :aberdeen, :amherst, :michelt, :ummaa
       product = options.press.to_s
     end
-    if component_product.key?(product)
-      component_product[product] << minfo
-    else
-      component_product[product] = [minfo]
+    unless product.strip.empty?
+      if component_product.key?(product)
+        component_product[product] << minfo
+      else
+        component_product[product] = [minfo]
+      end
     end
 
     unless options.press == :aberdeen
@@ -298,7 +301,7 @@ else
       end
     end
 
-    unless options.press == :michelt or options.press == :amherst or :aberdeen
+    unless options.press == :michelt or options.press == :amherst or options.press == :aberdeen
       case options.press
       when :bar
         if minfo[:monograph_series][0].downcase == 'b'
