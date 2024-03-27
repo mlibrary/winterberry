@@ -85,8 +85,7 @@ end
 # Initalize the JATS resource processor
 jats_processor = UMPTG::Journal::JATSResourceProcessor.new( logger: script_logger)
 
-jats2html_xsl_file = File.join(root_dir, "lib", "journal", "xsl", "janeway.xsl")
-#jats2html_xsl_file = File.join(root_dir, "lib", "journal", "xsl", "janeway_modular.xsl")
+jats2html_xsl_file = File.join(root_dir, "lib", "journal", "xsl", "janeway", "janeway.xsl")
 
 # Manifest cache to reuse for those retrieved
 manifests = {}
