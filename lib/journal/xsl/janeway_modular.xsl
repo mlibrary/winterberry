@@ -7,8 +7,6 @@
     <xsl:import href="/var/www/michigan/src/files/xsl/default-v1.4.3.xsl"/>
     -->
     <xsl:import href="janeway_default.xsl"/>
-
-    <!-- Version 1.4.3 2023-09-29 UMPTG 1.1 -->
     <xsl:import href="janeway_fulcrum.xsl"/>
 
 </xsl:stylesheet>

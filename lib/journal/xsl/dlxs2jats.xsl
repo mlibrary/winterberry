@@ -971,7 +971,6 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
             <xsl:if test="exists(@REND)">
                 <xsl:attribute name="fig-type" select="@REND"/>
             </xsl:if>
-
             <xsl:choose>
                 <xsl:when test="@REND='author'">
                     <xsl:if test="exists(HEAD)">
@@ -1128,10 +1127,13 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
         </xsl:element>
     </xsl:template>
 
-    <xsl:template match="NOTE1//LG/L|Q1[@TYPE='epig']/P">
+    <xsl:template match="NOTE1//LG/L|Q1[lower-case(@TYPE)='epig']/P|Q1[lower-case(@TYPE)='epig']/L">
         <xsl:element name="verse-line">
             <xsl:if test="exists(@REND)">
                 <xsl:attribute name="style-detail" select="@REND"/>
+            </xsl:if>
+            <xsl:if test="lower-case(parent::*[1]/@TYPE)='epig'">
+                <!--<xsl:attribute name="style" select="'font-style:italic;'"/>-->
             </xsl:if>
             <xsl:apply-templates select="@*[name()!='REND']|node()"/>
         </xsl:element>
@@ -1232,6 +1234,7 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
 
     <xsl:template match="Q1[@TYPE='epig']">
         <xsl:element name="verse-group">
+            <!--<xsl:attribute name="style" select="'font-style:italic;'"/>-->
             <xsl:apply-templates select="@*[name()!='TYPE']|node()"/>
         </xsl:element>
     </xsl:template>
@@ -1544,16 +1547,6 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
                     <xsl:apply-templates select="$node/@*[name()!='REND' and name()!='TYPE']|node()"/>
                 </xsl:element>
             </xsl:when>
-            <xsl:when test="$style='sub'">
-                <xsl:element name="sub">
-                    <xsl:apply-templates select="$node/@*[name()!='REND' and name()!='TYPE']|node()"/>
-                </xsl:element>
-            </xsl:when>
-            <xsl:when test="$style='sup'">
-                <xsl:element name="sup">
-                    <xsl:apply-templates select="$node/@*[name()!='REND' and name()!='TYPE']|node()"/>
-                </xsl:element>
-            </xsl:when>
             <!--
             <xsl:when test="$style='center' or $style='right' or $style='left' or $style='indent5' or $style='alignright' or $style='alignleft'">
                 <xsl:message>Style ignored: <xsl:value-of select="$style"/></xsl:message>
@@ -1669,15 +1662,15 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
         <xsl:param name="node"/>
 
         <xsl:choose>
-            <xsl:when test="matches(lower-case(normalize-space($node/*[1])),'^(fig|figure|figures|table|tables)[ ]+[a-zA-Z0-9\-\.:]+ ')">
+            <xsl:when test="matches(lower-case(normalize-space($node/*[1])),'^(fig\.|figure|figures|table|tables)[ ]+[a-zA-Z0-9\-\.:]+[ ]*')">
                 <xsl:variable name="children" select="$node/*[1]/child::node()"/>
-                <xsl:analyze-string select="$children[1]" regex="^([^ ]+[ ]+[a-zA-Z0-9\.\-:]+)">
-                    <xsl:matching-substring>
-                        <xsl:element name="label">
-                            <xsl:value-of select="regex-group(1)"/>
-                        </xsl:element>
-                    </xsl:matching-substring>
-                </xsl:analyze-string>
+                <xsl:variable name="label">
+                    <xsl:analyze-string select="$children[1]" regex="^([^ ]+[ ]+[a-zA-Z0-9\.\-:]+)">
+                        <xsl:matching-substring>
+                            <xsl:value-of select="normalize-space(regex-group(1))"/>
+                        </xsl:matching-substring>
+                    </xsl:analyze-string>
+                </xsl:variable>
                 <xsl:variable name="title">
                     <xsl:analyze-string select="$children[1]" regex="^[^ ]+[ ]+[a-zA-Z0-9\.\-:]+(.*)">
                         <xsl:matching-substring>
@@ -1688,13 +1681,23 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
                         </xsl:non-matching-substring>
                     </xsl:analyze-string>
                 </xsl:variable>
-                <xsl:if test="count($node/*) > 1 or count($children) > 1 or $title!=''">
+                <xsl:if test="count($node/*) > 1 or count($children) > 1 or $title!='' or $label!=''">
+                    <xsl:if test="$label!='' and $title!=''">
+                        <xsl:element name="label">
+                            <xsl:value-of select="$label"/>
+                        </xsl:element>
+                    </xsl:if>
                     <xsl:element name="caption">
-                        <xsl:if test="count($node/HEAD)>1 or count($children) > 1 or $title!=''">
+                        <xsl:if test="count($node/HEAD)>1 or count($children) > 1 or $title!='' or $label!=''">
                             <xsl:element name="title">
-                                <xsl:if test="$title!=''">
-                                    <xsl:value-of select="$title"/>
-                                </xsl:if>
+                                <xsl:choose>
+                                    <xsl:when test="$title!=''">
+                                        <xsl:value-of select="$title"/>
+                                    </xsl:when>
+                                    <xsl:when test="$label!=''">
+                                        <xsl:value-of select="$label"/>
+                                    </xsl:when>
+                                </xsl:choose>
                                 <xsl:apply-templates select="$children[position()>1]"/>
                                 <xsl:apply-templates select="$node/*[position()>1 and local-name()='HEAD']"/>
                             </xsl:element>
@@ -1707,9 +1710,7 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
                 <xsl:element name="caption">
                     <xsl:choose>
                         <xsl:when test="normalize-space($node/*[local-name()='HEAD']) !=''">
-                            <!--
                             <xsl:apply-templates select="$node/*[local-name()!='REF' and local-name()!='FIGURE']"/>
-                            -->
                         </xsl:when>
                         <xsl:when test="normalize-space($node/*[local-name()!='HEAD' and local-name()!='REF'])!=''">
                             <xsl:element name="title">

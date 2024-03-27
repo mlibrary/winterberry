@@ -1,48 +1,55 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
 require 'optparse'
 require 'ostruct'
 
 # Process the script parameters.
 options = OpenStruct.new
+options.output_method = :html
 option_parser = OptionParser.new do |opts|
-  opts.banner = "Usage: #{File.basename(__FILE__)} [-h] xsl_file xml_file [xml_file...]"
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-h] [-m output_method] xsl_file xml_file [xml_file...]"
+  opts.on('-m', '--output_method html|xml', 'Output method html|xml') do |output_method|
+    options.output_method = output_method
+  end
   opts.on_tail('-h', '--help', 'Print this help message') do
-    puts opts
+    script_logger.info(opts)
     exit 0
   end
 end
 option_parser.parse!(ARGV)
 if ARGV.count < 2
-  puts option_parser.help
-  return
+  script_logger.info(option_parser.help)
+  exit(0)
 end
 
-# Determine the root directory of the code base.
-script_dir = File.expand_path(File.dirname(__FILE__))
-root_dir = File.dirname(script_dir)
+xsl_file = File.expand_path(ARGV[0])
+unless File.file?(xsl_file)
+  script_logger.error("invalid XSL file #{xsl_file}")
+  exit(1)
+end
 
 require_relative File.join(root_dir, 'lib', 'xslt')
 require_relative File.join(root_dir, 'lib', 'xml', 'util')
 
-xsl_file = ARGV[0]
-
-# Determine the output file extension from the
-# XSL output method.
-xml_doc = UMPTG::XML.parse(xml_file: xsl_file)
-xsl_output_node = xml_doc.xpath("/*[local-name()='stylesheet']/*[local-name()='output']").first
-xsl_output = xsl_output_node.nil? ? :xml : xsl_output_node["method"].to_sym
-
 xml_file_list = ARGV[1..-1]
 xml_file_list.each do |xml_file|
   xml_file = File.expand_path(xml_file)
-  if !File.file?(xml_file)
-      puts "Error: invalid file #{xml_file}"
-      next
+  unless File.file?(xml_file)
+    script_logger.error("invalid file #{xml_file}")
+    next
   end
 
-  output_file = File.join(File.dirname(xml_file), File.basename(xml_file, ".*") + "_transformed." + xsl_output.to_s)
+  output_file = File.join(File.dirname(xml_file), File.basename(xml_file, ".*") + \
+          "_transformed." + options.output_method.to_s)
 
   UMPTG::XSLT.transform(
           xslpath: xsl_file,

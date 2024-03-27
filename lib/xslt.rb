@@ -30,6 +30,9 @@ module UMPTG
       xsl_version = xsl_doc.xpath("/*[local-name()='stylesheet' or local-name()='transform']").first['version']
       logger.info("XSLT version: #{xsl_version}")
 
+      cur_dir = Dir.pwd
+      Dir.chdir(File.dirname(xsl_path))
+
       case
       when xsl_version.start_with?('1.')
         src_doc = Nokogiri::XML(File.read(src_path)) if src_doc.nil?
@@ -61,6 +64,9 @@ module UMPTG
         raise "unknown XSL stylesheet version #{xsl_version}."
         return false
       end
+
+      Dir.chdir(cur_dir)
+
       return true
     end
 

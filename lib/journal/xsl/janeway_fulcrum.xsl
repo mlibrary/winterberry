@@ -79,4 +79,18 @@
         </xsl:element>
     </xsl:template>
 
+    <xsl:template match="verse-line">
+        <xsl:choose>
+            <xsl:when test="@style">
+                <xsl:element name="span">
+                    <xsl:attribute name="style"><xsl:value-of select="@style"/></xsl:attribute>
+                    <xsl:apply-templates/>
+                </xsl:element>
+            </xsl:when>
+            <xsl:otherwise>
+                <xsl:apply-templates/>
+            </xsl:otherwise>
+        </xsl:choose>
+    </xsl:template>
+
 </xsl:stylesheet>
