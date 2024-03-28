@@ -57,21 +57,6 @@ unless options.manifest_file.nil?
       )
 end
 
-class CaptionURLAction < UMPTG::XML::Pipeline::Actions::NormalizeAction
-  def process(args = {})
-    super(args)
-
-    reference_node = @properties[:reference_node]
-    markup = @properties[:markup]
-
-    inner_html = reference_node.inner_html
-    reference_node.inner_html = markup
-    add_info_msg("Replace markup #{inner_html} with #{markup}")
-
-    @status = UMPTG::XML::Pipeline::Action.COMPLETED
-  end
-end
-
 CAPTION_URL_XPATH = <<-SXPATH
 //*[
 local-name()='figure' and @data-fulcrum-embed-filename
@@ -99,36 +84,44 @@ class CaptionURLFilter < UMPTG::XML::Pipeline::Filter
     resource = manifest.fileset(fname) unless manifest.nil?
 
     # Determine the markup to insert, if possible
-    if resource.nil?
-      markup = nil
+    action_list = []
+    if resource["noid"].empty?
+      a[:warning_message] = "#{fname}: no resource found"
+      action_list << UMPTG::XML::Pipeline::Action.new(a)
     else
 =begin
       # Embed iframe
       embed_markup = manifest.fileset_embed_markup(fname)
       markup = '<div class="default-media-display">' + embed_markup + '</div>'
 =end
+      # Insert resource image
+      image_name = File.basename(fname, ".*") + ".jpg"
+      image_alt = resource['alternative_text']
+      unless image_alt.nil? or image_alt.empty?
+        #image_ctr = UMPTG::XML::Pipeline::Actions::EmbedAction.default_container(reference_node)
+        #image_ctr.add_child("<img src=\"#{image_name}\" alt=\"#{image_alt}\"/>")
+        #image_markup = image_ctr.to_xml
+        image_markup = "<img src=\"#{image_name}\" alt=\"#{image_alt}\"/>"
+        a[:markup] = image_markup
+        a[:action] = :add_previous
+        action_list << UMPTG::XML::Pipeline::Actions::MarkupAction.new(a)
+      end
+
       # Embed links
       node = reference_node.first_element_child
+=begin
       n1 = node.dup
       n1.add_class("enhanced-media-display")
-
+=end
       link_markup = manifest.fileset_link_markup(fname, manifest.fileset_caption(fname))
       n2 = node.dup(0)
-      n2.add_class("default-media-display")
+      #n2.add_class("default-media-display")
       n2.add_child(link_markup)
-      markup = n1.to_xml + n2.to_xml
+      #caption_markup = n1.to_xml + n2.to_xml
+      caption_markup = n2.to_xml
 
-      #markup =  '<p class="enhanced-media-display">' + node_markup + '</p>'
-      #markup += '<p class="default-media-display">' + link_markup + '</p>'
-    end
-
-    action_list = []
-    if markup.nil?
-      a[:warning_message] = "#{fname}: no resource found" if resource_markup.nil?
-      action_list << UMPTG::XML::Pipeline::Action.new(a)
-    else
-      a[:markup] = markup
-      #action_list << CaptionURLAction.new(a)
+      a = args.clone
+      a[:markup] = caption_markup
 =begin
       # Embed iframe
       a[:action] = :add_previous
@@ -140,6 +133,8 @@ class CaptionURLFilter < UMPTG::XML::Pipeline::Filter
       a = args.clone
       a[:reference_node] = reference_node.parent
       a[:attribute_name] = "style"
+      action_list << UMPTG::XML::Pipeline::Actions::RemoveAttributeAction.new(a)
+      a[:attribute_name] = "data-fulcrum-embed-filename"
       action_list << UMPTG::XML::Pipeline::Actions::RemoveAttributeAction.new(a)
     end
 
