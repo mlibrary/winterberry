@@ -95,7 +95,7 @@ class CaptionURLFilter < UMPTG::XML::Pipeline::Filter
       markup = '<div class="default-media-display">' + embed_markup + '</div>'
 =end
       # Insert resource image
-      image_name = File.basename(fname, ".*") + ".jpg"
+      image_name = "../images/" + File.basename(fname, ".*") + ".jpg"
       image_alt = resource['alternative_text']
       unless image_alt.nil? or image_alt.empty?
         #image_ctr = UMPTG::XML::Pipeline::Actions::EmbedAction.default_container(reference_node)
@@ -109,16 +109,18 @@ class CaptionURLFilter < UMPTG::XML::Pipeline::Filter
 
       # Embed links
       node = reference_node.first_element_child
-=begin
-      n1 = node.dup
-      n1.add_class("enhanced-media-display")
-=end
+
+      #n1 = node.dup
+      #n1.add_class("enhanced-media-display")
+      n1 = UMPTG::XML::Pipeline::Actions::EmbedAction.embed_container(reference_node, node.name)
+      n1.add_child(manifest.fileset_caption(fname))
+
       link_markup = manifest.fileset_link_markup(fname, manifest.fileset_caption(fname))
       n2 = node.dup(0)
-      #n2.add_class("default-media-display")
+      n2.add_class("default-media-display")
       n2.add_child(link_markup)
-      #caption_markup = n1.to_xml + n2.to_xml
-      caption_markup = n2.to_xml
+      caption_markup = n1.to_xml + n2.to_xml
+      #caption_markup = n2.to_xml
 
       a = args.clone
       a[:markup] = caption_markup
@@ -136,6 +138,10 @@ class CaptionURLFilter < UMPTG::XML::Pipeline::Filter
       action_list << UMPTG::XML::Pipeline::Actions::RemoveAttributeAction.new(a)
       a[:attribute_name] = "data-fulcrum-embed-filename"
       action_list << UMPTG::XML::Pipeline::Actions::RemoveAttributeAction.new(a)
+      a[:attribute_name] = "class"
+      a[:attribute_value] = "figure"
+      a[:attribute_append] = true
+      action_list << UMPTG::XML::Pipeline::Actions::SetAttributeValueAction.new(a)
     end
 
     return action_list

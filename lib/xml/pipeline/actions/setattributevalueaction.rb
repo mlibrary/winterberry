@@ -8,7 +8,7 @@ module UMPTG::XML::Pipeline::Actions
       attribute_name = @properties[:attribute_name]
       if attribute_name.nil? or attribute_name.empty?
         add_error_msg("missing attribute name")
-        @status = Action.FAILED
+        @status = UMPTG::Action.FAILED
         return
       end
 
@@ -23,14 +23,14 @@ module UMPTG::XML::Pipeline::Actions
         unless current_attribute_value_list.include?(attribute_value)
           current_attribute_value_list << attribute_value
           reference_node[attribute_name] = current_attribute_value_list.join(' ')
-          @status = Action.COMPLETED
+          @status = UMPTG::Action.COMPLETED
         end
       else
         reference_node[attribute_name] = attribute_value
-        @status = NormalizeAction.NORMALIZED
+        @status = UMPTG::Action.COMPLETED
       end
       add_info_msg("set attribute \"#{attribute_name}\" to value \"#{reference_node[attribute_name]}\" for element #{reference_node.name}") \
-          if @status == Action.COMPLETED
+          if @status == UMPTG::Action.COMPLETED
     end
   end
 end
