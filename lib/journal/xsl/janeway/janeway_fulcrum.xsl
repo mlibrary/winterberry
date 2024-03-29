@@ -3,7 +3,7 @@
                 xmlns:mml="http://www.w3.org/1998/Math/MathML" xmlns:xs="http://www.w3.org/2001/XMLSchema"
                 exclude-result-prefixes="xsi xs xlink mml">
 
-    <!-- Version 1.4.3 2023-09-29 UMPTG 1.2 -->
+    <!-- Version 1.4.3 2024-04-02 UMPTG 1.4 -->
     <xsl:template match="*[local-name()='media' and ./*[local-name()='attrib' and @specific-use='umptg_fulcrum_resource']]">
         <xsl:variable name="data-doi" select="child::object-id[@pub-id-type='doi']/text()"/>
 
@@ -71,15 +71,14 @@
 
     <xsl:template match="email">
         <xsl:element name="a">
-            <xsl:attribute name="href">
-                <xsl:value-of select="concat('mailto:',.)"/>
-            </xsl:attribute>
-            <xsl:attribute name="class">email</xsl:attribute>
+            <xsl:attribute name="href"><xsl:value-of select="concat('mailto:',.)"/></xsl:attribute>
+            <xsl:attribute name="class"><xsl:value-of select="'email'"/></xsl:attribute>
             <xsl:apply-templates/>
         </xsl:element>
     </xsl:template>
 
-    <xsl:template match="verse-line">
+    <!--
+    <xsl:template match="disp-quote[@content-type='epig']/verse-group/verse-line">
         <xsl:choose>
             <xsl:when test="@style">
                 <xsl:element name="span">
@@ -92,5 +91,6 @@
             </xsl:otherwise>
         </xsl:choose>
     </xsl:template>
+    -->
 
 </xsl:stylesheet>
