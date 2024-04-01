@@ -164,6 +164,20 @@ module UMPTG::Fulcrum::Manifest
       return caption
     end
 
+    # Method returns the link for a resource.
+    def fileset_link(file_name)
+      fileset = fileset(file_name)
+      noid = fileset["noid"]
+      doi = fileset["doi"]
+
+      link = ""
+      unless noid.empty?
+        link = doi
+        link = fileset["link"][12..-3] if link.nil? or link.empty?
+      end
+      return link
+    end
+
     # Method generates XML markup to link a resource.
     #
     # Parameter:

@@ -101,7 +101,7 @@ class CaptionURLFilter < UMPTG::XML::Pipeline::Filter
         #image_ctr = UMPTG::XML::Pipeline::Actions::EmbedAction.default_container(reference_node)
         #image_ctr.add_child("<img src=\"#{image_name}\" alt=\"#{image_alt}\"/>")
         #image_markup = image_ctr.to_xml
-        image_markup = "<img src=\"#{image_name}\" alt=\"#{image_alt}\"/>"
+        image_markup = "<a href=\"#{manifest.fileset_link(fname)}\"><img src=\"#{image_name}\" alt=\"#{image_alt}\"/></a>"
         a[:markup] = image_markup
         a[:action] = :add_previous
         action_list << UMPTG::XML::Pipeline::Actions::MarkupAction.new(a)
@@ -115,12 +115,13 @@ class CaptionURLFilter < UMPTG::XML::Pipeline::Filter
       n1 = UMPTG::XML::Pipeline::Actions::EmbedAction.embed_container(reference_node, node.name)
       n1.add_child(manifest.fileset_caption(fname))
 
-      link_markup = manifest.fileset_link_markup(fname, manifest.fileset_caption(fname))
+      #link_markup = manifest.fileset_link_markup(fname, manifest.fileset_caption(fname))
+      link_markup = manifest.fileset_caption(fname)
       n2 = node.dup(0)
-      n2.add_class("default-media-display")
+      #n2.add_class("default-media-display")
       n2.add_child(link_markup)
-      caption_markup = n1.to_xml + n2.to_xml
-      #caption_markup = n2.to_xml
+      #caption_markup = n1.to_xml + n2.to_xml
+      caption_markup = n2.to_xml
 
       a = args.clone
       a[:markup] = caption_markup
