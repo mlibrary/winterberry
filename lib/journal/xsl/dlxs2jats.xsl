@@ -881,15 +881,9 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
             </xsl:if>
             <xsl:choose>
                 <xsl:when test="@TYPE='epig'">
-                    <xsl:element name="preformat">
-                        <xsl:apply-templates select="@*[name()!='TYPE']|node()"/>
-                    </xsl:element>
-
-                    <!--
                     <xsl:element name="verse-group">
                         <xsl:apply-templates select="@*[name()!='TYPE']|node()"/>
                     </xsl:element>
-                    -->
                 </xsl:when>
                 <xsl:otherwise>
                     <xsl:apply-templates select="@*[name()!='TYPE']|node()"/>
@@ -1277,21 +1271,9 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
 
     <xsl:template match="Q1[@TYPE='epig']/L">
         <xsl:element name="verse-line">
-            <xsl:attribute name="style" select="'display:block;font-style:italic;'"/>
+            <xsl:attribute name="style" select="'display:block;font-style:italic;font-family:serif'"/>
             <xsl:apply-templates/>
         </xsl:element>
-        <!--
-        <xsl:element name="verse-line">
-            <xsl:attribute name="style" select="'display:block;font-style:italic;'"/>
-            <xsl:apply-templates/>
-        </xsl:element>
-        -->
-        <!--
-        <xsl:call-template name="add-inline-style">
-            <xsl:with-param name="node" select="."/>
-            <xsl:with-param name="style" select="'italic'"/>
-        </xsl:call-template>
-        -->
     </xsl:template>
 
     <xsl:template match="L">

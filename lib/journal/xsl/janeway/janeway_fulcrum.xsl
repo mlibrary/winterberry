@@ -64,9 +64,9 @@
     </xsl:template>
 
     <xsl:template match="table-wrap//caption/title">
-        <span class="caption-title">
-            <xsl:apply-templates/>
-        </span>
+        <xsl:element name="span">
+            <xsl:attribute name="class"><xsl:value-of select="'caption-title'"/></xsl:attribute>
+        </xsl:element>
     </xsl:template>
 
     <xsl:template match="email">
