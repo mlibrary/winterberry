@@ -62,6 +62,11 @@
                     </xsl:element>
                 </xsl:element>
                 <xsl:element name="body" namespace="{$NAMESPACE_URL}">
+                    <!-- Strip out titles that have not passed Eloquence verification and
+                        strip out the "Supporting Graduate Writers" since Fulcrum field
+                        fullTextOnFulcrum="N".
+                    <xsl:apply-templates select="book[eloquence='Passed' and printISBN!='9780472903023']"/>
+                    -->
                     <xsl:apply-templates select="book"/>
                 </xsl:element>
             </xsl:element>

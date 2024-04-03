@@ -80,13 +80,15 @@ else
 
       # Book key not found. Try it as ISBN
       bnode_list = doi_report_doc.xpath("//*[(local-name()='eISBN' or local-name()='printISBN') and string()='#{monograph_id}']/ancestor::*[local-name()='book'][1]")
-      script_logger.warn("ISBN #{monograph_id} found.") unless bnode_list.empty?
+      script_logger.info("ISBN #{monograph_id} found.") unless bnode_list.empty?
       script_logger.warn("ISBN #{monograph_id} not found.") if bnode_list.empty?
 
-      # Book key not found. Try it as DOI
-      bnode_list = doi_report_doc.xpath("//*[(local-name()='doi') and string()='#{monograph_id}']/ancestor::*[local-name()='book'][1]")
-      script_logger.warn("DOI #{monograph_id} found.") unless bnode_list.empty?
-      script_logger.warn("DOI #{monograph_id} not found.") if bnode_list.empty?
+      if bnode_list.empty?
+        # ISBN not found. Try it as DOI
+        bnode_list = doi_report_doc.xpath("//*[(local-name()='doi') and string()='#{monograph_id}']/ancestor::*[local-name()='book'][1]")
+        script_logger.info("DOI #{monograph_id} found.") unless bnode_list.empty?
+        script_logger.warn("DOI #{monograph_id} not found.") if bnode_list.empty?
+      end
     else
       script_logger.info("book key #{monograph_id} found.")
     end
