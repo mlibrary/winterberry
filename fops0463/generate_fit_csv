@@ -134,6 +134,9 @@ heb_csv_file_list.each do |heb_csv_file|
 
   frow_ndx = 3
   heb_csv.each do |hrow|
+    # This title withdrawn from HEB Round 20.
+    next if hrow["HEBID"].downcase == "heb40131.0001.001"
+
     fit_data_sheet.add_row(frow_ndx) if fit_data_sheet[frow_ndx].nil?
 
     fit_headers.each do |fh|
