@@ -41,12 +41,17 @@ FIT2HEB_HEADER = {
   "VolumeNumber" => "Volume",
   "Series" => "Series",
   "CopyrightYear" => "Copyright year",
+=begin
   "CompanyName" => "Publisher",
+=end
   "Imprint" => "Publisher",
   "LongDescription" => "Book description",
+  "OriginalPublisher" => "Publisher",
+=begin
   "PrimaryISBN" => "ISBN-13",
   "PrintISBN" => "ISBN-13",
   "PublisherName" => "Publisher",
+=end
   "PubDate" => "Date published",
   "AuthorDisplayName1" => "Author1 Alphabetical name",
   "AuthorLastName1" => "Author1 Family name",
@@ -153,22 +158,39 @@ heb_csv_file_list.each do |heb_csv_file|
         heb_value = "0.00"
       when "BookPrice_PriceType1"
         heb_value = "USD"
+      when "CompanyName"
+        heb_value = "Michigan Publishing"
       when "ExclusiveForSaleCountries"
-        heb_value = "World"
+        #heb_value = "World"
+        heb_value = ""
       when "Format"
-        heb_value = heb_value.downcase == "ebk" ? "Other" : heb_value
+        case heb_value.downcase
+        when "ebk"
+          heb_value = "Other"
+        when "paperback"
+          heb_value = "Paper"
+        end
+        #heb_value = heb_value.downcase == "ebk" ? "Other" : heb_value
+      when "Imprint"
+        heb_value = "ACLS Humanities Ebook"
       when "Media"
         heb_value = "Book"
       when "Pages"
         heb_value = "0"
       when "PrimaryAuthor1"
         heb_value = "Y"
+      when "PrimaryISBN"
+        heb_value = ""
       when "PrimaryLanguage"
         heb_value = "English"
+      when "PrintISBN"
+        heb_value = ""
       when "ProductAvailabilityCode"
         heb_value = "Not Yet Available"
       when "PubDate"
         heb_value = Date.new(heb_value.to_i).strftime
+      when "PublisherName"
+        heb_value = "MPS Hosted Clients"
       end
 
       fit_data_sheet.add_cell(frow_ndx, fh.col, heb_value, nil, true)
