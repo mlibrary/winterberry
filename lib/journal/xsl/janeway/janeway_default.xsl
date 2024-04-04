@@ -1659,6 +1659,21 @@
         <xsl:apply-templates/>
     </xsl:template>
 
+    <xsl:template match="media" mode="criticalcommons">
+        <div class="media video-content">
+            <div class="media-inline video-inline">
+                <div class="acta-inline-video">
+                    <iframe
+                            width="560" height="315"
+                            src="{@xlink:href}" frameborder="0"
+                            allowfullscreen="yes"
+                    ></iframe>
+                </div>
+            </div>
+        </div>
+        <xsl:apply-templates/>
+    </xsl:template>
+
     <xsl:template match="media" mode="soundcloud">
         <div class="media audio-content">
             <div class="media-inline audio-inline">
@@ -3291,6 +3306,11 @@
                             <xsl:apply-templates select="." mode="youtube"/>
                         </div>
                     </xsl:when>
+                    <xsl:when test="contains(./@xlink:href, 'criticalcommons.org')">
+                        <div class="media" data-doi="{$data-doi}">
+                            <xsl:apply-templates select="." mode="criticalcommons"/>
+                        </div>
+                    </xsl:when>
                     <xsl:otherwise>
                         <a href="{@xlink:href}">Video URL</a>
                         <xsl:apply-templates/>
@@ -3769,24 +3789,8 @@
         </pre>
     </xsl:template>
 
-    <!--
     <xsl:template match="verse-line">
         <xsl:apply-templates/>
-    </xsl:template>
-    -->
-
-    <xsl:template match="verse-line">
-        <xsl:choose>
-            <xsl:when test="@style">
-                <xsl:element name="span">
-                    <xsl:attribute name="style"><xsl:value-of select="@style"/></xsl:attribute>
-                    <xsl:apply-templates/>
-                </xsl:element>
-            </xsl:when>
-            <xsl:otherwise>
-                <xsl:apply-templates/>
-            </xsl:otherwise>
-        </xsl:choose>
     </xsl:template>
 
     <xsl:template match="title">

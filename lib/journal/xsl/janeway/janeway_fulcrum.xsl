@@ -3,7 +3,7 @@
                 xmlns:mml="http://www.w3.org/1998/Math/MathML" xmlns:xs="http://www.w3.org/2001/XMLSchema"
                 exclude-result-prefixes="xsi xs xlink mml">
 
-    <!-- Version 1.4.3 2024-04-02 UMPTG 1.4 -->
+    <!-- UMPTG 1.4 2024-04-04 -->
     <xsl:template match="*[local-name()='media' and ./*[local-name()='attrib' and @specific-use='umptg_fulcrum_resource']]">
         <xsl:variable name="data-doi" select="child::object-id[@pub-id-type='doi']/text()"/>
 
@@ -77,8 +77,7 @@
         </xsl:element>
     </xsl:template>
 
-    <!--
-    <xsl:template match="disp-quote[@content-type='epig']/verse-group/verse-line">
+    <xsl:template match="verse-line">
         <xsl:choose>
             <xsl:when test="@style">
                 <xsl:element name="span">
@@ -91,6 +90,5 @@
             </xsl:otherwise>
         </xsl:choose>
     </xsl:template>
-    -->
 
 </xsl:stylesheet>

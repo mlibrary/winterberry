@@ -80,6 +80,7 @@ require 'uri'
 dlxs2jats_xsl_file = File.join(root_dir, "lib", "journal", "xsl", "dlxs2jats.xsl")
 jats2html_xsl_file = File.join(root_dir, "lib", "journal", "xsl", "jats-html.xsl")
 jats2html_xsl_file = File.join(root_dir, "lib", "journal", "xsl", "janeway", "janeway.xsl")
+#jats2html_xsl_file = File.join(root_dir, "..", "janeway", "src", "transform", "xsl", "default.xsl")
 
 KSP='#'
 RSP=';'
