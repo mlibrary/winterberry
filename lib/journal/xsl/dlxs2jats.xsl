@@ -879,7 +879,16 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
             <xsl:if test="exists(@TYPE)">
                 <xsl:attribute name="content-type" select="@TYPE"/>
             </xsl:if>
-            <xsl:apply-templates select="@*[name()!='TYPE']|node()"/>
+            <xsl:choose>
+                <xsl:when test="@TYPE='epig'">
+                    <xsl:element name="verse-group">
+                        <xsl:apply-templates select="@*[name()!='TYPE']|node()"/>
+                    </xsl:element>
+                </xsl:when>
+                <xsl:otherwise>
+                    <xsl:apply-templates select="@*[name()!='TYPE']|node()"/>
+                </xsl:otherwise>
+            </xsl:choose>
         </xsl:element>
     </xsl:template>
 
@@ -1127,7 +1136,7 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
         </xsl:element>
     </xsl:template>
 
-    <xsl:template match="NOTE1//LG/L|Q1[lower-case(@TYPE)='epig']/P|Q1[lower-case(@TYPE)='epig']/L">
+    <xsl:template match="NOTE1//LG/L|Q1[lower-case(@TYPE)='epig']/P">
         <xsl:element name="verse-line">
             <xsl:if test="exists(@REND)">
                 <xsl:attribute name="style-detail" select="@REND"/>
@@ -1232,12 +1241,14 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
         </xsl:element>
     </xsl:template>
 
+    <!--
     <xsl:template match="Q1[@TYPE='epig']">
         <xsl:element name="verse-group">
-            <!--<xsl:attribute name="style" select="'font-style:italic;'"/>-->
+            <comment<xsl:attribute name="style" select="'font-style:italic;'"/>>
             <xsl:apply-templates select="@*[name()!='TYPE']|node()"/>
         </xsl:element>
     </xsl:template>
+    -->
 
     <xsl:template match="Q1[@TYPE='poem']">
         <xsl:choose>
@@ -1255,6 +1266,13 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
     <xsl:template match="LG">
         <xsl:element name="verse-group">
             <xsl:apply-templates select="@*|node()"/>
+        </xsl:element>
+    </xsl:template>
+
+    <xsl:template match="Q1[@TYPE='epig']/L">
+        <xsl:element name="verse-line">
+            <xsl:attribute name="style" select="'display:block;font-style:italic;font-family:serif'"/>
+            <xsl:apply-templates/>
         </xsl:element>
     </xsl:template>
 

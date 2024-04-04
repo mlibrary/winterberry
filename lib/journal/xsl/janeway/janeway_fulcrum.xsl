@@ -1,14 +1,9 @@
 <xsl:stylesheet version="1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                 xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
                 xmlns:mml="http://www.w3.org/1998/Math/MathML" xmlns:xs="http://www.w3.org/2001/XMLSchema"
-                xmlns:tei="http://www.tei-c.org/ns/1.0"
                 exclude-result-prefixes="xsi xs xlink mml">
-    <!--
-    <xsl:import href="/var/www/michigan/src/files/xsl/default-v1.4.3.xsl"/>
-    -->
-    <xsl:import href="janeway_default.xsl"/>
 
-    <!-- Version 1.4.3 2023-09-22 UMPTG 1.1 -->
+    <!-- UMPTG 1.4 2024-04-04 -->
     <xsl:template match="*[local-name()='media' and ./*[local-name()='attrib' and @specific-use='umptg_fulcrum_resource']]">
         <xsl:variable name="data-doi" select="child::object-id[@pub-id-type='doi']/text()"/>
 
@@ -69,19 +64,31 @@
     </xsl:template>
 
     <xsl:template match="table-wrap//caption/title">
-        <span class="caption-title">
-            <xsl:apply-templates/>
-        </span>
+        <xsl:element name="span">
+            <xsl:attribute name="class"><xsl:value-of select="'caption-title'"/></xsl:attribute>
+        </xsl:element>
     </xsl:template>
 
     <xsl:template match="email">
         <xsl:element name="a">
-            <xsl:attribute name="href">
-                <xsl:value-of select="concat('mailto:',.)"/>
-            </xsl:attribute>
-            <xsl:attribute name="class">email</xsl:attribute>
+            <xsl:attribute name="href"><xsl:value-of select="concat('mailto:',.)"/></xsl:attribute>
+            <xsl:attribute name="class"><xsl:value-of select="'email'"/></xsl:attribute>
             <xsl:apply-templates/>
         </xsl:element>
+    </xsl:template>
+
+    <xsl:template match="verse-line">
+        <xsl:choose>
+            <xsl:when test="@style">
+                <xsl:element name="span">
+                    <xsl:attribute name="style"><xsl:value-of select="@style"/></xsl:attribute>
+                    <xsl:apply-templates/>
+                </xsl:element>
+            </xsl:when>
+            <xsl:otherwise>
+                <xsl:apply-templates/>
+            </xsl:otherwise>
+        </xsl:choose>
     </xsl:template>
 
 </xsl:stylesheet>
