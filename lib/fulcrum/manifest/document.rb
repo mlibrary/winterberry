@@ -183,7 +183,7 @@ module UMPTG::Fulcrum::Manifest
     # Parameter:
     #   descr           Text to include within the link
     def fileset_link_markup(file_name, descr = nil)
-      descr = "View resource." if descr == nil
+      descr = fileset_caption(file_name) if descr == nil
 
       link_markup = ""
       fileset = fileset(file_name)

@@ -109,9 +109,10 @@ class CaptionURLFilter < UMPTG::XML::Pipeline::Filter
       n1.add_class("figh")
       n1.add_class("enhanced-media-display")
       n1.content=""
-      n1.add_child(manifest.fileset_caption(fname))
+      link_markup = manifest.fileset_link_markup(fname, "Fullscreen video and transcript")
+      n1.add_child(link_markup)
 
-      link_markup = manifest.fileset_link_markup(fname, manifest.fileset_caption(fname))
+      link_markup = manifest.fileset_link_markup(fname)
       n2 = node.dup(0)
       n2.add_class("figh")
       n2.add_class("default-media-display")
