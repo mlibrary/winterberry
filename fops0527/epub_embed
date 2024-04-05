@@ -89,11 +89,6 @@ class CaptionURLFilter < UMPTG::XML::Pipeline::Filter
       a[:warning_message] = "#{fname}: no resource found"
       action_list << UMPTG::XML::Pipeline::Action.new(a)
     else
-=begin
-      # Embed iframe
-      embed_markup = manifest.fileset_embed_markup(fname)
-      markup = '<div class="default-media-display">' + embed_markup + '</div>'
-=end
       # Insert resource image
       image_name = "../images/" + File.basename(fname, ".*") + ".jpg"
       image_alt = resource['alternative_text']
@@ -111,15 +106,14 @@ class CaptionURLFilter < UMPTG::XML::Pipeline::Filter
       node = reference_node.first_element_child
 
       n1 = node.dup
+      n1.add_class("figh")
       n1.add_class("enhanced-media-display")
-      #n1 = UMPTG::XML::Pipeline::Actions::EmbedAction.embed_container(reference_node, node.name)
       n1.content=""
       n1.add_child(manifest.fileset_caption(fname))
 
-      #link_markup = manifest.fileset_link_markup(fname, manifest.fileset_caption(fname))
-      link_markup = manifest.fileset_caption(fname) + ". " + \
-            manifest.fileset_link_markup(fname, "Fullscreen video and transcript.")
+      link_markup = manifest.fileset_link_markup(fname, manifest.fileset_caption(fname))
       n2 = node.dup(0)
+      n2.add_class("figh")
       n2.add_class("default-media-display")
       n2.add_child(link_markup)
       caption_markup = n1.to_xml + n2.to_xml
@@ -127,10 +121,7 @@ class CaptionURLFilter < UMPTG::XML::Pipeline::Filter
 
       a = args.clone
       a[:markup] = caption_markup
-=begin
-      # Embed iframe
-      a[:action] = :add_previous
-=end
+
       # Embed links
       a[:action] = :replace_content
       action_list << UMPTG::XML::Pipeline::Actions::MarkupAction.new(a)
@@ -139,8 +130,6 @@ class CaptionURLFilter < UMPTG::XML::Pipeline::Filter
       a[:reference_node] = reference_node.parent
       a[:attribute_name] = "style"
       action_list << UMPTG::XML::Pipeline::Actions::RemoveAttributeAction.new(a)
-      #a[:attribute_name] = "data-fulcrum-embed-filename"
-      #action_list << UMPTG::XML::Pipeline::Actions::RemoveAttributeAction.new(a)
       a[:attribute_name] = "class"
       a[:attribute_value] = "figure"
       a[:attribute_append] = true
