@@ -22,7 +22,7 @@ options.max_level = 3
 option_parser = OptionParser.new do |opts|
   opts.banner = "Usage: #{File.basename(__FILE__)} [-l max_level] hs_xml_file [hs_xml_file...]"
   opts.on('-l', '--level max_level', 'Max level') do |max_level|
-    options.max_level = max_level
+    options.max_level = max_level.to_i
   end
   opts.on_tail('-h', '--help', 'Print this help message') do
     script_logger.info(opts)
@@ -39,16 +39,28 @@ end
 hs_xml_file_list = ARGV
 
 class Categ
-  attr_accessor :kids, :node, :parent_categ
+  attr_accessor :kids, :node, :parents
 
   def initialize(args = {})
     @node = nil
-    @parent_categ = nil
+    @parents = []
     @kids = []
   end
 
+  def comment_node
+    return @node.xpath("./*[local-name()='comment']").first
+  end
+
+  def identifier_node
+    return @node.xpath("./*[local-name()='identifier']").first
+  end
+
+  def label_node
+    return @node.xpath("./*[local-name()='prefLabel']").first
+  end
+
   def label
-    return @node.xpath("./*[local-name()='prefLabel']").first.text
+    return label_node.text
   end
 end
 
@@ -63,6 +75,9 @@ HEADERS = [
         "Data Sub Code",
         "Data Sub2 Code",
         "Description",
+        "Term1",
+        "Term2",
+        "Term3",
         "Externalcode",
         "Alternate Description 1"
     ]
@@ -78,22 +93,23 @@ def add_categ(args = {})
   csv = args[:csv]
   categ_list = args[:categ_list]
   data_code_list = args[:data_code_list]
+  term_list = args[:term_list]
 
   categ_list.sort! {|a,b| a.label <=> b.label }
   categ_list.each_index do |ndx|
     categ = categ_list[ndx]
-    dnode = categ.node.xpath("./*[local-name()='prefLabel']").first
+    dnode = categ.label_node
     raise "missing prefLabel element #{categ.node}" if dnode.nil?
     descr = dnode.text[0..39]
 
-    cnode = categ.node.xpath("./*[local-name()='comment']").first
+    cnode = categ.comment_node
     raise "missing comment element #{categ.node}" if cnode.nil?
     comment = cnode.text[0..254]
 
     code = ndx+1
     dc_list = data_code_list + [code]
 
-    enode = categ.node.xpath("./*[local-name()='identifier']").first
+    enode = categ.identifier_node
     raise "missing identifier element #{categ.node}" if enode.nil?
     extcode = enode.text[0..29]
 =begin
@@ -101,12 +117,15 @@ def add_categ(args = {})
 =end
     dc_list.each {|dc| extcode += "_#{dc}" unless dc.nil? }
 
+    tm_list = term_list + [categ]
+
     row = {
         "Level" => level,
         "Description" => descr,
         "Externalcode" => extcode,
         "Alternate Description 1" => comment
       }
+
     dc_list.each_index do |ndx|
       dc = dc_list[ndx]
       case ndx
@@ -118,6 +137,9 @@ def add_categ(args = {})
         row["Data Sub#{ndx} Code"] = dc
       end
     end
+
+    tm_list.each_index {|n| row["Term#{(n+1)}"] = tm_list[n].label }
+
     csv << row
 
     add_categ(
@@ -126,6 +148,7 @@ def add_categ(args = {})
         level: (level+1),
         max_level: max_level,
         data_code_list: dc_list,
+        term_list: tm_list
       )
   end
 end
@@ -154,9 +177,9 @@ hs_xml_file_list.each do |hs_xml_file|
     if categ.nil?
       categ = Categ.new
       id2categ[lnode.text] = categ
-      script_logger.info("category id #{lnode.text} added")
+      #script_logger.info("category id #{lnode.text} added")
     else
-      script_logger.warn("category id #{lnode.text} exists")
+      #script_logger.warn("category id #{lnode.text} exists")
     end
     categ.node = node
 
@@ -165,7 +188,7 @@ hs_xml_file_list.each do |hs_xml_file|
     pnode_list = node.xpath("./*[local-name()='broader']/*[local-name()='id']")
     if pnode_list.empty?
       categ_list << categ
-      script_logger.info("category id #{lnode.text} added as top level")
+      #script_logger.info("category id #{lnode.text} added as top level")
     else
       pnode_list.each do |pnode|
         pcateg = id2categ[pnode.text]
@@ -173,16 +196,16 @@ hs_xml_file_list.each do |hs_xml_file|
           pcateg = Categ.new
           id2categ[pnode.text] = pcateg
         end
-        categ.parent_categ = pcateg
+        categ.parents << pcateg
         pcateg.kids << categ
-        script_logger.info("category id #{lnode.text} added to parent category #{pnode.text}")
+        #script_logger.info("category id #{lnode.text} added to parent category #{pnode.text}")
       end
     end
   end
   script_logger.info("top: #{categ_list.count}")
 
   csv_file = File.join(script_dir, "hs.csv")
-  code_headers = (0..(options.max_level.to_i-1)).to_a.collect do |n|
+  code_headers = (0..(options.max_level-1)).to_a.collect do |n|
     case n
     when 0
       "Data Code"
@@ -192,10 +215,15 @@ hs_xml_file_list.each do |hs_xml_file|
       "Data Sub#{n} Code"
     end
   end
+  term_headers = (1..(options.max_level)).to_a.collect do |n|
+    "Term#{(n)}"
+  end
 
   headers = ["Level"] + \
       code_headers + \
-      ["Description", "Externalcode", "Alternate Description 1"]
+      ["Description"] + \
+      term_headers + \
+      ["Externalcode", "Alternate Description 1"]
 
   CSV.open(
           csv_file,
@@ -208,8 +236,9 @@ hs_xml_file_list.each do |hs_xml_file|
         csv: csv,
         categ_list: categ_list,
         level: 1,
-        max_level: options.max_level.to_i,
-        data_code_list: []
+        max_level: options.max_level,
+        data_code_list: [],
+        term_list: []
       )
   end
   script_logger.info("Saved file #{csv_file}")
