@@ -35,25 +35,25 @@ module UMPTG::XML::Pipeline
                 )
       end
 
-    logger = args.key?(:logger) ? args[:logger] : UMPTG::Logger.create(logger_fp: STDOUT)
-    actions.each do |action|
-      action.messages.each do |msg|
-        case msg.level
-        when UMPTG::Message.INFO
-          logger.info(msg.text)
-        when UMPTG::Message.WARNING
-          logger.warn(msg.text)
-        when UMPTG::Message.ERROR
-          logger.error(msg.text)
-        when UMPTG::Message.FATAL
-          logger.fatal(msg.text)
+      logger = args.key?(:logger) ? args[:logger] : UMPTG::Logger.create(logger_fp: STDOUT)
+      actions.each do |action|
+        action.messages.each do |msg|
+          case msg.level
+          when UMPTG::Message.INFO
+            logger.info(msg.text)
+          when UMPTG::Message.WARNING
+            logger.warn(msg.text)
+          when UMPTG::Message.ERROR
+            logger.error(msg.text)
+          when UMPTG::Message.FATAL
+            logger.fatal(msg.text)
+          end
         end
       end
-    end
-    return UMPTG::XML::Pipeline::ActionResult.new(
-            actions: actions,
-            modified: false
-            )
+      return UMPTG::XML::Pipeline::ActionResult.new(
+              actions: actions,
+              modified: false
+              )
     end
 
     def self.report_actions(args = {})
