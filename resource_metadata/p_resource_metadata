@@ -18,7 +18,7 @@ script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
 # Process the script parameters.
 options = OpenStruct.new
 option_parser = OptionParser.new do |opts|
-  opts.banner = "Usage: #{File.basename(__FILE__)} epub_file [epub_file...]"
+  opts.banner = "Usage: #{File.basename(__FILE__)} monograph_dir [monograph_dir...]"
   opts.on_tail('-h', '--help', 'Print this help message') do
     script_logger.info(opts)
     exit 0
@@ -31,9 +31,10 @@ if ARGV.count < 1
 end
 
 # Process the command line parameters.
-epub_file_list = ARGV
+monograph_dir_list = ARGV
 
 require_relative File.join(root_dir, "lib", "epub")
+require_relative File.join(root_dir, "lib", "fulcrum", "monographdir")
 require_relative File.join(root_dir, "resource_metadata", "lib", "fulcrum", "metadata")
 
 xml_processor = UMPTG::XML::Pipeline::Processor.new(
@@ -50,22 +51,110 @@ epub_processor = UMPTG::EPUB::XProcessor.new(
       xml_processor: xml_processor
     )
 
-epub_file_list.each do |epub_file|
-  unless File.file?(epub_file)
-    script_logger.error("invalid EPUB file #{epub_file}")
-    exit 1
-  end
-  script_logger.info("processing EPUB file #{File.basename(epub_file)}")
+monograph_dir_list.each do |mdir|
+  monograph_dir = UMPTG::Fulcrum::MonographDir.new(
+            monograph_dir: mdir,
 
-  epub = UMPTG::EPUB::Archive.new(epub_file: epub_file)
-
-  logger_file =  File.join(
-            File.dirname(epub_file),
-            File.basename(epub_file, ".*") + "_" + File.basename(__FILE__) + ".log"
             )
-  epub_processor.logger = UMPTG::Logger.create(logger_file: logger_file)
-  epub_processor.logger.info("Processing EPUB file #{File.basename(epub_file)}")
-  epub_processor.run(
-        epub
+  if monograph_dir.monograph_dir.nil?
+    script_logger.error("invalid monograph directory #{mdir}")
+    next
+  end
+  script_logger.info("processing monograph directory #{monograph_dir.monograph_dir}")
+
+  # Create the monograph processing directory.
+  FileUtils.mkdir_p monograph_dir.processing_dir
+
+  # Create the processing log file for this monograph directory.
+  logger_file =  File.join(
+            monograph_dir.processing_dir,
+            File.basename(__FILE__) + ".log"
+            )
+  logger = UMPTG::Logger.create(logger_file: logger_file)
+  xml_processor.logger = logger
+  epub_processor.logger = logger
+  epub_processor.logger.info("*** Processing Monograph directory #{File.basename(monograph_dir.monograph_dir)} ***")
+
+  epub = UMPTG::EPUB::Archive.new(epub_file: monograph_dir.epub_file)
+
+  epub_processor.logger.info("Using EPUB #{File.basename(monograph_dir.epub_file)}.")
+  entry_actions = epub_processor.run(
+        epub,
+        {
+          normalize: true
+        }
       )
+
+  epub_processor.logger.info("Using FMSL #{File.basename(monograph_dir.fmsl_file)}.")
+  epub_processor.logger.warn("No alt text/caption found for resource \"***row left intentionally blank***\".")
+
+  fmsl_csv = CSV.parse(
+            File.read(monograph_dir.fmsl_file),
+            :headers => true,
+            :return_headers => false
+            )
+
+  entry_actions.each do |ea|
+    ea.action_result.actions.each do |a|
+      a.object_list.each do |o|
+        #fmsl_row = monograph_dir.fmsl.fileset(o.resource_name)
+        file_name_base = File.basename(o.resource_name, ".*").downcase
+        fmsl_row = fmsl_csv.find {|row| !row['File Name'].nil? and File.basename(row['File Name'], ".*").downcase == file_name_base }
+        if fmsl_row.nil?
+          script_logger.warn("resource #{o.resource_name} not found.")
+          next
+        end
+        #script_logger.info("updating resource #{o.resource_name}.")
+
+        alt = fmsl_row["Alternative Text"]
+        caption = fmsl_row["Caption"]
+        resource_name = fmsl_row["File Name"]
+        epub_alt = o.alt_text
+        epub_caption = o.caption_text
+
+        epub_processor.logger.info("FMSL alt text matches EPUB alt text for resource \"#{resource_name}\"") \
+            unless alt.nil? or alt != epub_alt
+        epub_processor.logger.warn("No alt text found within EPUB for resource \"#{resource_name}\".") \
+            if epub_alt.nil? or epub_alt.empty?
+        epub_processor.logger.warn("Overwriting FMSL alt text with EPUB alt text for resource \"#{resource_name}\"") \
+            if !(alt.nil? or alt.empty?) and !(epub_alt.nil? or epub_alt.empty?) and alt != epub_alt
+            #unless (alt.nil? or alt.empty?) and !(epub_alt.nil? or epub_alt.empty?)
+        epub_processor.logger.info("Updating FMSL alt text with EPUB alt text for resource \"#{resource_name}\"") \
+            if (alt.nil? or alt.empty?) and !(epub_alt.nil? or epub_alt.empty?)
+        fmsl_row["Alternative Text"] = epub_alt unless epub_alt.nil? or epub_alt.empty?
+
+        epub_processor.logger.info("FMSL caption matches EPUB caption for resource \"#{resource_name}\"") \
+            unless caption.nil? or caption != epub_caption
+        epub_processor.logger.warn("No caption found within EPUB for resource \"#{resource_name}\".") \
+            if epub_caption.nil? or epub_caption.empty?
+        epub_processor.logger.warn("Overwriting FMSL caption with EPUB caption for resource \"#{resource_name}\"") \
+            if !(caption.nil? or caption.empty?) and !(epub_caption.nil? or epub_caption.empty?) and caption != epub_caption
+        epub_processor.logger.info("Updating FMSL caption with EPUB caption for resource \"#{resource_name}\"") \
+            if (caption.nil? or caption.empty?) and !(epub_caption.nil? or epub_caption.empty?)
+        fmsl_row["Caption"] = epub_caption unless epub_caption.nil? or epub_caption.empty?
+      end
+    end
+  end
+
+  # Look for the dreaded blank second line.
+  new_fmsl_headers = fmsl_csv.headers
+  new_fmsl_headers << "Caption" unless new_fmsl_headers.include?("Caption")
+  new_fmsl_headers << "Alternative Text" unless new_fmsl_headers.include?("Alternative Text")
+
+  # Save the updated FMSL in the resource processing directory.
+  new_fmsl_file = File.join(monograph_dir.processing_dir, File.basename(monograph_dir.fmsl_file))
+  CSV.open(
+          new_fmsl_file,
+          "w",
+          :write_headers=> true,
+          :headers => new_fmsl_headers
+        ) do |csv|
+    fmsl_csv.each do |fmsl_row|
+      new_row = {}
+      fmsl_row.each do |key,value|
+        new_row[key] = value.strip.force_encoding("UTF-8") unless value.nil?
+      end
+      csv << new_row
+    end
+  end
 end
