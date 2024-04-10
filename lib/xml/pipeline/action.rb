@@ -21,21 +21,34 @@ module UMPTG::XML::Pipeline
       actions = args.key?(:actions) ? args[:actions] : []
       normalize = args.key?(:normalize) ? args[:normalize] : false
 
+      modified = false
       if normalize
-        modified = false
-        if normalize
-          actions.each do |a|
-            a.process(args)
-            modified = true if a.normalize and a.status == UMPTG::Action.COMPLETED
-          end
+        actions.each do |a|
+          a.process(args)
+          modified = true if a.normalize and a.status == UMPTG::Action.COMPLETED
         end
         return UMPTG::XML::Pipeline::ActionResult.new(
                 actions: actions,
                 modified: modified
                 )
+
       end
 
       logger = args.key?(:logger) ? args[:logger] : UMPTG::Logger.create(logger_fp: STDOUT)
+      UMPTG::XML::Pipeline::Action.display_messages(
+            actions: actions,
+            logger: logger
+         )
+      return UMPTG::XML::Pipeline::ActionResult.new(
+              actions: actions,
+              modified: modified
+              )
+    end
+
+    def self.display_messages(args = {})
+      actions = args.key?(:actions) ? args[:actions] : []
+      logger = args.key?(:logger) ? args[:logger] : UMPTG::Logger.create(logger_fp: STDOUT)
+
       actions.each do |action|
         action.messages.each do |msg|
           case msg.level
@@ -50,10 +63,6 @@ module UMPTG::XML::Pipeline
           end
         end
       end
-      return UMPTG::XML::Pipeline::ActionResult.new(
-              actions: actions,
-              modified: false
-              )
     end
 
     def self.report_actions(args = {})
