@@ -1411,7 +1411,7 @@
         </span>
     </xsl:template>
 
-    <xsl:template match="fig//caption/title | supplementary-material/caption/title">
+    <xsl:template match="fig//caption/title | supplementary-material/caption/title | table-wrap//caption/title">
         <span class="caption-title">
             <xsl:apply-templates/>
         </span>
