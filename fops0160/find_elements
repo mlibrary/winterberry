@@ -44,18 +44,26 @@ local-name()='title'
 ]
 SXPATH
 
-class TitleFilter < UMPTG::XML::Pipeline::Filter
+EMAIL_XPATH = <<-SXPATH
+//*[
+local-name()='email'
+]
+SXPATH
+
+class ElementFilter < UMPTG::XML::Pipeline::Filter
   def create_actions(args = {})
     a = args.clone
 
-    # title
+    # Element
     reference_node = a[:reference_node]
 
-    #
+    # Calculate child count
+    c_list = reference_node.xpath("./*")
+    c_name_list = c_list.collect {|c| c.name}
     action_list = [
           UMPTG::XML::Pipeline::Action.new(
                 reference_node: reference_node,
-                info_msg: "found element #{reference_node.name}"
+                info_message: "found element #{reference_node.name}, children #{c_list.count}: #{c_name_list.join(',')}"
               )
         ]
 
@@ -63,16 +71,16 @@ class TitleFilter < UMPTG::XML::Pipeline::Filter
   end
 end
 
-title_processor = UMPTG::XML::Pipeline::Processor.new(
-      name: "JATS_Title",
+element_processor = UMPTG::XML::Pipeline::Processor.new(
+      name: "JATS_elements",
       filters: {
-        jats_title: TitleFilter.new(
-                  name: :jats_title,
-                  xpath: TITLE_XPATH
+        elements: ElementFilter.new(
+                  name: :elements,
+                  xpath: EMAIL_XPATH
                )
       },
       options: {
-        jats_title: true
+        elements: true
       }
     )
 
@@ -87,15 +95,15 @@ jats_file_list.each do |jats_file|
             File.dirname(jats_file),
             File.basename(jats_file, ".*") + "_" + File.basename(__FILE__) + ".log"
             )
-  title_processor.logger = UMPTG::Logger.create(logger_file: logger_file)
-  title_processor.logger.info("Processing JATS file #{File.basename(jats_file)}")
+  element_processor.logger = UMPTG::Logger.create(logger_file: logger_file)
+  element_processor.logger.info("Processing JATS file #{File.basename(jats_file)}")
 
   jats_doc = Nokogiri::XML(File.read(jats_file))
 
-  title_processor.run(
+  element_processor.run(
         jats_doc,
         {
-            normalize: true
+            normalize: false
         }
       )
 end

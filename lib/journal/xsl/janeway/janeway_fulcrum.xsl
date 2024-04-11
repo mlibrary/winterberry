@@ -70,7 +70,6 @@
             <xsl:apply-templates/>
         </xsl:element>
     </xsl:template>
-    -->
 
     <xsl:template match="email">
         <xsl:element name="a">
@@ -79,5 +78,6 @@
             <xsl:apply-templates/>
         </xsl:element>
     </xsl:template>
+    -->
 
 </xsl:stylesheet>

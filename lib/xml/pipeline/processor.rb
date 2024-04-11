@@ -23,6 +23,7 @@ module UMPTG::XML::Pipeline
 
       # Return XML::ActionResult
       args[:actions] = actions
+      args[:logger] = @logger
       return UMPTG::XML::Pipeline::Action.process_actions(args)
     end
 
