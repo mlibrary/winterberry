@@ -93,53 +93,35 @@ def log_doi(script_logger, record)
 end
 
 DOI_SKIP_LIST = [
-        # Currently not registered
+        # Currently not registered due to
+        # no UMP page exists.
         "10.3998/mpub.11871089",
         "10.3998/mpub.12912253",
-        "10.3998/mpub.14418165",
         "10.3998/mpub.12838586",
         "10.3998/mpub.14376540",
-        "10.3998/mpub.12123587",
-        "10.3998/mpub.12067961",
         "10.3998/mpub.12783158",
         "10.3998/mpub.12823887",
-        "10.3998/mpub.12794206",
         "10.3998/mpub.14415745",
+        "10.3998/mpub.14373970",
+        "10.3998/mpub.12901912",
+        "10.3998/mpub.14406207",
+        "10.3998/mpub.12793897",
+        "10.3998/mpub.14327772",
 
-        # Currently produce false negatives
+=begin
+        # Currently produce false negatives.
+        # Crossref API returns UMP site, but
+        # DOI is correctly registered for Fulcrum.
         "10.3998/mpub.12333911",
         "10.3998/mpub.12089759",
         "10.3998/mpub.12330943",
-        "10.3998/mpub.12081134",
         "10.3998/mpub.12674669",
         "10.3998/mpub.12333333",
-        "10.3998/mpub.12391573",
-=begin
-        # Should now be registered
-        "10.3998/mpub.14328063",
-        "10.3998/mpub.12865688",
-        "10.3998/mpub.12578382",
-        "10.3998/mpub.12827650",
-        "10.3998/mpub.14386272",
-        "10.3998/mpub.14477325",
-        "10.3998/mpub.12876501",
+
+        # Need to be registered
 =end
     ]
 ISBN_SKIP_LIST = [
-"9780472039784","9780472074839","9780472077069","9780472077120","9780472076673","9780472076789","9780472039777",
-"9780472133543","9780472133550","9780472039227","9780472076970","9780472904525","9780472077021","9780472133536",
-"9780472076734","9780472039722","9780472039746","9780472076260","9780472076857","9780472077151","9780472076741",
-"9780472077267","9780472076901","9780472074372","9780472133307","9780472077137","9780472076796","9780472076918",
-"9780472077052","9780472077113","9780472076833","9780472076956","9780472133529","9780472077199","9780472076765",
-"9780472076932","9780472077175","9780472999071","9780472039708","9780472076802","9780472076710","9780472039715",
-"9780472076413","9780472076864","9780472076826","9780472076994","9780472076994","9780472077076","9780472076987",
-"9780472076949","9780472076666","9780472075218","9780472039111","9780472077205","9780472039845","9780472076642",
-"9780472999088","9780472076758","9780472076895","9780472076727","9780472039661","9780472039807","9780472076680",
-"9780472077007","9780472039791","9780472077182","9780472076567","9780472131952","9780472076871","9780472077243",
-"9780472077212","9780472076840","9780472076246","9780472077250","9780472076963","9780472039678","9780472133574",
-"9780472076819","9780472077144","9780472077090","9780472076086","9780472133512","9780472076888","9780472039838",
-"9780472077083","9780472077045","9780472133567","9780472076925","9780472077014","9780472077281","9780472077168",
-"9780472077106","9780472077038","9780472133598","9780472133291","9780472133581"
     ]
 
 doi_records = {}
@@ -153,12 +135,9 @@ doi_data_node_list.each do |doi_data_node|
   doi_records[doi_record.doi] = doi_record
 end
 
-doi_list_2024 = []
 if doi_list.empty?
   doi_records.each do |doi,record|
     if record.pub_year.to_i > 2023
-    #if record.pub_year.to_i == 2025
-      #doi_list_2024 << record.doi
       doi_list << record.doi
     else
       doi_list << record.doi
@@ -167,21 +146,6 @@ if doi_list.empty?
 end
 
 response_list = []
-
-=begin
-doi_list_2024_failed = []
-doi_list_2024.each do |doi|
-  begin
-    response = Serrano.works(ids: [doi])
-    #script_logger.info(doi)
-  rescue StandardError => e
-    script_logger.error(e.message)
-    doi_list_2024_failed << doi
-  end
-end
-doi_list_2024_failed.each {|doi| log_doi(script_logger, doi_records[doi]) }
-exit(0)
-=end
 
 response_list = []
 case options.message_type
@@ -229,19 +193,3 @@ response_list.each do |response|
 end
 
 doi_list.each {|doi| log_doi(script_logger, doi_records[doi]) }
-#doi_list_2024.each {|doi| log_doi(script_logger, doi_records[doi]) }
-
-=begin
-doi_records.each do |doi,record|
-  #next if record.url_actual == record.url_proposed
-  #script_logger.info("#{record.url_actual},#{record.url_proposed}")
-  uri_actual_host = URI(record.url_actual).host
-  uri_actual_host.delete_prefix!('www.') unless uri_actual_host.nil?
-  uri_proposed_host = URI(record.url_proposed).host
-  uri_proposed_host.delete_prefix!('www.') unless uri_proposed_host.nil?
-  next if uri_actual_host == uri_proposed_host
-  next if uri_actual_host == "hdl.handle.net"
-  #script_logger.warn("#{uri_actual_host},#{uri_proposed_host}")
-  script_logger.info("#{record.url_actual},#{record.url_proposed}")
-end
-=end
