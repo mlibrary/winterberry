@@ -63,18 +63,10 @@
         </div>
     </xsl:template>
 
+    <!--
     <xsl:template match="table-wrap//caption/title">
         <xsl:element name="span">
             <xsl:attribute name="class"><xsl:value-of select="'caption-title'"/></xsl:attribute>
-            <xsl:apply-templates/>
-        </xsl:element>
-    </xsl:template>
-
-    <!--
-    <xsl:template match="email">
-        <xsl:element name="a">
-            <xsl:attribute name="href"><xsl:value-of select="concat('mailto:',.)"/></xsl:attribute>
-            <xsl:attribute name="class"><xsl:value-of select="'email'"/></xsl:attribute>
             <xsl:apply-templates/>
         </xsl:element>
     </xsl:template>
