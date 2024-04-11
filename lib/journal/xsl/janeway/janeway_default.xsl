@@ -1411,7 +1411,7 @@
         </span>
     </xsl:template>
 
-    <xsl:template match="fig//caption/title | supplementary-material/caption/title | table-wrap//caption/title">
+    <xsl:template match="fig//caption/title | supplementary-material/caption/title">
         <span class="caption-title">
             <xsl:apply-templates/>
         </span>
@@ -3871,14 +3871,6 @@
            <xsl:apply-templates/>
          </code>
        </pre>
-    </xsl:template>
-
-    <xsl:template match="email">
-        <xsl:element name="a">
-            <xsl:attribute name="href"><xsl:value-of select="concat('mailto:',.)"/></xsl:attribute>
-            <xsl:attribute name="class"><xsl:value-of select="'email'"/></xsl:attribute>
-            <xsl:apply-templates/>
-        </xsl:element>
     </xsl:template>
 
     <!-- END - general format -->
