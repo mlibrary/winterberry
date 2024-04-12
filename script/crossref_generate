@@ -18,9 +18,19 @@ script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
 
 # Process the script parameters.
 options = OpenStruct.new
+options.id_list_files = {
+    exclude: nil,
+    include: nil
+  }
 options.monograph_link = :default
 option_parser = OptionParser.new do |opts|
-  opts.banner = "Usage: #{File.basename(__FILE__)} [-l default|fulcrum|ump] doi_report_file monograph_id [monograph_id...]"
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-e isbn_list_file] [-i isbn_list_file] [-l default|fulcrum|ump] doi_report_file"
+  opts.on('-e', '--exclude id_list_file', 'File containing list of ISBNs to exclude') do |id_list_file|
+    options.id_list_files[:exclude] = id_list_file
+  end
+  opts.on('-i', '--include id_list_file', 'File containing list of ISBNs to include') do |id_list_file|
+    options.id_list_files[:include] = id_list_file
+  end
   opts.on('-l', '--link default|fulcrum|ump', 'Use which link as resource') do |link|
     options.monograph_link = link.to_sym
   end
@@ -36,77 +46,115 @@ if ARGV.count < 1
 end
 
 # Process the command line parameters.
-doi_report_file = File.expand_path(ARGV[0])
-monograph_id_list = ARGV[1..-1]
+doi_report_file_list = ARGV
 
+# Determine whether the UMP site link or
+# the Fulcrum link should be assigned to the DOI.
 unless [:default,:fulcrum,:ump].include?(options.monograph_link)
   script_logger.error("invalid link type #{options.monograph_link}")
   exit 1
 end
 
-doi_report_file = File.expand_path(doi_report_file)
-unless File.file?(doi_report_file)
-  script_logger.error("invalid DOI Report file #{doi_report_file}")
-  exit 1
-end
-script_logger.info("processing DOI Report file #{File.basename(doi_report_file)}")
-
 require 'nokogiri'
+require 'csv'
 
 require_relative File.join(root_dir, "lib", "fulcrum")
 require_relative File.join(root_dir, 'lib', 'xslt')
 
-doi_report_doc = Nokogiri::XML(File.open(doi_report_file))
+# If monograph ID include or exclude files were provided,
+# verify their existence.
+id_list_csv_body = {
+    exclude: "ISBN\n9780472903023",
+    include: nil
+  }
+options.id_list_files.each do |key,id_list_file|
+  next if id_list_file.nil?
+
+  # Verify CSV file existence
+  id_list_file = File.expand_path(id_list_file)
+  unless File.file?(id_list_file)
+    script_logger.error("#{key.to_s} ID file #{id_list_file} does not exist")
+    exit 1
+  end
+  id_list_csv_body[key] = File.read(id_list_file)
+end
+
+id_list_csv = {}
+id_list_csv_body.each do |key,id_list_body|
+  # Create the ID CSV
+  csv = CSV.parse(
+          id_list_body,
+          :headers => true,
+          :return_headers => false
+        )
+  id_list_csv[key] = csv
+end
 
 # Create the serivce for retrieving the NOID.
 service = UMPTG::Services::Heliotrope.new(
                 :fulcrum_host => options.fulcrum_host
               )
 
-book_node_list = []
-if monograph_id_list.empty?
-  book_node_list = doi_report_doc.xpath("//*[local-name()='book']")
-else
-  monograph_id_list.each do |monograph_id|
-    script_logger.info("*" * 10 + " #{monograph_id} " + "*" * 10)
-    STDOUT.flush
+crossref_xsl_file = File.join(root_dir, "lib", "tmm", "xsl", "tmm_to_crossref.xsl")
 
-    manifest = nil
+doi_report_file_list.each do |doi_report_file|
+  doi_report_file = File.expand_path(doi_report_file)
+  unless File.file?(doi_report_file)
+    script_logger.error("invalid DOI Report file #{doi_report_file}")
+    exit 1
+  end
+  script_logger.info("processing DOI Report file #{File.basename(doi_report_file)}")
 
-    # Assume the monograph ID is a book key.
-    bnode_list = doi_report_doc.xpath("//*[local-name()='bookkey' and string()='#{monograph_id}']/ancestor::*[local-name()='book'][1]")
-    if bnode_list.empty?
-      script_logger.warn("book key #{monograph_id} not found.")
+  doi_report_doc = Nokogiri::XML(File.open(doi_report_file))
 
-      # Book key not found. Try it as ISBN
-      bnode_list = doi_report_doc.xpath("//*[(local-name()='eISBN' or local-name()='printISBN') and string()='#{monograph_id}']/ancestor::*[local-name()='book'][1]")
-      script_logger.info("ISBN #{monograph_id} found.") unless bnode_list.empty?
-      script_logger.warn("ISBN #{monograph_id} not found.") if bnode_list.empty?
+  book_node_list = []
+  if id_list_csv[:include].nil?
+    book_node_list = doi_report_doc.xpath("//*[local-name()='book']")
+  else
+    id_list_csv[:include].each do |row|
+      id_header = id_list_csv[:include].headers[0]
 
-      if bnode_list.empty?
-        # ISBN not found. Try it as DOI
+      monograph_id = row[id_header]
+      script_logger.info("*" * 10 + " including #{monograph_id} " + "*" * 10)
+      STDOUT.flush
+
+      case id_header
+      when "Book Key"
+        # Assume the monograph ID is a book key.
+        bnode_list = doi_report_doc.xpath("//*[local-name()='bookkey' and string()='#{monograph_id}']/ancestor::*[local-name()='book'][1]")
+      when "ISBN"
+        bnode_list = doi_report_doc.xpath("//*[(local-name()='eISBN' or local-name()='printISBN') and string()='#{monograph_id}']/ancestor::*[local-name()='book'][1]")
+      when "DOI"
         bnode_list = doi_report_doc.xpath("//*[(local-name()='doi') and string()='#{monograph_id}']/ancestor::*[local-name()='book'][1]")
-        script_logger.info("DOI #{monograph_id} found.") unless bnode_list.empty?
-        script_logger.warn("DOI #{monograph_id} not found.") if bnode_list.empty?
-      end
-    else
-      script_logger.info("book key #{monograph_id} found.")
-    end
-
-    monograph_link = nil
-    if bnode_list.empty? or options.monograph_link == :fulcrum
-      # Assume the monograph ID is a Fulcrum Identifer.
-      manifest_body_list = service.monograph_export(
-                    monograph_id: monograph_id
-                  )
-      if manifest_body_list[monograph_id].empty?
-        script_logger.warn("no manifest found for ID #{monograph_id}.")
+      when "NOID"
+        bnode_list = doi_report_doc.xpath("//*[local-name()='resource' and contains(string(),'#{monograph_id}')]/ancestor::*[local-name()='book'][1]")
       else
-        manifest = UMPTG::Fulcrum::Manifest::Document.new(
-                      csv_body: manifest_body_list[monograph_id].first
+        script_logger.error("unknown ID type #{id_header}. Skipping.")
+        next
+      end
+      script_logger.warn("#{id_header} #{monograph_id} not found.") \
+            if bnode_list.empty?
+
+      manifest = nil
+      if bnode_list.empty? or options.monograph_link == :fulcrum
+        # Assume the monograph ID is a Fulcrum Identifer.
+        manifest_body_list = service.monograph_export(
+                      monograph_id: monograph_id
                     )
+        if manifest_body_list[monograph_id].empty?
+          script_logger.warn("no manifest found for ID #{monograph_id}.")
+        else
+          manifest = UMPTG::Fulcrum::Manifest::Document.new(
+                        csv_body: manifest_body_list[monograph_id].first
+                      )
+          script_logger.info("manifest found for ID #{monograph_id}.")
+        end
+      end
+
+      monograph_link = nil
+      unless manifest.nil?
         monograph_link = manifest.monograph_row['link'][12..-3]
-        script_logger.info("manifest found for ID #{monograph_id}, using link #{monograph_link}.")
+        script_logger.info("using link #{monograph_link}.")
 
         if bnode_list.empty?
           script_logger.info("try using the ISBNs.")
@@ -125,19 +173,12 @@ else
             STDOUT.flush
           end
         end
-        if bnode_list.empty?
-          # Try using the monograph NOID.
-          script_logger.warn("manifest ISBNs not found for #{monograph_id}. Try using the monograph NOID #{manifest.noid}.")
-          bnode_list = doi_report_doc.xpath("//*[local-name()='resource' and contains(string(),'" + manifest.noid + "')]/ancestor::*[local-name()='book'][1]")
-        end
+        script_logger.warn("manifest ISBNs not found for #{monograph_id}.") \
+              if bnode_list.empty?
       end
-    end
+      bnode_list.each do |bn|
+        book_node_list << bn
 
-    if bnode_list.empty? and !manifest.nil?
-      bnode_list = doi_report_doc.xpath("//*[local-name()='resource' and contains(string(),'" + manifest.noid + "')]/ancestor::*[local-name()='book'][1]")
-    end
-    bnode_list.each do |bn|
-      book_node_list << bn
         case options.monograph_link
         when :fulcrum
           unless monograph_link.nil?
@@ -155,53 +196,80 @@ else
             end
           end
         end
+      end
+      script_logger.info("found #{bnode_list.count} book nodes to include for ID #{monograph_id}.")
     end
-    script_logger.info("found #{bnode_list.count} book nodes for ID #{monograph_id}.")
   end
+  if book_node_list.empty?
+    script_logger.warn("no book nodes found")
+    next
+  end
+
+  crossref_doc = Nokogiri::XML('<?xml version="1.0" encoding="utf-8"?><root></root>')
+  root_node = crossref_doc.first_element_child
+  book_node_list.each do |book_node|
+    root_node.add_child(book_node)
+  end
+
+  # Determine if there are any nodes to exclude
+  unless id_list_csv[:exclude].nil?
+    id_list_csv[:exclude].each do |row|
+      id_header = id_list_csv[:exclude].headers[0]
+
+      monograph_id = row[id_header]
+      script_logger.info("*" * 10 + " excluding #{monograph_id} " + "*" * 10)
+      STDOUT.flush
+
+      case id_header
+      when "Book Key"
+        # Assume the monograph ID is a book key.
+        bnode_list = crossref_doc.xpath("//*[local-name()='bookkey' and string()='#{monograph_id}']/ancestor::*[local-name()='book'][1]")
+      when "ISBN"
+        bnode_list = crossref_doc.xpath("//*[(local-name()='eISBN' or local-name()='printISBN') and string()='#{monograph_id}']/ancestor::*[local-name()='book'][1]")
+      when "DOI"
+        bnode_list = crossref_doc.xpath("//*[(local-name()='doi') and string()='#{monograph_id}']/ancestor::*[local-name()='book'][1]")
+      when "NOID"
+        bnode_list = crossref_doc.xpath("//*[local-name()='resource' and contains(string(),'#{monograph_id}')]/ancestor::*[local-name()='book'][1]")
+      else
+        script_logger.error("unknown ID type #{id_header}. Skipping.")
+        next
+      end
+      script_logger.info("#{id_header} found #{bnode_list.count} book nodes to exclude for ID #{monograph_id}.")
+      bnode_list.each {|bnode| bnode.remove }
+    end
+  end
+
+  doi_report_edit_file = File.join(File.dirname(doi_report_file), File.basename(doi_report_file, ".*") + "_edited" + File.extname(doi_report_file))
+  File.write(doi_report_edit_file, crossref_doc.to_xml)
+  script_logger.info("wrote XML file #{File.basename(doi_report_edit_file)}.")
+
+  crossref_xml_file = File.join(
+        File.dirname(doi_report_edit_file),
+        File.basename(doi_report_edit_file, ".*") + "_crossref" + File.extname(doi_report_edit_file)
+        )
+
+  script_logger.info("transforming XML file #{File.basename(doi_report_edit_file)} to #{File.basename(crossref_xml_file)} using XSL #{File.basename(crossref_xsl_file)}.")
+
+  # parameters: { "UMP_REGISTRANT" => "'MPublishing'" }
+  # See tmm_to_crossref.xsl for other parameters.
+
+  time = Time.now
+  # [Y0001]-[M01]-[D01]T[H01]:[m01]:[s01][Z]
+  batch_id = "#{time.strftime("%Y-%m-%dT%H:%M:%S")}#{sprintf("%03d:00", time.utc_offset/3600)}"
+
+  # [Y0001][M01][D01][H01][m01][s01]00000
+  timestamp = time.strftime("%Y%m%d%H%M%S") + "00000"
+
+  parameters = {
+      "BATCH_ID" => "'#{batch_id}'",
+      "TIMESTAMP" => "'#{timestamp}'"
+    }
+
+  UMPTG::XSLT.transform(
+        xslpath: crossref_xsl_file,
+        srcdoc: crossref_doc,
+        srcpath: doi_report_edit_file,
+        destpath: crossref_xml_file,
+        parameters: parameters
+        )
 end
-
-if book_node_list.empty?
-  script_logger.warn("no book nodes found")
-  exit 0
-end
-
-crossref_doc = Nokogiri::XML('<?xml version="1.0" encoding="utf-8"?><root></root>')
-root_node = crossref_doc.first_element_child
-book_node_list.each do |book_node|
-  root_node.add_child(book_node)
-end
-
-doi_report_edit_file = File.join(File.dirname(doi_report_file), File.basename(doi_report_file, ".*") + "_edited" + File.extname(doi_report_file))
-File.write(doi_report_edit_file, crossref_doc.to_xml)
-script_logger.info("wrote XML file #{File.basename(doi_report_edit_file)}.")
-
-crossref_xsl_file = File.join(root_dir, "lib", "tmm", "xsl", "tmm_to_crossref.xsl")
-crossref_xml_file = File.join(
-      File.dirname(doi_report_edit_file),
-      File.basename(doi_report_edit_file, ".*") + "_crossref" + File.extname(doi_report_edit_file)
-      )
-
-script_logger.info("transforming XML file #{File.basename(doi_report_edit_file)} to #{File.basename(crossref_xml_file)} using XSL #{File.basename(crossref_xsl_file)}.")
-
-# parameters: { "UMP_REGISTRANT" => "'MPublishing'" }
-# See tmm_to_crossref.xsl for other parameters.
-
-time = Time.now
-# [Y0001]-[M01]-[D01]T[H01]:[m01]:[s01][Z]
-batch_id = "#{time.strftime("%Y-%m-%dT%H:%M:%S")}#{sprintf("%03d:00", time.utc_offset/3600)}"
-
-# [Y0001][M01][D01][H01][m01][s01]00000
-timestamp = time.strftime("%Y%m%d%H%M%S") + "00000"
-
-parameters = {
-    "BATCH_ID" => "'#{batch_id}'",
-    "TIMESTAMP" => "'#{timestamp}'"
-  }
-
-UMPTG::XSLT.transform(
-      xslpath: crossref_xsl_file,
-      srcdoc: crossref_doc,
-      srcpath: doi_report_edit_file,
-      destpath: crossref_xml_file,
-      parameters: parameters
-      )
