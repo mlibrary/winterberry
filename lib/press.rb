@@ -5,8 +5,12 @@ module UMPTG
             aberdeenunipress: "MPS",
             amherst: "MPS",
             bar:   "MPS",
+            csas:   "CSAS",
+            cseas: "CSEAS",
+            cjs:   "CJS",
             ebc:   "UMP",
             heb:   "MPS",
+            lrccs: "LRCCS",
             leverpress: "MPS",
             michigan: "UMP",
             ummaa: "UMMAA"
