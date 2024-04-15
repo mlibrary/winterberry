@@ -14,13 +14,18 @@ script_dir = File.expand_path(File.dirname(__FILE__))
 root_dir = File.dirname(script_dir)
 
 require_relative File.join(root_dir, "lib", "logger")
+require_relative File.join(root_dir, 'lib', 'epubcheck')
 
 script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
 
 # Process the script parameters.
 options = OpenStruct.new
+options.version = UMPTG::EPUBCheck.versions_default
 option_parser = OptionParser.new do |opts|
-  opts.banner = "Usage: #{File.basename(__FILE__)} <epub_file|epub_dir> [<epub_file|epub_dir>..]"
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-v #{UMPTG::EPUBCheck.versions_str}] <epub_file|epub_dir> [<epub_file|epub_dir>..]"
+  opts.on('-v', "--version #{UMPTG::EPUBCheck.versions_str}", "Versions available") do |ver|
+    options.version = ver.downcase
+  end
   opts.on_tail('-h', '--help', 'Print this help message') do
     script_logger.info(option_parser.help)
     exit 0
@@ -32,9 +37,13 @@ if ARGV.count < 1
   exit 0
 end
 
-require_relative File.join(root_dir, 'lib', 'epubcheck')
-
 epub_file_list = ARGV
+
+unless UMPTG::EPUBCheck.versions.include?(options.version)
+  script_logger.error("invalid version #{options.version}")
+  script_logger.info(option_parser.help)
+  exit(1)
+end
 
 epub_file_list.each do |epub_file|
   epub_file = File.expand_path(epub_file)
@@ -46,9 +55,10 @@ epub_file_list.each do |epub_file|
   STDOUT.flush
 
   log_file = File.join(File.dirname(epub_file), File.basename(epub_file, ".*") + "_epubcheck.xml")
-  UMPTG::EpubCheck.check_file(
-      :epub_file => epub_file,
-      :logfile => log_file
+  UMPTG::EPUBCheck.check_file(
+      epub_file: epub_file,
+      logfile: log_file,
+      version: options.version
       )
 end
 
