@@ -64,7 +64,7 @@ require_relative File.join(root_dir, 'lib', 'xslt')
 # If monograph ID include or exclude files were provided,
 # verify their existence.
 id_list_csv_body = {
-    exclude: "ISBN\n9780472903023",
+    exclude: nil,
     include: nil
   }
 options.id_list_files.each do |key,id_list_file|
@@ -82,11 +82,15 @@ end
 id_list_csv = {}
 id_list_csv_body.each do |key,id_list_body|
   # Create the ID CSV
-  csv = CSV.parse(
-          id_list_body,
-          :headers => true,
-          :return_headers => false
-        )
+  if id_list_body.nil?
+    csv = nil
+  else
+    csv = CSV.parse(
+            id_list_body,
+            :headers => true,
+            :return_headers => false
+          )
+  end
   id_list_csv[key] = csv
 end
 

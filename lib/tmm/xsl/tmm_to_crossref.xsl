@@ -65,9 +65,8 @@
                     <!-- Strip out titles that have not passed Eloquence verification and
                         strip out the "Supporting Graduate Writers" since Fulcrum field
                         fullTextOnFulcrum="N".
-                    <xsl:apply-templates select="book[eloquence='Passed' and printISBN!='9780472903023']"/>
                     -->
-                    <xsl:apply-templates select="book"/>
+                    <xsl:apply-templates select="book[starts-with(eloquenceVerificationStatus,'Passed') and printISBN!='9780472903023']"/>
                 </xsl:element>
             </xsl:element>
         </xsl:if>
