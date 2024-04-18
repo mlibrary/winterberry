@@ -1,4 +1,4 @@
-module UMPTG::Fulcrum::Metadata
+module UMPTG::Fulcrum::Metadata::Filters
 
   class ResourceMetadataFilter < UMPTG::XML::Pipeline::Filter
 
@@ -26,7 +26,7 @@ module UMPTG::Fulcrum::Metadata
       reference_node = a[:reference_node]
 
       action_list = []
-      action_list << UMPTG::Fulcrum::Metadata::FigureAction.new(
+      action_list << UMPTG::Fulcrum::Metadata::Actions::FigureAction.new(
           name: args[:name],
           reference_node: reference_node
           )

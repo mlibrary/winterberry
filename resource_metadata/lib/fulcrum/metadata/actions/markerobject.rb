@@ -1,4 +1,4 @@
-module UMPTG::Fulcrum::Metadata
+module UMPTG::Fulcrum::Metadata::Actions
 
   # Class represents additional resources (Marker)
   # found when processing an EPUB. The super contains

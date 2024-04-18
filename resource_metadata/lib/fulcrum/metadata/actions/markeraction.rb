@@ -1,4 +1,4 @@
-module UMPTG::Fulcrum::Metadata
+module UMPTG::Fulcrum::Metadata::Actions
 
   class MarkerAction < Action
 

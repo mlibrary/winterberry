@@ -1,4 +1,4 @@
-module UMPTG::Fulcrum::Metadata
+module UMPTG::Fulcrum::Metadata::Actions
 
   # Class representing actions for resources found within
   # <figure|img> markup.

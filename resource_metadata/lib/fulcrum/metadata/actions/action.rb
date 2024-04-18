@@ -1,4 +1,4 @@
-module UMPTG::Fulcrum::Metadata
+module UMPTG::Fulcrum::Metadata::Actions
 
   # Class is the base for resource metadata processing.
   class Action < UMPTG::XML::Pipeline::Action
