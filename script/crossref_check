@@ -86,7 +86,7 @@ def log_doi(script_logger, record)
   uri_proposed_host = URI(record.url_proposed).host
   uri_proposed_host.delete_prefix!('www.') unless uri_proposed_host.nil?
 
-  return if uri_actual_host == uri_proposed_host
+  #return if uri_actual_host == uri_proposed_host
   #return if uri_actual_host == "hdl.handle.net"
 
   script_logger.info("#{record.doi}:#{record.print_isbn},#{record.url_actual},#{record.url_proposed}")
@@ -94,31 +94,29 @@ end
 
 DOI_SKIP_LIST = [
         # Currently not registered due to
-        # no UMP page exists.
+        # no UMP page exists as they have
+        # not passed Eloquence verification.
         "10.3998/mpub.11871089",
         "10.3998/mpub.12912253",
         "10.3998/mpub.12838586",
-        "10.3998/mpub.14376540",
         "10.3998/mpub.12783158",
         "10.3998/mpub.12823887",
         "10.3998/mpub.14415745",
-        "10.3998/mpub.14373970",
         "10.3998/mpub.12901912",
         "10.3998/mpub.14406207",
         "10.3998/mpub.12793897",
-        "10.3998/mpub.14327772",
 
 =begin
+
         # Currently produce false negatives.
         # Crossref API returns UMP site, but
         # DOI is correctly registered for Fulcrum.
-        "10.3998/mpub.12333911",
-        "10.3998/mpub.12089759",
-        "10.3998/mpub.12330943",
-        "10.3998/mpub.12674669",
-        "10.3998/mpub.12333333",
 
         # Need to be registered
+        "10.3998/mpub.14376540",
+        "10.3998/mpub.14373970",
+        "10.3998/mpub.14327772",
+        "10.3998/mpub.12806429",
 =end
     ]
 ISBN_SKIP_LIST = [

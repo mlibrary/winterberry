@@ -216,6 +216,7 @@ doi_report_file_list.each do |doi_report_file|
   end
 
   # Determine if there are any nodes to exclude
+  exclude_list = []
   unless id_list_csv[:exclude].nil?
     id_list_csv[:exclude].each do |row|
       id_header = id_list_csv[:exclude].headers[0]
@@ -224,6 +225,9 @@ doi_report_file_list.each do |doi_report_file|
       script_logger.info("*" * 10 + " excluding #{monograph_id} " + "*" * 10)
       STDOUT.flush
 
+      exclude_list << "   " + monograph_id + "   "
+=begin
+      # Remove excluded title from the source document.
       case id_header
       when "Book Key"
         # Assume the monograph ID is a book key.
@@ -240,6 +244,7 @@ doi_report_file_list.each do |doi_report_file|
       end
       script_logger.info("#{id_header} found #{bnode_list.count} book nodes to exclude for ID #{monograph_id}.")
       bnode_list.each {|bnode| bnode.remove }
+=end
     end
   end
 
@@ -266,7 +271,8 @@ doi_report_file_list.each do |doi_report_file|
 
   parameters = {
       "BATCH_ID" => "'#{batch_id}'",
-      "TIMESTAMP" => "'#{timestamp}'"
+      "TIMESTAMP" => "'#{timestamp}'",
+      "EXCLUDE_ISBN" => "'#{exclude_list.join(';')}'"
     }
 
   UMPTG::XSLT.transform(

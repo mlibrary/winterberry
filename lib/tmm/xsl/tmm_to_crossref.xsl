@@ -12,6 +12,7 @@
     <!-- Defined paramters that can be overridden -->
     <xsl:param name="BATCH_ID"/>
     <xsl:param name="TIMESTAMP"/>
+    <xsl:param name="EXCLUDE_ISBN" select="''"/>
     <xsl:param name="UMP_URL_PREFIX" select="'https://press.umich.edu/isbn/'"/>
     <xsl:param name="UMP_DEPOSITOR" select="'scpo'"/>
     <xsl:param name="UMP_EMAIL" select="'mpub.xref@gmail.com'"/>
@@ -20,6 +21,7 @@
 
     <!-- Current Crossref namespace -->
     <xsl:variable name="NAMESPACE_URL" select="'http://www.crossref.org/schema/5.3.1'"/>
+    <xsl:variable name="EXCLUDE_ISBN_LIST" select="concat(';',translate($EXCLUDE_ISBN,' ',''),';')"/>
 
     <xsl:template match="root">
         <xsl:if test="normalize-space($BATCH_ID)!='' and normalize-space($TIMESTAMP)!=''">
@@ -66,7 +68,7 @@
                         strip out the "Supporting Graduate Writers" since Fulcrum field
                         fullTextOnFulcrum="N".
                     -->
-                    <xsl:apply-templates select="book[starts-with(eloquenceVerificationStatus,'Passed') and printISBN!='9780472903023']"/>
+                    <xsl:apply-templates select="book[starts-with(eloquenceVerificationStatus,'Passed') and not(contains($EXCLUDE_ISBN_LIST,printISBN))]"/>
                 </xsl:element>
             </xsl:element>
         </xsl:if>
