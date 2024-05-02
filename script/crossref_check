@@ -86,13 +86,14 @@ def log_doi(script_logger, record)
   uri_proposed_host = URI(record.url_proposed).host
   uri_proposed_host.delete_prefix!('www.') unless uri_proposed_host.nil?
 
-  #return if uri_actual_host == uri_proposed_host
+  return if uri_actual_host == uri_proposed_host
   #return if uri_actual_host == "hdl.handle.net"
 
   script_logger.info("#{record.doi}:#{record.print_isbn},#{record.url_actual},#{record.url_proposed}")
 end
 
 DOI_SKIP_LIST = [
+=begin
         # Currently not registered due to
         # no UMP page exists as they have
         # not passed Eloquence verification.
@@ -106,18 +107,12 @@ DOI_SKIP_LIST = [
         "10.3998/mpub.14406207",
         "10.3998/mpub.12793897",
 
-=begin
-
         # Currently produce false negatives.
         # Crossref API returns UMP site, but
         # DOI is correctly registered for Fulcrum.
 
-        # Need to be registered
-        "10.3998/mpub.14376540",
-        "10.3998/mpub.14373970",
-        "10.3998/mpub.14327772",
-        "10.3998/mpub.12806429",
 =end
+        # Need to be registered
     ]
 ISBN_SKIP_LIST = [
     ]
