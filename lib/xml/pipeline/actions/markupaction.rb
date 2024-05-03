@@ -3,7 +3,7 @@ module UMPTG::XML::Pipeline::Actions
   class MarkupAction < EmbedAction
     attr_reader :action, :markup
 
-    ACTIONS = [ :add_child, :add_next, :add_previous, :replace_content ]
+    ACTIONS = [ :add_child, :add_next, :add_previous, :replace_content, :replace_node ]
 
     def initialize(args = {})
       super(args)
@@ -34,6 +34,11 @@ module UMPTG::XML::Pipeline::Actions
         reference_node.content = ""
         reference_node.add_child(fragment)
         add_info_msg("#{reference_node.name}: replaced content markup #{markup}.")
+      when :replace_node
+        reference_name = reference_node.name
+        reference_node.add_next_sibling(fragment)
+        reference_node.remove
+        add_info_msg("#{reference_name}: replaced with #{markup}.")
       else
         add_error_msg("#{reference_node.name}: invalid action #{action}.")
       end

@@ -1,0 +1,149 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Script takes a list of journal article IDs and processes
+# any Fulcrum resources referenced within.
+
+require 'optparse'
+require 'ostruct'
+require 'os'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+# Process the script parameters.
+options = OpenStruct.new
+options.fulcrum_host = nil
+options.resource_map_file = nil
+options.generate_xhtml = false
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-f production|preview|staging] [-r resource_map_file] [-x] manifest_file|monograph_id jats_file [jats_file...]"
+  opts.on('-f', '--fulcrum_host host', 'Fulcrum environment') do |fulcrum_host|
+    options.fulcrum_host = fulcrum_host
+  end
+  opts.on('-m', '--resource_map_file map_file', 'Resource Map File') do |map_file|
+    options.resource_map_file = map_file
+  end
+  opts.on('-x', '--xhtml', 'Generate XHTML') do |da|
+    options.generate_xhtml = true
+  end
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    script_logger.info(opts)
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 2
+  script_logger.info(option_parser.help)
+  exit 0
+end
+
+monograph_id = ARGV[0]
+jats_file_list = ARGV[1..-1]
+
+require_relative File.join(root_dir, 'lib', 'xslt')
+require_relative File.join(root_dir, "lib", "fulcrum", "manifest")
+require_relative File.join(root_dir, "lib", "xml", "util")
+require_relative File.join(root_dir, "lib", "services")
+require_relative File.join(root_dir, "lib", "journal")
+
+# Retrieve the manifest for the monograph resources
+csv_body = ""
+manifest_file = File.expand_path(monograph_id)
+if File.file?(manifest_file)
+  csv_body = File.read(manifest_file)
+else
+  service = UMPTG::Services::Heliotrope.new(
+                  :fulcrum_host => options.fulcrum_host
+                )
+  id2csv_body_list = service.monograph_export(
+          noid: monograph_id,
+          fulcrum_host: options.fulcrum_host
+          )
+  csv_body = id2csv_body_list[monograph_id].first
+end
+if csv_body.empty?
+  script_logger.warn("no manifest found for id #{monograph_id}")
+  exit 1
+end
+manifest = UMPTG::Fulcrum::Manifest::Document.new(
+              csv_body: csv_body
+            )
+if manifest.nil?
+  script_logger.warn("generating manifest CSV for #{monograph_id}")
+  exit 1
+end
+script_logger.info("manifest retrieved for #{monograph_id}")
+
+if options.resource_map_file.nil?
+  resource_map = nil
+else
+  resource_map = UMPTG::Fulcrum::ResourceMap::Map.new(
+      xml_path: options.resource_map_file
+      )
+  script_logger.info("using resource map #{File.basename(options.resource_map_file)}")
+end
+
+# Initalize the JATS resource processor
+jats_processor = UMPTG::Journal::Resource::Processor.new(
+          manifest: manifest,
+          resource_map: resource_map,
+          options: { resource: true },
+          logger: script_logger
+        )
+
+jats2html_xsl_file = File.join(root_dir, "lib", "journal", "xsl", "janeway", "janeway.xsl")
+
+jats_file_list.each do |jats_file|
+  jats_file = File.expand_path(jats_file)
+  unless File.exist?(jats_file)
+    script_logger.error("invalid EPUB file path #{jats_file}.")
+    next
+  end
+  script_logger.info("*** processing #{File.basename(jats_file)} ***")
+  STDOUT.flush
+
+  jats_doc = UMPTG::XML.parse(xml_file: jats_file)
+  next if jats_doc.nil?
+
+  result = jats_processor.run(
+        jats_doc,
+        {
+          normalize: true
+        }
+      )
+
+  # Report results
+  UMPTG::XML::Pipeline::Action.process_actions(
+        actions: result.actions,
+        logger: script_logger
+        )
+
+  if result.modified
+    new_jats_file = File.join(
+          File.dirname(jats_file),
+          File.basename(jats_file, ".*") + "_" + File.basename(__FILE__) + File.extname(jats_file)
+          )
+    #UMPTG::Journal::JATSResourceProcessor.save(jats_doc, new_jats_file)
+    UMPTG::Journal::JATS.save(jats_doc, new_jats_file)
+    script_logger.info("save file #{File.basename(new_jats_file)}.")
+
+    if options.generate_xhtml
+      html_file = File.join(File.dirname(new_jats_file), File.basename(new_jats_file, ".*") + ".html")
+      UMPTG::XSLT.transform(
+              xslpath: jats2html_xsl_file,
+              srcpath: new_jats_file,
+              destpath: html_file,
+              logger: script_logger
+              )
+    end
+  end
+
+  script_logger.info()
+  STDOUT.flush
+end

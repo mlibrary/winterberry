@@ -1,5 +1,6 @@
 module UMPTG::Fulcrum::Manifest
   require 'htmlentities'
+  require 'redcarpet'
   require 'uri'
 
   @@BLANK_ROW_FILE_NAME = "***row left intentionally blank***"
@@ -23,6 +24,8 @@ module UMPTG::Fulcrum::Manifest
   </div>
   </div>
   REMARKUP
+
+  LINK_HREF_MARKUP = "%s/downloads/%s?file=embed_css"
 
   class Document < UMPTG::Object
     attr_reader :name, :noid, :csv, :monograph_row, :isbn, :headers
@@ -121,6 +124,10 @@ module UMPTG::Fulcrum::Manifest
       unless file_name.nil?
         file_name_base = File.basename(file_name, ".*").downcase
         fileset_row = @csv.find {|row| !row['file_name'].nil? and File.basename(row['file_name'], ".*").downcase == file_name_base }
+        if fileset_row.nil?
+          file_name_base = file_name_base.gsub(/[ ]+/, '_')
+          fileset_row = @csv.find {|row| !row['file_name'].nil? and File.basename(row['file_name'], ".*").downcase == file_name_base }
+        end
         if fileset_row.nil?
           fn = HTMLEntities.new.decode(file_name)
           fileset_row = @csv.find {|row| row['external_resource_url'] == fn }
@@ -242,6 +249,148 @@ module UMPTG::Fulcrum::Manifest
       return embed_markup
     end
 
+    # Method generates the XML JATS markup for embedding
+    # a specific resource.
+    def fileset_embed_jats_markup(args = {})
+      file_name = args[:file_name]
+      caption_markup = args[:caption_markup]
+      renderer = args[:renderer]
+
+      fileset = fileset(file_name)
+      #emb_markup = fileset["embed_code"] unless fileset["noid"].empty?
+      noid = fileset["noid"]
+      embed_markup = ""
+
+      unless noid.empty?
+        embed_markup = fileset['embed_code']
+        unless embed_markup.nil? or embed_markup.empty?
+          embed_doc = Nokogiri::XML::DocumentFragment.parse(embed_markup)
+          iframe_node = embed_doc.xpath("descendant-or-self::*[local-name()='iframe']").first
+          embed_link = iframe_node['src']
+        end
+
+        link_uri = URI(embed_link)
+        link_scheme_host = link_uri.scheme + "://" + link_uri.host
+
+        href = fileset['link'][12..-3]
+        title = fileset['title'].nil? ? "" : fileset['title']
+        caption = fileset['caption'].nil? ? "" : fileset['caption']
+        doi = fileset['doi'].nil? ? "" : fileset['doi']
+
+        @entity_encoder = HTMLEntities.new
+        extensions = {
+          autolink: true,
+          fenced_code_blocks: true
+        }
+        @markdown = Redcarpet::Markdown.new(
+                  renderer,
+                  extensions
+                )
+
+        title = @markdown.render(@entity_encoder.encode(title.force_encoding("UTF-8")))
+        caption = @markdown.render(@entity_encoder.encode(caption.force_encoding("UTF-8")))
+
+        doi_noprefix = doi.delete_prefix("https://doi.org/")
+        embed_code = fileset['embed_code']
+        noid = fileset['noid']
+
+        css_link = sprintf(LINK_HREF_MARKUP, link_scheme_host, noid)
+
+        media_doc = Nokogiri::XML::Document.new
+        media_element = media_doc.create_element("media")
+
+        media_element['xlink:href'] = embed_link
+        media_element['mimetype'] = fileset['resource_type']
+        media_element['mime-subtype'] = File.extname(fileset['file_name'])[1..-1].downcase
+        media_element['position'] = 'anchor'
+        media_element['specific-use'] = 'online'
+
+        unless title.strip.empty? and (caption.strip.empty? or caption_markup.nil?)
+          caption_element = add_element("caption", media_element)
+          if caption_markup.nil?
+            add_element_unless_no_content("title", caption_element, title)
+            add_element_unless_no_content("p", caption_element, caption)
+          else
+            caption_element.add_child(caption_markup)
+          end
+        end
+        add_element_unless_no_content(
+                "object-id",
+                media_element,
+                doi_noprefix,
+                {
+                    "pub-id-type" => "doi"
+                }
+                )
+
+        attrib_element = add_element(
+              "attrib",
+              media_element,
+              '',
+              {
+                  "id" => "umptg_fulcrum_resource_" + noid,
+                  "specific-use" => "umptg_fulcrum_resource"
+              }
+              )
+
+        unless doi.strip.empty?
+          add_ext_link(
+              attrib_element,
+              {
+                "ext-link-type" => "doi",
+                "xlink:href" => doi_noprefix
+              }
+              )
+        end
+
+        add_ext_link(
+            attrib_element,
+            {
+              "ext-link-type" => "uri",
+              "specific-use" => "umptg_fulcrum_resource_link",
+              "xlink:href" => href
+            }
+            )
+        add_ext_link(
+            attrib_element,
+            {
+              "ext-link-type" => "uri",
+              "specific-use" => "umptg_fulcrum_resource_css_stylesheet_link",
+              "xlink:href" => css_link
+            }
+            )
+        add_ext_link(
+            attrib_element,
+            {
+              "ext-link-type" => "uri",
+              "specific-use" => "umptg_fulcrum_resource_embed_link",
+              "xlink:href" => embed_link
+            }
+            )
+
+        alt_element = add_element("alternatives", attrib_element)
+        add_element(
+              "preformat",
+              alt_element,
+              noid,
+              {
+                  "specific-use" => "umptg_fulcrum_resource_identifier",
+                  "position" => "anchor"
+              }
+              )
+        add_element_unless_no_content(
+                "preformat",
+                alt_element,
+                title,
+                {
+                    "specific-use" => "umptg_fulcrum_resource_title",
+                    "position" => "anchor"
+                }
+                )
+        return media_element.to_xml
+      end
+    end
+
     private
 
     def parse_isbns(isbns_property)
@@ -256,6 +405,30 @@ module UMPTG::Fulcrum::Manifest
         end
       end
       return isbn_format
+    end
+
+    def add_element(elemName, parentElem, content = '', attrs = {})
+      child_elem = parentElem.document.create_element(elemName)
+      parentElem.add_child(child_elem)
+      unless content.strip.empty?
+        #child_elem.content = content
+        nl = child_elem.parse(content)
+        child_elem.add_child(nl)
+      end
+
+      attrs.each do |attrName,attrValue|
+        child_elem[attrName] = attrValue unless attrValue.strip.empty?
+      end
+      return child_elem
+    end
+
+    def add_element_unless_no_content(elemName, parentElem, content = '', attrs = {})
+      return add_element(elemName, parentElem, content, attrs) \
+            unless content.strip.empty?
+    end
+
+    def add_ext_link(parentElem, attrs = {})
+      return add_element("ext-link", parentElem, '', attrs)
     end
   end
 
