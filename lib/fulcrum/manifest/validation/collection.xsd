@@ -443,6 +443,7 @@
     <xs:element name="external_resource" type="type_fileset_external_resource"/>
     <xs:element name="image" type="type_fileset_resource"/>
     <xs:element name="interactive_map" type="type_fileset_resource"/>
+    <xs:element name="interactive_application" type="type_fileset_resource"/>
     <xs:element name="map" type="type_fileset_resource"/>
     <xs:element name="model3d" type="type_fileset_resource"/>
     <xs:element name="musical_example" type="type_fileset_resource"/>
@@ -1072,6 +1073,7 @@
             <xs:element ref="external_resource"/>
             <xs:element ref="image"/>
             <xs:element ref="interactive_map"/>
+            <xs:element ref="interactive_application"/>
             <xs:element ref="map"/>
             <xs:element ref="model3d"/>
             <xs:element ref="musical_example"/>
