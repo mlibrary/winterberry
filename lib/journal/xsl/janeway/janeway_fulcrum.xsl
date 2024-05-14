@@ -23,7 +23,13 @@
         <xsl:variable name="identifier" select="$fulcrum_elem/*[local-name()='alternatives']/*[@specific-use='umptg_fulcrum_resource_identifier']"/>
         <xsl:variable name="title" select="$fulcrum_elem/*[local-name()='alternatives']/*[@specific-use='umptg_fulcrum_resource_title']"/>
 
-        <div class="media" data-doi="{$data-doi}">
+        <xsl:element name="div">
+            <xsl:attribute name="class">
+                <xsl:value-of select="'media'"/>
+            </xsl:attribute>
+            <xsl:attribute name="data-doi">
+                <xsl:value-of select="$data-doi"/>
+            </xsl:attribute>
             <xsl:element name="link">
                 <xsl:attribute name="href">
                     <xsl:value-of select="$css_link"/>
@@ -60,16 +66,6 @@
                 </xsl:element>
             </xsl:element>
             <xsl:apply-templates select="*[local-name()!='attrib' or @specific-use!='umptg_fulcrum_resource']"/>
-        </div>
-    </xsl:template>
-
-    <!--
-    <xsl:template match="table-wrap//caption/title">
-        <xsl:element name="span">
-            <xsl:attribute name="class"><xsl:value-of select="'caption-title'"/></xsl:attribute>
-            <xsl:apply-templates/>
         </xsl:element>
     </xsl:template>
-    -->
-
 </xsl:stylesheet>
