@@ -162,11 +162,26 @@ module UMPTG::Fulcrum::Manifest
         }
     end
 
+    # Method returns the file name for a resource.
+    def fileset_file_name(file_name)
+      fileset = fileset(file_name)
+      fname = fileset['file_name']
+      return fname.nil? ? "" : fname
+    end
+
     # Method returns the caption for a resource.
     def fileset_caption(file_name)
       fileset = fileset(file_name)
       caption = fileset['caption']
       caption = fileset['title'] if caption.nil? or caption.strip.empty?
+      caption = "" if caption.nil? or caption.strip.empty?
+      return caption
+    end
+
+    # Method returns the caption for a resource.
+    def fileset_title(file_name)
+      fileset = fileset(file_name)
+      caption = fileset['title']
       caption = "" if caption.nil? or caption.strip.empty?
       return caption
     end
@@ -207,7 +222,8 @@ module UMPTG::Fulcrum::Manifest
 =end
       unless noid.empty?
         link = doi
-        link = fileset["link"][12..-3] if link.nil? or link.empty?
+        link = fileset["handle"] if link.nil? or link.strip.empty?
+        link = fileset["link"][12..-3] if link.nil? or link.strip.empty?
         link_markup = "<a href=\"#{link}\" target=\"_blank\">#{descr}</a>"
       end
       return link_markup

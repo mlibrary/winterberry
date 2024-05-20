@@ -1,0 +1,98 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Test script for embedding resource links
+
+require 'optparse'
+require 'ostruct'
+require 'os'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+# Process the script parameters.
+options = OpenStruct.new
+options.manifest_file = nil
+options.normalize = false
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-n] [-m manifest_file] xml_file [xml_file...]"
+  opts.on('-m', '--manifest manifest_file', 'Resource manifest file') do |manifest_file|
+    options.manifest_file = manifest_file
+  end
+  opts.on('-n', '--normalize', 'Use which link as resource') do |flag|
+    options.normalize = true
+  end
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    script_logger.info(opts)
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  script_logger.info(option_parser.help)
+  return
+end
+
+# Process the command line parameters.
+xml_file_list = ARGV
+
+require_relative File.join(root_dir, "lib", "fulcrum")
+require_relative File.join(root_dir, "lib", "xml", "pipeline")
+
+manifest = nil
+unless options.manifest_file.nil?
+  manifest_file = File.expand_path(options.manifest_file)
+  unless File.file?(manifest_file)
+    script_logger.error("#{manifest_file} is not a file.")
+    exit 1
+  end
+  manifest = UMPTG::Fulcrum::Manifest::Document.new(
+        csv_file: manifest_file
+      )
+end
+raise "no valid manifest specified" if manifest.nil?
+#raise "no NOID column" unless manifest.headers.include?("noid")
+
+fixer_processor = UMPTG::Fulcrum::XResources::Processor.new(
+      name: "Fixer",
+      manifest: manifest,
+      options: {
+        embed_link: true
+      }
+    )
+
+xml_file_list.each do |xml_file|
+  xml_file = File.expand_path(xml_file)
+  unless File.file?(xml_file)
+    script_logger.error("invalid XML file #{xml_file}")
+    next
+  end
+  script_logger.info("processing XML file #{File.basename(xml_file)}")
+
+  xml_doc = Nokogiri::XML(File.read(xml_file))
+
+  logger_file =  File.join(
+            File.dirname(xml_file),
+            File.basename(xml_file, ".*") + "_" + File.basename(__FILE__) + ".log"
+            )
+  fixer_processor.logger = UMPTG::Logger.create(logger_file: logger_file)
+  fixer_processor.logger.info("Processing XML file #{File.basename(xml_file)}")
+  fixer_processor.run(
+        xml_doc,
+        {
+            normalize: options.normalize
+        }
+      )
+
+  new_xml_file = File.join(
+          File.dirname(xml_file),
+          File.basename(xml_file, ".*") + "_" + File.basename(__FILE__) + File.extname(xml_file)
+          )
+  UMPTG::XML.save(xml_doc, new_xml_file)
+  script_logger.info("Saved #{new_xml_file}.")
+end
