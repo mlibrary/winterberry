@@ -5,9 +5,7 @@ module UMPTG::Fulcrum::XResources
     def initialize(args = {})
       a = args.clone
       a[:filters] = {
-            embed_link: Filter::EmbedLinkFilter.new(
-                  manifest: args[:manifest]
-                )
+            embed_link: Filter::EmbedLinkFilter.new(args)
           }
       super(a)
     end
