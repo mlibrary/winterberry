@@ -181,7 +181,16 @@ doi_report_file_list.each do |doi_report_file|
         script_logger.warn("manifest ISBNs not found for #{monograph_id}.") \
               if bnode_list.empty?
       end
+
+      avoid_dups = {}
       bnode_list.each do |bn|
+        bookkey = bn.xpath("./*[local-name()='bookkey']").first.content
+        if avoid_dups.key?(bookkey)
+          script_logger.warn("duplicate found #{bookkey}, skipping")
+          next
+        end
+        avoid_dups[bookkey] = bn
+
         book_node_list << bn
 
         case options.monograph_link
