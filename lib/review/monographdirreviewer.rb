@@ -71,26 +71,13 @@ module UMPTG::Review
           return
         end
 
-        resources_manifest = nil
-        csv_path = File.join(@monograph_dir.resources_dir, "manifest.csv")
-        unless File.exist?(csv_path)
-          if @monograph_dir.isbn.nil?
-            @review_logger.error("no ISBN for id #{@monograph_dir.monograph_id}.")
-            return
-          end
-
-          csv_path_list = Dir.glob(File.join(@monograph_dir.resources_dir, @monograph_dir.isbn + "*.csv"))
-          if csv_path_list.empty?
-            @review_logger.warn("no resources CSV for id #{@monograph_dir.monograph_id}.")
-            return
-          else
-            @review_logger.warn("multiple resources CSV found for id #{@monograph_dir.monograph_id}") \
-                if csv_path_list.count > 1
-            csv_path = csv_path_list.first
-            @review_logger.info("using resources directory CSV #{File.basename(csv_path)}.")
-          end
+        resources_manifest = @monograph_dir.fmsl
+        if resources_manifest.nil?
+          @review_logger.warn("no resources CSV for id #{@monograph_dir.monograph_id}.")
+          return
         end
-        resources_manifest = UMPTG::Fulcrum::Manifest::Document.new(csv_file: csv_path)
+        csv_path = @monograph_dir.fmsl_file
+        @review_logger.info("using resources directory CSV #{File.basename(csv_path)}.")
 
         total_references = 0
         epub_reviewer.resource_path_list.each do |entry_name,path_list|

@@ -99,15 +99,29 @@ module UMPTG::Fulcrum
         # Find the monograph processing directory and insure that it exists.
         @processing_dir = File.join(@monograph_dir, "resource_processing")
 
+        # If the resource Fulcrum metadata CSV exists, then load it.
         if @fmsl.nil?
-          @fmsl_file = Dir.glob(File.join(@resources_dir, "*.csv")).first
-          if File.file?(@fmsl_file)
+          @fmsl_file = File.join(@resources_dir, "manifest.csv")
+          unless File.file?(@fmsl_file)
+            @fmsl_file = nil
+            path_list = Dir.glob(File.join(@resources_dir, "*.csv"))
+            if path_list.empty?
+              @logger.warn("no resources CSV for id #{@monograph_id}.")
+            else
+              @fmsl_file = path_list.first
+              @logger.warn("multiple resources CSV found for id #{@monograph_id}.") \
+                    if path_list.count > 1
+              @logger.warn("using CSV #{File.basename(@fmsl_file)}")
+            end
+          end
+
+          if @fmsl_file.nil? or !File.file?(@fmsl_file)
+            @logger.warn("no manifest file found")
+          else
             @fmsl = UMPTG::Fulcrum::Manifest::Document.new(
                         csv_file: @fmsl_file,
                         convert_headers: false
                     )
-          else
-            @logger.warn("no manifest file found")
           end
         end
 
