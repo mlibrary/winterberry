@@ -5,8 +5,10 @@ module UMPTG::Fulcrum::Metadata::Filters
     RESOURCE_XPATH = <<-SXPATH
     //*[
     local-name()='figure' and count(descendant::*[local-name()='figure'])=0
-    ] | *[
+    ] | //*[
     local-name()='img' and count(ancestor::*[local-name()='figure'])=0
+    ] | //*[
+    @data-fulcrum-embed-filename and local-name()!='figure'
     ]
     SXPATH
 
@@ -26,10 +28,19 @@ module UMPTG::Fulcrum::Metadata::Filters
       reference_node = a[:reference_node]
 
       action_list = []
-      action_list << UMPTG::Fulcrum::Metadata::Actions::FigureAction.new(
-          name: args[:name],
-          reference_node: reference_node
-          )
+      if reference_node.key?("data-fulcrum-embed-filename")
+        action = UMPTG::Fulcrum::Metadata::Actions::MarkerAction.new(
+                             name: args[:name],
+                             reference_node: reference_node
+                             )
+      else
+        action = UMPTG::Fulcrum::Metadata::Actions::FigureAction.new(
+            name: args[:name],
+            reference_node: reference_node
+            )
+      end
+
+      action_list << action
       return action_list
     end
   end

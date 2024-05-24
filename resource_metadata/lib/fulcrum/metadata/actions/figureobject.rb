@@ -6,7 +6,7 @@ module UMPTG::Fulcrum::Metadata::Actions
   # the base to include the figure caption and associated
   # resource name.
   class FigureObject < MarkerObject
-    attr_accessor :alt_text, :caption_text
+    attr_accessor :caption_text
 
     # Arguments:
     #   :node         XML fragment node, @src contains resource name.
@@ -30,8 +30,6 @@ module UMPTG::Fulcrum::Metadata::Actions
       @caption = @properties[:caption]
       @caption_text = @caption.nil? ? "" : \
             @caption.text.strip.gsub(/[\n]+/, ' ')
-
-      @alt_text = @node.has_attribute?("alt") ? @node["alt"] : ""
     end
   end
 end

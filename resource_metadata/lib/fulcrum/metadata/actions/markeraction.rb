@@ -14,7 +14,7 @@ module UMPTG::Fulcrum::Metadata::Actions
       # then use it value. Otherwise use the
       # element content.
       rnames = []
-      if (@node.name == "figure" or @node.name == "span") and @node.key?("data-fulcrum-embed-filename")
+      if @node.key?("data-fulcrum-embed-filename")
         rnames << @node["data-fulcrum-embed-filename"]
       else
         comment = @node.xpath(".//comment()")
@@ -54,6 +54,10 @@ module UMPTG::Fulcrum::Metadata::Actions
                 caption: caption
               )
         olist << marker
+      end
+
+      olist.each do |o|
+        add_info_msg("found reference for resource #{o.resource_name}")
       end
 
       # Attach the list of Marker objects to this action

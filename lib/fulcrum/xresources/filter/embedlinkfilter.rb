@@ -41,7 +41,6 @@ module UMPTG::Fulcrum::XResources::Filter
       args[:name] = :embed_link unless args.key?(:name)
       process_figures = args[:process_figures]
       process_figures = true if process_figures.nil?
-puts "process_figures:#{process_figures}"
       args[:xpath] = process_figures ? FIGURE_EMBED_XPATH : EMBED_XPATH
       super(args)
     end

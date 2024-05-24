@@ -190,10 +190,11 @@ module UMPTG::Fulcrum::Manifest
     def fileset_link(file_name)
       fileset = fileset(file_name)
       noid = fileset["noid"]
+      file_name = fileset['file_name']
       doi = fileset["doi"]
 
       link = ""
-      unless noid.empty?
+      unless file_name.empty?
         link = doi
         link = fileset["link"][12..-3] if link.nil? or link.empty?
       end
@@ -209,18 +210,11 @@ module UMPTG::Fulcrum::Manifest
 
       link_markup = ""
       fileset = fileset(file_name)
-      noid = fileset["noid"]
+      file_name = fileset["file_name"]
       doi = fileset["doi"]
+      doi = doi.start_with?("http:", "https:") ? doi : "https://doi.org/" + doi
 
-=begin
-# For testing with Fulcrum metadata CSV instead of mongraph manifest.
-      if noid.nil?
-        noid = File.basename(file_name, ".*") + "_noid"
-        doi = "https://doi.org/10.3998/mpub.#{noid}"
-      end
-#
-=end
-      unless noid.empty?
+      unless file_name.empty?
         link = doi
         link = fileset["handle"] if link.nil? or link.strip.empty?
         link = fileset["link"][12..-3] if link.nil? or link.strip.empty?
@@ -235,8 +229,9 @@ module UMPTG::Fulcrum::Manifest
       fileset = fileset(file_name)
       #emb_markup = fileset["embed_code"] unless fileset["noid"].empty?
       noid = fileset["noid"]
+      file_name = fileset["file_name"]
       embed_markup = ""
-      unless noid.empty?
+      unless file_name.empty?
         # Found fileset. Determine the embed link from the
         # "Embed Code" property. This will give the correct host.
         # If fileset has no property, then it can't be embedded.
@@ -275,9 +270,10 @@ module UMPTG::Fulcrum::Manifest
       fileset = fileset(file_name)
       #emb_markup = fileset["embed_code"] unless fileset["noid"].empty?
       noid = fileset["noid"]
+      file_name = fileset["file_name"]
       embed_markup = ""
 
-      unless noid.empty?
+      unless file_name.empty?
         embed_markup = fileset['embed_code']
         unless embed_markup.nil? or embed_markup.empty?
           embed_doc = Nokogiri::XML::DocumentFragment.parse(embed_markup)
