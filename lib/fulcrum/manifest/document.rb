@@ -186,6 +186,15 @@ module UMPTG::Fulcrum::Manifest
       return caption
     end
 
+    # Method returns the Allow Download for a resource.
+    def fileset_allow_download(file_name)
+      fileset = fileset(file_name)
+      allow_download = fileset['allow_download?']
+      return false if allow_download.nil? or allow_download.strip.empty?
+      allow_download = allow_download.strip.downcase
+      return (allow_download == "true" or allow_download == "yes")
+    end
+
     # Method returns the link for a resource.
     def fileset_link(file_name, args = {})
       download = args.key?(:download) ? args[:download] : false

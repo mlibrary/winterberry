@@ -205,7 +205,7 @@ module UMPTG::Fulcrum::XResources::Filter
                 resource_name,
                 {
                     description: content,
-                    download: true
+                    download: manifest.fileset_allow_download(resource_name)
                 }
               )
       else
