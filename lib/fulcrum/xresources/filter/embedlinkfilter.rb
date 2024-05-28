@@ -199,7 +199,18 @@ module UMPTG::Fulcrum::XResources::Filter
       else
         content = node.inner_html
       end
-      markup = link == "true" ? manifest.fileset_link_markup(resource_name, content) : content
+
+      if link == "true"
+        markup = manifest.fileset_link_markup(
+                resource_name,
+                {
+                    description: content,
+                    download: true
+                }
+              )
+      else
+        markup = content
+      end
 
       node.remove_attribute("data-fulcrum-embed-filename")
       node.remove_attribute("data-fulcrum-embed-caption-field")

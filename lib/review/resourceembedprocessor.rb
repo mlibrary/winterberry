@@ -64,8 +64,12 @@ module UMPTG::Review
                       )
           end
         when :link
-          link_markup = @manifest.fileset_link_markup(reference_action_def.resource_name, \
-                    reference_node.inner_html)
+          link_markup = @manifest.fileset_link_markup(
+                    reference_action_def.resource_name,
+                    {
+                      description: reference_node.inner_html
+                    }
+                  )
           reference_action_list << LinkElementAction.new(
                        name: name,
                        reference_node: reference_node,

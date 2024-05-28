@@ -103,7 +103,12 @@ class CaptionURLFilter < UMPTG::XML::Pipeline::Filter
       markup = nil
     else
       node_markup = reference_node.inner_html
-      link_markup = manifest.fileset_link_markup(fname, node_markup)
+      link_markup = manifest.fileset_link_markup(
+                fname,
+                {
+                  description: node_markup
+                }
+              )
       markup =  '<p class="enhanced-media-display">' + node_markup + '</p>'
       markup += '<p class="default-media-display">' + link_markup + '</p>'
     end

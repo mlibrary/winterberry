@@ -187,7 +187,9 @@ module UMPTG::Fulcrum::Manifest
     end
 
     # Method returns the link for a resource.
-    def fileset_link(file_name)
+    def fileset_link(file_name, args = {})
+      download = args.key?(:download) ? args[:download] : false
+
       fileset = fileset(file_name)
       noid = fileset["noid"]
       file_name = fileset['file_name']
@@ -195,8 +197,15 @@ module UMPTG::Fulcrum::Manifest
 
       link = ""
       unless file_name.empty?
-        link = doi
-        link = fileset["link"][12..-3] if link.nil? or link.empty?
+        if download
+          link = doi + "?urlappend=%3fdownload=true" unless doi.nil? or doi.strip.empty?
+          link = fileset["handle"] if link.empty?
+          link = "https://www.fulcrum.org/downloads/#{noid}" if link.nil? or link.strip.empty?
+        else
+          link = doi
+          link = fileset["handle"] if link.nil? or link.strip.empty?
+          link = fileset["link"][12..-3] if link.nil? or link.strip.empty?
+        end
       end
       return link
     end
@@ -205,22 +214,12 @@ module UMPTG::Fulcrum::Manifest
     #
     # Parameter:
     #   descr           Text to include within the link
-    def fileset_link_markup(file_name, descr = nil)
-      descr = fileset_caption(file_name) if descr == nil
+    def fileset_link_markup(file_name, args = {})
+      descr = args[:description]
+      descr = fileset_caption(file_name) if descr.nil?
 
-      link_markup = ""
-      fileset = fileset(file_name)
-      file_name = fileset["file_name"]
-      doi = fileset["doi"]
-      doi = doi.start_with?("http:", "https:") ? doi : "https://doi.org/" + doi
-
-      unless file_name.empty?
-        link = doi
-        link = fileset["handle"] if link.nil? or link.strip.empty?
-        link = fileset["link"][12..-3] if link.nil? or link.strip.empty?
-        link_markup = "<a href=\"#{link}\" target=\"_blank\">#{descr}</a>"
-      end
-      return link_markup
+      link = fileset_link(file_name, args)
+      return link.empty? ? "" : "<a href=\"#{link}\" target=\"_blank\">#{descr}</a>"
     end
 
     # Method generates the XML markup for embedding
