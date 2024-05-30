@@ -182,15 +182,7 @@ doi_report_file_list.each do |doi_report_file|
               if bnode_list.empty?
       end
 
-      avoid_dups = {}
       bnode_list.each do |bn|
-        bookkey = bn.xpath("./*[local-name()='bookkey']").first.content
-        if avoid_dups.key?(bookkey)
-          script_logger.warn("duplicate found #{bookkey}, skipping")
-          next
-        end
-        avoid_dups[bookkey] = bn
-
         book_node_list << bn
 
         case options.monograph_link
@@ -219,11 +211,29 @@ doi_report_file_list.each do |doi_report_file|
     next
   end
 
+  avoid_dups = {}
   crossref_doc = Nokogiri::XML('<?xml version="1.0" encoding="utf-8"?><root></root>')
   root_node = crossref_doc.first_element_child
   book_node_list.each do |book_node|
+    bookkey = book_node.xpath("./*[local-name()='bookkey']").first.content
+    if avoid_dups.key?(bookkey)
+      avoid_dups[bookkey] << book_node
+      script_logger.warn("duplicate found #{bookkey}, skipping")
+      next
+    end
+    avoid_dups[bookkey] = [book_node]
+
     root_node.add_child(book_node)
   end
+
+  num_dups = 0
+  avoid_dups.each do |k,v|
+    if v.count > 1
+      script_logger.warn("found #{v.count} duplicates for key #{k}.")
+      num_dups += 1
+    end
+  end
+  script_logger.warn("found #{num_dups} total duplicates.")
 
   # Determine if there are any nodes to exclude
   exclude_list = []

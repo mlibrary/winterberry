@@ -1,0 +1,61 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Test script for reading file first char
+
+require 'optparse'
+require 'ostruct'
+require 'os'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+# Process the script parameters.
+options = OpenStruct.new
+options.manifest_file = nil
+options.normalize = false
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-n] xml_file [xml_file...]"
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    script_logger.info(opts)
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  script_logger.info(option_parser.help)
+  return
+end
+
+# Process the command line parameters.
+xml_file_list = ARGV
+
+require 'nokogiri'
+
+xml_file_list.each do |xml_file|
+  xml_file = File.expand_path(xml_file)
+  unless File.file?(xml_file)
+    script_logger.error("invalid XML file #{xml_file}")
+    next
+  end
+  script_logger.info("processing XML file #{File.basename(xml_file)}")
+
+  xml_fp = File.open(xml_file)
+  a2 = xml_fp.read(15)
+  xml_fp.rewind
+  puts "a2,#{a2.length}:#{a2}"
+
+  a = []
+  xml_fp.each_byte {|b| a << b}
+  #puts "0:#{a[0..14]}"
+  line = a[0..14].map { |b| sprintf(", 0x%02X",b) }.join
+  puts line
+
+  #xml_doc = Nokogiri::XML(File.read(xml_file))
+  xml_fp.close
+end
