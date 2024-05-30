@@ -428,6 +428,23 @@ File.open(cmds_file, "w") do |fp|
     fp.puts "bundle exec ruby bin/restrict_items.rb -f #{comp_file} -p #{product} >& #{greensub_task_dir}/restrict_items_#{product}.log"
     fp.puts
   end
+
+  fp.puts "# DOI Submission"
+  includes_file = File.join(task_dir, "doi_submission_includes.csv")
+  File.open(includes_file, "w") do |f|
+    f.puts "ISBN"
+    f.puts monograph_info.keys.join("\n")
+  end
+  tocrossref_dir = File.join(fulcrum_dir, "TMMDataTransfer", "ToCrossref")
+  tocrossref_pattern = press_dir[options.press].downcase == "mps" ? \
+          File.join(tocrossref_dir, "*_MPS.xml") : \
+          File.join(tocrossref_dir, "*_UMPRE.xml")
+  src_tocrossref_file = Dir.glob(tocrossref_pattern).last
+  dest_tocrossref_file = File.join(task_dir, File.basename(src_tocrossref_file))
+  fp.puts "bundle exec ruby script/crossref_generate -l fulcrum -i #{includes_file.gsub(' ', '\ ')} #{dest_tocrossref_file.gsub(' ', '\ ')}"
+  FileUtils.copy(src_tocrossref_file, dest_tocrossref_file)
+  fp.puts
+
   fp.puts "# Rails console"
   fp.puts "bundle exec rails console"
   fp.puts
