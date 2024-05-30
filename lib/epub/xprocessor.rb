@@ -31,7 +31,7 @@ module UMPTG::EPUB
       entry_actions = []
 
       # Process the EPUB OPF if that filter is provided.
-      filters = @xml_processor.filters
+      filters = @xml_processor.filters.clone
       opf_filter = filters.select {|f| f.name == :package }.first
       unless opf_filter.nil?
         xml_doc = UMPTG::XML.parse(xml_content: epub.opf.content)

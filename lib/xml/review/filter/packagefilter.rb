@@ -86,10 +86,22 @@ module UMPTG::XML::Review::Filter
     def run(xml_doc, args = {})
       act = super(xml_doc, args)
 
+      actions = []
+      epub_version = xml_doc.root["version"]
+      new_act = UMPTG::XML::Pipeline::Action.new(reference_node: xml_doc.root)
+      actions << new_act
+      case
+      when epub_version.nil?
+        new_act.add_info_msg("EPUB version not present.")
+      when epub_version.strip[0] == "2"
+        new_act.add_warning_msg("EPUB version #{epub_version}.")
+      else
+        new_act.add_info_msg("EPUB version #{epub_version}.")
+      end
+
       metadata_node = xml_doc.xpath("//*[local-name()='metadata']").first
       return act if metadata_node.nil?
 
-      actions = []
       @child_elements.each do |elem|
         alist = act.select do |a|
           element_name = a.reference_node.namespace.prefix ?
