@@ -43,27 +43,27 @@ module UMPTG::Review
                     )
 
             child_list = container_node.xpath(@child_xpath)
+            element_exist = @child_elements.to_h {|x| [x,nil]}
             unless child_list.empty?
-              element_exist = @selection_elements.to_h {|x| [x,nil]}
               child_list.each do |child_node|
                 element_name = child_node.namespace.prefix ?
                     "#{child_node.namespace.prefix}:#{child_node.name}" : child_node.name
                 element_exist[element_name] = child_node
               end
+            end
 
-              element_exist.each do |e,n|
-                list = new_action(
-                          name: name,
-                          reference_node: n,
-                          container_node: container_node
-                        )
-                if n.nil?
-                  list.first.add_warning_msg("#{container_name} #{container_id}: element #{e} not found.")
-                else
-                  list.first.add_info_msg("#{container_name} #{container_id}: element #{e} found.")
-                end
-                reference_action_list += list
+            element_exist.each do |e,n|
+              list = new_action(
+                        name: name,
+                        reference_node: n,
+                        container_node: container_node
+                      )
+              if n.nil?
+                list.first.add_warning_msg("#{container_name} #{container_id}: element #{e} not found.")
+              else
+                list.first.add_info_msg("#{container_name} #{container_id}: element #{e} found.")
               end
+              reference_action_list += list
             end
           end
         end
