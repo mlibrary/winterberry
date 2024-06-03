@@ -1,0 +1,183 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Test script for embedding resource links
+
+require 'optparse'
+require 'ostruct'
+require 'os'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+# Process the script parameters.
+options = OpenStruct.new
+options.manifest_file = nil
+options.normalize = false
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} epub_file [epub_file...]"
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    script_logger.info(opts)
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  script_logger.info(option_parser.help)
+  return
+end
+
+# Process the command line parameters.
+epub_file_list = ARGV
+
+require_relative File.join(root_dir, "lib", "epub")
+
+TEMPLATE_FILE = File.join(root_dir, "fops0275", "template.xhtml")
+
+EXCLUDE_XPATH = <<-EXPATH
+//*[
+@epub:type='pagebreak'
+] | //*[
+local-name()!='section' and @class
+] | //*[
+local-name()='a' and @href
+]
+EXPATH
+
+SECTION_EXCLUDE_XPATH = <<-EXPATH
+.//*[
+@epub:type='pagebreak'
+] | .//*[
+local-name()!='section' and @class
+]
+EXPATH
+
+exclude_sections = [
+        "cover",
+        "halftitlepage",
+        "titlepage",
+        "copyright-page",
+        "toc",
+        "frontmatter"
+    ]
+epub_file_list.each do |epub_file|
+  unless File.file?(epub_file)
+    script_logger.error("invalid EPUB file #{epub_file}")
+    next
+  end
+  script_logger.info("processing EPUB file #{File.basename(epub_file)}")
+
+  logger_file =  File.join(
+            File.dirname(epub_file),
+            File.basename(epub_file, ".*") + "_" + File.basename(__FILE__) + ".log"
+            )
+  file_logger = UMPTG::Logger.create(logger_file: logger_file)
+
+  epub = UMPTG::EPUB::Archive.new(epub_file: epub_file)
+
+  template_doc = UMPTG::XML.parse(xml_file: TEMPLATE_FILE)
+  template_body_node = template_doc.xpath("//*[local-name()='body']").first
+
+  epub_title = epub.metadata["title"]
+  epub_title = epub_title.nil? ? "" : epub_title
+  unless epub_title.empty?
+    title_node = template_doc.xpath("//*[local-name()='head']/*[local-name()='title']").first
+    unless title_node.nil?
+      file_logger.info("adding title #{epub_title}")
+      title_node.content = epub_title
+    end
+  end
+
+  id_map = {}
+  full_id_map = {}
+  epub.spine.each_index do |ndx|
+    entry = epub.spine[ndx]
+
+    xml_doc = UMPTG::XML.parse(xml_content: entry.content)
+    body_node = xml_doc.xpath("//*[local-name()='body']").first
+
+    section_node = body_node.xpath("./*[local-name()='section'][1]").first
+    unless section_node.nil?
+      section_type = section_node["epub:type"]
+      if exclude_sections.include?(section_type)
+        t = section_type.nil? ? "(empty)" : section_type
+        file_logger.info("skipping entry #{entry.name}, type:#{t}")
+        next
+      end
+    end
+    file_logger.info("merging entry #{entry.name}, type:#{section_type}")
+
+    entry_base_name = entry.name.split('/').last
+    body_node.xpath(".//*[@id]").each do |n|
+      id = n["id"]
+      next if id.nil? or id.strip.empty?
+
+      full_id = entry_base_name + "#" + id
+      new_id = "sect#{ndx}_#{id}"
+      full_id_map[full_id] = new_id
+      id_map[id] = new_id
+      n["id"] = new_id
+      file_logger.info("replaced @id #{id} with #{new_id}")
+    end
+
+    template_body_node.add_child(body_node.inner_html)
+  end
+
+  full_id_map.each do |k,v|
+    x = ".//*[@href='#{k}']"
+    file_logger.info("searching for @href #{k},count:#{template_body_node.xpath(x).count},#{x}")
+    template_body_node.xpath(x).each do |n|
+      if n.key?("href")
+        href = n["href"]
+        n["href"] = "#" + v
+        file_logger.info("replaced @href #{href} with #{v}")
+      end
+    end
+  end
+
+  id_map.each do |k,v|
+    x = ".//*[@aria-labelledby='#{k}']"
+    file_logger.info("searching for @aria-labelledby #{k},count:#{template_body_node.xpath(x).count},#{x}")
+    template_body_node.xpath(x).each do |n|
+      if n.key?("aria-labelledby")
+        href = n["aria-labelledby"]
+        n["aria-labelledby"] = v
+        file_logger.info("replaced @aria-labelledby #{href} with #{v}")
+      end
+    end
+  end
+
+  sections = template_body_node.xpath("./*[local-name()='section']")
+  sections.each do |section_node|
+    exlude_nodes = section_node.xpath(SECTION_EXCLUDE_XPATH)
+    exlude_nodes.each do |n|
+      epub_type = n["epub:type"]
+
+=begin
+      if epub_type == 'pagebreak'
+        file_logger.info("removing node type:#{epub_type}")
+        n.remove
+        next
+      end
+=end
+      if n.key?("class")
+        file_logger.info("removing @class:#{n['class']}")
+        n.remove_attribute("class")
+      end
+    end
+  end
+
+  merged_epub_file = File.join(
+            File.dirname(epub_file),
+            File.basename(epub_file, ".*") + "_" + File.basename(__FILE__) + ".xhtml"
+            )
+
+  UMPTG::XML.save(template_doc, merged_epub_file)
+  file_logger.info("Saved #{merged_epub_file}.")
+  script_logger.info("Saved #{merged_epub_file}.")
+end
