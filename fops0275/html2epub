@@ -1,0 +1,359 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Test script for embedding resource links
+
+require 'optparse'
+require 'ostruct'
+require 'os'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+# Process the script parameters.
+options = OpenStruct.new
+options.manifest_file = nil
+options.normalize = false
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} xml_file [xml_file...]"
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    script_logger.info(opts)
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  script_logger.info(option_parser.help)
+  return
+end
+
+# Process the command line parameters.
+xml_file_list = ARGV
+
+require_relative File.join(root_dir, "lib", "epub")
+
+TEMPLATE_FILE = File.join(root_dir, "fops0275", "template.xhtml")
+CSS_FILE = File.join(root_dir, "fops0275", "default.css")
+
+FRONTMATTER_SECTION_XML =  <<-FXML
+<section class="chapter" id="%s" aria-labelledby="%s" epub:type="%s">
+<header id="%s"><h1 class="ctfm">%s</h1></header>
+</section>
+FXML
+
+COVER_SECTION_XML =  <<-FXML
+<section class="chapter" id="%s" epub:type="%s">
+<div class="cover">
+<p class="fig"><img alt="%s" role="doc-cover" src="%s"/></p>
+</div>
+</section>
+FXML
+
+class Entry < UMPTG::Object
+  attr_reader :name, :doc
+
+  def initialize(args = {})
+    super(args)
+    @name = @properties[:name]
+    @doc = @properties[:doc]
+  end
+end
+
+xml_file_list.each do |xml_file|
+  unless File.file?(xml_file)
+    script_logger.error("invalid EPUB file #{xml_file}")
+    next
+  end
+  script_logger.info("processing EPUB file #{File.basename(xml_file)}")
+
+  xml_doc = UMPTG::XML.parse(xml_file: xml_file)
+
+  epub = UMPTG::EPUB::Archive.new
+
+  epub.add(
+      entry_name: "OEBPS/default.css",
+      entry_content: File.read(CSS_FILE),
+      media_type: "text/css"
+    )
+
+  doc_title_node = xml_doc.xpath("//*[local-name()='head']/*[local-name()='title']")
+  doc_title = doc_title_node.nil? ? "unknown title" : doc_title_node.text
+
+  opf_metadata_node = epub.opf_doc.root.xpath("./*[local-name()='metadata']").first
+  unless opf_metadata_node.nil?
+    opf_metadata_node.add_child("<dc:title>#{doc_title}</dc:title>")
+    opf_metadata_node.add_child("<dc:language>en</dc:language>")
+
+    mod_time = Time.now.strftime("%FT%H:%M:%SZ")
+    opf_metadata_node.add_child("<meta property=\"dcterms:modified\">#{mod_time}</meta>")
+  end
+
+  section_ctr = 0
+  entry_map = []
+  id_map = {}
+
+  # Cover page generated
+  cover_file = Dir.glob(File.join(File.dirname(xml_file), "images", "[Cc]over.*")).first
+  unless cover_file.nil?
+    section_ctr += 1
+    template_doc = UMPTG::XML.parse(xml_file: TEMPLATE_FILE)
+
+    title = "Cover"
+    epub_type = "frontmatter"
+
+    title_node = template_doc.xpath("//*[local-name()='head']/*[local-name()='title']").first
+    title_node.content = title
+
+    body_node = template_doc.xpath("//*[local-name()='body']").first
+    section_file_id = section_ctr.to_s.rjust(3, "0")
+
+    section_id = "sect#{section_file_id}_cover"
+    section_header_id = section_id + "_header"
+    section_node = body_node.add_child(sprintf(COVER_SECTION_XML, section_id, epub_type, "#{title}: #{doc_title}", cover_file.delete_prefix(File.dirname(xml_file))[1..-1])).first
+
+    entry_base_name = "#{section_file_id}_section.xhtml"
+    entry_name = "OEBPS/" + entry_base_name
+    e = Entry.new(name: entry_name, doc: template_doc)
+    entry_map << e
+  end
+
+  # Title page generated
+  section_ctr += 1
+  template_doc = UMPTG::XML.parse(xml_file: TEMPLATE_FILE)
+
+  title = "Title Page"
+  epub_type = "titlepage"
+
+  title_node = template_doc.xpath("//*[local-name()='head']/*[local-name()='title']").first
+  title_node.content = title
+
+  body_node = template_doc.xpath("//*[local-name()='body']").first
+  section_file_id = section_ctr.to_s.rjust(3, "0")
+
+  section_id = "sect#{section_file_id}_#{epub_type}"
+  section_header_id = section_id + "_header"
+  markup = sprintf('<section class="chapter" id="%s" aria-labelledby="%s" epub:type="%s"><h1 id="%s">%s</h1></section>', section_id, section_header_id, epub_type, section_header_id, doc_title)
+  body_node.add_child(markup)
+
+  entry_base_name = "#{section_file_id}_section.xhtml"
+  entry_name = "OEBPS/" + entry_base_name
+  e = Entry.new(name: entry_name, doc: template_doc)
+  entry_map << e
+
+  # TOC generated
+  section_ctr += 1
+  template_doc = UMPTG::XML.parse(xml_file: TEMPLATE_FILE)
+
+  title = "Contents"
+  epub_type = "toc"
+
+  title_node = template_doc.xpath("//*[local-name()='head']/*[local-name()='title']").first
+  title_node.content = title
+
+  body_node = template_doc.xpath("//*[local-name()='body']").first
+  section_file_id = section_ctr.to_s.rjust(3, "0")
+
+  section_id = "sect#{section_file_id}_#{epub_type}"
+  section_header_id = section_id + "_header"
+  section_node = body_node.add_child(sprintf(FRONTMATTER_SECTION_XML, section_id, section_header_id, epub_type, section_header_id, title)).first
+
+  entry_base_name = "#{section_file_id}_section.xhtml"
+  entry_name = "OEBPS/" + entry_base_name
+  e = Entry.new(name: entry_name, doc: template_doc)
+  entry_map << e
+  toc_entry = e
+
+  # List of Figures page generated
+  fig_nodes = xml_doc.xpath("//*[local-name()='figure']")
+  if fig_nodes.count > 0
+    section_ctr += 1
+    template_doc = UMPTG::XML.parse(xml_file: TEMPLATE_FILE)
+
+    title = "List of Figures"
+    epub_type = "frontmatter"
+
+    title_node = template_doc.xpath("//*[local-name()='head']/*[local-name()='title']").first
+    title_node.content = title
+
+    body_node = template_doc.xpath("//*[local-name()='body']").first
+    section_file_id = section_ctr.to_s.rjust(3, "0")
+    section_id = "sect#{section_file_id}_figures"
+    section_header_id = section_id + "_header"
+    section_node = body_node.add_child(sprintf(FRONTMATTER_SECTION_XML, section_id, section_header_id, epub_type, section_header_id, title)).first
+
+    fig_ctr = fig_nodes.count
+    fig_nodes.each do |fig_node|
+      fig_id = fig_node["id"]
+      if fig_id.nil? or fig_id.strip.empty?
+        fig_id = "fig#{fig_ctr}"
+        fig_ctr += 1
+        fig_node["id"] = fig_id
+        script_logger.warn("missing figure ID. Using ID #{fig_id}")
+      end
+      fig_href = "#" + fig_id
+
+      fig_caption_node = fig_node.xpath("./*[local-name()='figcaption']").first
+      fig_caption = fig_caption_node.nil? ? fig_caption = fig_id : fig_caption = fig_caption_node.text
+      markup = "<p class=\"tocill\"><a class=\"xref\" href=\"#{fig_href}\">#{fig_caption}</a></p>"
+      section_node.add_child(markup)
+    end
+
+    entry_base_name = "#{section_file_id}_section.xhtml"
+
+    entry_name = "OEBPS/" + entry_base_name
+    e = Entry.new(name: entry_name, doc: template_doc)
+    entry_map << e
+  end
+
+  xml_doc.xpath("//*[local-name()='body']/*[local-name()='section']").each do |section_node|
+    section_ctr += 1
+    epub_type = section_node['epub:type']
+    epub_type = epub_type.nil? ? "" : epub_type.strip
+
+    template_doc = UMPTG::XML.parse(xml_file: TEMPLATE_FILE)
+
+    title = ""
+    header_node = section_node.xpath("./*[local-name()='header' or local-name()='h1']").first
+    unless header_node.nil?
+      hn = header_node.dup(1)
+      hn.xpath(".//*[local-name()='span']").each {|n| n.remove}
+      title = hn.content.strip.gsub(/\s+/, " ")
+    end
+    unless title.empty?
+      title_node = template_doc.xpath("//*[local-name()='head']/*[local-name()='title']").first
+      unless title_node.nil?
+        script_logger.info("adding title #{title}")
+        title_node.content = title
+      end
+    end
+
+    template_body_node = template_doc.xpath("//*[local-name()='body']").first
+    template_body_node.add_child(section_node)
+
+    entry_base_name = "#{section_ctr.to_s.rjust(3, "0")}_section.xhtml"
+    entry_name = "OEBPS/" + entry_base_name
+
+    section_node.xpath("//*[@id]").each do |node|
+      id = node["id"]
+      id_map[id] = entry_base_name + "#" + id
+    end
+
+    e = Entry.new(name: entry_name, doc: template_doc)
+    entry_map << e
+  end
+
+  script_logger.info("updating IDs")
+  entry_map.each do |entry|
+    script_logger.info(entry.name)
+    body_node = entry.doc.xpath("//*[local-name()='body']").first
+    body_node.xpath(".//*[@href]").each do |n|
+      href = n["href"]
+      href_key = href[1..-1]
+      if href.start_with?('#') and id_map.key?(href_key)
+        new_href = id_map[href_key]
+        n["href"] = new_href
+        script_logger.info("replace @href #{href} with #{new_href}")
+      else
+        script_logger.warn("no replacement for @href #{href}") if href.start_with?("#")
+      end
+    end
+
+    body_node.xpath(".//*[@epub:type='pagebreak']").each {|n| n.inner_html = ""}
+  end
+
+  unless toc_entry.nil?
+    body_node = toc_entry.doc.xpath("//*[local-name()='body']").first
+
+    sctr = entry_map.count
+    entry_map.each do |entry|
+      section_node = entry.doc.xpath("//*[local-name()='body']/*[local-name()='section']").first
+      section_id = section_node["id"]
+      if section_id.nil? or section_id.strip.empty?
+        section_id = "sect#{sctr.to_s.rjust(3, "0")}"
+        section_node["id"] = section_id
+        script_logger.warn("missing ID for a TOC section. Using #{section_id}")
+      end
+
+      epub_type = section_node["epub:type"]
+      next if epub_type.nil? or epub_type.strip.empty?
+
+      title_node = entry.doc.xpath("//*[local-name()='head']/*[local-name()='title']").first
+      title = title_node.content.strip.gsub(/\s+/, " ")
+
+      unless title.empty?
+        case epub_type
+        when "frontmatter", "titlepage", "toc"
+          cls = "tocfm"
+        when "backmatter", "index"
+          cls = "tocbm"
+        else
+          cls = "toc"
+        end
+        href = File.basename(entry.name) + "#" + section_id
+        markup = "<p class=\"#{cls}\"><a class=\"xref\" href=\"#{href}\">#{title}</a></p>"
+        body_node.add_child(markup)
+        script_logger.info("adding TOC item #{entry.name}, #{title}")
+      end
+    end
+  end
+
+  entry_map.each do |entry|
+    section_node = entry.doc.xpath("//*[local-name()='body']/*[local-name()='section']").first
+    epub_type = section_node["epub:type"]
+
+    title = ""
+    unless epub_type.nil? or epub_type.strip.empty?
+      title_node = entry.doc.xpath("//*[local-name()='head']/*[local-name()='title']").first
+      title = title_node.content.strip.gsub(/\s+/, " ")
+    end
+
+    script_logger.info("adding entry #{entry.name}, #{title}")
+    epub.add(
+        entry_name: entry.name,
+        entry_content: UMPTG::XML.doc_to_xml(entry.doc),
+        media_type: "application/xhtml+xml",
+        toc_title: title,
+        epub_type: epub_type,
+        spine_loc: -1
+      )
+  end
+
+  entry_map.each do |entry|
+    entry.doc.xpath("//*[local-name()='img']").each do |img_node|
+      img_src = img_node["src"]
+      img_file = File.join(File.dirname(xml_file), img_src)
+      if File.file?(img_file)
+        entry_name = "OEBPS/images/" + File.basename(img_file)
+        entry_content = File.read(img_file, mode: "rb")
+        extname = File.extname(img_file)
+        case extname
+        when '.jpg', '.jpeg'
+          media_type = "image/jpeg"
+        when '.db'
+          next
+        else
+          media_type = "image/#{extname[1..-1]}"
+        end
+        script_logger.info("adding file #{entry_name},#{media_type}")
+        epub.add(
+            entry_name: entry_name,
+            entry_content: entry_content,
+            media_type: media_type
+          )
+      end
+    end
+  end
+
+  epub_file = File.join(
+            File.dirname(xml_file),
+            File.basename(xml_file, ".*") + "_" + File.basename(__FILE__) + ".epub"
+          )
+
+  epub.save(epub_file: epub_file)
+  script_logger.info("Saved #{epub_file}.")
+end

@@ -5,20 +5,66 @@ module UMPTG::EPUB
   class Archive < UMPTG::Object
     attr_reader :epub_file, :modified
 
+    OPF_ENTRY_NAME = "OEBPS/content.opf"
+
+    CONTAINER_XML =  <<-CONXML
+<?xml version="1.0"?>
+<container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container">
+<rootfiles>
+<rootfile full-path="%s" media-type="application/oebps-package+xml"/>
+</rootfiles>
+</container>
+    CONXML
+
+    NAVIGATION_XML = <<-NAVXML
+<?xml version="1.0"?>
+<html lang="en-US" xml:lang="en-US" xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops">
+<head>
+<meta content="initial-scale=1.0,maximum-scale=5.0" name="viewport"/>
+<title>Navigation</title>
+<link href="default.css" rel="stylesheet" type="text/css"/>
+</head>
+<body>
+  <nav id="toc" role="doc-toc" epub:type="toc" aria-labelledby="ncx-head">
+    <h1 id="ncx-head">Contents</h1>
+    <ol></ol>
+  </nav>
+  <nav id="landmarks" epub:type="landmarks">
+    <h2>Guide</h2>
+    <ol></ol>
+  </nav>
+  </body>
+</html>
+    NAVXML
+
     def initialize(args = {})
       super(args)
 
       @renditions = {}
       @name2entry = {}
+      @nav_doc = nil
 
       case
       when @properties.key?(:epub_file)
         load(epub_file: @properties[:epub_file])
       else
-        label = "OEBPS/content.opf"
-        rend = UMPTG::EPUB::Rendition.new(name: label)
-        @renditions[label] = rend
+        rend = UMPTG::EPUB::Rendition.new(name: OPF_ENTRY_NAME)
+        @renditions[OPF_ENTRY_NAME] = rend
         @modified = false
+        add(
+            entry_name: "mimetype",
+            entry_content: "application/epub+zip"
+          )
+        add(
+            entry_name: "META-INF/container.xml",
+            entry_content: sprintf(CONTAINER_XML, OPF_ENTRY_NAME)
+          )
+        add(
+            entry_name: "OEBPS/toc.xhtml",
+            entry_content: NAVIGATION_XML,
+            media_type: "application/xhtml+xml",
+            properties: "nav"
+          )
       end
     end
 
@@ -63,17 +109,24 @@ module UMPTG::EPUB
 
       @name2entry[entry.name] = entry
 
+      epub_manifest_node = opf_doc.xpath("//*[local-name()='manifest']").first
+      raise "no manifest found for #{epub_file}" if epub_manifest_node.nil?
+
       if args.key?(:media_type)
         media_type = args[:media_type]
 
-        epub_manifest_node = opf_doc.xpath("//*[local-name()='manifest']").first
-        raise "no manifest found for #{epub_file}" if epub_manifest_node.nil?
+        item_id = "item#{File.basename(entry.name).gsub(/[. ]+/,'_')}"
+        item_node = epub_manifest_node.xpath("./*[local-name()='item' and @id='#{item_id}']").first
 
-        entry_name = entry.name.delete_prefix(File.dirname(opf.name) + "/")
-        new_item_node = opf_doc.parse(
-            "<item id=\"#{File.basename(entry.name).gsub('[. ]+','_')}\" href=\"#{entry_name}\" media-type=\"#{media_type}\"/>"
-          ).first
-        epub_manifest_node.add_child(new_item_node)
+        if item_node.nil?
+          ename = entry.name.delete_prefix(File.dirname(opf_name) + "/")
+          item_node = opf_doc.parse(
+              "<item id=\"item#{File.basename(entry.name).gsub(/[. ]+/,'_')}\" href=\"#{ename}\"/>"
+            ).first
+          epub_manifest_node.add_child(item_node)
+        end
+
+        item_node["media-type"] = media_type
 
         if args.key?(:spine_loc) and !media_type.start_with?("image/")
           spine_loc = args[:spine_loc]
@@ -81,29 +134,83 @@ module UMPTG::EPUB
           epub_spine_node = opf_doc.xpath("//*[local-name()='spine']").first
           raise "no spine found for #{epub_file}" if epub_spine_node.nil?
 
-          new_spine_node = opf_doc.parse(
-                 "<itemref idref=\"#{new_item_node['id']}\"/>"
-               ).first
-          case spine_loc
-          when 0
-            n = epub_spine_node.xpath("./*[first()]").first
-            n.before(new_spine_node)
-          when -1
-            n = epub_spine_node.xpath("./*[last()]").first
-            n.after(new_spine_node)
+          new_spine_markup = "<itemref idref=\"#{item_node['id']}\"/>"
+
+          itemref_list = epub_spine_node.xpath("./*[local-name()='itemref']")
+          if itemref_list.empty? or spine_loc == -1
+            epub_spine_node.add_child(new_spine_markup)
           else
-            n = epub_spine_node.xpath("./*[#{spine_loc}]").first
-            n.before(new_spine_node)
+            case spine_loc
+            when 0
+              n = itemref_list[0]
+              n.before(new_spine_markup)
+            else
+              n = itemref_list[spine_loc]
+              n.before(new_spine_markup)
+            end
           end
         end
 
+        properties = args[:properties]
+        unless properties.nil?
+          properties.strip!
+          item_node["properties"] = properties \
+              unless properties.empty?
+        end
+
         add(
-            entry_name: opf.name,
+            entry_name: opf_name,
             entry_content: UMPTG::XML.doc_to_xml(opf_doc)
           )
+
+        if args[:toc_title]
+          toc_title = args[:toc_title].strip
+
+          add_navigation(
+              entry: entry,
+              toc_title: toc_title,
+              epub_type: args[:epub_type]
+            )
+        end
+
       end
 
       return entry
+    end
+
+    def add_navigation(args = {})
+      entry = args[:entry]
+      toc_title = args[:toc_title]
+      epub_type = args[:epub_type]
+
+      nav_doc = navigation_doc(args)
+      return if nav_doc.nil?
+
+      add_entry = false
+      unless toc_title.nil? or toc_title.strip.empty?
+        toc_node = nav_doc.xpath("//*[local-name()='nav' and @epub:type='toc']/*[local-name()='ol']").first
+        unless toc_node.nil?
+          markup = "<li id=\"toc_#{toc_node.children.count}\"><a href=\"#{File.basename(entry.name)}\">#{toc_title}</a></li>"
+          toc_node.add_child(markup)
+          add_entry = true
+        end
+      end
+
+      unless epub_type.nil? or epub_type.strip.empty?
+        lm_node = nav_doc.xpath("//*[local-name()='nav' and @epub:type='landmarks']/*[local-name()='ol']").first
+        unless lm_node.nil?
+          markup = "<li><a href=\"#{File.basename(entry.name)}\" epub:type=\"#{epub_type}\">#{toc_title}</a></li>"
+          lm_node.add_child(markup)
+          add_entry = true
+        end
+      end
+
+      if add_entry
+        add(
+            entry_name: navigation.first.name,
+            entry_content: UMPTG::XML.doc_to_xml(nav_doc)
+          )
+      end
     end
 
     def remove(args = {})
@@ -173,6 +280,15 @@ module UMPTG::EPUB
     def navigation(args = {})
       label, rend = rendition(args)
       return item_list(rend.nav_items, File.dirname(label))
+    end
+
+    def navigation_doc(args = {})
+      if @nav_doc.nil?
+        nav_entry = navigation(args).first
+        @nav_doc = Nokogiri::XML::Document.parse(nav_entry.content) \
+            unless nav_entry.nil?
+      end
+      return @nav_doc
     end
 
     def ncx(args = {})
