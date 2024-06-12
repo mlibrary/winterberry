@@ -53,7 +53,7 @@ SECTION_EXCLUDE_XPATH = <<-EXPATH
 .//*[
 @epub:type='pagebreak'
 ] | .//*[
-local-name()!='section' and @class
+@class
 ]
 EXPATH
 
@@ -65,6 +65,7 @@ exclude_sections = [
         "toc",
         "frontmatter"
     ]
+
 epub_file_list.each do |epub_file|
   unless File.file?(epub_file)
     script_logger.error("invalid EPUB file #{epub_file}")
@@ -74,24 +75,59 @@ epub_file_list.each do |epub_file|
 
   logger_file =  File.join(
             File.dirname(epub_file),
-            File.basename(epub_file, ".*") + "_" + File.basename(__FILE__) + ".log"
+            File.basename(epub_file, ".*") + ".log"
             )
   file_logger = UMPTG::Logger.create(logger_file: logger_file)
 
   epub = UMPTG::EPUB::Archive.new(epub_file: epub_file)
 
   template_doc = UMPTG::XML.parse(xml_file: TEMPLATE_FILE)
+
+  template_doc.xpath("//*[local-name()='head']/*[@type='text/css' or @name='viewport' or @charset]").each do |n|
+    file_logger.info("removing CSS link #{n['href']}") if n['type'] == 'text/css'
+    file_logger.info("removing meta #{n['name']}") if n['name'] == 'viewport'
+    file_logger.info("removing meta #{n['charset']}") if n.key?('charset')
+    n.remove
+  end
+
   template_body_node = template_doc.xpath("//*[local-name()='body']").first
 
-  epub_title = epub.metadata["title"]
-  epub_title = epub_title.nil? ? "" : epub_title
-  unless epub_title.empty?
-    title_node = template_doc.xpath("//*[local-name()='head']/*[local-name()='title']").first
-    unless title_node.nil?
-      file_logger.info("adding title #{epub_title}")
-      title_node.content = epub_title
+  metadata_doc = UMPTG::XML.parse(xml_file: TEMPLATE_FILE)
+  metadata_body_node = metadata_doc.xpath("//*[local-name()='body']").first
+  metadata_section_node = metadata_body_node.add_child("<section role=\"metadata\"/>").first
+  epub.opf_doc.xpath("//*[local-name()='metadata']").each do |opf_metadata_node|
+    node_list = opf_metadata_node.xpath("./*[name()='dc:title']")
+    if node_list.count > 0
+      div_node = metadata_section_node.add_child("<div role=\"title\"/>").first
+      f = true
+      node_list.each do |n|
+        r = f ? "main-title" : "sub-title"
+        f = false
+        div_node.add_child("<p role=\"#{r}\">#{n.content}</p>")
+      end
+      title_node = template_doc.xpath("//*[local-name()='head']/*[local-name()='title']").first
+      unless title_node.nil?
+        t = node_list.first.content
+        file_logger.info("adding title #{t}")
+        title_node.content = t
+      end
+    end
+    node_list = opf_metadata_node.xpath("./*[name()='dc:creator']")
+    if node_list.count > 0
+      div_node = metadata_section_node.add_child("<div role=\"contributors\"/>").first
+      node_list.each do |n|
+        div_node.add_child("<p role=\"creator\">#{n.content}</p>")
+      end
+    end
+    div_node = metadata_section_node.add_child("<div role=\"publishing\"/>").first
+    opf_metadata_node.xpath("./*[name()='dc:publisher']").each do |n|
+      div_node.add_child("<p role=\"publisher_name\">#{n.content}</p>")
+    end
+    opf_metadata_node.xpath("./*[name()='dc:date']").each do |n|
+      div_node.add_child("<p role=\"publishing_date\">#{n.content}</p>")
     end
   end
+  template_body_node.add_child(metadata_body_node.inner_html)
 
   id_map = {}
   full_id_map = {}
@@ -99,6 +135,7 @@ epub_file_list.each do |epub_file|
     entry = epub.spine[ndx]
 
     xml_doc = UMPTG::XML.parse(xml_content: entry.content)
+
     body_node = xml_doc.xpath("//*[local-name()='body']").first
 
     section_node = body_node.xpath("./*[local-name()='section'][1]").first
@@ -113,6 +150,7 @@ epub_file_list.each do |epub_file|
     file_logger.info("merging entry #{entry.name}, type:#{section_type}")
 
     entry_base_name = entry.name.split('/').last
+
     body_node.xpath(".//*[@id]").each do |n|
       id = n["id"]
       next if id.nil? or id.strip.empty?
@@ -123,6 +161,24 @@ epub_file_list.each do |epub_file|
       id_map[id] = new_id
       n["id"] = new_id
       file_logger.info("replaced @id #{id} with #{new_id}")
+    end
+
+    file_logger.info("removing @aria-labelledby")
+    body_node.xpath("descendant-or-self::*[@class or @aria-labelledby or @data-locator or @aria-label or @epub:type or (local-name()='header' and @id)]").each do |n|
+      n.content = "" if n["epub:type"] == "pagebreak"
+
+      n.remove_attribute("id") if n.name == 'header'
+      n.remove_attribute("class")
+      n.remove_attribute("aria-labelledby")
+      n.remove_attribute("aria-label")
+      n.remove_attribute("data-locator")
+      n.remove_attribute("role")
+
+      unless n["epub:type"].nil?
+        n["role"] = n["epub:type"]
+        #n.remove_attribute("epub:type")
+        n.remove_attribute("type")
+      end
     end
 
     template_body_node.add_child(body_node.inner_html)
@@ -140,41 +196,9 @@ epub_file_list.each do |epub_file|
     end
   end
 
-  id_map.each do |k,v|
-    x = ".//*[@aria-labelledby='#{k}']"
-    file_logger.info("searching for @aria-labelledby #{k},count:#{template_body_node.xpath(x).count},#{x}")
-    template_body_node.xpath(x).each do |n|
-      if n.key?("aria-labelledby")
-        href = n["aria-labelledby"]
-        n["aria-labelledby"] = v
-        file_logger.info("replaced @aria-labelledby #{href} with #{v}")
-      end
-    end
-  end
-
-  sections = template_body_node.xpath("./*[local-name()='section']")
-  sections.each do |section_node|
-    exlude_nodes = section_node.xpath(SECTION_EXCLUDE_XPATH)
-    exlude_nodes.each do |n|
-      epub_type = n["epub:type"]
-
-=begin
-      if epub_type == 'pagebreak'
-        file_logger.info("removing node type:#{epub_type}")
-        n.remove
-        next
-      end
-=end
-      if n.key?("class")
-        file_logger.info("removing @class:#{n['class']}")
-        n.remove_attribute("class")
-      end
-    end
-  end
-
   merged_epub_file = File.join(
             File.dirname(epub_file),
-            File.basename(epub_file, ".*") + "_" + File.basename(__FILE__) + ".xhtml"
+            File.basename(epub_file, ".*") + ".xhtml"
             )
 
   UMPTG::XML.save(template_doc, merged_epub_file)

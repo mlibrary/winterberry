@@ -46,16 +46,25 @@ xml_file_list.each do |xml_file|
   script_logger.info("processing XML file #{File.basename(xml_file)}")
 
   xml_fp = File.open(xml_file)
-  a2 = xml_fp.read(15)
+  #a2 = xml_fp.read(15)
+  a2 = xml_fp.read
   xml_fp.rewind
-  puts "a2,#{a2.length}:#{a2}"
+  #puts "a2,#{a2.length}:#{a2}"
+  puts "a2,#{a2.length}"
 
+=begin
   a = []
   xml_fp.each_byte {|b| a << b}
   #puts "0:#{a[0..14]}"
-  line = a[0..14].map { |b| sprintf(", 0x%02X",b) }.join
+  #line = a[0..14].map { |b| sprintf(", 0x%02X",b) }.join
+  line = a[0..14].map { |b| sprintf("0x%02X",b) }.join(',')
   puts line
 
   #xml_doc = Nokogiri::XML(File.read(xml_file))
+=end
   xml_fp.close
+
+  new_xml_file = File.join(File.dirname(xml_file), File.basename(xml_file, ".*") + "_fixed" + File.extname(xml_file))
+  File.write(new_xml_file, a2[1..-1])
+  puts "Wrote #{new_xml_file}"
 end

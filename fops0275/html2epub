@@ -38,7 +38,7 @@ xml_file_list = ARGV
 require_relative File.join(root_dir, "lib", "epub")
 
 TEMPLATE_FILE = File.join(root_dir, "fops0275", "template.xhtml")
-CSS_FILE = File.join(root_dir, "fops0275", "default.css")
+CSS_FILE = File.join(root_dir, "fops0275", "manuscript_template", "default.css")
 
 FRONTMATTER_SECTION_XML =  <<-FXML
 <section class="chapter" id="%s" aria-labelledby="%s" epub:type="%s">
@@ -47,7 +47,7 @@ FRONTMATTER_SECTION_XML =  <<-FXML
 FXML
 
 COVER_SECTION_XML =  <<-FXML
-<section class="chapter" id="%s" epub:type="%s">
+<section id="%s" class="chapter" epub:type="%s">
 <div class="cover">
 <p class="fig"><img alt="%s" role="doc-cover" src="%s"/></p>
 </div>
@@ -64,6 +64,42 @@ class Entry < UMPTG::Object
   end
 end
 
+TYPE2ROLE = {
+    "acknowledgments" => "doc-acknowledgments",
+    "abstract" => "doc-abstract",
+    "afterword" => "doc-afterword",
+    "appendix" => "doc-appendix",
+    "backlink" => "doc-backlink",
+    "biblioentry" => "doc-biblioentry",
+    "bibliography" => "doc-bibliography",
+    "biblioref" => "doc-biblioref",
+    "chapter" => "doc-chapter",
+    "colophon" => "doc-colophon",
+    "conclusion" => "doc-conclusion",
+    "cover" => "doc-cover",
+    "credits" => "doc-credits",
+    "endnotes" => "doc-endnotes",
+    "errata" => "doc-errata",
+    "foreword" => "doc-foreword",
+    "glossary" => "doc-glossary",
+    "glossref" => "doc-glossref",
+    "epigraph" => "doc-epigraph",
+    "footnote" => "doc-footnote",
+    "index" => "doc-index",
+    "introduction" => "doc-introduction",
+    "noteref" => "doc-noteref",
+    "notice" => "doc-notice",
+    "page-list" => "doc-pagelist",
+    "pagebreak" => "doc-pagebreak",
+    "part" => "doc-part",
+    "preface" => "doc-preface",
+    "prologue" => "doc-prologue",
+    "pullquote" => "doc-pullquote",
+    "subtitle" => "doc-subtitle",
+    "tip" => "doc-tip",
+    "toc" => "doc-toc"
+  }
+
 xml_file_list.each do |xml_file|
   unless File.file?(xml_file)
     script_logger.error("invalid EPUB file #{xml_file}")
@@ -74,12 +110,6 @@ xml_file_list.each do |xml_file|
   xml_doc = UMPTG::XML.parse(xml_file: xml_file)
 
   epub = UMPTG::EPUB::Archive.new
-
-  epub.add(
-      entry_name: "OEBPS/default.css",
-      entry_content: File.read(CSS_FILE),
-      media_type: "text/css"
-    )
 
   doc_title_node = xml_doc.xpath("//*[local-name()='head']/*[local-name()='title']")
   doc_title = doc_title_node.nil? ? "unknown title" : doc_title_node.text
@@ -102,6 +132,7 @@ xml_file_list.each do |xml_file|
   unless cover_file.nil?
     section_ctr += 1
     template_doc = UMPTG::XML.parse(xml_file: TEMPLATE_FILE)
+    template_doc.root.add_namespace("epub", "http://www.idpf.org/2007/ops")
 
     title = "Cover"
     epub_type = "frontmatter"
@@ -125,6 +156,7 @@ xml_file_list.each do |xml_file|
   # Title page generated
   section_ctr += 1
   template_doc = UMPTG::XML.parse(xml_file: TEMPLATE_FILE)
+  template_doc.root.add_namespace("epub", "http://www.idpf.org/2007/ops")
 
   title = "Title Page"
   epub_type = "titlepage"
@@ -148,6 +180,7 @@ xml_file_list.each do |xml_file|
   # TOC generated
   section_ctr += 1
   template_doc = UMPTG::XML.parse(xml_file: TEMPLATE_FILE)
+  template_doc.root.add_namespace("epub", "http://www.idpf.org/2007/ops")
 
   title = "Contents"
   epub_type = "toc"
@@ -173,6 +206,7 @@ xml_file_list.each do |xml_file|
   if fig_nodes.count > 0
     section_ctr += 1
     template_doc = UMPTG::XML.parse(xml_file: TEMPLATE_FILE)
+    template_doc.root.add_namespace("epub", "http://www.idpf.org/2007/ops")
 
     title = "List of Figures"
     epub_type = "frontmatter"
@@ -212,10 +246,46 @@ xml_file_list.each do |xml_file|
 
   xml_doc.xpath("//*[local-name()='body']/*[local-name()='section']").each do |section_node|
     section_ctr += 1
-    epub_type = section_node['epub:type']
-    epub_type = epub_type.nil? ? "" : epub_type.strip
 
     template_doc = UMPTG::XML.parse(xml_file: TEMPLATE_FILE)
+    template_doc.root.add_namespace("epub", "http://www.idpf.org/2007/ops")
+
+    template_body_node = template_doc.xpath("//*[local-name()='body']").first
+    section_node = template_body_node.add_child(section_node)
+
+    section_id = section_node["id"]
+    if section_id.nil? or section_id.strip.empty?
+      section_id = section_ctr.to_s.rjust(3, "0") + "_section"
+      section_node["id"] = section_id
+    end
+
+    section_aria_label = section_node["aria-labelledby"]
+    if section_aria_label.nil?
+      header_node = section_node.xpath("./*[local-name()='header']").first
+      unless header_node.nil?
+        header_id = header_node["id"]
+        if header_id.nil? or header_id.strip.empty?
+          header_id = section_id + "_header"
+          header_node["id"] = header_id
+        end
+        section_node["aria-labelledby"] = header_id
+      end
+    end
+
+    #nlist = section_node.xpath("descendant-or-self::*[@epub:type]")
+    nlist = section_node.xpath("descendant-or-self::*[@role]")
+    nlist.each do |n|
+      if n.key?("role")
+        role = n["role"]
+        n["epub:type"] = role
+        new_role = TYPE2ROLE[role]
+        if new_role.nil? or new_role.strip.empty?
+          n.remove_attribute("role")
+        else
+          n['role'] = new_role
+        end
+      end
+    end
 
     title = ""
     header_node = section_node.xpath("./*[local-name()='header' or local-name()='h1']").first
@@ -231,9 +301,6 @@ xml_file_list.each do |xml_file|
         title_node.content = title
       end
     end
-
-    template_body_node = template_doc.xpath("//*[local-name()='body']").first
-    template_body_node.add_child(section_node)
 
     entry_base_name = "#{section_ctr.to_s.rjust(3, "0")}_section.xhtml"
     entry_name = "OEBPS/" + entry_base_name
@@ -263,7 +330,7 @@ xml_file_list.each do |xml_file|
       end
     end
 
-    body_node.xpath(".//*[@epub:type='pagebreak']").each {|n| n.inner_html = ""}
+    #body_node.xpath(".//*[@epub:type='pagebreak']").each {|n| n.inner_html = ""}
   end
 
   unless toc_entry.nil?
@@ -349,9 +416,18 @@ xml_file_list.each do |xml_file|
     end
   end
 
+  entry_name = "OEBPS/default.css"
+  media_type = "text/css"
+  script_logger.info("adding file #{entry_name},#{media_type}")
+  epub.add(
+      entry_name: entry_name,
+      entry_content: File.read(CSS_FILE),
+      media_type: media_type
+    )
+
   epub_file = File.join(
             File.dirname(xml_file),
-            File.basename(xml_file, ".*") + "_" + File.basename(__FILE__) + ".epub"
+            File.basename(xml_file, ".*") + ".epub"
           )
 
   epub.save(epub_file: epub_file)
