@@ -110,7 +110,6 @@ manuscript_dir_list.each do |manuscript_dir|
     end
 
     entry_base_name = "#{section_cntr.to_s.rjust(3, "0")}_section.xhtml"
-    #puts "#{entry_base_name}:#{epub_type}"
     entry_name = "OEBPS/" + entry_base_name
 
     section_node.xpath("//*[@id]").each do |node|
@@ -145,11 +144,17 @@ manuscript_dir_list.each do |manuscript_dir|
 
   opf_metadata_node = epub.opf_doc.root.xpath("./*[local-name()='metadata']").first
   unless opf_metadata_node.nil?
-    opf_metadata_node.add_child("<dc:title>#{doc_title}</dc:title>")
-    opf_metadata_node.add_child("<dc:language>en</dc:language>")
+    opf_metadata_node.add_child("<dc:title>#{manuscript.title}</dc:title>")
+    opf_metadata_node.add_child("<dc:language>#{manuscript.languages.first}</dc:language>")
 
     mod_time = Time.now.strftime("%FT%H:%M:%SZ")
     opf_metadata_node.add_child("<meta property=\"dcterms:modified\">#{mod_time}</meta>")
+    opf_metadata_node.add_child("<dc:creator>#{manuscript.creators.first}</dc:creator>")
+
+    isbn_node = opf_metadata_node.xpath("./*[name()='dc:identifier' and @id='pub-id']").first
+    unless isbn_node.nil?
+      isbn_node.content = manuscript.isbns.first
+    end
   end
 
   entry_list.each do |entry|

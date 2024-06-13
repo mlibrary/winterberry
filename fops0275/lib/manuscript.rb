@@ -1,4 +1,7 @@
 module UMPTG
+  require 'csv'
+  require 'xsv'
+
   require_relative File.join("..", "..", "lib", "object")
   require_relative File.join("..", "..", "lib", "xml", "util")
 
@@ -69,7 +72,7 @@ module UMPTG
   FXML
 
   class Manuscript < UMPTG::Object
-    attr_reader :path, :xml_doc
+    attr_reader :path, :xml_doc, :metadata, :title, :languages, :creators, :isbns
 
     def initialize(dirpath = nil, args = {})
       a = args.clone
@@ -77,6 +80,21 @@ module UMPTG
       super(a)
       @path = dirpath
       @xml_doc = nil
+
+      @metadata = monograph_metadata
+
+      @title = @metadata["Title"]
+
+      isbns_list = @metadata["ISBN(s)"]
+      @isbns = isbns_list.nil? ? [] : isbns_list.split(';')
+
+      languages_list = @metadata["Language"]
+      puts "languages:#{languages_list}"
+      @languages = languages_list.nil? ? [] : languages_list.split(';')
+
+      creators_list = @metadata["Creator(s)"]
+      puts "creators:#{creators_list}"
+      @creators = creators_list.nil? ? [] : creators_list.split(';')
     end
 
     def template_doc(args = {})
@@ -104,7 +122,8 @@ module UMPTG
       end
       doc.root.add_namespace("epub", "http://www.idpf.org/2007/ops")
 
-      doc_title = doc.xpath("//*[local-name()='head']/*[local-name()='title']").first.content
+      #doc_title = doc.xpath("//*[local-name()='head']/*[local-name()='title']").first.content
+      doc_title = @title
       s_node = doc.xpath("//*[local-name()='body']/*[local-name()='section'][1]").first
 
       # Cover page generated
@@ -163,12 +182,21 @@ module UMPTG
           section_id = section_node["id"]
           role = section_node["role"]
           title_node = section_node.xpath(".//*[local-name()='header' or local-name()='h1']").first
-          title = title_node.nil? ? "" : title_node.content.strip.gsub(/\s+/, " ")
+          if title_node.nil?
+            title = ""
+          else
+            hn = title_node.dup(1)
+            hn.xpath(".//*[local-name()='span']").each {|n| n.remove}
+            title = hn.content.strip.gsub(/\s+/, " ")
+          end
 
           case role
           when "cover"
             cls = "tocfm"
             title = "Cover"
+          when "titlepage"
+            cls = "tocfm"
+            title = "Title Page"
           when "frontmatter", "titlepage", "toc"
             cls = "tocfm"
           when "backmatter", "index"
@@ -176,7 +204,6 @@ module UMPTG
           else
             cls = "toc"
           end
-          puts "#{section_id}:#{role},#{title}"
           unless title.empty?
             href = "#" + section_id
             markup = "<p class=\"#{cls}\"><a class=\"xref\" href=\"#{href}\">#{title}</a></p>"
@@ -246,6 +273,40 @@ module UMPTG
       @xml_doc = doc
     end
 
+    def monograph_metadata
+      mfile = monograph_metadata_file
+      body_list = []
+      if File.extname(mfile) == ".xlsx" or File.extname(mfile) == ".xls"
+        x = Xsv::Workbook.open(mfile)
+        sheet = x.sheets[0]
+        raise "Error: no sheets for #{mfile}" if sheet.nil?
+
+        body_list = sheet.collect {|r| CSV.generate_line(r) unless r.compact.empty? }
+      else
+        body_list = File.open(mfile).readlines
+      end
+
+      CSV::Converters[:strip_field] = ->(value) { value.strip rescue value }
+      begin
+        csv_data = CSV.parse(
+                  body_list.join,
+                  headers: true,
+                  converters: :strip_field,
+                  return_headers: false)
+       #          :header_converters => lambda { |h| h.downcase.gsub(' ', '_') })
+       #          :headers => true, :converters => :all,
+      rescue Exception => e
+        raise e.message
+      end
+      return csv_data[-1]
+    end
+
+    def monograph_metadata_file
+      f = Dir.glob(File.join(@path, "monograph_metadata.*")).first
+      puts "f:#{f}"
+      return f.nil? ? "" : f
+    end
+
     def images_dir
       return File.join(@path, "images")
     end
@@ -261,14 +322,5 @@ module UMPTG
     def xhtml_files
       return Dir.glob(File.join(xhtml_dir, "*"))
     end
-
-    def section(args = {})
-      role = args[:role]
-
-      section_doc = Nokogiri::XML::Document.parse(SECTION_XML)
-      section_doc.root["role"] = role
-      return section_doc
-    end
-
   end
 end
