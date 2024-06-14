@@ -14,6 +14,14 @@
     <xs:element name="allow_download_after_expiration" type="type_allow_download_after_expiration"/>
     <xs:element name="allow_hi_res" type="type_allow_hi_res"/>
     <xs:element name="alt_text" type="type_alt_text"/>
+    <xs:element name="article_creator" type="type_article_creator"/>
+    <xs:element name="article_creator_list" type="type_contributor_list"/>
+    <xs:element name="article_display_date" type="type_article_display_date"/>
+    <xs:element name="article_display_date_list" type="type_display_date_list"/>
+    <xs:element name="article_issue" type="type_article_issue"/>
+    <xs:element name="article_permalink" type="type_article_permalink"/>
+    <xs:element name="article_title" type="type_article_title"/>
+    <xs:element name="article_volume" type="type_article_volume"/>
     <xs:element name="buy_url" type="type_buy_url"/>
     <xs:element name="caption" type="type_caption"/>
     <xs:element name="content_type" type="type_content_type"/>
@@ -529,6 +537,12 @@
                     <xs:element ref="language_list" minOccurs="0"/>
                     <xs:element ref="transcript" minOccurs="0"/>
                     <xs:element ref="translation" minOccurs="0"/>
+                    <xs:element ref="article_title" minOccurs="0"/>
+                    <xs:element ref="article_creator_list" minOccurs="0"/>
+                    <xs:element ref="article_display_date_list" minOccurs="0"/>
+                    <xs:element ref="article_issue" minOccurs="0"/>
+                    <xs:element ref="article_permalink" minOccurs="0"/>
+                    <xs:element ref="article_volume" minOccurs="0"/>
                     <xs:element ref="redirect_to" minOccurs="0"/>
                 </xs:all>
             </xs:extension>
@@ -575,6 +589,10 @@
                     <xs:element ref="language_list" minOccurs="0"/>
                     <xs:element ref="transcript" minOccurs="0"/>
                     <xs:element ref="translation" minOccurs="0"/>
+                    <xs:element ref="article_creator_list" minOccurs="0"/>
+                    <xs:element ref="article_display_date_list" minOccurs="0"/>
+                    <xs:element ref="article_permalink" minOccurs="0"/>
+                    <xs:element ref="article_title" minOccurs="0"/>
                     <xs:element ref="redirect_to" minOccurs="0"/>
                 </xs:all>
             </xs:extension>
@@ -717,6 +735,60 @@
             <xs:extension base="type_string">
                 <xs:attribute name="object" type="xs:string" fixed="file_set"/>
                 <xs:attribute name="field_name" type="xs:string" fixed="Alternative Text"/>
+                <xs:attribute name="multivalued" type="xs:string" fixed="yes"/>
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+    <xs:complexType name="type_article_creator">
+        <xs:complexContent>
+            <xs:extension base="type_string_contributor">
+                <xs:attribute name="object" type="xs:string" fixed="universal"/>
+                <xs:attribute name="field_name" type="xs:string" fixed="Article Creator(s)"/>
+                <xs:attribute name="multivalued" type="xs:string" fixed="yes_multiline"/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="type_article_display_date">
+        <xs:simpleContent>
+            <xs:extension base="type_string">
+                <xs:attribute name="object" type="xs:string" fixed="file_set"/>
+                <xs:attribute name="field_name" type="xs:string" fixed="Article Display Date"/>
+                <xs:attribute name="multivalued" type="xs:string" fixed="yes_split"/>
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+    <xs:complexType name="type_article_issue">
+        <xs:simpleContent>
+            <xs:extension base="type_string">
+                <xs:attribute name="object" type="xs:string" fixed="universal"/>
+                <xs:attribute name="field_name" type="xs:string" fixed="Article Issue"/>
+                <xs:attribute name="multivalued" type="xs:string" fixed="yes"/>
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+    <xs:complexType name="type_article_permalink">
+        <xs:simpleContent>
+            <xs:extension base="type_string_url">
+                <xs:attribute name="object" type="xs:string" fixed="universal"/>
+                <xs:attribute name="field_name" type="xs:string" fixed="Article Permalink"/>
+                <xs:attribute name="multivalued" type="xs:string" fixed="no"/>
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+    <xs:complexType name="type_article_title">
+        <xs:simpleContent>
+            <xs:extension base="type_string_title">
+                <xs:attribute name="object" type="xs:string" fixed="universal"/>
+                <xs:attribute name="field_name" type="xs:string" fixed="Article Title"/>
+                <xs:attribute name="multivalued" type="xs:string" fixed="yes"/>
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+    <xs:complexType name="type_article_volume">
+        <xs:simpleContent>
+            <xs:extension base="type_string">
+                <xs:attribute name="object" type="xs:string" fixed="universal"/>
+                <xs:attribute name="field_name" type="xs:string" fixed="Article Volume"/>
                 <xs:attribute name="multivalued" type="xs:string" fixed="yes"/>
             </xs:extension>
         </xs:simpleContent>
@@ -1187,12 +1259,14 @@
         <xs:choice>
             <xs:element ref="contributor" maxOccurs="unbounded"/>
             <xs:element ref="creator" maxOccurs="unbounded"/>
+            <xs:element ref="article_creator" maxOccurs="unbounded"/>
         </xs:choice>
     </xs:complexType>
     <xs:complexType name="type_display_date_list">
-        <xs:sequence maxOccurs="unbounded">
-            <xs:element ref="display_date"/>
-        </xs:sequence>
+        <xs:choice>
+            <xs:element ref="display_date" maxOccurs="unbounded"/>
+            <xs:element ref="article_display_date" maxOccurs="unbounded"/>
+        </xs:choice>
     </xs:complexType>
     <xs:complexType name="type_keywords_list">
         <xs:sequence maxOccurs="unbounded">

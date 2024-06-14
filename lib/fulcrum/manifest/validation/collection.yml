@@ -71,6 +71,30 @@
   :metadata_name: alt_text
   :field_name: Alternative Text
   :multivalued: :yes
+- :object: :universal
+  :metadata_name: article_creator
+  :field_name: Article Creator(s)
+  :multivalued: :yes_multiline
+- :object: :file_set
+  :metadata_name: article_display_date
+  :field_name: Article Display Date
+  :multivalued: :yes_split
+- :object: :universal
+  :metadata_name: article_issue
+  :field_name: Article Issue
+  :multivalued: :yes
+- :object: :universal
+  :metadata_name: article_permalink
+  :field_name: Article Permalink
+  :multivalued: :no
+- :object: :universal
+  :metadata_name: article_title
+  :field_name: Article Title
+  :multivalued: :yes
+- :object: :universal
+  :metadata_name: article_volume
+  :field_name: Article Volume
+  :multivalued: :yes
 - :object: :monograph
   :metadata_name: buy_url
   :field_name: Buy Book URL
