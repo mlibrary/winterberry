@@ -89,11 +89,9 @@ module UMPTG
       @isbns = isbns_list.nil? ? [] : isbns_list.split(';')
 
       languages_list = @metadata["Language"]
-      puts "languages:#{languages_list}"
       @languages = languages_list.nil? ? [] : languages_list.split(';')
 
       creators_list = @metadata["Creator(s)"]
-      puts "creators:#{creators_list}"
       @creators = creators_list.nil? ? [] : creators_list.split(';')
     end
 
@@ -307,8 +305,12 @@ module UMPTG
       return f.nil? ? "" : f
     end
 
+    def manuscript_dir
+      return File.join(@path, "manuscript")
+    end
+
     def images_dir
-      return File.join(@path, "images")
+      return File.join(manuscript_dir, "images")
     end
 
     def images_files
@@ -316,7 +318,7 @@ module UMPTG
     end
 
     def xhtml_dir
-      return File.join(@path, "xhtml")
+      return File.join(manuscript_dir, "xhtml")
     end
 
     def xhtml_files

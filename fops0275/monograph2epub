@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
-# Script generates an EPUB from a manuscript directory.
+# Script generates an EPUB from a monograph directory.
 
 require 'optparse'
 require 'ostruct'
@@ -20,7 +20,7 @@ options = OpenStruct.new
 options.manifest_file = nil
 options.normalize = false
 option_parser = OptionParser.new do |opts|
-  opts.banner = "Usage: #{File.basename(__FILE__)} manuscript_dir [manuscript_dir...]"
+  opts.banner = "Usage: #{File.basename(__FILE__)} monograph_dir [monograph_dir...]"
   opts.on_tail('-h', '--help', 'Print this help message') do
     script_logger.info(opts)
     exit 0
@@ -33,10 +33,10 @@ if ARGV.count < 1
 end
 
 # Process the command line parameters.
-manuscript_dir_list = ARGV
+monograph_dir_list = ARGV
 
 require_relative File.join(root_dir, "lib", "epub")
-require_relative File.join(root_dir, "fops0275", "lib", "manuscript")
+require_relative File.join(root_dir, "fops0275", "lib", "monograph")
 
 class Entry < UMPTG::Object
   attr_reader :name, :doc
@@ -48,35 +48,35 @@ class Entry < UMPTG::Object
   end
 end
 
-CSS_FILE = File.join(root_dir, "fops0275", "default.css")
+CSS_FILE = File.join(root_dir, "fops0275", "lib", "default.css")
 
-manuscript_dir_list.each do |manuscript_dir|
-  manuscript_dir = File.expand_path(manuscript_dir)
-  unless File.directory?(manuscript_dir)
-    script_logger.error("directory #{manuscript_dir} does not exist.")
+monograph_dir_list.each do |monograph_dir|
+  monograph_dir = File.expand_path(monograph_dir)
+  unless File.directory?(monograph_dir)
+    script_logger.error("directory #{monograph_dir} does not exist.")
     next
   end
-  script_logger.info("processing manuscript directory #{File.basename(manuscript_dir)}")
+  script_logger.info("processing monograph directory #{File.basename(monograph_dir)}")
 
-  manuscript = UMPTG::Manuscript.new(manuscript_dir)
-  manuscript.generate_xml_doc()
-  manuscript_xml_doc = manuscript.xml_doc
+  monograph = UMPTG::Manuscript.new(monograph_dir)
+  monograph.generate_xml_doc()
+  monograph_xml_doc = monograph.xml_doc
 
-  manuscript_file = File.join(
-            manuscript.path,
-            File.basename(manuscript.path, ".*") + ".xhtml"
+  monograph_file = File.join(
+            monograph.path,
+            File.basename(monograph.path, ".*") + ".xhtml"
             )
 
-  UMPTG::XML.save(manuscript_xml_doc, manuscript_file)
-  script_logger.info("Saved #{manuscript_file}.")
+  UMPTG::XML.save(monograph_xml_doc, monograph_file)
+  script_logger.info("Saved #{monograph_file}.")
 
   entry_list = []
   id_map = {}
   section_cntr = 0
-  manuscript_xml_doc.xpath("//*[local-name()='body']/*[local-name()='section']").each do |section_node|
+  monograph_xml_doc.xpath("//*[local-name()='body']/*[local-name()='section']").each do |section_node|
     section_cntr += 1
 
-    template_doc = manuscript.template_doc()
+    template_doc = monograph.template_doc()
 
     template_body_node = template_doc.xpath("//*[local-name()='body']").first
     section_node = template_body_node.add_child(section_node)
@@ -140,20 +140,20 @@ manuscript_dir_list.each do |manuscript_dir|
 
   epub = UMPTG::EPUB::Archive.new
 
-  doc_title = manuscript_xml_doc.xpath("//*[local-name()='head']/*[local-name()='title']").first.content
+  doc_title = monograph_xml_doc.xpath("//*[local-name()='head']/*[local-name()='title']").first.content
 
   opf_metadata_node = epub.opf_doc.root.xpath("./*[local-name()='metadata']").first
   unless opf_metadata_node.nil?
-    opf_metadata_node.add_child("<dc:title>#{manuscript.title}</dc:title>")
-    opf_metadata_node.add_child("<dc:language>#{manuscript.languages.first}</dc:language>")
+    opf_metadata_node.add_child("<dc:title>#{monograph.title}</dc:title>")
+    opf_metadata_node.add_child("<dc:language>#{monograph.languages.first}</dc:language>")
 
     mod_time = Time.now.strftime("%FT%H:%M:%SZ")
     opf_metadata_node.add_child("<meta property=\"dcterms:modified\">#{mod_time}</meta>")
-    opf_metadata_node.add_child("<dc:creator>#{manuscript.creators.first}</dc:creator>")
+    opf_metadata_node.add_child("<dc:creator>#{monograph.creators.first}</dc:creator>")
 
     isbn_node = opf_metadata_node.xpath("./*[name()='dc:identifier' and @id='pub-id']").first
     unless isbn_node.nil?
-      isbn_node.content = manuscript.isbns.first
+      isbn_node.content = monograph.isbns.first
     end
   end
 
@@ -181,7 +181,7 @@ manuscript_dir_list.each do |manuscript_dir|
   entry_list.each do |entry|
     entry.doc.xpath("//*[local-name()='img']").each do |img_node|
       img_src = img_node["src"]
-      img_file = File.join(manuscript.path, img_src)
+      img_file = File.join(monograph.manuscript_dir, img_src)
       if File.file?(img_file)
         entry_name = "OEBPS/images/" + File.basename(img_file)
         entry_content = File.read(img_file, mode: "rb")
@@ -214,8 +214,8 @@ manuscript_dir_list.each do |manuscript_dir|
     )
 
   epub_file = File.join(
-            manuscript.path,
-            File.basename(manuscript.path, ".*") + ".epub"
+            monograph.path,
+            File.basename(monograph.path, ".*") + ".epub"
           )
 
   epub.save(epub_file: epub_file)
