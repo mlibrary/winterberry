@@ -1,0 +1,94 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Script loads WebVTT file content into a CSV cell.
+
+require 'optparse'
+require 'ostruct'
+require 'os'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+# Process the script parameters.
+options = OpenStruct.new
+options.manifest_file = nil
+options.normalize = false
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} csv_file [csv_file...]"
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    script_logger.info(opts)
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  script_logger.info(option_parser.help)
+  return
+end
+
+# Process the command line parameters.
+csv_file_list = ARGV
+
+require 'csv'
+
+csv_file_list.each do |csv_file|
+  csv_file = File.expand_path(csv_file)
+  unless File.file?(csv_file)
+    script_logger.error("CSV file #{csv_file} does not exist.")
+    next
+  end
+  script_logger.info("processing CSV file #{File.basename(csv_file)}")
+  
+  CSV::Converters[:strip_field] = ->(value) { value.strip rescue value }
+  csv_input = CSV.parse(
+            File.read(csv_file),
+            headers: true,
+            converters: :strip_field,
+            return_headers: false
+          )
+  csv_input.each do |row|
+    vtt_file = row["Translation"]
+    unless vtt_file.nil? or vtt_file.strip.empty?
+      vtt_file = File.join(File.dirname(csv_file), vtt_file.strip)
+      if File.file?(vtt_file)
+        row["Translation"] = File.read(vtt_file)
+        script_logger.info("loaded file #{File.basename(vtt_file)}")
+      end
+    end
+    vtt_file = row["Transcript"]
+    unless vtt_file.nil? or vtt_file.strip.empty?
+      vtt_file = File.join(File.dirname(csv_file), vtt_file.strip)
+      if File.file?(vtt_file)
+        row["Transcript"] = File.read(vtt_file)
+        script_logger.info("loaded file #{File.basename(vtt_file)}")
+      end
+    end
+  end
+  
+  csv_output = CSV.generate(
+          headers: csv_input.headers,
+          :write_headers => true
+        ) do |csv|
+    csv_input.each do |row|
+      r = {}
+      row.each do |k,v|
+        r[k] = v
+      end
+      csv << r
+    end
+  end
+
+  # Save the Fulcrum metadata CSV file.
+  new_csv_file = File.join(
+        File.dirname(csv_file),
+        File.basename(csv_file, ".*") + "_vtt" + File.extname(csv_file)
+        )
+  script_logger.info("Creating metadata file #{new_csv_file}")
+  File.write(new_csv_file, csv_output)
+end
