@@ -117,6 +117,20 @@ module UMPTG
           xhtml_body_node = xhtml_doc.xpath("//*[local-name()='body']").first
           body_node.add_child(xhtml_body_node.inner_html)
         end
+
+        body_node.xpath(".//*[@href]").each do |n|
+          href = n['href']
+          href = href.nil? ? "" : href.strip
+          next if href.empty?
+
+          s = href.split('#')
+          if s.count > 1
+            next if s[0].start_with?("http")
+
+            #puts "href:#{n['href']},#{s[0]},#{s[1]}"
+            n['href'] = "#" + s[1]
+          end
+        end
       end
       doc.root.add_namespace("epub", "http://www.idpf.org/2007/ops")
 
