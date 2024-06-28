@@ -344,6 +344,13 @@ module UMPTG::EPUB
                       content: opf_entry.get_input_stream.read
                     )
           @renditions[opf_entry.name] = rendition
+          rendition.manifest.each do |n|
+            e = entry(File.join(File.dirname(rendition.name), n['href']))
+            unless e.nil?
+              e.type = n['media-type']
+              e.props = n['properties']
+            end
+          end
         end
       end
     end

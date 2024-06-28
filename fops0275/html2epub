@@ -272,7 +272,19 @@ xml_file_list.each do |xml_file|
       end
     end
 
-    #nlist = section_node.xpath("descendant-or-self::*[@epub:type]")
+    nlist = section_node.xpath("descendant-or-self::*[@epub:type]")
+    nlist.each do |n|
+      if n.key?("type")
+        epub_type = n["epub:type"]
+        new_role = TYPE2ROLE[epub_type]
+        if new_role.nil? or new_role.strip.empty?
+          n.remove_attribute("role")
+        else
+          n['role'] = new_role
+        end
+      end
+    end
+=begin
     nlist = section_node.xpath("descendant-or-self::*[@role]")
     nlist.each do |n|
       if n.key?("role")
@@ -286,6 +298,7 @@ xml_file_list.each do |xml_file|
         end
       end
     end
+=end
 
     title = ""
     header_node = section_node.xpath("./*[local-name()='header' or local-name()='h1']").first

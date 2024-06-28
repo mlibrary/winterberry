@@ -206,12 +206,48 @@ epub_file_list.each do |epub_file|
     end
   end
 
-  merged_epub_file = File.join(
+  img_list = template_doc.xpath("//*[local-name()='img' and @src]")
+  img_list.each do |img|
+    src = img['src']
+    unless src.nil? or src.strip.empty?
+      new_src = File.join("..", "media", File.basename(src))
+      img['src'] = new_src
+      file_logger.info("replace #{src} with #{new_src}")
+    end
+  end
+
+  monograph_dir = File.join(
             File.dirname(epub_file),
+            File.basename(epub_file, ".*") + "_monograph"
+          )
+  Dir.mkdir(monograph_dir) unless File.directory?(monograph_dir)
+
+  manuscript_dir = File.join(monograph_dir, "manuscript")
+  Dir.mkdir(manuscript_dir) unless File.directory?(manuscript_dir)
+  document_dir = File.join(manuscript_dir, "document")
+  Dir.mkdir(document_dir) unless File.directory?(document_dir)
+  media_dir = File.join(manuscript_dir, "media")
+  Dir.mkdir(media_dir) unless File.directory?(media_dir)
+
+  merged_epub_file = File.join(
+            document_dir,
             File.basename(epub_file, ".*") + ".xhtml"
             )
 
   UMPTG::XML.save(template_doc, merged_epub_file)
   file_logger.info("Saved #{merged_epub_file}.")
   script_logger.info("Saved #{merged_epub_file}.")
+
+  epub.manifest.each do |entry|
+    next unless entry.type.start_with?('image/')
+
+    props = entry.props.nil? ? "" : entry.props
+    if props.include?("cover-image")
+      img_file = File.join(media_dir, "Cover" + File.extname(entry.name))
+    else
+      img_file = File.join(media_dir, File.basename(entry.name))
+    end
+    File.binwrite(img_file, entry.content)
+    file_logger.info("Saved image #{img_file}.")
+  end
 end

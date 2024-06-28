@@ -102,20 +102,19 @@ module UMPTG
     end
 
     def generate_xml_doc(args = {})
-      xhtml_list = xhtml_files
-
-      if xhtml_list.count == 1
-        doc = UMPTG::XML.parse(xml_file: xhtml_list.first)
+      document_list = document_files
+      if document_list.count == 1
+        doc = UMPTG::XML.parse(xml_file: document_list.first)
         body_node = doc.xpath("//*[local-name()='body']").first
       else
         doc = template_doc(args)
 
         body_node = doc.xpath("//*[local-name()='body']").first
 
-        xhtml_files.each do |xhtml_file|
-          xhtml_doc = UMPTG::XML.parse(xml_file: xhtml_file)
-          xhtml_body_node = xhtml_doc.xpath("//*[local-name()='body']").first
-          body_node.add_child(xhtml_body_node.inner_html)
+        document_files.each do |document_file|
+          document_doc = UMPTG::XML.parse(xml_file: document_file)
+          document_body_node = document_doc.xpath("//*[local-name()='body']").first
+          body_node.add_child(document_body_node.inner_html)
         end
 
         body_node.xpath(".//*[@href]").each do |n|
@@ -140,12 +139,12 @@ module UMPTG
 
       # Cover page generated
       section_doc = Nokogiri::XML::Document.parse(COVER_SECTION_XML)
-      cover_file = Dir.glob(File.join(images_dir, "[Cc]over.*")).first
+      cover_file = Dir.glob(File.join(media_dir, "[Cc]over.*")).first
       unless cover_file.nil?
         img_node = section_doc.xpath("//*[local-name()='img' and @role='doc-cover']").first
         img_node["alt"] = "Cover: " + doc_title
         #img_node["src"] = cover_file.delete_prefix(manuscript.path))[1..-1]
-        img_node["src"] = File.join(File.basename(images_dir), File.basename(cover_file))
+        img_node["src"] = File.join("..", File.basename(media_dir), File.basename(cover_file))
       end
       s_node.add_previous_sibling(section_doc.root)
 
@@ -315,7 +314,6 @@ module UMPTG
 
     def monograph_metadata_file
       f = Dir.glob(File.join(@path, "monograph_metadata.*")).first
-      puts "f:#{f}"
       return f.nil? ? "" : f
     end
 
@@ -323,20 +321,20 @@ module UMPTG
       return File.join(@path, "manuscript")
     end
 
-    def images_dir
-      return File.join(manuscript_dir, "images")
+    def media_dir
+      return File.join(manuscript_dir, "media")
     end
 
-    def images_files
-      return Dir.glob(File.join(images_dir, "*"))
+    def media_files
+      return Dir.glob(File.join(media_dir, "*"))
     end
 
-    def xhtml_dir
-      return File.join(manuscript_dir, "xhtml")
+    def document_dir
+      return File.join(manuscript_dir, "document")
     end
 
-    def xhtml_files
-      return Dir.glob(File.join(xhtml_dir, "*"))
+    def document_files
+      return Dir.glob(File.join(document_dir, "*"))
     end
   end
 end

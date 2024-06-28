@@ -157,32 +157,14 @@ monograph_dir_list.each do |monograph_dir|
     end
   end
 
-  entry_list.each do |entry|
-    section_node = entry.doc.xpath("//*[local-name()='body']/*[local-name()='section']").first
-    epub_type = section_node["epub:type"]
-
-    title = ""
-    unless epub_type.nil? or epub_type.strip.empty?
-      title_node = entry.doc.xpath("//*[local-name()='head']/*[local-name()='title']").first
-      title = title_node.content.strip.gsub(/\s+/, " ")
-    end
-
-    script_logger.info("adding entry #{entry.name}, #{title}")
-    epub.add(
-        entry_name: entry.name,
-        entry_content: UMPTG::XML.doc_to_xml(entry.doc),
-        media_type: "application/xhtml+xml",
-        toc_title: title,
-        epub_type: epub_type,
-        spine_loc: -1
-      )
-  end
-
+  # Adding img files and update img/@href
   entry_list.each do |entry|
     entry.doc.xpath("//*[local-name()='img']").each do |img_node|
       img_src = img_node["src"]
-      img_file = File.join(monograph.manuscript_dir, img_src)
+      img_file = File.expand_path(img_src, monograph.document_dir)
       if File.file?(img_file)
+        img_node["src"] = File.join("images", File.basename(img_file))
+
         entry_name = "OEBPS/images/" + File.basename(img_file)
         entry_content = File.read(img_file, mode: "rb")
         extname = File.extname(img_file)
@@ -202,6 +184,27 @@ monograph_dir_list.each do |monograph_dir|
           )
       end
     end
+  end
+
+  entry_list.each do |entry|
+    section_node = entry.doc.xpath("//*[local-name()='body']/*[local-name()='section']").first
+    epub_type = section_node["epub:type"]
+
+    title = ""
+    unless epub_type.nil? or epub_type.strip.empty?
+      title_node = entry.doc.xpath("//*[local-name()='head']/*[local-name()='title']").first
+      title = title_node.content.strip.gsub(/\s+/, " ")
+    end
+
+    script_logger.info("adding entry #{entry.name}, #{title}")
+    epub.add(
+        entry_name: entry.name,
+        entry_content: UMPTG::XML.doc_to_xml(entry.doc),
+        media_type: "application/xhtml+xml",
+        toc_title: title,
+        epub_type: epub_type,
+        spine_loc: -1
+      )
   end
 
   entry_name = "OEBPS/default.css"

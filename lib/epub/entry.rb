@@ -3,7 +3,7 @@ module UMPTG::EPUB
   require 'zip'
 
   class Entry < UMPTG::Object
-    attr_accessor :content, :modified
+    attr_accessor :content, :modified, :props, :type
     
     def initialize(args = {})
       super(args)
@@ -19,6 +19,8 @@ module UMPTG::EPUB
       end
 
       @modified = false
+      @type = ""
+      @props = ""
     end
 
     def name
