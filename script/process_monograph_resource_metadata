@@ -184,6 +184,14 @@ monograph_id_list.each do |monograph_id|
             node = object.node
             node_map = object.map
             reference_name = node_map['resource_name'].strip
+
+            do_embed = node_map["data-fulcrum-embed"]
+            unless do_embed.nil? or do_embed == false
+              # Markup specifies that this image should not be embedded.
+              monograph_loggers[monograph_id].warn("#{object.name}: skipping reference \"#{reference_name}\".")
+              next
+            end
+
             resource = resource_map.reference_resource(reference_name)
             if resource.nil?
               monograph_loggers[monograph_id].warn("#{object.name}: no resource found for reference \"#{reference_name}\".")
