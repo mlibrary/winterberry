@@ -66,6 +66,7 @@ module UMPTG::Journal::Resource::Filter
         end
       end
       fileset = manifest.fileset(href) if fileset.nil?
+      fileset = manifest.fileset_from_noid(href) if fileset['noid'].empty?
 
       if fileset['noid'].empty?
         @logger.warn("no fileset for href #{href}. Skipping.")
