@@ -4,9 +4,26 @@ module UMPTG::Fulcrum::XResources
 
     def initialize(args = {})
       a = args.clone
-      a[:filters] = {
-            embed_link: Filter::EmbedLinkFilter.new(args)
-          }
+
+      options = a[:options]
+      options = options.nil? ? {} : options
+
+      a[:filters] = {}
+      options.each do |k,v|
+        next unless v
+
+        case k
+        when :embed_link
+          filter = Filter::EmbedLinkFilter.new(args)
+        when :update_alt
+          filter = Filter::UpdateAltTextFilter.new(args)
+        else
+          next
+        end
+        a[:filters][k] = filter
+      end
+      raise "No filters defined" if a[:filters].empty?
+
       super(a)
     end
   end

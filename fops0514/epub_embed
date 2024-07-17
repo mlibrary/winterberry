@@ -63,7 +63,8 @@ fixer_processor = UMPTG::Fulcrum::XResources::Processor.new(
       name: "Fixer",
       manifest: manifest,
       options: {
-        embed_link: true
+        embed_link: true,
+        update_alt: false
       }
     )
 

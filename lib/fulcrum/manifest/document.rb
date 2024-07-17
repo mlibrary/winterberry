@@ -138,6 +138,11 @@ module UMPTG::Fulcrum::Manifest
       return EMPTY_FILESET
     end
 
+    def fileset_exists(file_name)
+      f = fileset(file_name)
+      return !f["file_name"].strip.empty?
+    end
+
     def fileset_from_noid(noid)
       if noid != nil
         fileset_row = @csv.find {|row| row['noid'] == noid }
@@ -167,6 +172,13 @@ module UMPTG::Fulcrum::Manifest
       fileset = fileset(file_name)
       fname = fileset['file_name']
       return fname.nil? ? "" : fname
+    end
+
+    # Method returns the file name for a resource.
+    def fileset_alt(file_name)
+      fileset = fileset(file_name)
+      alt = fileset['alternative_text']
+      return alt.nil? ? "" : alt
     end
 
     # Method returns the caption for a resource.

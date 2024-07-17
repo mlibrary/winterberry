@@ -12,15 +12,7 @@ module UMPTG::Fulcrum::XResources::Filter
     //*[
     local-name()='figure'
     or @data-fulcrum-embed-filename
-    ]
-    SXPATH
-
-    XPATH1 = <<-SXPATH
-    //*[
-    local-name()='figure'
-    and (
-    @data-fulcrum-embed-filename or count(.//*[local-name()='img']) > 0
-    )
+    or (local-name()='img' and count(ancestor::*[local-name()='figure'])=0)
     ]
     SXPATH
 
@@ -54,6 +46,8 @@ module UMPTG::Fulcrum::XResources::Filter
       case reference_node.name
       when "figure"
         action_list = create_figure_actions(reference_node)
+      when "img"
+        action_list = create_img_actions(reference_node)
       else
         action_list = create_element_actions(reference_node)
       end
@@ -111,61 +105,65 @@ module UMPTG::Fulcrum::XResources::Filter
                )
         end
 
-        # One or more resource references found.
-        caption_added = false
-        if caption_node.nil?
-          action_list << UMPTG::XML::Pipeline::Action.new(
-                   name: name,
-                   reference_node: reference_node,
-                   warning_message: \
-                     "#{reference_node.name}: added figcaption element for #{fragment_node}"
-               )
-          fragment_node.add_child("<figcaption class=\"figcaption\"/>")
-          caption_node = fragment_node.xpath(".//*[local-name()='figcaption']").first
-          caption_added = true
-        end
-        block_list = caption_node.xpath(".//*[local-name()='p' or local-name()='div']")
-
-        caption_field = reference_node["data-fulcrum-embed-caption-field"]
-        caption_field = caption_field.strip.downcase unless caption_field.nil?
-        caption_link = reference_node["data-fulcrum-embed-caption-link"]
-        caption_link = (caption_link.strip.downcase == "true") unless caption_link.nil?
-
+        resource_name_list = []
         resource_node_list.each do |resource_node|
-          next if caption_field == "none"
-
           reference_name = resource_node.name == "img" ? \
                     resource_node["src"] : \
                     resource_node["data-fulcrum-embed-filename"]
           resource_name = manifest.fileset_file_name(reference_name)
+          resource_name_list << resource_name unless resource_name.nil? or resource_name.strip.empty?
+        end
 
-          cf = caption_field.nil? ? "caption" : caption_field
-          cl = caption_link.nil? ? false : caption_link
-          if caption_added
-
-            if caption_field.nil? and caption_link.nil?
-              caption_node.add_child(CLASS_FORMAT_STR % ["default-media-display", resource_name, cf, "true"])
-              caption_node.add_child(CLASS_FORMAT_STR % ["enhanced-media-display", resource_name, cf, cl])
-            else
-              caption_node.add_child(FORMAT_STR % [resource_name, cf, cl])
-            end
-          else
-            block_list.each {|n| n.add_class("enhanced-media-display") }
-            caption_node.add_child(CLASS_FORMAT_STR % ["default-media-display", resource_name, cf, "true"])
+        if resource_name_list.count > 0
+          # One or more resource references found.
+          caption_added = false
+          if caption_node.nil?
+            action_list << UMPTG::XML::Pipeline::Action.new(
+                     name: name,
+                     reference_node: reference_node,
+                     warning_message: \
+                       "#{reference_node.name}: added figcaption element for #{fragment_node}"
+                 )
+            fragment_node.add_child("<figcaption class=\"figcaption\"/>")
+            caption_node = fragment_node.xpath(".//*[local-name()='figcaption']").first
+            caption_added = true
           end
-          fragment_node.remove_attribute("style")
-        end
+          block_list = caption_node.xpath(".//*[local-name()='p' or local-name()='div']")
 
-        caption_node.xpath(".//*[@data-fulcrum-embed-filename]").each do |node|
-          insert_metadata(node)
+          caption_field = reference_node["data-fulcrum-embed-caption-field"]
+          caption_field = caption_field.strip.downcase unless caption_field.nil?
+          caption_link = reference_node["data-fulcrum-embed-caption-link"]
+          caption_link = (caption_link.strip.downcase == "true") unless caption_link.nil?
+
+          resource_name_list.each do |resource_name|
+            cf = caption_field.nil? ? "caption" : caption_field
+            cl = caption_link.nil? ? false : caption_link
+            if caption_added
+
+              if caption_field.nil? and caption_link.nil?
+                caption_node.add_child(CLASS_FORMAT_STR % ["default-media-display", resource_name, cf, "true"])
+                caption_node.add_child(CLASS_FORMAT_STR % ["enhanced-media-display", resource_name, cf, cl])
+              else
+                caption_node.add_child(FORMAT_STR % [resource_name, cf, cl])
+              end
+            else
+              block_list.each {|n| n.add_class("enhanced-media-display") }
+              caption_node.add_child(CLASS_FORMAT_STR % ["default-media-display", resource_name, cf, "true"])
+            end
+            fragment_node.remove_attribute("style")
+          end
+
+          caption_node.xpath(".//*[@data-fulcrum-embed-filename]").each do |node|
+            insert_metadata(node)
+          end
+          action_list << UMPTG::XML::Pipeline::Actions::MarkupAction.new(
+                   name: name,
+                   reference_node: reference_node,
+                   action: :replace_node,
+                   markup: fragment_node.to_xml,
+                   info_message: "#{reference_node.name}: links for resources #{resource_name_list.join(',')}"
+               )
         end
-        action_list << UMPTG::XML::Pipeline::Actions::MarkupAction.new(
-                 name: name,
-                 reference_node: reference_node,
-                 action: :replace_node,
-                 markup: fragment_node.to_xml,
-                 info_message: "#{reference_node.name}: links for resources #{resource_name_list.join(',')}"
-             )
       end
       return action_list
     end
@@ -182,6 +180,33 @@ module UMPTG::Fulcrum::XResources::Filter
                markup: node.to_xml,
                info_message: "#{reference_node.name}: links for resources #{fragment_node.name}"
            )
+      return action_list
+    end
+
+    def create_img_actions(reference_node)
+      reference_name = reference_node["src"]
+
+      action_list = []
+
+      content = manifest.fileset_title(reference_name)
+      unless content.empty?
+        link_markup = manifest.fileset_link_markup(
+                reference_name,
+                {
+                    description: content,
+                    download: manifest.fileset_allow_download(reference_name)
+                }
+              )
+        markup = "<span class=\"default-media-display\">" + link_markup + "</span>"
+
+        action_list << UMPTG::XML::Pipeline::Actions::MarkupAction.new(
+                 name: name,
+                 reference_node: reference_node,
+                 action: :add_next,
+                 markup: markup,
+                 info_message: "#{reference_name}: links for resource"
+             )
+      end
       return action_list
     end
 
