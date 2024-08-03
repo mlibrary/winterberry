@@ -4,8 +4,7 @@
                 xmlns:xi="http://www.w3.org/2001/XInclude"
                 xmlns:html="http://www.w3.org/1999/xhtml"
                 xmlns:epub="http://www.idpf.org/2007/ops"
-                xmlns:mlibxsl="http://www.mlib.umich.edu/namespace/mlibxsl"
-                exclude-result-prefixes="xs xi html epub mlibxsl"
+                exclude-result-prefixes="xs xi html epub"
                 version="2.0">
 
     <xsl:output method="xml" indent="yes"/>

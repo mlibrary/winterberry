@@ -69,7 +69,7 @@ module UMPTG::EPUB
     end
 
     def entry(name)
-      return @name2entry[name]
+      return @name2entry[name.delete_prefix("./")]
     end
 
     def entries
@@ -91,6 +91,7 @@ module UMPTG::EPUB
         entry_content = args[:entry_content]
         raise "Error: missing entry content" if entry_content.nil?
 
+        entry_name = entry_name.delete_prefix("./")
         if @name2entry.key?(entry_name)
           entry = @name2entry[entry_name]
           if entry_content != entry.content
@@ -153,9 +154,8 @@ module UMPTG::EPUB
 
         properties = args[:properties]
         unless properties.nil?
-          properties.strip!
-          item_node["properties"] = properties \
-              unless properties.empty?
+          p = properties.strip
+          item_node["properties"] = p unless p.empty?
         end
 
         add(
@@ -305,6 +305,14 @@ module UMPTG::EPUB
       label, rend = rendition(args)
       cover_name = rend.cover_name
       return entry(File.join(File.dirname(label), cover_name))
+    end
+
+    def xhtml(args = {})
+      label, rend = rendition(args)
+      xhtml_list = rend.xhtml_items.collect do |item|
+        entry(File.join(File.dirname(label), item['href']))
+      end
+      return xhtml_list
     end
 
     def load(args = {})

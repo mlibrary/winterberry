@@ -65,6 +65,10 @@ module UMPTG::EPUB
       return spine
     end
 
+    def xhtml_items
+      return find_media_type('application/xhtml+xml')
+    end
+
     def nav_items
       return manifest.select do |node|
         unless node['properties'].nil?
@@ -103,7 +107,8 @@ module UMPTG::EPUB
     end
 
     def find_media_type(media_type)
-      return manifest.select {|node| node['media-type'].downcase == media_type}
+      m = media_type.downcase
+      return manifest.select {|node| node['media-type'].downcase == m}
     end
 
   end

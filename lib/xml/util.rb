@@ -2,6 +2,7 @@ module UMPTG::XML
   require 'nokogiri'
 
   @@XML_PI = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+  @@HTML_DT = "<!DOCTYPE html>"
 
   def self.parse(args = {})
     xml_content = args[:xml_content]
@@ -26,7 +27,13 @@ module UMPTG::XML
   end
 
   def self.doc_to_xml(doc)
-    return @@XML_PI + "\n" + doc.xpath("/*").to_s
+    pref = @@XML_PI + "\n"
+    pref += @@HTML_DT + "\n" if doc.root.name.downcase == "html"
+    return  pref + doc.xpath("/*").to_s
+  end
+
+  def self.doc_to_xhtml(doc)
+    return UMPTG::XML.doc_to_xml(doc)
   end
 
   def self.save(doc, dest_path)
@@ -41,7 +48,7 @@ module UMPTG::XML
   def self.save_html(doc, dest_path)
     begin
       # doc.to_xml would include <!DOCTYPE html> header.
-      File.write(dest_path, @@XML_PI + "\n" + doc.xpath("//*[local-name()='html']").to_s)
+      File.write(dest_path, UMPTG::XML.doc_to_xhtml(doc))
     rescue Exception => e
       puts e.message
     end

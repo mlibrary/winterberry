@@ -1,4 +1,14 @@
 module UMPTG::EPUB
+  require_relative(File.join("migrator", "filters"))
+  require_relative(File.join("migrator", "processor"))
+
+  class << self
+    def Migrator(args = {})
+      return Migrator::Processor.new(args)
+    end
+  end
+
+=begin
   require 'fileutils'
   require 'zip'
   require 'tempfile'
@@ -112,4 +122,5 @@ module UMPTG::EPUB
       @migrate_logger.info("Saved #{output_epub_file}")
     end
   end
+=end
 end

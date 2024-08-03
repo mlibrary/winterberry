@@ -1,6 +1,6 @@
 module UMPTG
   require_relative 'logger'
-  require_relative File.join("xml", "util")
+  require_relative 'xml'
   require_relative 'xslt'
   require_relative 'object'
   require_relative 'action'
@@ -15,4 +15,10 @@ module UMPTG
   require_relative File.join('epub', 'entryprocessor')
   require_relative File.join('epub', 'processor')
   require_relative File.join('epub', 'xprocessor')
+
+  class << self
+    def EPUB(args = {})
+      return EPUB::Archive.new(args)
+    end
+  end
 end

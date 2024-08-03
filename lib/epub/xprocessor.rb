@@ -1,4 +1,11 @@
 module UMPTG::EPUB
+
+  class << self
+    def Processor(args = {})
+      return XProcessor.new(args)
+    end
+  end
+
   require_relative(File.join("..", "object"))
   require_relative(File.join("..", "action"))
   require_relative(File.join("..", "logger"))
@@ -32,10 +39,9 @@ module UMPTG::EPUB
 
       # Process the EPUB OPF if that filter is provided.
       filters = @xml_processor.filters.clone
-      opf_filter = filters.select {|f| f.name == :package }.first
+      opf_filter = filters.select {|f| f.name == :opf }.first
       unless opf_filter.nil?
-        xml_doc = UMPTG::XML.parse(xml_content: epub.opf.content)
-        actions = opf_filter.run(xml_doc, args)
+        actions = opf_filter.run(epub.opf_doc, args)
 
         run_args[:actions] = actions
         result = UMPTG::XML::Pipeline::Action.process_actions(run_args)
@@ -45,8 +51,25 @@ module UMPTG::EPUB
                   )
       end
 
+      # Process the EPUB NCX if that filter is provided.
+      filters = @xml_processor.filters.clone
+      ncx_filter = filters.select {|f| f.name == :ncx }.first
+      unless ncx_filter.nil?
+        epub.ncx.each do |ncx|
+          xml_doc = UMPTG::XML.parse(xml_content: ncx.content)
+          actions = ncx_filter.run(xml_doc, args)
+
+          run_args[:actions] = actions
+          result = UMPTG::XML::Pipeline::Action.process_actions(run_args)
+          entry_actions << EntryActions.new(
+                    entry: ncx,
+                    action_result: result
+                    )
+        end
+      end
+
       # Process EPUB spine.
-      filters = filters.delete_if {|f| f.name == :package }
+      filters = filters.delete_if {|f| f.name == :package or f.name == :ncx }
       unless filters.empty?
         sv_filters = @xml_processor.filters
         @xml_processor.filters = filters
