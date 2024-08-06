@@ -40,7 +40,7 @@ THTML
         suf = slist.count > 1 ? "#" + slist[1] : ""
 
         ext = File.extname(p)
-        if [".htm", ".html"].include?(ext)
+        if [".htm", ".html", ".xml"].include?(ext)
           return File.join(File.dirname(p), File.basename(p, ".*") + ".xhtml" + suf)
         end
       end

@@ -45,7 +45,7 @@ epub_file_list.each do |epub_file|
   epub = UMPTG::EPUB::Archive.new(epub_file: epub_file)
   script_logger.info("processing #{File.basename(epub_file)}, version #{epub.version}")
 
-  UMPTG::EPUB::Migrator.migrate(
+  UMPTG::EPUB::MigratorXSL.migrate(
         epub: epub,
         migrate_logger: script_logger
         )

@@ -8,12 +8,11 @@ module UMPTG::EPUB
     end
   end
 
-=begin
   require 'fileutils'
   require 'zip'
   require 'tempfile'
 
-  class Migrator
+  class MigratorXSL
     attr_reader :migrate_logger
 
     def self.migrate(args = {})
@@ -122,5 +121,4 @@ module UMPTG::EPUB
       @migrate_logger.info("Saved #{output_epub_file}")
     end
   end
-=end
 end

@@ -76,30 +76,6 @@ module UMPTG::EPUB::Migrator::Filter
                 )
       end
 
-=begin
-      actions << UMPTG::XML::Pipeline::Actions::RemoveNamespaceAction.new(
-                name: name,
-                reference_node: reference_node,
-                namespace_remove_all: true,
-                warning_message: "#{name}, namespaces not removed"
-              )
-      actions << UMPTG::XML::Pipeline::Actions::SetAttributeValueAction.new(
-                name: name,
-                reference_node: reference_node,
-                attribute_name: "xmlns",
-                attribute_value: "http://www.idpf.org/2007/opf",
-                warning_message: "#{name}, missing #{reference_node.name}/@xmlns=\"http://www.idpf.org/2007/opf\""
-              )
-
-      actions << UMPTG::XML::Pipeline::Actions::AddNamespaceAction.new(
-                name: name,
-                reference_node: reference_node,
-                namespace_prefix: "xsi",
-                namespace_uri: "http://www.w3.org/2001/XMLSchema-instance",
-                warning_message: "#{name}, missing #{reference_node.name}/@xsi=\"http://www.w3.org/2001/XMLSchema-instance\""
-              )
-=end
-
       version = reference_node["version"]
       case version.strip[0]
       when "3"
@@ -124,38 +100,39 @@ module UMPTG::EPUB::Migrator::Filter
     def process_metadata(reference_node, args)
       actions = []
 
-=begin
-      actions << UMPTG::XML::Pipeline::Actions::AddNamespaceAction.new(
-                name: name,
-                reference_node: reference_node,
-                namespace_prefix: "dc",
-                namespace_uri: "http://purl.org/dc/elements/1.1/",
-                warning_message: "#{name}, missing #{reference_node.name}/@dc=\"http://purl.org/dc/elements/1.1/\""
-              )
-
-      actions << UMPTG::XML::Pipeline::Actions::AddNamespaceAction.new(
-                name: name,
-                reference_node: reference_node,
-                namespace_prefix: "dcterms",
-                namespace_uri: "http://purl.org/dc/terms/",
-                warning_message: "#{name}, missing #{reference_node.name}/@dcterms=\"http://purl.org/dc/terms/\""
-              )
-=end
-
-      # [Y0001]-[M01]-[D01]T[H01]:[m01]:[s01]Z
+      # Set[Y0001]-[M01]-[D01]T[H01]:[m01]:[s01]Z
       tm = Time.now
       mdate = tm.strftime("%Y-%m-%dT%H:%M:%SZ")
 
       mdate_list = reference_node.xpath("./*[local-name()='meta' and @property='dcterms:modified']")
       if mdate_list.empty?
+        dte_actions = []
+
+        # If found, transform dc:date/@opf:event="modification" to meta/@property="dcterms:modified"
         markup = "<meta property=\"dcterms:modified\">#{mdate}</>"
-        actions << UMPTG::XML::Pipeline::Actions::MarkupAction.new(
-                  name: name,
-                  reference_node: reference_node,
-                  action: :add_child,
-                  markup: markup,
-                  warning_message: "#{name}, missing metadata/meta[@property='dcterms:modified']"
-                )
+
+        opf_dates = reference_node.xpath(".//@*[namespace-uri()='http://www.idpf.org/2007/opf' and local-name()='event']")
+        opf_dates.each do |d|
+          if d.content.downcase.start_with?("modif")
+            dte_actions << UMPTG::XML::Pipeline::Actions::MarkupAction.new(
+                      name: name,
+                      reference_node: d.parent,
+                      action: :replace_node,
+                      markup: markup,
+                      warning_msg: "#{name} invalid #{d.parent.name}/@opf:#{d.name}=\"#{d.content}\""
+                    )
+          end
+        end
+        if dte_actions.empty?
+          dte_actions << UMPTG::XML::Pipeline::Actions::MarkupAction.new(
+                    name: name,
+                    reference_node: reference_node,
+                    action: :add_child,
+                    markup: markup,
+                    warning_msg: "#{name}, missing metadata/meta[@property='dcterms:modified']"
+                  )
+        end
+        actions += dte_actions
       else
         mdate_list.each do |n|
           actions << UMPTG::XML::Pipeline::Actions::MarkupAction.new(

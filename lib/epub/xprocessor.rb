@@ -57,6 +57,8 @@ module UMPTG::EPUB
       unless ncx_filter.nil?
         epub.ncx.each do |ncx|
           xml_doc = UMPTG::XML.parse(xml_content: ncx.content)
+          @logger.error("#{ncx.name}: #{xml_doc.errors.count} parse errors") unless xml_doc.errors.empty?
+
           actions = ncx_filter.run(xml_doc, args)
 
           run_args[:actions] = actions
@@ -69,7 +71,7 @@ module UMPTG::EPUB
       end
 
       # Process EPUB spine.
-      filters = filters.delete_if {|f| f.name == :package or f.name == :ncx }
+      filters = filters.delete_if {|f| f.name == :opf or f.name == :ncx }
       unless filters.empty?
         sv_filters = @xml_processor.filters
         @xml_processor.filters = filters
@@ -77,6 +79,8 @@ module UMPTG::EPUB
         spine_entries = epub.spine if spine_entries.nil?
         spine_entries.each do |entry|
           xml_doc = UMPTG::XML.parse(xml_content: entry.content)
+          @logger.error("#{entry.name}: #{xml_doc.errors.count} parse errors") unless xml_doc.errors.empty?
+
           result = @xml_processor.run(xml_doc, args)
           entry_actions << EntryActions.new(
                     entry: entry,

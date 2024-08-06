@@ -4,6 +4,8 @@ module UMPTG::EPUB::Migrator::Filter
 
     XPATH = <<-PCKXPATH
     //*[
+    local-name()='html'
+    ] | //*[
     local-name()='head'
     ] | //*[
     local-name()='img'
@@ -29,6 +31,8 @@ module UMPTG::EPUB::Migrator::Filter
       actions = []
 
       case reference_node.name
+      when "html"
+        actions += process_root(reference_node, args)
       when "head"
         actions += process_heading(reference_node, args)
       when "img"
@@ -52,6 +56,31 @@ module UMPTG::EPUB::Migrator::Filter
     end
 
     private
+
+    XSI_NS = "http://www.w3.org/2001/XMLSchema-instance"
+
+    def process_root(reference_node, args)
+      actions = []
+
+      xsi_ns = reference_node.document.root.namespace_definitions.select {|ns| ns.href == XSI_NS }
+      if xsi_ns.empty?
+        actions << UMPTG::XML::Pipeline::Actions::AddNamespaceAction.new(
+                  name: name,
+                  reference_node: reference_node,
+                  namespace_prefix: "xsi",
+                  namespace_uri: XSI_NS,
+                  warning_message: "#{name}, missing namespace #{reference_node.name}/@xmlns:xsi=\"#{XSI_NS}\""
+                )
+      else
+        actions << UMPTG::XML::Pipeline::Action.new(
+                  name: name,
+                  reference_node: reference_node,
+                  info_message: "#{name}, found namespace #{reference_node.name}/@xmlns:#{xsi_ns.first.prefix}=\"#{xsi_ns.first.href}\""
+                )
+      end
+
+      return actions
+    end
 
     def process_heading(reference_node, args)
       actions = []

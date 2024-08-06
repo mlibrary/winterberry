@@ -1,8 +1,11 @@
 module UMPTG::XML
   require 'nokogiri'
+  require 'htmlentities'
 
   @@XML_PI = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
   @@HTML_DT = "<!DOCTYPE html>"
+
+  @@ENTITY_CODER = HTMLEntities.new
 
   def self.parse(args = {})
     xml_content = args[:xml_content]
@@ -13,6 +16,18 @@ module UMPTG::XML
 
       xml_content = File.read(xml_file)
     end
+    #xml_content = xml_content.force_encoding("ISO-8859-1").encode("UTF-8")
+    xml_content = xml_content.force_encoding("UTF-8")
+
+=begin
+    begin
+      xml_content = @@ENTITY_CODER.decode(xml_content)
+    rescue Encoding::UndefinedConversionError => uce
+      raise "Encoding error #{uce.message}"
+    rescue Exception => e
+      raise e.message
+    end
+=end
 
     begin
       xml_doc = Nokogiri::XML(xml_content, nil, 'UTF-8')
@@ -24,6 +39,10 @@ module UMPTG::XML
 
   def self.XML_PI
     return @@XML_PI
+  end
+
+  def self.ENTITY_CODER
+    return @@ENTITY_CODER
   end
 
   def self.doc_to_xml(doc)
