@@ -41,7 +41,7 @@ FULCRUM_MONOGRAPH_HEADERS = UMPTG::Fulcrum::Manifest::Validation::CollectionSche
 fm_csv = CSV.parse(
           File.read(csv_file),
           :headers => true,
-          #:header_converters=> lambda {|f| fm_header_convert(f)},
+          :header_converters=> lambda {|f| f.strip},
           :return_headers => false
         )
 
@@ -118,17 +118,6 @@ monograph_dir_list.each do |monograph_dir|
       end
     end
   end
-=begin
-  fm_row_list = fm_csv.select {|row| !row['HEBID'].nil? and row['HEBID'].strip.downcase == title_id }
-  if fm_row_list.empty?
-    title_isbn = title_id[0..12]
-    fm_row_list = fm_csv.select do |row|
-      (!row['ISBN1_13'].nil? and row['ISBN1_13'].strip.gsub(/\-/,'') == title_isbn) \
-      or (!row['ISBN2_13'].nil? and row['ISBN2_13'].strip.gsub(/\-/,'') == title_isbn) \
-      or (!row['ISBN3_13'].nil? and row['ISBN3_13'].strip.gsub(/\-/,'') == title_isbn)
-    end
-  end
-=end
 
   if fm_row_list.empty?
     puts "Warning: no CSV row found for #{title_id}. Skipping."
@@ -142,74 +131,16 @@ monograph_dir_list.each do |monograph_dir|
   #   Title, Publisher (citation), Creator(s), Pub Year,
   #   Pub Location, Handle, Identifier(s), ISBN(s)
   unless fm_row.nil?
-    monograph_row['File Name'] = UMPTG::Fulcrum::Manifest.MONOGRAPH_FILE_NAME
-=begin
-    format_isbn = {}
-    isbn, format = convert_isbn(fm_row['ISBN-13'], fm_row['ISBN format'], "hardcover")
-    format_isbn[format] = isbn unless isbn.nil? or isbn.empty?
-    # Monograph row
-    isbn_list = []
-    format_isbn.each do |key,val|
-      isbn_list << "#{val} (#{key})"
-    end
-    monograph_row['ISBN(s)'] = isbn_list.join(';')
-=end
-    monograph_row['ISBN(s)'] = fm_row['ISBN(s)']
-
-=begin
-    author_list = []
-    5.times do |i|
-      author_name = fm_row["Author#{i} Alphabetical name"]
-      author_name = author_name.nil? ? "" : author_name.strip
-      unless author_name.empty?
-        author_role = fm_row["Author#{i} Role"]
-        author_role = author_role.nil? ? "" : author_role.strip
-        author_entry = author_role.empty? ? author_name : "#{author_name} (#{author_role})"
-        author_list << author_entry
-      end
-    end
-    monograph_row['Creator(s)'] = author_list.join(';')
-
-    monograph_row['Title'] = fm_row['Main title']
-    unless fm_row['Subtitle'].nil? or fm_row['Subtitle'].empty?
-      monograph_row['Title'] += ': ' + fm_row['Subtitle']
-    end
-=end
-    monograph_row['Creator(s)'] = fm_row['Creator(s)']
-    monograph_row['Title'] = fm_row['Title']
-
-=begin
-    #monograph_row['Handle'] = fm_row['Handle Prefix'] + fm_row['ID'][3..7] unless fm_row['Handle Prefix'].nil?
-    #monograph_row['Handle'] = "http://hdl.handle.net/2027/heb." + fm_row['ID'][3..7] if fm_row['Handle Prefix'].nil?
-    #monograph_row['Handle'] = "2027/heb." + fm_row['ID'][3..7] if fm_row['Handle Prefix'].nil?
-    monograph_row['Handle'] = "2027/heb." + fm_row['ID'][3..7]
-=end
     fm_row.each do |key,val|
       next if key.nil? or key.strip.empty?
 
       case key
-      when 'HEBID'
-        monograph_row['Identifier(s)'] = "heb_id:#{val.downcase}"
-      #when 'Date published'
-      when 'Copyright year'
-        monograph_row['Pub Year'] = val
-      when 'Location published'
-        monograph_row['Pub Location'] = val
-      when 'Book description'
-        monograph_row['Description'] = val
-      when 'Copyright holder'
+      when 'File Name'
+        monograph_row['File Name'] = UMPTG::Fulcrum::Manifest.MONOGRAPH_FILE_NAME
+      when 'Copyright Holder'
         monograph_row['Rightsholder'] = val
-      when 'Creator display name'
-        monograph_row['Creator Display'] = val
-      when 'Edition statement'
-        monograph_row['Edition Name'] = val
-      when 'Subject Description'
-        puts "subject:#{val}"
-        monograph_row['Subject'] = val
-      when 'Handle Prefix'
-      when 'ISBN-13'
-      when 'ISBN Format', 'ISBN format'
-      when 'Main title', 'Subtitle', 'File Name'
+      when 'DOI'
+        monograph_row[key] = val.delete_prefix("https://doi.org/")
       else
         monograph_row[key] = val
       end
@@ -222,9 +153,7 @@ monograph_dir_list.each do |monograph_dir|
         ) do |csv|
 
     csv << { "File Name" => "***row left intentionally blank***" }
-    rep_row_list.each do |rep_row|
-      csv << rep_row
-    end
+    rep_row_list.each {|rep_row| csv << rep_row }
     csv << monograph_row
   end
 
@@ -232,5 +161,4 @@ monograph_dir_list.each do |monograph_dir|
   fulcrum_file = File.join(monograph_dir, title_id + "_fulcrum.csv")
   puts "Creating metadata file #{fulcrum_file}"
   File.write(fulcrum_file, fulcrum_body)
-  #break
 end
