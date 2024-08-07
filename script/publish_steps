@@ -478,7 +478,7 @@ File.open(cmds_file, "w") do |fp|
   fp.puts monograph_info.keys.join(' ')
   fp.puts monograph_info.keys.select {|k| monograph_info[k][:fmsl_file] != nil }.join(' ')
   monograph_info.each do |monograph_id,minfo|
-    mminfo = minfo.delete_if {|key,value| key == :monograph_dir or key == :monograph_resources_dir}
+    mminfo = minfo.delete_if {|key,value| key == :monograph_dir or key == :monograph_resources_dir or key == :fmsl_file}
     fp.puts "#{monograph_id},#{mminfo.values.join(',')}"
   end
   fp.puts
