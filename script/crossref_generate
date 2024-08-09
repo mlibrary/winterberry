@@ -235,8 +235,29 @@ doi_report_file_list.each do |doi_report_file|
   end
 
   avoid_dups = {}
-  crossref_doc = Nokogiri::XML(XML_PI + "\n<root></root>")
-  root_node = crossref_doc.first_element_child
+=begin
+  crossref_markup = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+  crossref_markup += "<root>"
+  book_node_list.each do |book_node|
+    bookkey = book_node.xpath("./*[local-name()='bookkey']").first.content
+    if avoid_dups.key?(bookkey)
+      avoid_dups[bookkey] << book_node
+      script_logger.warn("duplicate found #{bookkey}, skipping")
+      next
+    end
+    avoid_dups[bookkey] = [book_node]
+
+    markup = book_node.to_xml.force_encoding(enc.name).encode("UTF-8")
+    crossref_markup += markup
+  end
+  crossref_markup += "</root>"
+  crossref_doc = Nokogiri::XML.parse(crossref_markup)
+=end
+
+  #crossref_doc = Nokogiri::XML(XML_PI + "\n<root></root>")
+  crossref_doc = Nokogiri::XML("<?xml version=\"1.0\" encoding=\"utf-8\"?>" + "\n<root></root>")
+
+  root_node = crossref_doc.document.root
   book_node_list.each do |book_node|
     bookkey = book_node.xpath("./*[local-name()='bookkey']").first.content
     if avoid_dups.key?(bookkey)

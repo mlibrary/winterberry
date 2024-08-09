@@ -17,7 +17,7 @@
     <xsl:param name="UMP_REGISTRANT" select="'MPublishing'"/>
     <xsl:param name="UMP_PUBLISHER_PLACE" select="'Ann Arbor, MI'"/>
 
-    <xsl:output method="xml" encoding="windows-1252" omit-xml-declaration="no" indent="yes"/>
+    <xsl:output method="xml" encoding="utf-8" omit-xml-declaration="no" indent="yes"/>
     <xsl:strip-space elements="*"/>
 
     <!-- Current Crossref namespace -->
