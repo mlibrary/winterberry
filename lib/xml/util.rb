@@ -3,6 +3,7 @@ module UMPTG::XML
   require 'htmlentities'
 
   @@XML_PI = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+  @@XML_PI_FORMAT = "<?xml version=\"1.0\" encoding=\"%s\"?>"
   @@HTML_DT = "<!DOCTYPE html>"
 
   @@ENTITY_CODER = HTMLEntities.new
@@ -14,10 +15,16 @@ module UMPTG::XML
       raise "error: either :xml_content or :xml_file must be provided" \
           if xml_file.nil? or xml_file.empty?
 
-      xml_content = File.read(xml_file)
+      encoding_name = args[:encoding] || "UTF-8"
+      enc = Encoding::find(encoding_name)
+      raise "invalid encoding name #{encoding_name}" if enc.nil?
+
+      xml_content = File.open(xml_file, "r", encoding: enc.name) {|fp| fp.read }
+      unless xml_content[0..200].match?(/<\?xml[ ]*[^\?]+\?>/)
+        pi = sprintf(@@XML_PI_FORMAT, enc.name)
+        xml_content = pi + "\n" + xml_content
+      end
     end
-    #xml_content = xml_content.force_encoding("ISO-8859-1").encode("UTF-8")
-    xml_content = xml_content.force_encoding("UTF-8")
 
 =begin
     begin
@@ -29,8 +36,9 @@ module UMPTG::XML
     end
 =end
 
+
     begin
-      xml_doc = Nokogiri::XML(xml_content, nil, 'UTF-8')
+      xml_doc = Nokogiri::XML(xml_content)
     rescue Exception => e
       raise e.message
     end
@@ -97,9 +105,5 @@ module UMPTG::XML
           child.add_next_sibling(link_element)
         end
       end
-  end
-
-  def self.XML_PI
-    return @@XML_PI
   end
 end

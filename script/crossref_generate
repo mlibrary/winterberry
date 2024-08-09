@@ -23,6 +23,7 @@ options.id_list_files = {
     include: nil
   }
 options.monograph_link = :default
+options.encoding = "windows-1252"
 option_parser = OptionParser.new do |opts|
   opts.banner = "Usage: #{File.basename(__FILE__)} [-e isbn_list_file] [-i isbn_list_file] [-l default|fulcrum|ump] doi_report_file"
   opts.on('-e', '--exclude id_list_file', 'File containing list of ISBNs to exclude') do |id_list_file|
@@ -33,6 +34,9 @@ option_parser = OptionParser.new do |opts|
   end
   opts.on('-l', '--link default|fulcrum|ump', 'Use which link as resource') do |link|
     options.monograph_link = link.to_sym
+  end
+  opts.on('-n', '--encoding', 'Encoding UTF-8|Windows-1252') do |enc|
+    options.encoding = enc
   end
   opts.on_tail('-h', '--help', 'Print this help message') do
     script_logger.info(opts)
@@ -55,11 +59,21 @@ unless [:default,:fulcrum,:ump].include?(options.monograph_link)
   exit 1
 end
 
+# Determine if valid encoding
+enc = Encoding::find(options.encoding)
+if enc.nil?
+  script_logger.error("invalid encoding #{options.encoding}")
+  exit 1
+end
+
 require 'nokogiri'
 require 'csv'
 
 require_relative File.join(root_dir, "lib", "fulcrum")
 require_relative File.join(root_dir, 'lib', 'xslt')
+
+ENCODING_WINDOWS_1252 = Encoding::find("Windows-1252")
+XML_PI = "<?xml version=\"1.0\" encoding=\"#{enc.name}\"?>"
 
 # If monograph ID include or exclude files were provided,
 # verify their existence.
@@ -109,7 +123,16 @@ doi_report_file_list.each do |doi_report_file|
   end
   script_logger.info("processing DOI Report file #{File.basename(doi_report_file)}")
 
-  doi_report_doc = Nokogiri::XML(File.open(doi_report_file))
+  doi_report_doc = UMPTG::XML.parse(
+          xml_file: doi_report_file,
+          encoding: enc.name
+        )
+=begin
+  fp = File.open(doi_report_file, "r", encoding: enc.name)
+  xml_content = fp.read
+  doi_report_doc = Nokogiri::XML(XML_PI + "\n" + xml_content)
+  #doi_report_doc = Nokogiri::XML(File.open(doi_report_file))
+=end
 
   book_node_list = []
   if id_list_csv[:include].nil?
@@ -212,7 +235,7 @@ doi_report_file_list.each do |doi_report_file|
   end
 
   avoid_dups = {}
-  crossref_doc = Nokogiri::XML('<?xml version="1.0" encoding="utf-8"?><root></root>')
+  crossref_doc = Nokogiri::XML(XML_PI + "\n<root></root>")
   root_node = crossref_doc.first_element_child
   book_node_list.each do |book_node|
     bookkey = book_node.xpath("./*[local-name()='bookkey']").first.content
@@ -269,7 +292,10 @@ doi_report_file_list.each do |doi_report_file|
   end
 
   doi_report_edit_file = File.join(File.dirname(doi_report_file), File.basename(doi_report_file, ".*") + "_edited" + File.extname(doi_report_file))
-  File.write(doi_report_edit_file, crossref_doc.to_xml)
+  #File.write(doi_report_edit_file, crossref_doc.to_xml)
+  File.open(doi_report_edit_file, "w", encoding: enc.name) do |f|
+    f.write(crossref_doc.to_xml)
+  end
   script_logger.info("wrote XML file #{File.basename(doi_report_edit_file)}.")
 
   crossref_xml_file = File.join(
@@ -292,7 +318,8 @@ doi_report_file_list.each do |doi_report_file|
   parameters = {
       "BATCH_ID" => "'#{batch_id}'",
       "TIMESTAMP" => "'#{timestamp}'",
-      "EXCLUDE_ISBN" => "'#{exclude_list.join(';')}'"
+      "EXCLUDE_ISBN" => "'#{exclude_list.join(';')}'",
+      "ENCODING_NAME" => "'#{enc.name}'"
     }
 
   UMPTG::XSLT.transform(

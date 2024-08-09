@@ -35,10 +35,20 @@ module UMPTG
 
       case
       when xsl_version.start_with?('1.')
-        src_doc = Nokogiri::XML(File.read(src_path)) if src_doc.nil?
+        if src_doc.nil?
+          enc_name = parameters["ENCODING_NAME"] || "UTF-8"
+          enc = Encoding::find(enc_name)
+          raise "invalid encoding name #{enc_name}" if enc.nil?
+
+          src_doc = UMPTG::XML.parse(
+                  xml_file: src_path,
+                  encoding: enc.name
+                )
+        end
+
         xsl = Nokogiri::XSLT(xsl_body)
         dest_xml = xsl.transform(src_doc, parameters)
-        File.write(dest_path, dest_xml)
+        File.open(dest_path, "w", encoding: src_doc.encoding) {|fp| fp.write(dest_xml) }
       when xsl_version.start_with?('2.')
         raise "srcpath parameter must be set" if src_path.nil? or src_path.empty?
         parameters_str = ""

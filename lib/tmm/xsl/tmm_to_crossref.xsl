@@ -6,18 +6,19 @@
         xmlns:date="http://exslt.org/dates-and-times"
         extension-element-prefixes="date"
 >
-    <xsl:output method="xml" encoding="utf-8" omit-xml-declaration="no" indent="yes"/>
-    <xsl:strip-space elements="*"/>
-
     <!-- Defined paramters that can be overridden -->
     <xsl:param name="BATCH_ID"/>
     <xsl:param name="TIMESTAMP"/>
     <xsl:param name="EXCLUDE_ISBN" select="''"/>
+    <xsl:param name="ENCODING_NAME" select="'utf-8'"/>
     <xsl:param name="UMP_URL_PREFIX" select="'https://press.umich.edu/isbn/'"/>
     <xsl:param name="UMP_DEPOSITOR" select="'scpo'"/>
     <xsl:param name="UMP_EMAIL" select="'mpub.xref@gmail.com'"/>
     <xsl:param name="UMP_REGISTRANT" select="'MPublishing'"/>
     <xsl:param name="UMP_PUBLISHER_PLACE" select="'Ann Arbor, MI'"/>
+
+    <xsl:output method="xml" encoding="windows-1252" omit-xml-declaration="no" indent="yes"/>
+    <xsl:strip-space elements="*"/>
 
     <!-- Current Crossref namespace -->
     <xsl:variable name="NAMESPACE_URL" select="'http://www.crossref.org/schema/5.3.1'"/>

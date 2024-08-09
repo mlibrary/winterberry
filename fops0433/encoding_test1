@@ -1,0 +1,86 @@
+#!/usr/bin/env ruby
+# encoding: utf-8
+
+# Script test Crossref DOI encoding
+
+require 'optparse'
+require 'ostruct'
+require 'os'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+# Process the script parameters.
+options = OpenStruct.new
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)}  xml_file [<xml_file>..]"
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    puts opts
+    exit(0)
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  puts option_parser.help
+  exit(0)
+end
+
+xml_file_list = ARGV
+
+require 'nokogiri'
+
+require_relative File.join(root_dir, 'lib', 'xml', 'util')
+
+
+XML_PI_FORMAT = "<?xml version=\"1.0\" encoding=\"%s\"?>"
+enc = Encoding::find("Windows-1252")
+
+xml_file_list.each do |xml_file|
+  xml_file = File.expand_path(xml_file)
+  unless File.file?(xml_file)
+    script_logger.error("path \"#{File.basename(xml_file)}\" is not an existing file.")
+    next
+  end
+  script_logger.info("processing file \"#{File.basename(xml_file)}\"")
+
+  xml_doc = UMPTG::XML.parse(
+          xml_file: xml_file,
+          encoding: enc.name
+        )
+
+=begin
+  fp = File.open(xml_file, "r", encoding: ENCODING_WINDOWS_1252.name)
+  xml_content = fp.read
+  pi = sprintf(XML_PI_FORMAT, ENCODING_WINDOWS_1252.name) + "\n"
+  xml_doc = Nokogiri::XML.parse(pi + xml_content)
+  script_logger.info("enc:#{xml_doc.encoding}")
+
+  crossref_markup = pi + '<root></root>'
+  crossref_doc = Nokogiri::XML(crossref_markup)
+  crossref_file = File.join(
+        File.dirname(xml_file),
+        File.basename(xml_file, ".*") + "_crossref" + File.extname(xml_file)
+      )
+  File.write(crossref_file, crossref_doc.to_xml)
+  script_logger.info("saved file \"#{File.basename(crossref_file)}\"")
+
+  xml_doc.xpath("//*[local-name()='book']").each do |node|
+    title = node.xpath(".//*[local-name()='title']").first.content
+    crossref_doc.root.add_child(node)
+    script_logger.info("added title \"#{title}\"")
+  end
+=end
+
+  new_xml_file = File.join(
+        File.dirname(xml_file),
+        File.basename(xml_file, ".*") + "_" + File.basename(__FILE__) + File.extname(xml_file)
+      )
+  fp = File.open(new_xml_file, "w", encoding:"Windows-1252")
+  fp.write(new_xml_file, xml_doc.to_xml)
+  script_logger.info("saved file \"#{File.basename(new_xml_file)}\"")
+end
