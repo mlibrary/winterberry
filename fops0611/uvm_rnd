@@ -90,16 +90,6 @@ monograph_dir_list.each do |monograph_dir|
   # is the search key. First, search HEB ID field (ID).
   # If fails, then search the ISBN fields (ISBN[1-3]_13).
   fm_row_list = fm_csv.select {|row| !row['File Name'].nil? and File.basename(row['File Name'].strip, ".*") == title_id }
-=begin
-  fm_row_list = []
-  fm_csv.each do |row|
-    fname = row['File Name']
-    next if fname.nil?
-    fname = File.basename(fname.strip, ".*")
-    #puts "#{fname},#{title_id}"
-    fm_row_list << row if fname == title_id
-  end
-=end
   if fm_row_list.empty?
     puts "Warning: no CSV row found for #{title_id}. Skipping."
     next
@@ -112,57 +102,23 @@ monograph_dir_list.each do |monograph_dir|
   #   Title, Publisher (citation), Creator(s), Pub Year,
   #   Pub Location, Handle, Identifier(s), ISBN(s)
   unless fm_row.nil?
-=begin
-    format_isbn = {}
-    isbn, format = convert_isbn(fm_row['ISBN-13'], fm_row['ISBN format'], "hardcover")
-    format_isbn[format] = isbn unless isbn.nil? or isbn.empty?
-    # Monograph row
-    isbn_list = []
-    format_isbn.each do |key,val|
-      isbn_list << "#{val} (#{key})"
-    end
-    monograph_row['ISBN(s)'] = isbn_list.join(';')
-
-    author_list = []
-    5.times do |i|
-      author_name = fm_row["Author#{i} Alphabetical name"]
-      author_name = author_name.nil? ? "" : author_name.strip
-      unless author_name.empty?
-        author_role = fm_row["Author#{i} Role"]
-        author_role = author_role.nil? ? "" : author_role.strip
-        author_entry = author_role.empty? ? author_name : "#{author_name} (#{author_role})"
-        author_list << author_entry
-      end
-    end
-    monograph_row['Creator(s)'] = author_list.join(';')
-
-    monograph_row['Title'] = fm_row['Main title']
-    unless fm_row['Subtitle'].nil? or fm_row['Subtitle'].empty?
-      monograph_row['Title'] += ': ' + fm_row['Subtitle']
-    end
-=end
-
-=begin
-    #monograph_row['Handle'] = fm_row['Handle Prefix'] + fm_row['ID'][3..7] unless fm_row['Handle Prefix'].nil?
-    #monograph_row['Handle'] = "http://hdl.handle.net/2027/heb." + fm_row['ID'][3..7] if fm_row['Handle Prefix'].nil?
-    #monograph_row['Handle'] = "2027/heb." + fm_row['ID'][3..7] if fm_row['Handle Prefix'].nil?
-    monograph_row['Handle'] = "2027/heb." + fm_row['ID'][3..7]
-=end
     fm_row.each do |key,val|
       next if key.nil? or key.strip.empty?
       next if key == 'File Name'
 
       monograph_row[key] = val
-=begin
       case key
+      when 'Copyright Holder'
+        monograph_row['Rightsholder'] = val
+      when 'DOI'
+        monograph_row['DOI'] = val.delete_prefix("https://doi.org/")
+=begin
       when 'Copyright year'
         monograph_row['Pub Year'] = val
       when 'Location published'
         monograph_row['Pub Location'] = val
       when 'Book description'
         monograph_row['Description'] = val
-      when 'Copyright holder'
-        monograph_row['Rightsholder'] = val
       when 'Creator display name'
         monograph_row['Creator Display'] = val
       when 'Edition statement'
@@ -174,10 +130,10 @@ monograph_dir_list.each do |monograph_dir|
       when 'ISBN-13'
       when 'ISBN Format', 'ISBN format'
       when 'Main title', 'Subtitle'
+=end
       else
         monograph_row[key] = val
       end
-=end
     end
   end
 
