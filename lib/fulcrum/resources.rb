@@ -17,4 +17,7 @@ module UMPTG::Fulcrum
   require_relative File.join('resources', 'linkelementaction')
   require_relative File.join('resources', 'removeelementaction')
   require_relative File.join('resources', 'updatealtaction')
+
+  require_relative File.join('resources', 'filter')
+  require_relative File.join('resources', 'processor')
 end

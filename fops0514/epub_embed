@@ -59,7 +59,7 @@ end
 raise "no valid manifest specified" if manifest.nil?
 #raise "no NOID column" unless manifest.headers.include?("noid")
 
-fixer_processor = UMPTG::Fulcrum::XResources::Processor.new(
+fixer_processor = UMPTG::Fulcrum::Resources::Processor.new(
       name: "Fixer",
       manifest: manifest,
       options: {

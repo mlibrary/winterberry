@@ -1,4 +1,4 @@
-module UMPTG::Fulcrum::XResources
+module UMPTG::Fulcrum::Resources
 
   class Processor < UMPTG::XML::Pipeline::Processor
 

@@ -1,11 +1,7 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
-# Script takes a list of EPUBs and embeds
-# Fulcrum resources and additional resources.
-# The manifest for each EPUB may be specified,
-# otherwise the EPUB basename is used as the
-# monograph ID.
+# Script for embedding resource links
 
 require 'optparse'
 require 'ostruct'
@@ -21,23 +17,15 @@ script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
 
 # Process the script parameters.
 options = OpenStruct.new
-options.fulcrum_host = nil
-options.resource_map_file_list = []
-options.resource_css = :default
-options.manifest_file_list = []
+options.manifest_file = nil
+options.normalize = false
 option_parser = OptionParser.new do |opts|
-  opts.banner = "Usage: #{File.basename(__FILE__)} [-f production|preview|staging] [-m manifest_file] epub_file [epub_file...]"
-  opts.on('-a', '--resource_map <resource_map_file>', 'Resource Map File') do |resource_map_file|
-    options.resource_map_file_list << resource_map_file
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-n] [-m manifest_file] epub_file [epub_file...]"
+  opts.on('-m', '--manifest manifest_file', 'Resource manifest file') do |manifest_file|
+    options.manifest_file = manifest_file
   end
-  opts.on('-c', '--resource_css [default|enhanced]', 'Resource CSS styling') do |type|
-    options.resource_css = type
-  end
-  opts.on('-f', '--fulcrum_host [production|preview|staging]', 'Fulcrum environment') do |fulcrum_host|
-    options.fulcrum_host = fulcrum_host
-  end
-  opts.on('-m', '--manifest [manifest_file]', 'Manifest file') do |manifest_file|
-    options.manifest_file_list << manifest_file
+  opts.on('-n', '--normalize', 'Use which link as resource') do |flag|
+    options.normalize = true
   end
   opts.on_tail('-h', '--help', 'Print this help message') do
     script_logger.info(opts)
@@ -49,64 +37,69 @@ if ARGV.count < 1
   script_logger.info(option_parser.help)
   return
 end
+
+# Process the command line parameters.
 epub_file_list = ARGV
 
-require_relative File.join(root_dir, 'lib', 'fulcrum')
-require_relative File.join(root_dir, 'lib', 'review')
+require_relative File.join(root_dir, "lib", "epub")
+require_relative File.join(root_dir, "lib", "fulcrum")
+require_relative File.join(root_dir, "lib", "xml", "pipeline")
 
-options.embedders = {
-        resources_embed: true
-    }
-
-# Provide the directory path for adding the stylesheet link.
-fulcrum_css_name = options.resource_css == :default ? 'fulcrum_default.css' : 'fulcrum_enhanced.css'
-fulcrum_css_file = File.join(root_dir, 'lib', 'css', fulcrum_css_name)
-
-# Travese the list of EPUB files to update.
-epub_file_list.each_index do |ndx|
-
-  epub_file = File.expand_path(epub_file_list[ndx])
-  unless File.exist?(epub_file)
-    script_logger.error("invalid EPUB file path #{epub_file}.")
-    next
+manifest = nil
+unless options.manifest_file.nil?
+  manifest_file = File.expand_path(options.manifest_file)
+  unless File.file?(manifest_file)
+    script_logger.error("#{manifest_file} is not a file.")
+    exit 1
   end
-  script_logger.info("*** processing #{File.basename(epub_file)} ***")
-  STDOUT.flush
-
-  epub = UMPTG::EPUB::Archive.new(epub_file: epub_file)
-  logger_file = File.join(File.dirname(epub_file), \
-        File.basename(epub_file, ".*") + "_embed.log")
-
-  manifest_file = options.manifest_file_list[ndx]
   manifest = UMPTG::Fulcrum::Manifest::Document.new(
-        name: File.basename(manifest_file),
         csv_file: manifest_file
       )
+end
+raise "no valid manifest specified" if manifest.nil?
+#raise "no NOID column" unless manifest.headers.include?("noid")
 
-  resource_map_file = options.resource_map_file_list[ndx]
-  resource_map = UMPTG::Fulcrum::ResourceMap::Map.new(xml_path: resource_map_file)
+fixer_processor = UMPTG::Fulcrum::Resources::Processor.new(
+      name: "Fixer",
+      manifest: manifest,
+      process_figures: false,
+      options: {
+        embed_link: true
+      }
+    )
 
-  epub_embedder = UMPTG::Review::EPUBEmbedder.new(
-        epub: epub,
-        manifest: manifest,
-        resource_map: resource_map,
-        logger_file: logger_file
-        )
-  epub_embedder.embed(
-      embed_options: options.embedders,
-      css_file: fulcrum_css_file
+epub_processor = UMPTG::EPUB::XProcessor.new(
+      xml_processor: fixer_processor
+    )
+
+epub_file_list.each do |epub_file|
+  unless File.file?(epub_file)
+    script_logger.error("invalid EPUB file #{epub_file}")
+    exit 1
+  end
+  script_logger.info("processing EPUB file #{File.basename(epub_file)}")
+
+  epub = UMPTG::EPUB::Archive.new(epub_file: epub_file)
+
+  logger_file =  File.join(
+            File.dirname(epub_file),
+            File.basename(epub_file, ".*") + "_" + File.basename(__FILE__) + ".log"
+            )
+  epub_processor.logger = UMPTG::Logger.create(logger_file: logger_file)
+  epub_processor.logger.info("Processing EPUB file #{File.basename(epub_file)}")
+  epub_processor.run(
+        epub,
+        {
+            normalize: options.normalize
+        }
       )
 
   if epub.modified
-    # EPUB updated. Save it to a new file.
-    new_epub_file = File.join(File.dirname(epub_file), File.basename(epub_file, ".*") + "_embed" + File.extname(epub_file))
-    script_logger.info("EPUB updated. Writing new EPUB file #{File.basename(new_epub_file)}")
+    new_epub_file = File.join(
+            File.dirname(epub_file),
+            File.basename(epub_file, ".*") + "_" + File.basename(__FILE__) + File.extname(epub_file)
+            )
     epub.save(epub_file: new_epub_file)
-  else
-    # No EPUB updates.
-    script_logger.info("no updates for EPUB file #{File.basename(epub_file)}")
+    script_logger.info("Saved #{new_epub_file}.")
   end
-
-  script_logger.info()
-  STDOUT.flush
 end

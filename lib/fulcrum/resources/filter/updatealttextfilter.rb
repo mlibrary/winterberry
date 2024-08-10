@@ -1,4 +1,4 @@
-module UMPTG::Fulcrum::XResources::Filter
+module UMPTG::Fulcrum::Resources::Filter
 
   class UpdateAltTextFilter < UMPTG::Fulcrum::Filter::ManifestFilter
 
