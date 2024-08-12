@@ -13,14 +13,16 @@ module UMPTG
             lrccs: "LRCCS",
             leverpress: "MPS",
             michigan: "UMP",
-            ummaa: "UMMAA"
+            ummaa: "UMMAA",
+            vermont: "MPS"
             }
     @@PRESS_SUB_DIR = {
             aberdeenunipress: "Aberdeen",
             amherst: "Amherst",
             bar:   "BAR",
             heb:   "HEB",
-            leverpress: "Lever"
+            leverpress: "Lever",
+            vermont: "UVM"
             }
     @@DEFAULT = :ebc
 
@@ -41,7 +43,7 @@ module UMPTG
       return @@PRESS_DIR[press.to_sym]
     end
 
-    def self.press_sub_dir(press)
+    def self.press_subdir(press)
       return @@PRESS_SUB_DIR[press.to_sym]
     end
   end

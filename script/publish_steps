@@ -7,6 +7,12 @@ require 'optparse'
 require 'ostruct'
 require 'os'
 
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "press")
+
 # Process the script parameters.
 options = OpenStruct.new
 options.greensub_dir = "/mnt/umptmm"
@@ -16,7 +22,7 @@ options.fulcrum_dir = OS.windows? ? "s:/Information\ Management/Fulcrum" : optio
 options.press = :ebc
 option_parser = OptionParser.new do |opts|
   opts.banner = "Usage: #{File.basename(__FILE__)} [-d <fulcrum_dir>] [-p press] <task_id> <monograph_id> [<monograph_id>..]"
-  opts.on('-p', '--press [press]', 'Press amherst|aperio|bar|ebc|heb|lever|michelt|ummaa') do |press|
+  opts.on('-p', '--press [press]', "Press #{UMPTG::Press.press_list()}") do |press|
     options.press = press.to_sym
   end
   opts.on('-d', '--directory [DIRECTORY]', 'Fulcrum directory') do |fulcrum_dir|
@@ -36,10 +42,6 @@ end
 task_id = ARGV[0]
 monograph_id_list = ARGV[1..-1]
 
-# Determine the root directory of the code base.
-script_dir = File.expand_path(File.dirname(__FILE__))
-root_dir = File.dirname(script_dir)
-
 require 'fileutils'
 require_relative File.join(root_dir, "lib", "logger")
 require_relative File.join(root_dir, "lib", "services")
@@ -54,54 +56,34 @@ unless File.directory?(fulcrum_dir)
   exit 1
 end
 
-# Verify press, either UM Press or MPS services.
-press_dir = {
-        aberdeen: "MPS",
-        amherst: "MPS",
-        aperio: "MPS",
-        bar:   "MPS",
-        ebc:   "UMP",
-        elt:   "michelt",
-        heb:   "MPS",
-        lever:   "MPS",
-        maize: "MPS",
-        ummaa: "UMMAA"
-        }
-sub_dir = {
-        aberdeen: "Aberdeen",
-        amherst: "Amherst",
-        aperio: "Aperio",
-        bar:   "BAR",
-        heb:   "HEB",
-        lever:   "Lever",
-        maize: "Maize"
-        }
-unless press_dir.key?(options.press)
+unless UMPTG::Press.valid(options.press)
   script_logger.fatal("invalid press #{options.press}")
   exit 1
 end
 
+um_press_dir = UMPTG::Press.press_dir(options.press)
+um_press_subdir = UMPTG::Press.press_subdir(options.press)
+
 # Determine publishing directory
-publish_dir = File.join(fulcrum_dir, "PTG", "PublishingSteps", \
-    press_dir[options.press])
+publish_dir = File.join(fulcrum_dir, "PTG", "PublishingSteps", um_press_dir)
 unless File.directory?(publish_dir)
   script_logger.fatal("processing directory #{publish_dir} does not exist.")
   exit 1
 end
 application_publish_dir = File.join(options.application_dir, "PTG", "PublishingSteps", \
-                           press_dir[options.press])
+                          um_press_dir)
 greensub_publish_dir = File.join(options.greensub_dir, "PTG", "PublishingSteps", \
-                           press_dir[options.press])
+                          um_press_dir)
 
 # Determine the Fulcrum monograph directory
-sd_dir = sub_dir.key?(options.press) ? \
-    File.join(press_dir[options.press], sub_dir[options.press]) : \
-    press_dir[options.press]
+sd_dir = um_press_subdir.nil? ? um_press_dir : File.join(um_press_dir, um_press_subdir)
+
 monograph_dept_dir = File.join(fulcrum_dir, sd_dir)
 unless File.directory?(monograph_dept_dir)
   script_logger.fatal("monograph directory #{monograph_dept_dir} does not exist.")
   exit 1
 end
+
 
 # Create the task processing directory.
 task_dir = File.join(publish_dir, task_id)
@@ -186,7 +168,7 @@ monograph_id_list.each do |monograph_id|
 
   series_id = ""
   case options.press
-  when :aberdeen, :amherst, :aperio, :ebc, :michelt, :lever, :maize, :ummaa
+  when :aberdeen, :amherst, :aperio, :ebc, :michelt, :lever, :maize, :ummaa, :vermont
     series_id = monograph_row["doi"]
     script_logger.info("series_id: DOI not found, using ISBN") if series_id.nil?
 
@@ -268,7 +250,7 @@ else
 
     product = ""
     case options.press
-    when :aberdeen, :amherst, :michelt, :ummaa
+    when :aberdeen, :amherst, :michelt, :ummaa, :vermont
       product = options.press.to_s
     end
     unless product.strip.empty?
@@ -279,7 +261,7 @@ else
       end
     end
 
-    unless options.press == :aberdeen
+    unless options.press == :aberdeen or options.press == :vermont
       if options.press == :ebc and pub_year <= 2011
         perd = "2011pre"
       elsif options.press == :bar and pub_year < 2020
@@ -301,7 +283,8 @@ else
       end
     end
 
-    unless options.press == :michelt or options.press == :amherst or options.press == :aberdeen
+    unless options.press == :michelt or options.press == :amherst \
+          or options.press == :aberdeen or options.press == :vermont
       case options.press
       when :bar
         if minfo[:monograph_series][0].downcase == 'b'
@@ -436,7 +419,7 @@ File.open(cmds_file, "w") do |fp|
     f.puts monograph_info.keys.join("\n")
   end
   tocrossref_dir = File.join(fulcrum_dir, "TMMDataTransfer", "ToCrossref")
-  tocrossref_pattern = press_dir[options.press].downcase == "mps" ? \
+  tocrossref_pattern = um_press_dir.downcase == "mps" ? \
           File.join(tocrossref_dir, "*_MPS.xml") : \
           File.join(tocrossref_dir, "*_UMPRE.xml")
   src_tocrossref_file = Dir.glob(tocrossref_pattern).last
