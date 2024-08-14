@@ -1,0 +1,157 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Script for embedding resource links
+
+require 'optparse'
+require 'ostruct'
+require 'os'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+# Process the script parameters.
+options = OpenStruct.new
+options.manifest_file = nil
+options.normalize = false
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} manifest_file [manifest_file...]"
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    script_logger.info(opts)
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 0
+  script_logger.info(option_parser.help)
+  return
+end
+
+# Process the command line parameters.
+manifest_file_list = ARGV
+
+require_relative File.join(root_dir, "lib", "xml", "util")
+require_relative File.join(root_dir, "lib", "fulcrum", "manifest")
+
+XML_AUTHOR = <<-XA
+<authortype%d>%s</authortype%d>
+<authorlastname%d>%s</authorlastname%d>
+<authorfirstname%d>%s</authorfirstname%d>
+XA
+
+xml_str = UMPTG::XML.XML_PI + "\n<root>\n"
+book_key = 0
+manifest_file_list.each do |manifest_file|
+  unless File.file?(manifest_file)
+    script_logger.error("invalid manifest file #{manifest_file}")
+    exit 1
+  end
+  script_logger.info("processing manifest file #{File.basename(manifest_file)}")
+
+  manifest = UMPTG::Fulcrum::Manifest::Document.new(
+                csv_file: manifest_file
+              )
+  xml_str += "<book>\n"
+
+  # Book Key
+  book_key += 1
+  xml_str += "<bookkey>#{book_key}</bookkey>\n"
+
+  # Eloquence verification
+  xml_str += "<eloquenceVerificationStatus>Passed</eloquenceVerificationStatus>\n"
+
+  # Authors
+  ndx = 0
+  creator_display_list = []
+  creators = manifest.monograph_row["creator(s)"]
+  creators.split(';').each do |c|
+    c.strip!
+    m1 = c.match(/^([^\(]+)/)
+    author = m1[1].strip
+    fn = ln = ""
+    unless author.empty?
+      m2 = author.match(/([^,]+),(.*)/)
+      ln = m2[1].strip
+      fn = m2[2].strip
+    end
+
+    role = c.delete_prefix(m1[1]).strip
+    unless role.empty?
+      m3 = role.match(/\(([^\)]*)\)/)
+      role = m3[1].strip.capitalize
+    end
+    script_logger.info("author:#{author}, role:#{role}")
+
+    ndx += 1
+    xml_str += sprintf(XML_AUTHOR, ndx, role, ndx, ndx, ln, ndx, ndx, fn, ndx)
+
+    creator_display_list << "#{fn} #{ln} (#{role})" if ["author", "editor"].include?(role.downcase)
+  end
+  creator_display = manifest.monograph_row["creator_display"]
+  if creator_display.nil? or creator_display.strip.empty?
+    creator_display = creator_display_list.join(" and ")
+  end
+  xml_str += "<fullauthordisplayname>#{creator_display}</fullauthordisplayname>\n"
+
+  # Title
+  title = manifest.monograph_row["title"]
+  unless title.nil? or title.strip.empty?
+    subtitle = ""
+    n = title.index(':')
+    if n > 0
+      subtitle = title[(n+1)..-1]
+      title = title[0..(n-1)]
+    end
+    xml_str += "<titleprefixandtitle>#{title.strip}</titleprefixandtitle>\n"
+    xml_str += "<subtitle>#{subtitle.strip}</subtitle>\n" unless subtitle.strip.empty?
+  end
+
+  # Pub Year
+  pub_year = manifest.monograph_row["pub_year"]
+  xml_str += "<pubyear>#{pub_year}</pubyear>\n" unless pub_year.nil? or pub_year.strip.empty?
+
+  # Publisher
+  publisher = manifest.monograph_row["publisher"]
+  xml_str += "<groupentry3>#{publisher.strip}</groupentry3>\n" unless publisher.nil? or publisher.strip.empty?
+
+  # ISBNs
+  format_list = []
+  isbn_list = manifest.monograph_row["isbn(s)"]
+  isbn_list.split(';').each do |isbn|
+    m = isbn.match(/([0-9\-]+)[ ]*\(([^\)]+)\)/)
+    puts "isbn:#{isbn},#{m}"
+    isbn_num = m[1]
+    format = m[2].nil? ? "unknown" : m[2].downcase
+    format_list << { format: format, isbn: isbn_num}
+  end
+  plist = format_list.select {|p| ["hardcover","paper"].include?(p[:format]) }
+  plist2 = plist.sort do |a,b|
+    return 0 if a[:format] == b[:format]
+    return -1 if a[:format] == "hardcover"
+    return 1 if b[:format] == "hardcover"
+    return -1
+  end
+  xml_str += "<printISBN>#{plist2[0][:isbn]}</printISBN>\n" if plist2.count > 0
+  xml_str += "<secondaryISBN>#{plist2[1][:isbn]}</secondaryISBN>\n" if plist2.count > 1
+
+  plist = format_list.select {|p| ["ebook"].include?(p[:format]) }
+  xml_str += "<eISBN>#{plist[0][:isbn]}</eISBN>\n" if plist.count > 0
+
+  # DOI
+  doi = manifest.monograph_row["doi"]
+  xml_str += "<doi>#{doi.strip}</doi>\n" unless doi.nil? or doi.strip.empty?
+
+  # Link
+  link = manifest.monograph_row["link"][12..-3]
+  xml_str += "<resource>#{link.strip}</resource>\n" unless link.nil? or link.strip.empty?
+
+  xml_str += "</book>\n"
+end
+xml_str += "</root>"
+
+puts xml_str

@@ -45,8 +45,10 @@ module UMPTG::XML
     return xml_doc
   end
 
-  def self.XML_PI
-    return @@XML_PI
+  def self.XML_PI(args = {})
+    encoding = args[:encoding]
+    encoding = 'UTF-8' if encoding.nil? or encoding.strip.empty?
+    return sprintf(@@XML_PI_FORMAT, encoding)
   end
 
   def self.ENTITY_CODER
