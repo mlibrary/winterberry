@@ -1,0 +1,213 @@
+#!/usr/bin/env ruby
+# encoding: utf-8
+
+require 'optparse'
+require 'ostruct'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+# Process the script parameters.
+options = OpenStruct.new
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)}  <csv_file> fulcrum_dir [<fulcrum_dir>..]"
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    puts opts
+    exit(0)
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 2
+  puts option_parser.help
+  exit(0)
+end
+
+csv_file = ARGV[0]
+fulcrum_dir_list = ARGV[1..-1]
+
+unless File.exist?(csv_file)
+  script_logger.error("Error: CSV \"#{File.basename(csv_file)}\" does not exist.")
+  exit(1)
+end
+script_logger.info("Using CSV file \"#{File.basename(csv_file)}\"")
+
+require 'csv'
+
+require_relative File.join(root_dir, 'lib', 'fulcrum')
+
+FULCRUM_MONOGRAPH_HEADERS = UMPTG::Fulcrum::Manifest::Validation::CollectionSchema.headers()
+
+fm_csv = CSV.parse(
+          File.read(csv_file),
+          :headers => true,
+          #:header_converters=> lambda {|f| fm_header_convert(f)},
+          :return_headers => false
+        )
+
+def convert_isbn(isbn, row_format = nil, format_default = nil)
+  unless isbn.nil? or isbn.strip.empty?
+    isbn = isbn.strip.gsub(/\-/, '')
+  end
+  if row_format.nil? or row_format.strip.empty?
+    format = format_default
+  else
+    format = row_format.strip.downcase.gsub(/\-/, '')
+    format = 'open access' if format.downcase == 'all ebooks (oa)'
+    format = 'paper' if format.downcase == 'paperback'
+  end
+  return isbn, format
+end
+
+fulcrum_dir_list.each do |fulcrum_dir|
+  fulcrum_dir = File.expand_path(fulcrum_dir)
+  unless File.directory?(fulcrum_dir)
+    script_logger.error("path \"#{File.basename(fulcrum_dir)}\" is not an existing directory.")
+    next
+  end
+  script_logger.info("Processing Fulcrum directory \"#{File.basename(fulcrum_dir)}\"")
+
+  monograph_dir_list = Dir.glob(File.join(fulcrum_dir, "*"))
+  monograph_dir_list.each do |monograph_dir|
+    monograph_dir = File.expand_path(monograph_dir)
+    unless File.directory?(monograph_dir)
+      script_logger.error("path \"#{File.basename(monograph_dir)}\" is not an existing directory.")
+      next
+    end
+    script_logger.info("Processing directory \"#{File.basename(monograph_dir)}\"")
+
+    title_id = File.basename(monograph_dir)
+
+    file_list = Dir.glob(File.join(monograph_dir, "*"))
+    rep_row_list = []
+    file_list.each do |fl|
+      file_name = File.basename(fl)
+      ext = File.extname(file_name)
+      next if ext.nil? or ext.strip.empty?
+
+      case ext.strip.downcase
+      when '.jpg', '.png', '.bmp', '.jpeg'
+        rep_kind = 'cover'
+      when '.epub'
+        rep_kind = 'epub'
+      when '.pdf'
+        rep_kind = 'pdf_ebook'
+      else
+        script_logger.warn("Skipping file #{file_name}")
+        next
+      end
+
+      rep_row_list << {
+            'File Name' => file_name,
+            'Title' => file_name,
+            'Representative Kind' => rep_kind
+        }
+    end
+
+    monograph_row = { 'File Name' => '://:MONOGRAPH://:' }
+
+    # Search CSV for monograph metadata. Directory name
+    # is the ISBN and search key. Search for the ISBN in
+    # PrimaryISBN and EAN columns.
+    csv_row_list = fm_csv.select {|r|
+      (!r['PrimaryISBN'].nil? and r['PrimaryISBN'].gsub(/[ \-]/,'') == title_id) \
+        or (!r['EAN'].nil? and r['EAN'].gsub(/[ \-]/,'') == title_id)
+      }
+    script_logger.info("#{title_id}:#{csv_row_list.count}")
+
+    if csv_row_list.empty?
+      script_logger.warn("no CSV row found for #{title_id}. Skipping.")
+      #next
+    else
+      script_logger.info("Found CSV row for #{title_id}.")
+    end
+    fm_row = csv_row_list.first
+
+    # Make sure required fields are filled in:
+    unless fm_row.nil?
+      format_isbn = {}
+      isbn, format = convert_isbn(fm_row['EAN'], fm_row['Format'], "hardcover")
+      format_isbn[format] = isbn unless isbn.nil? or isbn.empty?
+      # Monograph row
+      isbn_list = []
+      format_isbn.each do |key,val|
+        isbn_list << "#{val} (#{key})"
+      end
+      monograph_row['ISBN(s)'] = isbn_list.join(';')
+
+      author_list = []
+      4.times do |i|
+        author_name = fm_row["AuthorDisplayName#{i}"]
+        author_name = author_name.nil? ? "" : author_name.strip
+        unless author_name.empty?
+          author_role = fm_row["AuthorType#{i}"]
+          author_role = author_role.nil? ? "" : author_role.strip
+          author_entry = author_role.empty? ? author_name : "#{author_name} (#{author_role.downcase})"
+          author_list << author_entry
+        end
+      end
+      monograph_row['Creator(s)'] = author_list.join(';')
+
+      monograph_row['Title'] = fm_row['Title']
+      unless fm_row['Subtitle'].nil? or fm_row['Subtitle'].empty?
+        monograph_row['Title'] += ': ' + fm_row['Subtitle']
+      end
+
+      monograph_row['Pub Location'] = "Ann Arbor, MI"
+      monograph_row['CC License'] = "Creative Commons Zero license (implies pd)"
+      monograph_row['Open Access?'] = "yes"
+      monograph_row['Rightsholder'] = "Public Domain"
+
+      fm_row.each do |key,val|
+        next if key.nil? or key.strip.empty?
+
+        case key
+        when 'PublisherName'
+          monograph_row['Publisher'] = val
+        when 'CopyrightYear'
+          monograph_row['Pub Year'] = val
+        when 'LongDescription'
+          monograph_row['Description'] = val
+        when 'Keywords'
+          monograph_row['Keywords'] = val
+        when 'FullAuthorDisplayName'
+          monograph_row['Creator Display'] = val
+        when 'EditionType'
+          monograph_row['Edition Name'] = val
+        when 'All Subjects'
+          monograph_row['Subject'] = val
+        when 'PrimaryLanguage'
+          monograph_row['Language'] = val
+        when 'VolumeNumber'
+          monograph_row['Volume'] = val
+        when 'LongDescription'
+          monograph_row['Description'] = val
+        when 'Keywords'
+          monograph_row['Keywords'] = val
+        else
+        end
+      end
+    end
+
+    fulcrum_body = CSV.generate(
+            :headers => FULCRUM_MONOGRAPH_HEADERS,
+            :write_headers => true
+          ) do |csv|
+
+      csv << { "File Name" => "***row left intentionally blank***" }
+      rep_row_list.each do |rep_row|
+        csv << rep_row
+      end
+      csv << monograph_row
+    end
+
+    # Save the Fulcrum metadata CSV file.
+    fulcrum_file = File.join(monograph_dir, title_id + "_fulcrum.csv")
+    File.write(fulcrum_file, fulcrum_body)
+    script_logger.info("Created metadata file #{fulcrum_file}")
+  end
+end
