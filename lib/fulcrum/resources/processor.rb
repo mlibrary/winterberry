@@ -15,6 +15,8 @@ module UMPTG::Fulcrum::Resources
         case k
         when :embed_link
           filter = Filter::EmbedLinkFilter.new(args)
+        when :fulcrum_css
+          filter = Filter::FulcrumCSSFilter.new(args)
         when :update_alt
           filter = Filter::UpdateAltTextFilter.new(args)
         else

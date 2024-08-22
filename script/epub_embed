@@ -41,7 +41,7 @@ end
 # Process the command line parameters.
 epub_file_list = ARGV
 
-require_relative File.join(root_dir, "lib", "epub")
+require_relative File.join(root_dir, "lib", "epub)
 require_relative File.join(root_dir, "lib", "fulcrum")
 require_relative File.join(root_dir, "lib", "xml", "pipeline")
 
@@ -62,7 +62,7 @@ raise "no valid manifest specified" if manifest.nil?
 fixer_processor = UMPTG::Fulcrum::Resources::Processor.new(
       name: "Fixer",
       manifest: manifest,
-      process_figures: false,
+      process_figures: true,
       options: {
         embed_link: true
       }
@@ -95,6 +95,32 @@ epub_file_list.each do |epub_file|
       )
 
   if epub.modified
+    # Insert the reference to fulcrum_default.css file in
+    # all XML files.
+    css_processor = UMPTG::Fulcrum::Resources::Processor.new(
+          name: "CSS",
+          options: {
+            fulcrum_css: true
+          }
+        )
+
+    css_file = File.join(root_dir, "lib", "css", "fulcrum_default.css")
+    epub.add(
+          entry_name: "OEBPS/styles/fulcrum_default.css",
+          entry_content: File.read(css_file),
+          media_type: "text/css"
+        )
+
+    spine_entries = epub.spine.select {|entry| entry.modified}
+    epub_processor.xml_processor = css_processor
+    epub_processor.run(
+          epub,
+          {
+              normalize: options.normalize,
+              spine_entries: spine_entries
+          }
+        )
+
     new_epub_file = File.join(
             File.dirname(epub_file),
             File.basename(epub_file, ".*") + "_" + File.basename(__FILE__) + File.extname(epub_file)

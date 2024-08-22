@@ -130,6 +130,20 @@ module UMPTG::Fulcrum::Resources::Filter
           end
           block_list = caption_node.xpath(".//*[local-name()='p' or local-name()='div']")
 
+=begin
+          link_markup = manifest.fileset_link_markup(
+                  resource_name_list.first,
+                  {
+                      description: "View Fulcrum resource.",
+                      download: manifest.fileset_allow_download(resource_name_list.first)
+                  }
+                )
+          last_block = block_list.last
+          link_container = last_block.document.create_element("span")
+          link_container.add_class("default-media-display")
+          link_container.add_child(" " + link_markup)
+          last_block.add_child(link_container)
+=end
           caption_field = reference_node["data-fulcrum-embed-caption-field"]
           caption_field = caption_field.strip.downcase unless caption_field.nil?
           caption_link = reference_node["data-fulcrum-embed-caption-link"]
