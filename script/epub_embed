@@ -41,7 +41,7 @@ end
 # Process the command line parameters.
 epub_file_list = ARGV
 
-require_relative File.join(root_dir, "lib", "epub)
+require_relative File.join(root_dir, "lib", "epub")
 require_relative File.join(root_dir, "lib", "fulcrum")
 require_relative File.join(root_dir, "lib", "xml", "pipeline")
 
