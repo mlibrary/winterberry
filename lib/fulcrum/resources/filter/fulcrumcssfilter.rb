@@ -8,7 +8,9 @@ module UMPTG::Fulcrum::Resources::Filter
     ]/*[
     local-name()='head'
     ]/*[
-    local-name()='link' and position()=last()
+    local-name()='link'
+    ][
+    last()
     ]
     SXPATH
 

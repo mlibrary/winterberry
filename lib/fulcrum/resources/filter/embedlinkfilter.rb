@@ -148,12 +148,11 @@ module UMPTG::Fulcrum::Resources::Filter
           caption_field = caption_field.strip.downcase unless caption_field.nil?
           caption_link = reference_node["data-fulcrum-embed-caption-link"]
           caption_link = (caption_link.strip.downcase == "true") unless caption_link.nil?
+          cf = caption_field.nil? ? "caption" : caption_field
+          cl = caption_link.nil? ? false : caption_link
 
           resource_name_list.each do |resource_name|
-            cf = caption_field.nil? ? "caption" : caption_field
-            cl = caption_link.nil? ? false : caption_link
             if caption_added
-
               if caption_field.nil? and caption_link.nil?
                 caption_node.add_child(CLASS_FORMAT_STR % ["default-media-display", resource_name, cf, "true"])
                 caption_node.add_child(CLASS_FORMAT_STR % ["enhanced-media-display", resource_name, cf, cl])
@@ -161,14 +160,22 @@ module UMPTG::Fulcrum::Resources::Filter
                 caption_node.add_child(FORMAT_STR % [resource_name, cf, cl])
               end
             else
-              block_list.each {|n| n.add_class("enhanced-media-display") }
-              caption_node.add_child(CLASS_FORMAT_STR % ["default-media-display", resource_name, cf, "true"])
+              disp_node_list = block_list.select {|n|
+                !(n.classes().include?("default-media-display") \
+                    or n.classes().include?("enhanced-media-display"))
+              }
+              disp_node_list.each {|n| n.add_class("enhanced-media-display") }
+
+              def_node_list = block_list.select {|n| n.classes().include?("default-media-display") }
+              if def_node_list.count == 0
+                caption_node.add_child(CLASS_FORMAT_STR % ["default-media-display", resource_name, cf, "true"])
+              end
             end
             fragment_node.remove_attribute("style")
           end
 
-          caption_node.xpath(".//*[@data-fulcrum-embed-filename]").each do |node|
-            insert_metadata(node)
+          caption_node.xpath(".//*[@*[starts-with(local-name(),'data-fulcrum-')]]").each do |node|
+            insert_metadata(node, resource_name_list.first)
           end
           action_list << UMPTG::XML::Pipeline::Actions::MarkupAction.new(
                    name: name,
@@ -224,8 +231,8 @@ module UMPTG::Fulcrum::Resources::Filter
       return action_list
     end
 
-    def insert_metadata(node)
-      resource_name = node["data-fulcrum-embed-filename"]
+    def insert_metadata(node, rn)
+      resource_name = node["data-fulcrum-embed-filename"] || rn
       field = node["data-fulcrum-embed-caption-field"]
       #link = node["data-fulcrum-embed-caption-link"]
       link = node.name == "span" ? "true" : node["data-fulcrum-embed-caption-link"]
@@ -257,7 +264,7 @@ module UMPTG::Fulcrum::Resources::Filter
 
       case node.name
       when "span"
-        node = Nokogiri::XML::DocumentFragment.parse(markup)
+        n = node.replace(Nokogiri::XML::DocumentFragment.parse(markup))
       else
         node.add_child(markup)
       end

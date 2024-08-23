@@ -98,7 +98,6 @@ epub_file_list.each do |epub_file|
     # Insert the reference to fulcrum_default.css file in
     # all XML files.
     css_processor = UMPTG::Fulcrum::Resources::Processor.new(
-          name: "CSS",
           options: {
             fulcrum_css: true
           }
