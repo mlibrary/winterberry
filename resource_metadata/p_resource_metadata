@@ -104,7 +104,7 @@ monograph_dir_list.each do |mdir|
           file_name_base = File.basename(o.resource_name, ".*").downcase
           fmsl_row = fmsl_csv.find {|row| !row['File Name'].nil? and File.basename(row['File Name'], ".*").downcase == file_name_base }
           if fmsl_row.nil?
-            script_logger.warn("resource #{o.resource_name} not found.")
+            epub_processor.logger.warn("resource #{o.resource_name} not found.")
             next
           end
           #script_logger.info("updating resource #{o.resource_name}.")

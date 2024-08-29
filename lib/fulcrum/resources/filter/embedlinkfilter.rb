@@ -11,7 +11,7 @@ module UMPTG::Fulcrum::Resources::Filter
     FIGURE_EMBED_XPATH = <<-SXPATH
     //*[
     local-name()='figure'
-    or @data-fulcrum-embed-filename
+    or (@data-fulcrum-embed-filename and count(ancestor::*[local-name()='figure'])=0)
     or (local-name()='img' and count(ancestor::*[local-name()='figure'])=0)
     ]
     SXPATH
@@ -184,6 +184,37 @@ module UMPTG::Fulcrum::Resources::Filter
                    markup: fragment_node.to_xml,
                    info_message: "#{reference_node.name}: links for resources #{resource_name_list.join(',')}"
                )
+        else
+          res_node_list = fragment_node.xpath("./*[@data-fulcrum-embed-filename]")
+          if res_node_list.count > 1
+            res_name_list = res_node_list.collect {|n| n['data-fulcrum-embed-filename'] }
+            action_list << UMPTG::XML::Pipeline::Action.new(
+                     name: name,
+                     reference_node: reference_node,
+                     warning_message: "#{caption_node.name}: multiple caption resource references found #{res_name_list.join(',')}"
+                 )
+          elsif res_node_list.count == 1
+            res_node = res_node_list.first
+            embed_filename = res_node['data-fulcrum-embed-filename']
+            fragment_node['data-fulcrum-embed-filename'] = embed_filename
+
+            res_node.remove_attribute('data-fulcrum-embed-filename')
+            res_node.remove if res_node.content.strip.empty?
+
+            unless caption_node.nil?
+              caption_node.xpath(".//*[@*[starts-with(local-name(),'data-fulcrum-')]]").each do |node|
+                insert_metadata(node, resource_name_list.first)
+              end
+            end
+
+            action_list << UMPTG::XML::Pipeline::Actions::MarkupAction.new(
+                     name: name,
+                     reference_node: reference_node,
+                     action: :replace_node,
+                     markup: fragment_node.to_xml,
+                     info_message: "#{reference_node.name}: setting @data-fulcrum-embed-filename=\"#{embed_filename}\"."
+                 )
+          end
         end
       end
       return action_list
@@ -231,7 +262,7 @@ module UMPTG::Fulcrum::Resources::Filter
       return action_list
     end
 
-    def insert_metadata(node, rn)
+    def insert_metadata(node, rn = nil)
       resource_name = node["data-fulcrum-embed-filename"] || rn
       field = node["data-fulcrum-embed-caption-field"]
       #link = node["data-fulcrum-embed-caption-link"]
@@ -258,18 +289,22 @@ module UMPTG::Fulcrum::Resources::Filter
         markup = content
       end
 
-      node.remove_attribute("data-fulcrum-embed-filename")
+      node.remove_attribute("data-fulcrum-embed-filename") \
+          unless node.classes().include?("enhanced-media-display")
       node.remove_attribute("data-fulcrum-embed-caption-field")
       node.remove_attribute("data-fulcrum-embed-caption-link")
 
       case node.name
       when "span"
-        n = node.replace(Nokogiri::XML::DocumentFragment.parse(markup))
+        n = node.replace(Nokogiri::XML::DocumentFragment.parse(markup)) \
+                unless node.parent.nil?
+        n = Nokogiri::XML::DocumentFragment.parse(markup) \
+                if node.parent.nil?
+        return n
       else
         node.add_child(markup)
       end
       return node
     end
-
   end
 end

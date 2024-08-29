@@ -18,7 +18,7 @@ module UMPTG::Review
         @child_xpath = nil
       else
         @child_xpath = ".//*[" + \
-                    @child_elements.collect {|x| "local-name()='#{x}'"}.join(' or ') + \
+                    @child_elements.collect {|x| x.include?(':') ? "name()='#{x}'" : "local-name()='#{x}'"}.join(' or ') + \
                 "]"
       end
     end
