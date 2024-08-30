@@ -17,6 +17,8 @@ module UMPTG::Fulcrum::Resources
           filter = Filter::EmbedLinkFilter.new(args)
         when :fulcrum_css
           filter = Filter::FulcrumCSSFilter.new(args)
+        when :resource_reference
+          filter = Filter::ResourceReferenceFilter.new(args)
         when :update_alt
           filter = Filter::UpdateAltTextFilter.new(args)
         else
