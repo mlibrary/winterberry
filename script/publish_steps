@@ -170,12 +170,21 @@ monograph_id_list.each do |monograph_id|
   case options.press
   when :aberdeen, :amherst, :aperio, :ebc, :michelt, :lever, :maize, :ummaa, :vermont
     series_id = monograph_row["doi"]
-    script_logger.info("series_id: DOI not found, using ISBN") if series_id.nil?
 
-    series_id = manifest.isbn['open access'] if series_id.nil?
-    series_id = manifest.isbn['ebook'] if series_id.nil?
-    series_id = manifest.isbn['oa ebook'] if series_id.nil?
-    series_id.strip! unless series_id.nil?
+    if series_id.nil?
+=begin
+      script_logger.info("series_id: DOI not found, using ISBN")
+
+      series_id = manifest.isbn['open access'] if series_id.nil?
+      series_id = manifest.isbn['ebook'] if series_id.nil?
+      series_id = manifest.isbn['oa ebook'] if series_id.nil?
+      series_id.strip! unless series_id.nil?
+=end
+      script_logger.info("series_id: DOI not found, using Handle")
+
+      series_id = "https://hdl.handle.net/2027/fulcrum." + monograph_noid
+      script_logger.error("series_id: Handle not found.") if series_id.nil? or series_id.empty?
+    end
   else
     id_list = monograph_row["identifier(s)"]
     unless id_list.nil?
