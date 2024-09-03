@@ -9,6 +9,7 @@
     <!-- Defined paramters that can be overridden -->
     <xsl:param name="BATCH_ID"/>
     <xsl:param name="TIMESTAMP"/>
+    <xsl:param name="BISAC_LIST" select="'temporarily out of stock;on demand;active;not yet published'"/>
     <xsl:param name="EXCLUDE_ISBN" select="''"/>
     <xsl:param name="ENCODING_NAME" select="'utf-8'"/>
     <xsl:param name="UMP_URL_PREFIX" select="'https://press.umich.edu/isbn/'"/>
@@ -23,6 +24,7 @@
     <!-- Current Crossref namespace -->
     <xsl:variable name="NAMESPACE_URL" select="'http://www.crossref.org/schema/5.3.1'"/>
     <xsl:variable name="EXCLUDE_ISBN_LIST" select="concat(';',translate($EXCLUDE_ISBN,' ',''),';')"/>
+    <xsl:variable name="FORMAT_BISAC_LIST" select="concat(';',$BISAC_LIST,';')"/>
 
     <xsl:template match="root">
         <xsl:if test="normalize-space($BATCH_ID)!='' and normalize-space($TIMESTAMP)!=''">
@@ -77,6 +79,10 @@
 
     <xsl:template match="book">
         <xsl:variable name="pbisac" select="translate(./primaryBISAC, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz')"/>
+        <xsl:variable name="sbisac" select="translate(./secondaryBISAC, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz')"/>
+        <xsl:variable name="pbisac_active" select="contains($FORMAT_BISAC_LIST,$pbisac)"/>
+        <xsl:variable name="sbisac_active" select="contains($FORMAT_BISAC_LIST,$sbisac)"/>
+
         <xsl:element name="book" namespace="{$NAMESPACE_URL}">
             <xsl:attribute name="book_type"><xsl:value-of select="'monograph'"/></xsl:attribute>
             <xsl:element name="book_metadata" namespace="{$NAMESPACE_URL}">
@@ -97,10 +103,14 @@
                 <xsl:apply-templates select="./printISBN|./eISBN"/>
                 -->
                 <xsl:choose>
-                    <xsl:when test="$pbisac='out of print' and ./secondaryISBN">
+                    <xsl:when test="$pbisac_active='true' and ./printISBN">
+                        <xsl:apply-templates select="./printISBN"/>
+                    </xsl:when>
+                    <xsl:when test="$sbisac_active='true' and ./secondaryISBN">
                         <xsl:apply-templates select="./secondaryISBN"/>
                     </xsl:when>
                     <xsl:otherwise>
+                        <xsl:message>WARNING: bookkey <xsl:value-of select="./bookkey"/> no active ISBN found.</xsl:message>
                         <xsl:apply-templates select="./printISBN"/>
                     </xsl:otherwise>
                 </xsl:choose>
@@ -122,16 +132,17 @@
                             <xsl:when test="starts-with(./resource, 'https://www.fulcrum.org/')">
                                 <xsl:value-of select="./resource"/>
                             </xsl:when>
-                            <xsl:when test="$pbisac='out of print' and ./secondaryISBN">
-                                <xsl:value-of select="concat($UMP_URL_PREFIX, ./secondaryISBN)"/>
-                            </xsl:when>
-                            <xsl:when test="./printISBN">
+                            <xsl:when test="$pbisac_active='true' and ./printISBN">
                                 <xsl:value-of select="concat($UMP_URL_PREFIX, ./printISBN)"/>
                             </xsl:when>
-                            <xsl:when test="./eISBN">
+                            <xsl:when test="$pbisac_active='true' and ./eISBN">
                                 <xsl:value-of select="concat($UMP_URL_PREFIX, ./eISBN)"/>
                             </xsl:when>
+                            <xsl:when test="$sbisac_active='true' and ./secondaryISBN">
+                                <xsl:value-of select="concat($UMP_URL_PREFIX, ./secondaryISBN)"/>
+                            </xsl:when>
                             <xsl:otherwise>
+                                <xsl:message>WARNING: bookkey <xsl:value-of select="./bookkey"/> no active ISBN found, using current resource.</xsl:message>
                                 <xsl:value-of select="./resource"/>
                             </xsl:otherwise>
                         </xsl:choose>
