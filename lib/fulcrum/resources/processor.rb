@@ -12,19 +12,10 @@ module UMPTG::Fulcrum::Resources
       options.each do |k,v|
         next unless v
 
-        case k
-        when :embed_link
-          filter = Filter::EmbedLinkFilter.new(args)
-        when :fulcrum_css
-          filter = Filter::FulcrumCSSFilter.new(args)
-        when :resource_reference
-          filter = Filter::ResourceReferenceFilter.new(args)
-        when :update_alt
-          filter = Filter::UpdateAltTextFilter.new(args)
-        else
-          next
-        end
-        a[:filters][k] = filter
+        cl = FILTERS[k]
+        raise "undefined filter #{k}" if cl.nil?
+
+        a[:filters][k] = cl.new(args)
       end
       raise "No filters defined" if a[:filters].empty?
 

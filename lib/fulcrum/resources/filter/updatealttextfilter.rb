@@ -9,7 +9,10 @@ module UMPTG::Fulcrum::Resources::Filter
     SXPATH
 
     def initialize(args = {})
-      args[:name] = :update_alt unless args.key?(:name)
+      args[:name] = :update_alt
+
+      raise "manifest required" if args[:manifest].nil?
+
       args[:xpath] = IMG_XPATH
       super(args)
     end

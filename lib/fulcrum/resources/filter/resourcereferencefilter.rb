@@ -11,10 +11,9 @@ module UMPTG::Fulcrum::Resources::Filter
     SXPATH
 
     def initialize(args = {})
-      args[:name] = :resource_reference unless args.key?(:name)
+      args[:name] = :resource_reference
       args[:xpath] = XPATH
       super(args)
-      puts "name:#{@properties[:name]}"
     end
 
     def create_actions(args = {})

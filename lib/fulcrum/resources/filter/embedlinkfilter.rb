@@ -30,11 +30,32 @@ module UMPTG::Fulcrum::Resources::Filter
     CFSTR
 
     def initialize(args = {})
-      args[:name] = :embed_link unless args.key?(:name)
+      args[:name] = :embed_link
+
+      raise "manifest required" if args[:manifest].nil?
+
       process_figures = args[:process_figures]
       process_figures = true if process_figures.nil?
       args[:xpath] = process_figures ? FIGURE_EMBED_XPATH : EMBED_XPATH
       super(args)
+    end
+
+    def run(xml_doc, args = {})
+      actions = super(xml_doc, args)
+
+      unless actions.empty?
+        reference_node = xml_doc.xpath(FulcrumCSSFilter.XPATH).first
+        raise "unable to add Fulcrum CSS filter" if reference_node.nil?
+
+        a = {
+            reference_node: reference_node,
+            markup: '<link href="../styles/fulcrum_default.css" rel="stylesheet" type="text/css"/>',
+            info_message: "Fulcrum CSS filter must be added"
+          }
+        actions << UMPTG::XML::Pipeline::Actions::NormalizeInsertMarkupAction.new(a)
+      end
+
+      return actions
     end
 
     def create_actions(args = {})

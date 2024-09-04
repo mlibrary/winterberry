@@ -2,7 +2,8 @@ module UMPTG::XML::Pipeline
 
   class ActionResult < UMPTG::Object
 
-    attr_reader :actions, :modified
+    attr_accessor :actions
+    attr_reader :modified
 
     def initialize(args = {})
       super(args)

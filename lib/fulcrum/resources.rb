@@ -20,4 +20,5 @@ module UMPTG::Fulcrum
 
   require_relative File.join('resources', 'filter')
   require_relative File.join('resources', 'processor')
+  require_relative File.join('resources', 'epubprocessor')
 end

@@ -32,5 +32,9 @@ module UMPTG::Fulcrum::Resources::Filter
 
       return action_list
     end
+
+    def self.XPATH
+      return XPATH
+    end
   end
 end
