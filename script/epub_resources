@@ -62,8 +62,10 @@ unless options.manifest_file.nil?
       )
 end
 
+filter_list = options.filter_list.empty? ? [ :embed_link ] : options.filter_list
+
 ops = {}
-options.filter_list.each {|f| ops[f] = true }
+filter_list.each {|f| ops[f] = true }
 fixer_processor = UMPTG::Fulcrum::Resources::Processor.new(
       name: "Fixer",
       manifest: manifest,

@@ -156,14 +156,21 @@ module UMPTG::Fulcrum::Resources::Filter
                   resource_name_list.first,
                   {
                       description: "View Fulcrum resource.",
-                      download: manifest.fileset_allow_download(resource_name_list.first)
+                      #download: manifest.fileset_allow_download(resource_name_list.first)
                   }
                 )
           last_block = block_list.last
-          link_container = last_block.document.create_element("span")
+          if last_block.nil?
+            last_block = caption_node.document.create_element("p")
+            link_container = last_block
+            caption_node.add_child(last_block)
+          else
+            link_container = last_block.document.create_element("span")
+            last_block.add_child(link_container)
+          end
           link_container.add_class("default-media-display")
           link_container.add_child(" " + link_markup)
-          last_block.add_child(link_container)
+          fragment_node.remove_class("enhanced-media-display")
 =end
           caption_field = reference_node["data-fulcrum-embed-caption-field"]
           caption_field = caption_field.strip.downcase unless caption_field.nil?
@@ -267,7 +274,7 @@ module UMPTG::Fulcrum::Resources::Filter
                 reference_name,
                 {
                     description: content,
-                    download: manifest.fileset_allow_download(reference_name)
+                    #download: manifest.fileset_allow_download(reference_name)
                 }
               )
         markup = "<span class=\"default-media-display\">" + link_markup + "</span>"
@@ -303,7 +310,7 @@ module UMPTG::Fulcrum::Resources::Filter
                 resource_name,
                 {
                     description: content,
-                    download: manifest.fileset_allow_download(resource_name)
+                    #download: manifest.fileset_allow_download(resource_name)
                 }
               )
       else

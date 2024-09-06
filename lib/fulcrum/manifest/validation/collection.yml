@@ -160,6 +160,10 @@
   :metadata_name: description
   :field_name: Description
   :multivalued: :yes
+- :object: :universal
+  :metadata_name: content_warning
+  :field_name: Content Warning
+  :multivalued: :no
 - :object: :file_set
   :metadata_name: display_date
   :field_name: Display Date
