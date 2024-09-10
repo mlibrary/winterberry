@@ -8,4 +8,15 @@ module UMPTG::XML
   require_relative(File.join("pipeline", "actionresult"))
   require_relative(File.join("pipeline", "filter"))
   require_relative(File.join("pipeline", "processor"))
+  require_relative(File.join("pipeline", "optionprocessor"))
+
+  class << self
+    def Processor(args = {})
+      return Pipeline::Processor.new(args)
+    end
+
+    def OptionProcessor(args = {})
+      return Pipeline::OptionProcessor.new(args)
+    end
+  end
 end

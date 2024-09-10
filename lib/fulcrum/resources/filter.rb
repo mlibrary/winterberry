@@ -12,18 +12,18 @@ module UMPTG::Fulcrum::Resources
     }
 
   def self.EmbedLinkFilter(args = {})
-    return Filter::EmbedLinkFilter.new(args)
-  end
-
-  def self.ResourceReferenceFilter(args = {})
-    return Filter::ResourceReferenceFilter.new(args)
-  end
-
-  def self.UpdateAltTextFilter(args = {})
-    return Filter::UpdateAltTextFilter.new(args)
+    return FILTERS[:embed_link].new(args)
   end
 
   def self.FulcrumCSSFilter(args = {})
-    return Filter::FulcrumCSSFilter.new(args)
+    return FILTERS[:fulcrum_css].new(args)
+  end
+
+  def self.ResourceReferenceFilter(args = {})
+    return FILTERS[:resource_reference].new(args)
+  end
+
+  def self.UpdateAltTextFilter(args = {})
+    return FILTERS[:update_alt].new(args)
   end
 end
