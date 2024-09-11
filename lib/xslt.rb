@@ -37,7 +37,7 @@ module UMPTG
       when xsl_version.start_with?('1.')
         if src_doc.nil?
           enc_name = parameters.nil? ? nil : parameters["ENCODING_NAME"]
-          enc_name = parameters["ENCODING_NAME"] || "UTF-8"
+          enc_name = enc_name || "UTF-8"
           enc = Encoding::find(enc_name)
           raise "invalid encoding name #{enc_name}" if enc.nil?
 

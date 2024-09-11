@@ -5,14 +5,26 @@ module UMPTG::XML::Pipeline
     attr_accessor :logger, :filters, :options
 
     def initialize(args = {})
-      super(args)
+      a = args.clone
 
-      @logger = @properties.key?(:logger) ? @properties[:logger] : UMPTG::Logger.create(logger_fp: STDOUT)
-      @options = @properties.key?(:options) ? @properties[:options] : {}
+      @logger = a.key?(:logger) ? a[:logger] : UMPTG::Logger.create(logger_fp: STDOUT)
+      @options = a.key?(:options) ? a[:options] : {}
 
-      m_filters = @properties.key?(:filters) ? @properties[:filters] : []
-      m_filters = m_filters.select {|key,proc| @options[key] == true }
-      @filters = m_filters.values
+      m_filters = a.key?(:filters) ? a[:filters] : []
+      a[:filters] = {}
+      @options.each do |k,v|
+        next unless v
+
+        cl = m_filters[k]
+        raise "undefined filter #{k}" if cl.nil?
+
+        a[:filters][k] = cl.new(args)
+      end
+      raise "No filters defined" if a[:filters].empty?
+
+      super(a)
+
+      @filters = a[:filters].values
     end
 
     def run(xml_doc, args = {})

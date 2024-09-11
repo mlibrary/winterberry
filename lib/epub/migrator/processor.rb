@@ -82,14 +82,8 @@ THTML
   end
 
   class Processor < UMPTG::XML::Pipeline::Processor
-    @@FILTERS = {
-          ncx: UMPTG::EPUB::Migrator::NCXFilter(),
-          opf: UMPTG::EPUB::Migrator::OPFFilter(),
-          xhtml: UMPTG::EPUB::Migrator::XHTMLFilter()
-        }
-
     def initialize(args = {})
-      args[:filters] = @@FILTERS
+      args[:filters] = FILTERS
       super(args)
     end
   end
