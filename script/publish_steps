@@ -168,7 +168,7 @@ monograph_id_list.each do |monograph_id|
 
   series_id = ""
   case options.press
-  when :aberdeen, :amherst, :aperio, :ebc, :michelt, :lever, :maize, :ummaa, :vermont
+  when :aberdeen, :amherst, :aperio, :ebc, :michelt, :leverpress, :maize, :ummaa, :vermont
     series_id = monograph_row["doi"]
 
     if series_id.nil?
@@ -312,7 +312,7 @@ else
 
       unless minfo[:monograph_open_access].empty?
         case options.press
-        when :aperio, :ebc, :lever, :ummaa
+        when :aperio, :ebc, :leverpress, :ummaa
           product = "ebc_oa"
         else
           raise "Found open access for press #{options.press}, #{minfo}"

@@ -1,6 +1,6 @@
 module UMPTG::Fulcrum::Resources
 
-  class Processor < UMPTG::XML::Pipeline::OptionProcessor
+  class Processor < UMPTG::XML::Pipeline::Processor
 
     def initialize(args = {})
       a = args.clone
