@@ -37,11 +37,17 @@ module UMPTG::EPUB
       @name = args[:rendition_name]
       raise "rendition name is required" if @name.nil? or @name.strip.empty?
 
-      @document = Nokogiri::XML(TEMPLATE)
-      @navigation_doc = Nokogiri::XML(NAVIGATION_TEMPLATE)
+      content = args[:rendition_content]
+      if content.nil? or content.strip.empty?
+        @document = Nokogiri::XML(TEMPLATE)
+        @navigation_doc = Nokogiri::XML(NAVIGATION_TEMPLATE)
 
-      man_node = Rendition.find_node(@document, "manifest")
-      man_node.add_child('<item id="nav" properties="nav" href="navigation.xhtml" media-type="application/xhtml+xml"/>')
+        man_node = Rendition.find_node(@document, "manifest")
+        man_node.add_child('<item id="nav" properties="nav" href="navigation.xhtml" media-type="application/xhtml+xml"/>')
+      else
+        @document = Nokogiri::XML(content)
+
+      end
     end
 
     def write(output_stream, args = {})

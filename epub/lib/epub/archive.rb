@@ -5,16 +5,6 @@ module UMPTG::EPUB
 
   class Archive < UMPTG::Object
 
-
-    CONTAINER_XML =  <<-CONXML
-<?xml version="1.0" encoding="UTF-8"?>
-<container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container">
-<rootfiles></rootfiles>
-</container>
-    CONXML
-
-    ROOTFILE_XML = '<rootfile full-path="%s" media-type="application/oebps-package+xml"/>'
-
     def initialize(args = {})
       super(args)
 
@@ -24,7 +14,7 @@ module UMPTG::EPUB
       a = args.clone
       case
       when args.key?(:epub_file)
-        #load_file(a)
+        load_file(a)
       else
         load(a)
       end
@@ -77,5 +67,36 @@ module UMPTG::EPUB
       rendition = Rendition.new(args)
       @renditions[rendition.name] = Rendition.new(args)
     end
+
+    def load_file(args = {})
+      epub_file = args[:epub_file]
+      raise "missing value for EPUB file" if epub_file.nil? or epub_file.strip.empty?
+      raise "invalid file path #{@epub_file}" unless File.exist?(epub_file)
+
+      Zip::File.open(epub_file) do |zip|
+        zip.entries.each do |zip_entry|
+          next if zip_entry.file_type_is?(:directory)
+          @entries << Entry.new(
+                entry_name: zip_entry.name,
+                entry_content: zip_entry.get_input_stream.read
+              )
+        end
+      end
+
+      entry = find_entry(File.join("META-INF", "container.xml"))
+      raise "unable to find container.xml" if entry.nil?
+
+      container_doc = Nokogiri::XML(entry.content)
+      rf_list = container_doc.xpath("//*[local-name()='rootfile' and media-type='application/oebps-package+xml' and @full-path]")
+      raise "unable to locate rootfiles" if rf.empty?
+
+      rf_list.each do |rf|
+        rendition_name = File.basename(rf['full-path'], ".*")
+        rendition = Rendition.new(
+              rendition_name: rendition_name,
+              rendition_content: rf.content
+            )
+        @renditions[rendition.name] = rendition
+      end
   end
 end
