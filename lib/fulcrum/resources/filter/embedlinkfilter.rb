@@ -198,7 +198,21 @@ module UMPTG::Fulcrum::Resources::Filter
               if def_node_list.count == 0
                 caption_node.add_child(CLASS_FORMAT_STR % ["default-media-display", resource_name, cf, "true"])
               end
+=begin
+              disp_node_list = block_list.select {|n| n.classes().include?("default-media-display") }
+              disp_node_list.each {|n| n.remove_class("default-media-display") }
+              disp_node_list = block_list.select {|n| n.classes().include?("enhanced-media-display") }
+              disp_node_list.each do |n|
+                n.remove_class("enhanced-media-display")
+                n["style"] = "display:none"
+              end
+=end
             end
+=begin
+            fs = manifest.fileset(resource_name)
+            ext_resource_id = fs["external_resource_id"]
+            fragment_node["data-fulcrum-embed-filename"] = ext_resource_id
+=end
             fragment_node.remove_attribute("style")
           end
 
