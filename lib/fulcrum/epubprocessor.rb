@@ -146,6 +146,8 @@ module UMPTG::Fulcrum
                             action.reference_action_def.action_str == :link
                           )
                         }
+            # FOPS-622 [Amherst] Solivan/Re-entry
+            # update_opf = false
             has_remote_resources = action_list.index { |action|
                         action.status == UMPTG::Action.COMPLETED and action.reference_action_def.action_str == :embed
                         }

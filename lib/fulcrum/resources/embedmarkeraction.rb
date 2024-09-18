@@ -21,6 +21,12 @@ module UMPTG::Fulcrum::Resources
         emb_container.add_child(emb_fragment)
 
         def_container.add_next_sibling(emb_container)
+=begin
+        # FOPS-622 [Amherst] Solivan/Re-entry
+        emb_container.add_child(emb_fragment)
+        reference_node.first_element_child.add_previous_sibling(emb_container)
+        reference_node['data-fulcrum-embed-filename'] = reference_action_def.resource_metadata["file_name_new"]
+=end
 
         # Action completed.
         @status = Action.COMPLETED
