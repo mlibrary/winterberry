@@ -1,9 +1,8 @@
 module UMPTG::EPUB
-  require 'nokogiri'
 
   class Entry < UMPTG::Object
     attr_accessor :name, :content
-    attr_reader :archive
+    attr_reader :id
 
     def initialize(args = {})
       super(args)
@@ -14,13 +13,7 @@ module UMPTG::EPUB
       @content = args[:entry_content]
       @content = "" if @content.nil?
 
-      @archive = args[:archive]
-      @document = nil
-    end
-
-    def document
-      @document = Nokogiri::XML(@content) if @document.nil?
-      return @document
+      @id = @name.gsub(/\/[ ]+/, '_')
     end
 
     def write(output_stream, args = {})

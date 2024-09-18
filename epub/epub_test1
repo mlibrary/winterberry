@@ -33,7 +33,7 @@ end
 # Process the command line parameters.
 epub_file_list = ARGV
 
-require_relative File.join(root_dir, "epub", "lib", "epub")
+require_relative File.join(script_dir, "lib", "epub")
 
 epub = UMPTG::EPUB::Archive.new()
 epub_file = File.join(script_dir, "test1.epub")

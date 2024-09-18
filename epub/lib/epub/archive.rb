@@ -1,28 +1,96 @@
 module UMPTG::EPUB
 
   require 'zip/filesystem'
-  require 'nokogiri'
 
   class Archive < UMPTG::Object
+
+    CONTAINER_XML =  <<-CONXML
+<?xml version="1.0"?>
+<container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container">
+<rootfiles>
+<rootfile full-path="OEBPS/content.opf" media-type="application/oebps-package+xml"/>
+</rootfiles>
+</container>
+    CONXML
+
+    OPF_TEMPLATE = <<-PKG
+<?xml version="1.0" encoding="UTF-8"?>
+<package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="pub-id" dir="ltr" xml:lang="en">
+<metadata xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:opf="http://www.idpf.org/2007/opf">
+<dc:identifier id="pub-id">pubid</dc:identifier>
+<dc:title>Ebook Title</dc:title>
+<dc:language>en</dc:language>
+</metadata>
+<manifest>
+<item id="nav" properties="nav" href="navigation.xhtml" media-type="application/xhtml+xml"/>
+</manifest>
+<spine></spine>
+</package>
+    PKG
+
+    NAVIGATION_TEMPLATE = <<-NTEMP
+<?xml version="1.0" encoding="UTF-8"?>
+<html lang="en-US" xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops">
+<head><title>Navigation</title></head>
+<body>
+<nav id="toc" role="doc-toc" epub:type="toc" aria-labelledby="nav_toc">
+<h2 id="nav_toc" epub:type="title">Table of Contents</h2>
+<ol style="list-style-type:none;">
+<li></li>
+</ol>
+</nav>
+</body>
+</html>
+    NTEMP
 
     def initialize(args = {})
       super(args)
 
       @entries = []
-      @renditions = {}
+      @name2entry = {}
+      @container_entry = nil
 
-      a = args.clone
-      case
-      when args.key?(:epub_file)
-        load_file(a)
-      else
-        load(a)
-      end
+      load(args)
     end
 
-    def add_entry(args = {})
-      entry = Entry.new(args)
-      @entries << entry
+    def load(args = {})
+      epub_file = args[:epub_file]
+      epub_file = (epub_file.nil? or epub_file.strip.empty?) ? "" : epub_file.strip
+
+      container_path = File.join("META-INF", "container.xml")
+      if epub_file.empty?
+        add(
+              entry_name: "mimetype",
+              entry_content: "application/epub+zip"
+            )
+        @container_entry = add(
+              entry_name: container_path,
+              entry_content: CONTAINER_XML
+            )
+        add(
+              entry_name: File.join("OEBPS", "content.opf"),
+              entry_content: OPF_TEMPLATE
+            )
+        add(
+              entry_name: File.join("OEBPS", "navigation.xhtml"),
+              entry_content: NAVIGATION_TEMPLATE
+            )
+      else
+        raise "invalid file path #{epub_file}" unless File.exist?(epub_file)
+
+        Zip::File.open(epub_file) do |zip|
+          zip.entries.each do |zip_entry|
+            next if zip_entry.file_type_is?(:directory)
+            add(
+                entry_name: zip_entry.name,
+                entry_content: zip_entry.get_input_stream.read
+                )
+          end
+        end
+
+        @container_entry = name2entry[container_path]
+        raise "unable to find #{container_path}" if entry.nil?
+      end
     end
 
     def save(args = {})
@@ -38,65 +106,59 @@ module UMPTG::EPUB
             compression_method: Zip::Entry::STORED
           )
 
-        # Write the META-INF/container.xml
-        container_doc = Nokogiri::XML(CONTAINER_XML)
-        rf = container_doc.xpath("//*[local-name()='rootfiles']").first
-        raise "unable to locate rootfiles" if rf.nil?
-        @renditions.keys.each {|k| rf.add_child(sprintf(ROOTFILE_XML, File.join("OEBPS", k + ".opf"))) }
-        Entry.write(
-            zos,
-            entry_name: File.join("META-INF", "container.xml"),
-            entry_content: container_doc.to_xml
-          )
+        # Write out rest of entries.
+        opf_files = renditions.collect {|r| r.name }
+        @entries.each do |entry|
+          next if entry.name == "mimetype"
 
-        # Write the renditions
-        @renditions.values.each {|rend| rend.write(zos) }
-      end
-    end
+          content = entry.content
+          if opf_files.include?(entry.name)
+            modified_date = Time.now.strftime("%Y-%m-%dT%H:%M:%S") + "Z"
+            doc = entry.document.clone
+            Rendition.add_modified(
+                  doc,
+                  value: modified_date
+                  )
+            content = doc.to_xml
+          end
 
-    private
-
-    def load(args = {})
-      n = args[:rendition_name]
-      if n.nil? or n.strip.empty?
-        cnt = @renditions.count
-        n = cnt == 0 ? "content" : "content_" + @renditions.count.to_s.rjust(3, '0')
-      end
-      args[:rendition_name] = n
-
-      rendition = Rendition.new(args)
-      @renditions[rendition.name] = Rendition.new(args)
-    end
-
-    def load_file(args = {})
-      epub_file = args[:epub_file]
-      raise "missing value for EPUB file" if epub_file.nil? or epub_file.strip.empty?
-      raise "invalid file path #{@epub_file}" unless File.exist?(epub_file)
-
-      Zip::File.open(epub_file) do |zip|
-        zip.entries.each do |zip_entry|
-          next if zip_entry.file_type_is?(:directory)
-          @entries << Entry.new(
-                entry_name: zip_entry.name,
-                entry_content: zip_entry.get_input_stream.read
-              )
+          Entry.write(
+              zos,
+              entry_name: entry.name,
+              entry_content: content
+            )
         end
       end
+    end
 
-      entry = find_entry(File.join("META-INF", "container.xml"))
-      raise "unable to find container.xml" if entry.nil?
+    def renditions(args = {})
+      rf_list = @container_entry.document.xpath("//*[local-name()='rootfile' and @media-type='application/oebps-package+xml' and @full-path]")
+      raise "unable to locate rootfiles" if rf_list.empty?
 
-      container_doc = Nokogiri::XML(entry.content)
-      rf_list = container_doc.xpath("//*[local-name()='rootfile' and media-type='application/oebps-package+xml' and @full-path]")
-      raise "unable to locate rootfiles" if rf.empty?
+      return rf_list.collect {|r| @name2entry[r['full-path']] }
+    end
 
-      rf_list.each do |rf|
-        rendition_name = File.basename(rf['full-path'], ".*")
-        rendition = Rendition.new(
-              rendition_name: rendition_name,
-              rendition_content: rf.content
+    def add(args = {})
+      entry_name = args[:entry_name]
+      raise "missing entry name" if entry_name.nil? or entry_name.strip.empty?
+      entry_name.strip!
+
+      entry_content = args[:entry_content]
+
+      entry = Entry.new(
+              entry_name: entry_name,
+              entry_content: entry_content,
+              archive: self
             )
-        @renditions[rendition.name] = rendition
-      end
+      @entries << entry
+      @name2entry[entry_name] = entry
+
+      return entry
+    end
+
+    def find(args = {})
+      entry_name = args[:entry_name]
+      return @name2entry[entry_name] unless entry_name.nil? or entry_name.strip.empty?
+    end
   end
 end
