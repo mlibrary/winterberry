@@ -145,14 +145,18 @@ module UMPTG::EPUB
 
       entry_content = args[:entry_content]
 
-      entry = Entry.new(
-              entry_name: entry_name,
-              entry_content: entry_content,
-              archive: self
-            )
-      @entries << entry
-      @name2entry[entry_name] = entry
-
+      if @name2entry.key?(entry_name)
+        entry = @name2entry[entry_name]
+        entry.replace(entry_content: entry_content)
+      else
+        entry = Entry.new(
+                entry_name: entry_name,
+                entry_content: entry_content,
+                archive: self
+              )
+        @entries << entry
+        @name2entry[entry_name] = entry
+      end
       return entry
     end
 

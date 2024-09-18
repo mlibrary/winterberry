@@ -23,12 +23,19 @@ module UMPTG::EPUB
       return @document
     end
 
+    def replace(args = {})
+      entry_content = args[:entry_content]
+      entry_content = "" if entry_content.nil?
+      @content = entry_content
+      @document = nil
+    end
+
     def write(output_stream, args = {})
       raise "Error: missing output stream" if output_stream.nil?
 
       a = args.clone
       a[:entry_name] = @name
-      a[:entry_content] = @content
+      a[:entry_content] = @document.nil? ? @content : @document.to_xml
       Entry.write(output_stream, a)
     end
 

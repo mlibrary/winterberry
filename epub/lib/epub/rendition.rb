@@ -8,6 +8,8 @@ module UMPTG::EPUB
       @opf_entry = args[:entry]
       raise "missing rendition entry" if @opf_entry.nil?
 
+      @manifest = Manifest.new(entry: @opf_entry)
+
       nav_node = @opf_entry.document.xpath("//*[local-name()='manifest']/*[local-name()='item' and @properties='nav']").first
       @nav_entry = @entry.archive.find(entry_name: nav_node['href'])
     end
