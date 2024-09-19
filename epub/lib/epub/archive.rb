@@ -4,7 +4,7 @@ module UMPTG::EPUB
 
   class Archive < UMPTG::Object
 
-    CONTAINER_XML =  <<-CONXML
+    CONTAINER_XML = <<-CONXML
 <?xml version="1.0"?>
 <container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container">
 <rootfiles>
