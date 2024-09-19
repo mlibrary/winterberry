@@ -26,6 +26,12 @@ module UMPTG::Fulcrum::Resources
         emb_container.add_child(emb_fragment)
         reference_node.first_element_child.add_previous_sibling(emb_container)
         reference_node['data-fulcrum-embed-filename'] = reference_action_def.resource_metadata["file_name_new"]
+
+        link_node = reference_node.xpath("./*[local-name()='figcaption']//*[local-name()='a']").first
+        unless link_node.nil?
+          doi = reference_action_def.resource_metadata["doi"]
+          link_node["href"] = doi
+        end
 =end
 
         # Action completed.
