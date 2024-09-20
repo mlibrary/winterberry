@@ -21,27 +21,25 @@ module UMPTG::EPUB
 <dc:title>Ebook Title</dc:title>
 <dc:language>en</dc:language>
 </metadata>
+<manifest/>
+<spine/>
+</package>
+    PKG
+
+    OPF_TEMPLATE_OLD = <<-PKG
+<?xml version="1.0" encoding="UTF-8"?>
+<package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="pub-id" dir="ltr" xml:lang="en">
+<metadata xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:opf="http://www.idpf.org/2007/opf">
+<dc:identifier id="pub-id">pubid</dc:identifier>
+<dc:title>Ebook Title</dc:title>
+<dc:language>en</dc:language>
+</metadata>
 <manifest>
 <item id="nav" properties="nav" href="navigation.xhtml" media-type="application/xhtml+xml"/>
 </manifest>
 <spine></spine>
 </package>
     PKG
-
-    NAVIGATION_TEMPLATE = <<-NTEMP
-<?xml version="1.0" encoding="UTF-8"?>
-<html lang="en-US" xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops">
-<head><title>Navigation</title></head>
-<body>
-<nav id="toc" role="doc-toc" epub:type="toc" aria-labelledby="nav_toc">
-<h2 id="nav_toc" epub:type="title">Table of Contents</h2>
-<ol style="list-style-type:none;">
-<li></li>
-</ol>
-</nav>
-</body>
-</html>
-    NTEMP
 
     def initialize(args = {})
       super(args)
@@ -70,10 +68,6 @@ module UMPTG::EPUB
         add(
               entry_name: File.join("OEBPS", "content.opf"),
               entry_content: OPF_TEMPLATE
-            )
-        add(
-              entry_name: File.join("OEBPS", "navigation.xhtml"),
-              entry_content: NAVIGATION_TEMPLATE
             )
       else
         raise "invalid file path #{epub_file}" unless File.exist?(epub_file)
@@ -111,21 +105,21 @@ module UMPTG::EPUB
         @entries.each do |entry|
           next if entry.name == "mimetype"
 
-          content = entry.content
-          if opf_files.include?(entry.name)
-            modified_date = Time.now.strftime("%Y-%m-%dT%H:%M:%S") + "Z"
-            doc = entry.document.clone
-            Rendition.add_modified(
-                  doc,
-                  value: modified_date
-                  )
-            content = doc.to_xml
+          unless opf_files.include?(entry.name)
+            entry.write(zos)
+            next
           end
 
+          modified_date = Time.now.strftime("%Y-%m-%dT%H:%M:%S") + "Z"
+          doc = entry.document.clone
+          Rendition.add_modified(
+                doc,
+                value: modified_date
+                )
           Entry.write(
               zos,
               entry_name: entry.name,
-              entry_content: content
+              entry_content: doc.to_xml
             )
         end
       end
@@ -141,7 +135,7 @@ module UMPTG::EPUB
     def add(args = {})
       entry_name = args[:entry_name]
       raise "missing entry name" if entry_name.nil? or entry_name.strip.empty?
-      entry_name.strip!
+      entry_name = entry_name.strip
 
       entry_content = args[:entry_content]
 

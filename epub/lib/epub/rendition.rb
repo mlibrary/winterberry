@@ -1,6 +1,7 @@
 module UMPTG::EPUB
 
   class Rendition < UMPTG::Object
+    attr_reader :manifest, :name, :navigation, :opf_entry, :spine
 
     def initialize(args = {})
       super(args)
@@ -8,10 +9,11 @@ module UMPTG::EPUB
       @opf_entry = args[:entry]
       raise "missing rendition entry" if @opf_entry.nil?
 
-      @manifest = Manifest.new(entry: @opf_entry)
+      @name = @opf_entry.name
 
-      nav_node = @opf_entry.document.xpath("//*[local-name()='manifest']/*[local-name()='item' and @properties='nav']").first
-      @nav_entry = @entry.archive.find(entry_name: nav_node['href'])
+      @manifest = Manifest.new(rendition: self)
+      @spine = Spine.new(rendition: self)
+      @navigation = Navigation.new(rendition: self)
     end
 
     def self.add_modified(opf_doc, args = {})

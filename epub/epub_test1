@@ -18,7 +18,7 @@ script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
 # Process the script parameters.
 options = OpenStruct.new
 option_parser = OptionParser.new do |opts|
-  opts.banner = "Usage: #{File.basename(__FILE__)} epub_file [epub_file...]"
+  opts.banner = "Usage: #{File.basename(__FILE__)} dir [dir...]"
   opts.on_tail('-h', '--help', 'Print this help message') do
     script_logger.info(opts)
     exit 0
@@ -31,20 +31,64 @@ if ARGV.count < 0
 end
 
 # Process the command line parameters.
-epub_file_list = ARGV
+dir_list = ARGV
+
+require 'find'
+require 'mime/types'
 
 require_relative File.join(script_dir, "lib", "epub")
 
-epub = UMPTG::EPUB::Archive.new()
-epub_file = File.join(script_dir, "test1.epub")
-epub.save(epub_file: epub_file)
-script_logger.info("wrote EPUB file #{epub_file}")
+    XHTML_TEMPLATE = <<-NTEMP
+<?xml version="1.0" encoding="UTF-8"?>
+<html lang="en-US" xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops">
+<head><title>Navigation</title></head><body/>
+</html>
+    NTEMP
 
-epub_file_list.each do |epub_file|
-  unless File.file?(epub_file)
-    script_logger.error("invalid EPUB file #{epub_file}")
-    exit 1
+dir_list.each do |d|
+  d = File.expand_path(d)
+  unless File.directory?(d)
+    script_logger.error("invalid directory #{d}")
+    next
   end
-  script_logger.info("processing EPUB file #{File.basename(epub_file)}")
+  script_logger.info("processing directory #{File.basename(d)}")
 
+  epub = UMPTG::EPUB()
+  Find.find(d) do |f|
+    bname = File.basename(f).downcase
+    if bname.start_with?('.') or bname.downcase == "meta-inf"
+      Find.prune
+      next
+    end
+    next if File.directory?(f)
+    next if bname == "mimetype"
+
+    entry_name = f.delete_prefix(d + File::SEPARATOR)
+    script_logger.info("add entry #{entry_name}")
+
+    entry_mediatype = UMPTG::EPUB::Entry.media_type(entry_name: f)
+    raise "no media type" if entry_mediatype.nil?
+
+    case entry_mediatype.media_type
+    when "image"
+      entry_content = File.open(f, "rb") {|fp| fp.read }
+    else
+      entry_content = File.read(f) if entry_content.nil?
+    end
+
+    epub.rendition.manifest.add(
+          entry_name: entry_name,
+          entry_content: entry_content
+        )
+
+    if File.extname(f) == ".xhtml"
+      epub.rendition.spine.add(entry_name: entry_name)
+      epub.rendition.navigation.add(entry_name: entry_name)
+    end
+  end
+
+  epub_file = File.join(script_dir, File.basename(d, ".*") + "_test1.epub")
+  epub.save(epub_file: epub_file)
+  script_logger.info("wrote EPUB file #{epub_file}")
 end
+
