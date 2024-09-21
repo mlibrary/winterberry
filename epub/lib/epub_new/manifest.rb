@@ -1,0 +1,57 @@
+module UMPTG::EPUB
+
+  class Manifest < Node
+
+    ITEM_TEMPLATE = <<-XMLTEMP
+<item id="%s" href="%s" media-type="%s"/>
+    XMLTEMP
+
+    def initialize(args = {})
+      a = args.clone
+      a[:xpath_node] = "//*[local-name()='manifest']"
+      a[:xpath_items] = "//*[local-name()='manifest']/*[local-name()='item']"
+      super(a)
+
+      @rendition = args[:rendition]
+    end
+
+    def find(args = {})
+      entry_id = args[:entry_id]
+      entry_name = args[:entry_name]
+      entry_media_type = args[:entry_mediatype]
+      entry_properties = args[:entry_properties]
+
+      xpath_args = ["local-name()='item'"]
+      xpath_args << "@id='#{entry_id.strip}'" unless entry_id.nil? or entry_id.strip.empty?
+      xpath_args << "@href='#{Archive.PATH(@rendition, entry_name.strip)}'" unless entry_name.nil? or entry_name.strip.empty?
+      xpath_args << "@media-type='#{entry_media_type.strip}'" unless entry_media_type.nil? or entry_media_type.strip.empty?
+
+      p_path = ""
+      unless entry_properties.nil?
+        entry_properties.strip!
+        p_list = entry_properties.split(" ").collect {|p| "contains(concat(' ',@properties,' '),' #{p} ')" }
+        xpath_args << "(" + p_list.join(' or ') + ")" unless p_list.empty?
+      end
+      xpath = "./*[" + xpath_args.join(' and ') + "]"
+
+      return obj_node.xpath(xpath)
+    end
+
+    def add(args = {})
+      entry = @rendition.epub.archive.add(args)
+
+      entry_id = args[:entry_id]
+      entry_id = "item_" + entry.name.gsub(/[ \/\.\,\-]+/, '_') if entry_id.nil? or entry_id.strip.empty?
+      entry_properties = args[:entry_properties]
+
+      markup = sprintf(ITEM_TEMPLATE, entry_id, Archive.PATH(@rendition, entry.name), entry.media_type.to_s)
+      item_node = obj_node.add_child(markup).first
+      item_node['properties'] = entry_properties unless entry_properties.nil? or entry_properties.strip.empty?
+      return entry
+    end
+
+    def navigation(args = {})
+      return find(entry_properties: "nav")
+    end
+  end
+end

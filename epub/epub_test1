@@ -76,18 +76,18 @@ dir_list.each do |d|
       entry_content = File.read(f) if entry_content.nil?
     end
 
-    epub.rendition.manifest.add(
+    epub.container.rendition.manifest.add(
           entry_name: entry_name,
           entry_content: entry_content
         )
 
     if File.extname(f) == ".xhtml"
-      epub.rendition.spine.add(entry_name: entry_name)
-      epub.rendition.navigation.add(entry_name: entry_name)
+      epub.container.rendition.spine.add(entry_name: entry_name)
+      epub.container.rendition.navigation.toc.add(entry_name: entry_name)
     end
   end
 
-  epub_file = File.join(script_dir, File.basename(d, ".*") + "_test1.epub")
+  epub_file = File.join(File.dirname(d), File.basename(d, ".*") + "_test1.epub")
   epub.save(epub_file: epub_file)
   script_logger.info("wrote EPUB file #{epub_file}")
 end
