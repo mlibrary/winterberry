@@ -1,0 +1,52 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Test new version of EPUB.
+
+require 'optparse'
+require 'ostruct'
+require 'os'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+# Process the script parameters.
+options = OpenStruct.new
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} epub_file [epub_file...]"
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    script_logger.info(opts)
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  script_logger.info(option_parser.help)
+  return
+end
+
+# Process the command line parameters.
+epub_file_list = ARGV
+
+require_relative File.join(script_dir, "lib", "epub")
+
+epub_file_list.each do |epub_file|
+  epub_file = File.expand_path(epub_file)
+  unless File.file?(epub_file)
+    script_logger.error("invalid directory #{epub_file}")
+    next
+  end
+  script_logger.info("processing directory #{File.basename(epub_file)}")
+
+  epub = UMPTG::EPUB(epub_file: epub_file)
+
+  epub_clone_file = File.join(File.dirname(epub_file), File.basename(epub_file, ".*") + "_clone" + File.extname(epub_file))
+  epub.save(epub_file: epub_clone_file)
+  script_logger.info("wrote EPUB file #{epub_clone_file}")
+end
+

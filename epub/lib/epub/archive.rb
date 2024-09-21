@@ -45,15 +45,19 @@ module UMPTG::EPUB
         Zip::File.open(epub_file) do |zip|
           zip.entries.each do |zip_entry|
             next if zip_entry.file_type_is?(:directory)
+
+            is_opf = ArchiveEntry.media_type(entry_name: zip_entry.name) == ArchiveEntry.OPF_MEDIA_TYPE
+            puts "#{zip_entry.name},#{is_opf},#{ArchiveEntry.media_type(entry_name: zip_entry.name)}"
             add(
                 entry_name: zip_entry.name,
-                entry_content: zip_entry.get_input_stream.read
+                entry_content: zip_entry.get_input_stream.read,
+                opf: is_opf
                 )
           end
         end
 
-        @container_entry = name2entry[Container.CONTAINER_PATH]
-        raise "unable to find #{container_path}" if entry.nil?
+        @container_entry = @name2entry[Container.DEFAULT_PATH]
+        raise "unable to find #{container_path}" if @container_entry.nil?
       end
 
     end

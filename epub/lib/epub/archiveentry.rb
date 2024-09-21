@@ -6,6 +6,8 @@ module UMPTG::EPUB
     attr_accessor :name, :content, :media_type
     attr_reader :archive
 
+    OPF_MEDIA_TYPE = "application/oebps-package+xml"
+
     def initialize(args = {})
       super(args)
 
@@ -65,6 +67,10 @@ module UMPTG::EPUB
 
       mt_list = MIME::Types.type_for(File.extname(entry_name.strip))
       return  mt_list.empty? ? nil : mt_list.first
+    end
+
+    def self.OPF_MEDIA_TYPE
+      return OPF_MEDIA_TYPE
     end
   end
 end
