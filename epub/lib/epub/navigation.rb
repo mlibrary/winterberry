@@ -1,8 +1,11 @@
 module UMPTG::EPUB
 
   class Navigation < UMPTG::Object
+    attr_reader :entry, :rendition, :toc
 
-    NAVIGATION_TEMPLATE = <<-NTEMP
+    DEFAULT_PATH = File.join("OEBPS", "navigation.xhtml")
+
+    DEFAULT_XML = <<-NTEMP
 <?xml version="1.0" encoding="UTF-8"?>
 <html lang="en-US" xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops">
 <head><title>Navigation</title></head>
@@ -16,73 +19,32 @@ module UMPTG::EPUB
 </html>
     NTEMP
 
-    TOC_TEMPLATE  = <<-NTEMP
-<li id="%s"><a href="%s">%s</a></li>
-    NTEMP
-
     def initialize(args = {})
       super(args)
 
       @rendition = args[:rendition]
-      raise "missing rendition for navigation" if @rendition.nil?
-
-      @nav_entry = @rendition.manifest.navigation
-      if @nav_entry.nil?
-        @nav_entry = @rendition.manifest.add(
-              entry_name: File.join("OEBPS", "navigation.xhtml"),
-              entry_content: NAVIGATION_TEMPLATE,
-              entry_properties: "nav"
-            )
-      end
+      @entry = args[:archive_entry]
+      @toc = TOC.new(args)
     end
 
-    def find_toc_nodelist(args = {})
-      nav_type_node = find_nav_type_node(args)
-      toc_nodelist = []
-      if nav_type_node.nil?
-      else
-        entry_name = args[:entry_name]
-        if entry_name.nil? or entry_name.strip.empty?
-          xpath = ".//*[local-name()='li']"
-        else
-          xpath = ".//*[local-name()='a' and @href='#{ename(entry_name)}']/ancestor::*[local-name()='li']"
-        end
-        toc_nodelist = @nav_entry.document.xpath(xpath)
-        return toc_nodelist
-      end
+    def self.DEFAULT_PATH
+      return DEFAULT_PATH
     end
 
-    def add(args = {})
-      toc_nodelist = find_toc_nodelist(args)
-      if toc_nodelist.empty?
-        nav_type_node = find_nav_type_node(args)
-        list_node = nav_type_node.xpath(".//*[local-name()='ol' or local-name()='ul']").first
-        if list_node.nil?
-        else
-          entry_name = args[:entry_name]
-          id = args[:toc_id]
-          id = "item_" + entry_name.gsub(/[ \/\.\,\-]+/, '_') if id.nil? or id.strip.empty?
-          markup = sprintf(TOC_TEMPLATE, id, ename(entry_name), entry_name)
-          list_node.add_child(markup)
-        end
-      end
+    def self.DEFAULT_XML
+      return DEFAULT_XML
     end
 
-    private
-
-    def find_nav_type_node(args = {})
-      epub_type = args[:epub_type]
-      epub_type = "toc" if epub_type.nil? or epub_type.strip.empty?
-
-      xpath = "//*[local-name()='nav' and @epub:type='#{epub_type}']"
-      nav_type_node = @nav_entry.document.xpath(xpath).first
-      return nav_type_node
-    end
-
-    def ename(entry_name)
-      m = File.expand_path(@nav_entry.name)
-      n = File.expand_path(entry_name)
-      return n.delete_prefix(File.dirname(m)+"/")
+    def self.MANIFEST_ITEM_XML
+      item_xml = sprintf(
+            Manifest.ITEM_XML,
+            Archive.MK_ID(DEFAULT_PATH),
+            File.basename(DEFAULT_PATH),
+            ArchiveEntry.media_type(entry_name: DEFAULT_PATH)
+          )
+      n = Nokogiri::XML.parse(item_xml)
+      n.document.root['properties'] = "nav"
+      return n.document.root.to_s
     end
   end
 end

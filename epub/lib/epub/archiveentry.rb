@@ -2,7 +2,7 @@ module UMPTG::EPUB
   require 'nokogiri'
   require 'mime/types'
 
-  class Entry < UMPTG::Object
+  class ArchiveEntry < UMPTG::Object
     attr_accessor :name, :content, :media_type
     attr_reader :archive
 
@@ -16,7 +16,7 @@ module UMPTG::EPUB
       @content = "" if @content.nil?
 
       @media_type = args[:entry_mediatype]
-      @media_type = UMPTG::EPUB::Entry.media_type(entry_name: @name) if @media_type.nil?
+      @media_type = UMPTG::EPUB::ArchiveEntry.media_type(entry_name: @name) if @media_type.nil?
 
       @archive = args[:archive]
       @document = nil
@@ -40,7 +40,7 @@ module UMPTG::EPUB
       a = args.clone
       a[:entry_name] = @name
       a[:entry_content] = @document.nil? ? @content : @document.to_xml
-      Entry.write(output_stream, a)
+      ArchiveEntry.write(output_stream, a)
     end
 
     def self.write(output_stream, args = {})

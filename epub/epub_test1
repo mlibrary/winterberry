@@ -66,7 +66,7 @@ dir_list.each do |d|
     entry_name = f.delete_prefix(d + File::SEPARATOR)
     script_logger.info("add entry #{entry_name}")
 
-    entry_mediatype = UMPTG::EPUB::Entry.media_type(entry_name: f)
+    entry_mediatype = UMPTG::EPUB::ArchiveEntry.media_type(entry_name: f)
     raise "no media type" if entry_mediatype.nil?
 
     case entry_mediatype.media_type

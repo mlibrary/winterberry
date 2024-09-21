@@ -1,8 +1,10 @@
 module UMPTG::EPUB
+  require 'nokogiri'
+  require 'mime/types'
 
   class Entry < UMPTG::Object
-    attr_accessor :name, :content
-    attr_reader :id
+    attr_accessor :name, :content, :media_type
+    attr_reader :archive
 
     def initialize(args = {})
       super(args)
@@ -13,7 +15,23 @@ module UMPTG::EPUB
       @content = args[:entry_content]
       @content = "" if @content.nil?
 
-      @id = @name.gsub(/\/[ ]+/, '_')
+      @media_type = args[:entry_mediatype]
+      @media_type = UMPTG::EPUB::Entry.media_type(entry_name: @name) if @media_type.nil?
+
+      @archive = args[:archive]
+      @document = nil
+    end
+
+    def document
+      @document = Nokogiri::XML(@content) if @document.nil?
+      return @document
+    end
+
+    def replace(args = {})
+      entry_content = args[:entry_content]
+      entry_content = "" if entry_content.nil?
+      @content = entry_content
+      @document = nil
     end
 
     def write(output_stream, args = {})
@@ -21,7 +39,7 @@ module UMPTG::EPUB
 
       a = args.clone
       a[:entry_name] = @name
-      a[:entry_content] = @content
+      a[:entry_content] = @document.nil? ? @content : @document.to_xml
       Entry.write(output_stream, a)
     end
 
@@ -39,6 +57,14 @@ module UMPTG::EPUB
 
       output_stream.put_next_entry(nme, nil, nil, compression_method)
       output_stream.write(content)
+    end
+
+    def self.media_type(args = {})
+      entry_name = args[:entry_name]
+      return if entry_name.nil?
+
+      mt_list = MIME::Types.type_for(File.extname(entry_name.strip))
+      return  mt_list.empty? ? nil : mt_list.first
     end
   end
 end
