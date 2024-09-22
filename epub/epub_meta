@@ -97,8 +97,15 @@ epub_file_list.each do |epub_file|
     puts "#{p.name} #{p['name']}=#{p['content']}" if p.key?('name')
     puts "#{p.namespace.prefix}:#{p.name}=#{p.content}" if p.namespace.href == UMPTG::EPUB::DCElements.NAMESPACE_URI
   end
-=end
   m_list = epub.rendition.metadata.schema.terms.accessMode
+  puts "m_list:#{m_list.count}"
+  m_list.each do |p|
+    puts "#{p.name} #{p['property']}=#{p.content}" if p.key?('property')
+    puts "#{p.name} #{p['name']}=#{p['content']}" if p.key?('name')
+    puts "#{p.namespace.prefix}:#{p.name}=#{p.content}" if p.namespace.href == UMPTG::EPUB::DCElements.NAMESPACE_URI
+  end
+=end
+  m_list = epub.rendition.metadata.dc.find
   puts "m_list:#{m_list.count}"
   m_list.each do |p|
     puts "#{p.name} #{p['property']}=#{p.content}" if p.key?('property')

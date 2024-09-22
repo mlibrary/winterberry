@@ -2,8 +2,6 @@ module UMPTG::EPUB
 
   class SchemaTerms < Node
 
-    NAMESPACE_URI = "http://purl.org/dc/terms/"
-
     def initialize(args = {})
       @ns_prefix = "schema"
 
@@ -25,10 +23,6 @@ module UMPTG::EPUB
 
     def add(args = {})
       raise "not implemented"
-    end
-
-    def self.NAMESPACE_URI
-      return NAMESPACE_URI
     end
   end
 end

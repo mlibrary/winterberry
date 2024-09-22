@@ -6,8 +6,8 @@ module UMPTG::EPUB
 
     def initialize(args = {})
       a = args.clone
-      a[:xpath_children] ="//*[local-name()='metadata']/*[namespace-uri='#{NAMESPACE_URI}']"
-      super(args)
+      a[:xpath_children] ="//*[local-name()='metadata']/*[namespace-uri()='#{NAMESPACE_URI}']"
+      super(a)
     end
 
     def title(args = {})

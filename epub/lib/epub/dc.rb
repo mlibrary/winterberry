@@ -20,7 +20,7 @@ module UMPTG::EPUB
 
     def dcterms_modified(args = {})
       metadata_value = args[:metadata_value]
-      metadata_node = @rendition.metadata.find(meta_property: 'dcterms:modified').first
+      metadata_node = @rendition.metadata.dc.terms.find(meta_property: 'modified').first
       return metadata_node.content if metadata_value.nil? or metadata_value.empty?
 
       metadata_node.content = metadata_value

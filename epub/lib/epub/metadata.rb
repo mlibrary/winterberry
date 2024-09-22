@@ -1,7 +1,7 @@
 module UMPTG::EPUB
 
   class Metadata < Node
-    attr_reader :dc, :property, :schema
+    attr_reader :dc, :schema, :terms
 
     CHILDREN_XPATH = <<-NTEMP
     //*[
@@ -27,12 +27,14 @@ module UMPTG::EPUB
       @dc = DC.new(a)
       #@property = Property.new(a)
       @schema = Schema.new(a)
+      @terms = Terms.new(a)
     end
 
     def find(args = {})
       return children if args.empty?
 
-      return Metadata.find_children(obj_node, args)
+      return @terms.find(args) + @dc.find(args) + @schema.find(args) + @terms.find(args)
+      #return Metadata.find_children(obj_node, args)
     end
 
     def add(args = {})

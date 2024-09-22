@@ -10,6 +10,7 @@ module UMPTG
   require_relative File.join('epub', 'manifest')
   require_relative File.join('epub', 'metadata')
   #require_relative File.join('epub', 'property')
+  require_relative File.join('epub', 'terms')
   require_relative File.join('epub', 'dc')
   require_relative File.join('epub', 'dcelements')
   require_relative File.join('epub', 'dcterms')
