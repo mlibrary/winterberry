@@ -1,4 +1,4 @@
-module UMPTG::EPUB
+module UMPTG::EPUB::Archive
   require 'nokogiri'
   require 'mime/types'
 
@@ -18,7 +18,7 @@ module UMPTG::EPUB
       @content = "" if @content.nil?
 
       @media_type = args[:entry_mediatype]
-      @media_type = UMPTG::EPUB::ArchiveEntry.media_type(entry_name: @name) if @media_type.nil?
+      @media_type = ArchiveEntry.media_type(entry_name: @name) if @media_type.nil?
 
       @archive = args[:archive]
       @document = nil

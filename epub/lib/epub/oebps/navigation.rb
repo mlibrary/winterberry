@@ -1,4 +1,4 @@
-module UMPTG::EPUB
+module UMPTG::EPUB::OEBPS
 
   class Navigation < UMPTG::Object
     attr_reader :entry, :rendition, :toc
@@ -40,7 +40,7 @@ module UMPTG::EPUB
             Manifest.ITEM_XML,
             Archive.MK_ID(DEFAULT_PATH),
             File.basename(DEFAULT_PATH),
-            ArchiveEntry.media_type(entry_name: DEFAULT_PATH)
+            UMPTG::EPUB::Archive::ArchiveEntry.media_type(entry_name: DEFAULT_PATH)
           )
       n = Nokogiri::XML.parse(item_xml)
       n.document.root['properties'] = "nav"

@@ -1,6 +1,6 @@
-module UMPTG::EPUB
+module UMPTG::EPUB::OEBPS
 
-  class Manifest < Node
+  class Manifest < UMPTG::EPUB::Node
 
     ITEM_XML = <<-XMLTEMP
 <item id="%s" href="%s" media-type="%s"/>

@@ -1,6 +1,6 @@
-module UMPTG::EPUB
+module UMPTG::EPUB::OEBPS
 
-  class Spine < Node
+  class Spine < UMPTG::EPUB::Node
 
     ITEMREF_TEMPLATE = <<-XMLTEMP
 <itemref idref="%s"/>

@@ -1,4 +1,4 @@
-module UMPTG::EPUB
+module UMPTG::EPUB::MetaInf
 
   class Container < UMPTG::Object
     attr_reader :entry, :epub, :renditions
@@ -47,7 +47,7 @@ module UMPTG::EPUB
       rend = nil
       entry = rootfiles.add(args)
       unless entry.nil?
-        rend = Rendition.new(
+        rend = UMPTG::EPUB::OEBPS::Rendition.new(
               epub: @epub,
               archive_entry: entry
             )
@@ -61,7 +61,7 @@ module UMPTG::EPUB
     end
 
     def self.DEFAULT_XML
-      return sprintf(DEFAULT_XML_TEMPLATE, Rendition.DEFAULT_PATH)
+      return sprintf(DEFAULT_XML_TEMPLATE, UMPTG::EPUB::OEBPS::Rendition.DEFAULT_PATH)
     end
 
     private
@@ -70,7 +70,7 @@ module UMPTG::EPUB
       return @rootfiles.children.collect do |r|
         entry = @epub.archive.find(entry_name: r['full-path'])
         raise "invalid entry" if entry.nil?
-        Rendition.new(
+        UMPTG::EPUB::OEBPS::Rendition.new(
               epub: @epub,
               archive_entry: entry
             )

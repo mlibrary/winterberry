@@ -1,4 +1,4 @@
-module UMPTG::EPUB::Metadata
+module UMPTG::EPUB::OEBPS::Metadata
 
   class Terms < UMPTG::EPUB::Node
 

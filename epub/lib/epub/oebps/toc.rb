@@ -1,6 +1,6 @@
-module UMPTG::EPUB
+module UMPTG::EPUB::OEBPS
 
-  class TOC < Node
+  class TOC < UMPTG::EPUB::Node
 
     TOC_ITEM_XML = <<-NTEMP
 <li id="%s"><a href="%s">%s</a></li>
@@ -25,7 +25,7 @@ module UMPTG::EPUB
       toc_items = find(args)
       if toc_items.empty?
         entry_name = args[:entry_name]
-        e_name = Archive.MK_PATH(@archive_entry, entry_name)
+        e_name = UMPTG::EPUB::Archive.Archive.MK_PATH(@archive_entry, entry_name)
 
         entry = @archive_entry.archive.find(entry_name: entry_name)
         title_node = entry.document.xpath("//*[local-name()='head']/*[local-name()='title']").first

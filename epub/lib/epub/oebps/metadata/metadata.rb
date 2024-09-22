@@ -1,4 +1,4 @@
-module UMPTG::EPUB::Metadata
+module UMPTG::EPUB::OEBPS::Metadata
 
   class Metadata < UMPTG::EPUB::Node
     attr_reader :dc, :schema, :terms

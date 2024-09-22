@@ -1,4 +1,4 @@
-module UMPTG::EPUB::Metadata
+module UMPTG::EPUB::OEBPS::Metadata
 
   class DCTerms < UMPTG::EPUB::Node
     attr_reader :ns_prefix

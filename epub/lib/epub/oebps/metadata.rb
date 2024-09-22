@@ -1,4 +1,4 @@
-module UMPTG::EPUB
+module UMPTG::EPUB::OEBPS
 
   require_relative File.join('metadata', 'dcelements')
   require_relative File.join('metadata', 'dcterms')

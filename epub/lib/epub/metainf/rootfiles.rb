@@ -1,6 +1,6 @@
-module UMPTG::EPUB
+module UMPTG::EPUB::MetaInf
 
-  class RootFiles < Node
+  class RootFiles < UMPTG::EPUB::Node
 
     ROOTFILE_XML = <<-XMLTEMP
 <rootfile full-path="%s" media-type="application/oebps-package+xml"/>

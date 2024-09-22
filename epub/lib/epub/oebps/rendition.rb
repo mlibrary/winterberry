@@ -1,4 +1,4 @@
-module UMPTG::EPUB
+module UMPTG::EPUB::OEBPS
 
   class Rendition < UMPTG::Object
     attr_reader :epub, :entry, :manifest, :metadata, \
