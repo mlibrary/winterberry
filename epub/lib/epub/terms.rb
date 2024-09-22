@@ -4,15 +4,10 @@ module UMPTG::EPUB
 
     def initialize(args = {})
       a = args.clone
-      a[:xpath_children] ="//*[local-name()='metadata']/*[local-name()='meta' and not(contains(@property,':'))]"
+      a[:xpath_children] ="./*[local-name()='meta' and not(contains(@property,':'))]"
       super(a)
-    end
 
-    def find(args = {})
-      return children if args.empty?
-
-      return children.select {|n| n['property'] == "#{args[:meta_property]}" } \
-            unless args[:meta_property].nil?
+      @ns_prefix = nil
     end
 
     def add(args = {})

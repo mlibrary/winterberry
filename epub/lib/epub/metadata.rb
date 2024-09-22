@@ -25,20 +25,19 @@ module UMPTG::EPUB
       super(a)
 
       @dc = DC.new(a)
-      #@property = Property.new(a)
       @schema = Schema.new(a)
       @terms = Terms.new(a)
-    end
 
-    def find(args = {})
-      return children if args.empty?
-
-      return @terms.find(args) + @dc.find(args) + @schema.find(args) + @terms.find(args)
-      #return Metadata.find_children(obj_node, args)
+      @xpath_children = @terms.xpath_children + '|' + @dc.xpath_children \
+              + '|' + @schema.xpath_children
     end
 
     def add(args = {})
       raise "not implemented"
+    end
+
+    def select(node, args)
+      return (@terms.select(node, args) or @dc.select(node, args) or @schema.select(node, args))
     end
 
     def self.namespace_prefix(onode, ns_attr_uri)

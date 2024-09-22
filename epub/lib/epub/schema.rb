@@ -7,16 +7,15 @@ module UMPTG::EPUB
       super(args)
 
       @terms = SchemaTerms.new(args)
-    end
-
-    def find(args = {})
-      return children if args.empty?
-
-      return @terms.find(args)
+      @xpath_children = @terms.xpath_children
     end
 
     def add(args = {})
       raise "not implemented"
+    end
+
+    def select(node, args)
+      return @terms.select(node, args)
     end
   end
 end

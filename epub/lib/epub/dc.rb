@@ -8,14 +8,16 @@ module UMPTG::EPUB
 
       @elements = DCElements.new(args)
       @terms = DCTerms.new(args)
-    end
 
-    def find(args = {})
-      return @elements.find(args) + @terms.find(args)
+      @xpath_children = @elements.xpath_children + "|" + @terms.xpath_children
     end
 
     def add(args = {})
       raise "not implemented"
+    end
+
+    def select(node, args)
+      return (@elements.select(node, args) or @terms.select(node, args))
     end
 
     def dcterms_modified(args = {})

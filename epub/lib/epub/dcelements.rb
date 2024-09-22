@@ -6,8 +6,10 @@ module UMPTG::EPUB
 
     def initialize(args = {})
       a = args.clone
-      a[:xpath_children] ="//*[local-name()='metadata']/*[namespace-uri()='#{NAMESPACE_URI}']"
+      a[:xpath_children] ="./*[namespace-uri()='#{NAMESPACE_URI}']"
       super(a)
+
+      @ns_prefix = Metadata.namespace_prefix(obj_node, NAMESPACE_URI)
     end
 
     def title(args = {})
@@ -16,13 +18,6 @@ module UMPTG::EPUB
 
     def identifier(args = {})
       return find(element_name: "identifier")
-    end
-
-    def find(args = {})
-      return children if args.empty?
-
-      return children.select {|n| n.name == args[:element_name]} \
-            unless args[:element_name].nil?
     end
 
     def add(args = {})
