@@ -1,6 +1,6 @@
-module UMPTG::EPUB
+module UMPTG::EPUB::Metadata
 
-  class DCTerms < Node
+  class DCTerms < UMPTG::EPUB::Node
     attr_reader :ns_prefix
 
     NAMESPACE_URI = "http://purl.org/dc/terms/"

@@ -1,6 +1,6 @@
-module UMPTG::EPUB
+module UMPTG::EPUB::Metadata
 
-  class DCElements < Node
+  class DCElements < UMPTG::EPUB::Node
 
     NAMESPACE_URI = "http://purl.org/dc/elements/1.1/"
 

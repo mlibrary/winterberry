@@ -1,6 +1,6 @@
-module UMPTG::EPUB
+module UMPTG::EPUB::Metadata
 
-  class Terms < Node
+  class Terms < UMPTG::EPUB::Node
 
     def initialize(args = {})
       a = args.clone

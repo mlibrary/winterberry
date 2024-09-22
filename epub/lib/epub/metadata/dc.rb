@@ -1,6 +1,6 @@
-module UMPTG::EPUB
+module UMPTG::EPUB::Metadata
 
-  class DC < Node
+  class DC < UMPTG::EPUB::Node
     attr_reader :elements, :terms
 
     def initialize(args = {})

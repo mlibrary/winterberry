@@ -31,7 +31,7 @@ module UMPTG::EPUB
 
       a = args.clone
       a[:rendition] = self
-      @metadata = Metadata.new(a)
+      @metadata = Metadata::Metadata.new(a)
       @manifest = Manifest.new(a)
       a[:manifest] = @manifest
       @spine = Spine.new(a)

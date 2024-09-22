@@ -1,6 +1,6 @@
-module UMPTG::EPUB
+module UMPTG::EPUB::Metadata
 
-  class SchemaTerms < Node
+  class SchemaTerms < UMPTG::EPUB::Node
 
     def initialize(args = {})
       super(args)
