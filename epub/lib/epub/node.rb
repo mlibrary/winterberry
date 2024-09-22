@@ -5,6 +5,10 @@ module UMPTG::EPUB
     def initialize(args = {})
       super(args)
 
+      @rendition = args[:rendition]
+      @container = args[:container]
+      raise "missing rendition" if @rendition.nil? and @container.nil?
+
       @archive_entry = args[:archive_entry]
       raise "invalid archive_entry" if @archive_entry.nil?
 

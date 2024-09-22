@@ -9,7 +9,7 @@ module UMPTG::EPUB
     def initialize(args = {})
       a = args.clone
       a[:xpath_node] = "//*[local-name()='spine']"
-      a[:xpath_items] = "//*[local-name()='spine']/*[local-name()='itemref']"
+      a[:xpath_children] = "//*[local-name()='spine']/*[local-name()='itemref']"
       super(a)
 
       @manifest = args[:manifest]

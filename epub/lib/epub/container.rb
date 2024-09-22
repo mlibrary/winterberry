@@ -20,7 +20,10 @@ module UMPTG::EPUB
       @epub = args[:epub]
       @entry = args[:archive_entry]
 
-      @rootfiles = RootFiles.new(archive_entry: @entry)
+      @rootfiles = RootFiles.new(
+              container: self,
+              archive_entry: @entry
+            )
       @renditions = init_renditions()
     end
 

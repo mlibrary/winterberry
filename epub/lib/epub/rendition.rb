@@ -1,7 +1,7 @@
 module UMPTG::EPUB
 
   class Rendition < UMPTG::Object
-    attr_reader :epub, :entry, :manifest, :navigation, :spine
+    attr_reader :epub, :entry, :manifest, :metadata, :navigation, :spine
 
     DEFAULT_PATH = File.join("OEBPS", "content.opf")
 
@@ -26,13 +26,18 @@ module UMPTG::EPUB
       @epub = args[:epub]
       @entry = args[:archive_entry]
 
-      @manifest = Manifest.new(args)
-      @spine = Spine.new(archive_entry: @entry, manifest: @manifest)
+      a = args.clone
+      a[:rendition] = self
+      @metadata = Metadata.new(a)
+      @manifest = Manifest.new(a)
+      a[:manifest] = @manifest
+      @spine = Spine.new(a)
 
-      manifest_nav_node = @manifest.navigation(args)
+      manifest_nav_node = @manifest.navigation()
       nav_href = Manifest.MK_PATH(@entry, manifest_nav_node["href"])
       nav_entry = @entry.archive.find(entry_name: nav_href)
-      @navigation = Navigation.new(rendition: self, archive_entry: nav_entry)
+      a[:archive_entry] = nav_entry
+      @navigation = Navigation.new(a)
     end
 
     def toc
