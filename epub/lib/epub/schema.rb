@@ -1,18 +1,18 @@
 module UMPTG::EPUB
 
   class Schema < Node
+    attr_reader :terms
 
     def initialize(args = {})
       super(args)
+
+      @terms = SchemaTerms.new(args)
     end
 
     def find(args = {})
       return children if args.empty?
 
-      a = args.clone
-      a[:namespace_attribute_prefix] = "schema"
-
-      return @rendition.metadata.find(a)
+      return @terms.find(args)
     end
 
     def add(args = {})

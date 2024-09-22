@@ -74,7 +74,6 @@ module UMPTG::EPUB
       end
 
       xpath = xpath_args.join('|')
-      puts "xpath:#{xpath}"
       return onode.xpath(xpath)
     end
   end
