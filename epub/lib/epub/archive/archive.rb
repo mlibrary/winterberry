@@ -1,6 +1,7 @@
 module UMPTG::EPUB::Archive
 
   require 'zip/filesystem'
+  require 'find'
 
   class Archive < UMPTG::Object
     attr_reader :epub
@@ -13,15 +14,14 @@ module UMPTG::EPUB::Archive
       @name2entry = {}
       @container_entry = nil
       @container = nil
-
-      load(args)
     end
 
     def load(args = {})
-      epub_file = args[:epub_file]
-      epub_file = (epub_file.nil? or epub_file.strip.empty?) ? "" : epub_file.strip
+      epub_path = args[:epub_path] || ""
 
-      if epub_file.empty?
+      if epub_path.empty?
+        load_scratch(args)
+        # Load a scratch EPUB
         add(
               entry_name: "mimetype",
               entry_content: "application/epub+zip"
@@ -38,10 +38,26 @@ module UMPTG::EPUB::Archive
               entry_name: UMPTG::EPUB::OEBPS::Navigation.DEFAULT_PATH,
               entry_content: Navigation.DEFAULT_XML
             )
-      else
-        raise "invalid file path #{epub_file}" unless File.exist?(epub_file)
+        return
+      end
 
-        Zip::File.open(epub_file) do |zip|
+      # Load a path
+      epub_path = File.expand_path(epub_path)
+      raise "invalid file path #{epub_path}" unless File.exist?(epub_path)
+
+      if File.directory?(epub_path)
+        # Load directory contents
+        Find.find(epub_path) do |path|
+          next if File.directory?(path)
+
+          add(
+              entry_name: path.delete_prefix(epub_path + File::SEPARATOR),
+              entry_content: File.open(path, "rb") {|f| f.read }
+              )
+        end
+      else
+        # Load file contents
+        Zip::File.open(epub_path) do |zip|
           zip.entries.each do |zip_entry|
             next if zip_entry.file_type_is?(:directory)
 
@@ -51,11 +67,10 @@ module UMPTG::EPUB::Archive
                 )
           end
         end
-
-        @container_entry = @name2entry[UMPTG::EPUB::MetaInf::Container.DEFAULT_PATH]
-        raise "unable to find #{container_path}" if @container_entry.nil?
       end
 
+      @container_entry = @name2entry[UMPTG::EPUB::MetaInf::Container.DEFAULT_PATH]
+      raise "unable to find #{container_path}" if @container_entry.nil?
     end
 
     def container()

@@ -9,6 +9,8 @@ module UMPTG::EPUB
       a = args.clone
       a[:epub] = self
       @archive = Archive::Archive.new(a)
+
+      @archive.load(args)
       @container = archive.container()
     end
 

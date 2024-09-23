@@ -1,0 +1,58 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Test new version of EPUB load file/directory.
+
+require 'optparse'
+require 'ostruct'
+require 'os'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+# Process the script parameters.
+options = OpenStruct.new
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} epub_path [epub_path...]"
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    script_logger.info(opts)
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  script_logger.info(option_parser.help)
+  return
+end
+
+# Process the command line parameters.
+epub_path_list = ARGV
+
+require_relative File.join(script_dir, "lib", "epub")
+
+epub_path_list.each do |epub_path|
+  epub_path = File.expand_path(epub_path)
+  unless File.exist?(epub_path)
+    script_logger.error("invalid path #{epub_path}")
+    next
+  end
+  is_dir = File.directory?(epub_path)
+  script_logger.info("processing file #{File.basename(epub_path)}") unless is_dir
+  script_logger.info("processing directory #{File.basename(epub_path)}") if is_dir
+  STDOUT.flush
+
+  epub = UMPTG::EPUB(epub_path: epub_path)
+
+  bname = File.basename(epub_path, ".*")
+  bname += is_dir ? "_save_dir.epub" : "_save_file" + File.extname(epub_path)
+
+  epub_save_file = File.join(File.dirname(epub_path), bname)
+  epub.save(epub_file: epub_save_file)
+  script_logger.info("saved EPUB file #{epub_save_file}")
+end
+

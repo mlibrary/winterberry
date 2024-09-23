@@ -43,7 +43,7 @@ epub_file_list.each do |epub_file|
   end
   script_logger.info("processing directory #{File.basename(epub_file)}")
 
-  epub = UMPTG::EPUB(epub_file: epub_file)
+  epub = UMPTG::EPUB(epub_path: epub_file)
 
   puts "version: #{epub.rendition.version}"
 
