@@ -9,8 +9,9 @@ module UMPTG::EPUB::OEBPS
     def initialize(args = {})
       a = args.clone
       a[:xpath_node] = "//*[local-name()='manifest']"
-      a[:xpath_children] = "//*[local-name()='manifest']/*[local-name()='item']"
       super(a)
+
+      @xpath_children = "./*[local-name()='item']"
     end
 
     def find(args = {})

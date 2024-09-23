@@ -9,11 +9,10 @@ module UMPTG::EPUB::OEBPS::Metadata::DC
     PKG
 
     def initialize(args = {})
-      a = args.clone
-      a[:xpath_children] ="./*[namespace-uri()='#{NAMESPACE_URI}']"
-      super(a)
+      super(args)
 
       @ns_prefix = UMPTG::EPUB::OEBPS::Metadata::Metadata.namespace_prefix(obj_node, NAMESPACE_URI)
+      @xpath_children = "./*[namespace-uri()='#{NAMESPACE_URI}']"
     end
 
     def title(args = {})

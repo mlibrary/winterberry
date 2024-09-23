@@ -3,7 +3,9 @@ module UMPTG::EPUB::OEBPS::Metadata
   class Terms < UMPTG::EPUB::Node
 
     def initialize(args = {})
-      super(args)
+      a = args.clone
+      a[:xpath_node] = "//*[local-name()='metadata']"
+      super(a)
 
       @ns_prefix = nil
       @xpath_children = "./*[local-name()='meta' and not(contains(@property,':'))]"

@@ -3,6 +3,5 @@ module UMPTG::EPUB::OEBPS
   require_relative File.join('metadata', 'terms')
   require_relative File.join('metadata', 'dc')
   require_relative File.join('metadata', 'schema')
-  require_relative File.join('metadata', 'metadataterms')
   require_relative File.join('metadata', 'metadata')
 end

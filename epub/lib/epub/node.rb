@@ -15,8 +15,7 @@ module UMPTG::EPUB
 
       @xpath_node = args[:xpath_node]
       raise "missing node xpath expression" if @xpath_node.nil? or @xpath_node.strip.empty?
-      @xpath_children = args[:xpath_children]
-      raise "missing items xpath expression" if @xpath_node.nil? or @xpath_node.strip.empty?
+      @xpath_children = args[:xpath_children] || "./*"
 
       @ns_prefix = nil
     end

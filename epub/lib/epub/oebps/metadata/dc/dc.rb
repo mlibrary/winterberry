@@ -4,10 +4,12 @@ module UMPTG::EPUB::OEBPS::Metadata::DC
     attr_reader :elements, :terms
 
     def initialize(args = {})
-      super(args)
+      a = args.clone
+      a[:xpath_node] = "//*[local-name()='metadata']"
+      super(a)
 
-      @elements = Elements.new(args)
-      @terms = Terms.new(args)
+      @elements = Elements.new(a)
+      @terms = Terms.new(a)
 
       @xpath_children = @elements.xpath_children + "|" + @terms.xpath_children
     end

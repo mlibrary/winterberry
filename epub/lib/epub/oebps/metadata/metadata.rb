@@ -21,7 +21,6 @@ module UMPTG::EPUB::OEBPS::Metadata
     def initialize(args = {})
       a = args.clone
       a[:xpath_node] = "//*[local-name()='metadata']"
-      a[:xpath_children] = "//*[local-name()='metadata']/*"
       super(a)
 
       @dc = DC::DC.new(a)
