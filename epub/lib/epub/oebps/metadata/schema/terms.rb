@@ -1,6 +1,6 @@
-module UMPTG::EPUB::OEBPS::Metadata
+module UMPTG::EPUB::OEBPS::Metadata::Schema
 
-  class SchemaTerms < UMPTG::EPUB::Node
+  class Terms < UMPTG::EPUB::OEBPS::Metadata::Terms
 
     def initialize(args = {})
       super(args)
@@ -11,10 +11,6 @@ module UMPTG::EPUB::OEBPS::Metadata
 
     def accessMode(args = {})
       return find(meta_property: "accessMode")
-    end
-
-    def add(args = {})
-      raise "not implemented"
     end
   end
 end

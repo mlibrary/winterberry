@@ -24,8 +24,8 @@ module UMPTG::EPUB::OEBPS::Metadata
       a[:xpath_children] = "//*[local-name()='metadata']/*"
       super(a)
 
-      @dc = DC.new(a)
-      @schema = Schema.new(a)
+      @dc = DC::DC.new(a)
+      @schema = Schema::Schema.new(a)
       @terms = Terms.new(a)
 
       @xpath_children = @terms.xpath_children + '|' + @dc.xpath_children \

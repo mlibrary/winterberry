@@ -45,6 +45,22 @@ epub_file_list.each do |epub_file|
 
   epub = UMPTG::EPUB(epub_file: epub_file)
 
+  puts "version: #{epub.rendition.version}"
+
+=begin
+  epub.rendition.metadata.dc.elements.add(element_name: "contributor", element_value: "TW Belch")
+  epub.rendition.metadata.dc.terms.add(meta_property: "accrualPolicy", meta_property_value: "Closed")
+  epub.rendition.metadata.dc.add(
+        meta_property: "accrualPolicy", meta_property_value: "Closed",
+        element_name: "contributor", element_value: "TW Belch"
+      )
+  epub.rendition.metadata.terms.add(meta_name: "cover", meta_property_content: "My_Cover")
+  epub.rendition.metadata.terms.add(meta_name: "cover", meta_property_content: "twb_cover2")
+  epub.rendition.metadata.schema.terms.add(
+        meta_property: "accessibilityFeature", meta_property_value: "structuralNavigation"
+      )
+=end
+
   epub_clone_file = File.join(File.dirname(epub_file), File.basename(epub_file, ".*") + "_clone" + File.extname(epub_file))
   epub.save(epub_file: epub_clone_file)
   script_logger.info("wrote EPUB file #{epub_clone_file}")

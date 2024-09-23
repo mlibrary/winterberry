@@ -32,16 +32,14 @@ module UMPTG::EPUB
     end
 
     def find(args = {})
-      return children if args[:element_name].nil? and args[:meta_property].nil? and args[:meta_name].nil?
-      return children.select {|n| select(n, args) }
+      c_list = children
+      return c_list if args[:element_name].nil? and args[:meta_property].nil? and args[:meta_name].nil?
+      return c_list.select {|n| select(n, args) }
     end
 
     def select(node, args = {})
       unless args[:element_name].nil?
         element_name = args[:element_name].strip
-        #return false if element_name.empty?
-        #return true if (node.name == element_name)
-
         return true unless element_name.empty? \
                 or (node.name != element_name)
       end

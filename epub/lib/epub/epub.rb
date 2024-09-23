@@ -18,7 +18,7 @@ module UMPTG::EPUB
 
     def save(args = {})
       modified_date = Time.now.strftime("%Y-%m-%dT%H:%M:%S") + "Z"
-      @container.rendition.metadata.dc.dcterms_modified(metadata_value: modified_date)
+      rendition.metadata.dc.terms.modified(meta_property_value: modified_date)
       @archive.save(args)
     end
   end
