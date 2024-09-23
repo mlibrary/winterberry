@@ -14,8 +14,8 @@ module UMPTG::EPUB
       @container = archive.container()
     end
 
-    def rendition
-      return @container.rendition
+    def rendition(args = {})
+      return @container.rendition(args)
     end
 
     def save(args = {})

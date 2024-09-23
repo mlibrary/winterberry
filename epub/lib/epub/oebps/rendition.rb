@@ -2,7 +2,7 @@ module UMPTG::EPUB::OEBPS
 
   class Rendition < UMPTG::Object
     attr_reader :epub, :entry, :manifest, :metadata, \
-        :navigation, :spine, :version
+        :name, :navigation, :spine, :version
 
     DEFAULT_PATH = File.join("OEBPS", "content.opf")
 
@@ -26,6 +26,7 @@ module UMPTG::EPUB::OEBPS
 
       @epub = args[:epub]
       @entry = args[:archive_entry]
+      @name = File.basename(@entry.name)
 
       @version = @entry.document.root["version"]
 
