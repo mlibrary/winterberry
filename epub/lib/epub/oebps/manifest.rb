@@ -15,15 +15,22 @@ module UMPTG::EPUB::OEBPS
     end
 
     def find(args = {})
-      entry_id = args[:entry_id]
-      entry_name = args[:entry_name]
-      entry_media_type = args[:entry_mediatype]
-      entry_properties = args[:entry_properties]
+      entry_id = args[:entry_id] || ""
+      entry_ids = args[:entry_ids] || []
+      entry_name = args[:entry_name] || ""
+      entry_media_type = args[:entry_mediatype] || ""
+      entry_properties = args[:entry_properties] || ""
 
       xpath_args = ["local-name()='item'"]
-      xpath_args << "@id='#{entry_id.strip}'" unless entry_id.nil? or entry_id.strip.empty?
-      xpath_args << "@href='#{Archive.MK_PATH(@archive_entry, entry_name.strip)}'" unless entry_name.nil? or entry_name.strip.empty?
-      xpath_args << "@media-type='#{entry_media_type.strip}'" unless entry_media_type.nil? or entry_media_type.strip.empty?
+
+      xpath_args << "@id='#{entry_id.strip}'" \
+              unless entry_id.strip.empty? or !entry_ids.empty?
+      xpath_id_args = entry_ids.collect {|id| "@id='#{id}'" }
+      xpath_args << "(#{xpath_id_args.join(' or ')})" unless xpath_id_args.empty?
+
+      xpath_args << "@href='#{UMPTG::EPUB::Archive::Archive.MK_PATH(@archive_entry, entry_name.strip)}'" \
+                unless entry_name.strip.empty?
+      xpath_args << "@media-type='#{entry_media_type.strip}'" unless entry_media_type.strip.empty?
 
       p_path = ""
       unless entry_properties.nil?
@@ -51,6 +58,13 @@ module UMPTG::EPUB::OEBPS
 
     def navigation(args = {})
       return find(entry_properties: "nav").first
+    end
+
+    def entries(args = {})
+      items = find(args)
+      e_list = items.collect {|n|
+          @rendition.epub.archive.find(entry_name: Manifest.MK_PATH(@archive_entry, n['href']))
+        }
     end
 
     def self.MK_PATH(archive_entry, entry_name)

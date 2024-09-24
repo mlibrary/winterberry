@@ -1,6 +1,6 @@
 module UMPTG::EPUB::OEBPS::Metadata
 
-  class Metadata < UMPTG::EPUB::Node
+  class Metadata < Node
     attr_reader :dc, :schema, :terms
 
     CHILDREN_XPATH = <<-NTEMP

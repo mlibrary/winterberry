@@ -17,16 +17,10 @@ module UMPTG::EPUB::OEBPS
       @xpath_children = "./*[local-name()='itemref']"
     end
 
-    def find(args = {})
-      itemrefs = []
-      manifest_items = @manifest.find(args)
-      unless manifest_items.empty?
-        item_id = manifest_items.first["id"]
-        raise "invalid manifest item ID" if item_id.nil? or item_id.strip.empty?
-
-        itemrefs = children.select {|r| r['idref'] == item_id }
-      end
-      return itemrefs
+    def select(node, args = {})
+      return node['idref'] == args[:entry_idref] \
+            unless args[:entry_idref].nil?
+      return true
     end
 
     def add(args = {})
@@ -42,6 +36,18 @@ module UMPTG::EPUB::OEBPS
         end
       end
       return itemrefs.first
+    end
+
+    def entries(args = {})
+      items = @rendition.spine_items(args)
+      return items.collect {|n|
+          @rendition.epub.archive.find(entry_name: Manifest.MK_PATH(@archive_entry, n['href']))
+        }
+    end
+
+    def items(args = {})
+      spine_item_ids = find(args).collect {|n| n["idref"] }
+      return @rendition.manifest.find(entry_ids: spine_item_ids)
     end
   end
 end
