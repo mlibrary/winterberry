@@ -3,7 +3,7 @@ module UMPTG::EPUB::Archive
   require 'zip/filesystem'
   require 'find'
 
-  class Archive < UMPTG::Object
+  class Files < UMPTG::Object
     attr_reader :epub
 
     def initialize(args = {})
@@ -27,15 +27,15 @@ module UMPTG::EPUB::Archive
               entry_content: "application/epub+zip"
             )
         @container_entry = add(
-              entry_name: UMPTG::EPUB::MetaInf::Container.DEFAULT_PATH,
-              entry_content: UMPTG::EPUB::MetaInf::Container.DEFAULT_XML
+              entry_name: UMPTG::EPUB::Archive::MetaInf::Container.DEFAULT_PATH,
+              entry_content: UMPTG::EPUB::Archive::MetaInf::Container.DEFAULT_XML
             )
         add(
-              entry_name: UMPTG::EPUB::OEBPS::Rendition.DEFAULT_PATH,
+              entry_name: UMPTG::EPUB::Archive::OEBPS::Rendition.DEFAULT_PATH,
               entry_content: Rendition.DEFAULT_XML
             )
         add(
-              entry_name: UMPTG::EPUB::OEBPS::Navigation.DEFAULT_PATH,
+              entry_name: UMPTG::EPUB::Archive::OEBPS::Navigation.DEFAULT_PATH,
               entry_content: Navigation.DEFAULT_XML
             )
         return
@@ -69,14 +69,14 @@ module UMPTG::EPUB::Archive
         end
       end
 
-      @container_entry = @name2entry[UMPTG::EPUB::MetaInf::Container.DEFAULT_PATH]
+      @container_entry = @name2entry[UMPTG::EPUB::Archive::MetaInf::Container.DEFAULT_PATH]
       raise "unable to find #{container_path}" if @container_entry.nil?
     end
 
     def container()
-      @container = UMPTG::EPUB::MetaInf::Container.new(
+      @container = UMPTG::EPUB::Archive::MetaInf::Container.new(
               epub: @epub,
-              archive_entry: @container_entry
+              file_entry: @container_entry
             ) if @container.nil?
       return @container
     end
@@ -87,7 +87,7 @@ module UMPTG::EPUB::Archive
 
       Zip::OutputStream.open(epub_file) do |zos|
         # Make the mimetype the first item
-        ArchiveEntry.write(
+        FileEntry.write(
             zos,
             entry_name: "mimetype",
             entry_content: "application/epub+zip",
@@ -116,8 +116,8 @@ module UMPTG::EPUB::Archive
       entry = find(args).first
       if entry.nil?
         a = args.clone
-        a[:archive] = self
-        entry = ArchiveEntry.new(a)
+        a[:files] = self
+        entry = FileEntry.new(a)
         @entries << entry
         @name2entry[entry.name] = entry
       else
@@ -126,8 +126,8 @@ module UMPTG::EPUB::Archive
       return entry
     end
 
-    def self.MK_PATH(archive_entry, entry_name)
-      m = File.expand_path(archive_entry.name)
+    def self.MK_PATH(file_entry, entry_name)
+      m = File.expand_path(file_entry.name)
       n = File.expand_path(entry_name)
       return n.delete_prefix(File.dirname(m)+"/")
     end

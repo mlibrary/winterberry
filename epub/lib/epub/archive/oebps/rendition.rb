@@ -1,4 +1,4 @@
-module UMPTG::EPUB::OEBPS
+module UMPTG::EPUB::Archive::OEBPS
 
   class Rendition < UMPTG::Object
     attr_reader :epub, :entry, :manifest, :metadata, \
@@ -25,7 +25,7 @@ module UMPTG::EPUB::OEBPS
       super(args)
 
       @epub = args[:epub]
-      @entry = args[:archive_entry]
+      @entry = args[:file_entry]
       @name = File.basename(@entry.name)
 
       @version = @entry.document.root["version"]
@@ -39,8 +39,8 @@ module UMPTG::EPUB::OEBPS
 
       manifest_nav_node = @manifest.navigation()
       nav_href = Manifest.MK_PATH(@entry, manifest_nav_node["href"])
-      nav_entry = @entry.archive.find(entry_name: nav_href).first
-      a[:archive_entry] = nav_entry
+      nav_entry = @entry.files.find(entry_name: nav_href).first
+      a[:file_entry] = nav_entry
       @navigation = Navigation.new(a)
     end
 

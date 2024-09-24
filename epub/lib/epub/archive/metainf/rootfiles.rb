@@ -1,6 +1,6 @@
-module UMPTG::EPUB::MetaInf
+module UMPTG::EPUB::Archive::MetaInf
 
-  class RootFiles < UMPTG::EPUB::Node
+  class RootFiles < UMPTG::EPUB::Archive::Node
 
     ROOTFILE_XML = <<-XMLTEMP
 <rootfile full-path="%s" media-type="application/oebps-package+xml"/>
@@ -25,7 +25,7 @@ module UMPTG::EPUB::MetaInf
       if rfiles.empty?
         a = args.clone
         a[:opf] = true
-        entry = @archive_entry.archive.add(a)
+        entry = @files_entry.files.add(a)
         markup = sprintf(ROOTFILE_XML, entry.name)
         rfiles = obj_node.add_child(markup)
         return entry

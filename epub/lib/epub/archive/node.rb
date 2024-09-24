@@ -1,4 +1,4 @@
-module UMPTG::EPUB
+module UMPTG::EPUB::Archive
 
   class Node < UMPTG::Object
     attr_reader :xpath_children
@@ -10,8 +10,8 @@ module UMPTG::EPUB
       @container = args[:container]
       raise "missing rendition" if @rendition.nil? and @container.nil?
 
-      @archive_entry = args[:archive_entry]
-      raise "invalid archive_entry" if @archive_entry.nil?
+      @files_entry = args[:file_entry]
+      raise "invalid file_entry" if @files_entry.nil?
 
       @xpath_node = args[:xpath_node]
       raise "missing node xpath expression" if @xpath_node.nil? or @xpath_node.strip.empty?
@@ -21,7 +21,7 @@ module UMPTG::EPUB
     end
 
     def obj_node
-      n = @archive_entry.document.xpath(@xpath_node).first
+      n = @files_entry.document.xpath(@xpath_node).first
       raise "xpath failure: #{@xpath_node}" if n.nil?
       return n
     end

@@ -41,7 +41,7 @@ def dump_list(label, m_list)
   m_list.each do |p|
     puts "#{p.name} #{p['property']}=#{p.content}" if p.key?('property')
     puts "#{p.name} #{p['name']}=#{p['content']}" if p.key?('name')
-    puts "#{p.namespace.prefix}:#{p.name}=#{p.content}" if p.namespace.href == UMPTG::EPUB::OEBPS::Metadata::DC::Elements.NAMESPACE_URI
+    puts "#{p.namespace.prefix}:#{p.name}=#{p.content}" if p.namespace.href == UMPTG::EPUB::Archive::OEBPS::Metadata::DC::Elements.NAMESPACE_URI
   end
 end
 

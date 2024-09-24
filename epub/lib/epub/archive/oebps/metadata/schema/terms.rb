@@ -1,6 +1,6 @@
-module UMPTG::EPUB::OEBPS::Metadata::Schema
+module UMPTG::EPUB::Archive::OEBPS::Metadata::Schema
 
-  class Terms < UMPTG::EPUB::OEBPS::Metadata::Terms
+  class Terms < UMPTG::EPUB::Archive::OEBPS::Metadata::Terms
 
     def initialize(args = {})
       super(args)

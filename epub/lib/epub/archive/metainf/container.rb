@@ -1,4 +1,4 @@
-module UMPTG::EPUB::MetaInf
+module UMPTG::EPUB::Archive::MetaInf
 
   class Container < UMPTG::Object
     attr_reader :entry, :epub, :renditions
@@ -18,11 +18,11 @@ module UMPTG::EPUB::MetaInf
       super(args)
 
       @epub = args[:epub]
-      @entry = args[:archive_entry]
+      @entry = args[:file_entry]
 
       @rootfiles = RootFiles.new(
               container: self,
-              archive_entry: @entry
+              file_entry: @entry
             )
       @renditions = init_renditions()
     end
@@ -47,9 +47,9 @@ module UMPTG::EPUB::MetaInf
       rend = nil
       entry = rootfiles.add(args)
       unless entry.nil?
-        rend = UMPTG::EPUB::OEBPS::Rendition.new(
+        rend = UMPTG::EPUB::Archive::OEBPS::Rendition.new(
               epub: @epub,
-              archive_entry: entry
+              file_entry: entry
             )
         @renditions << rend
       end
@@ -61,18 +61,18 @@ module UMPTG::EPUB::MetaInf
     end
 
     def self.DEFAULT_XML
-      return sprintf(DEFAULT_XML_TEMPLATE, UMPTG::EPUB::OEBPS::Rendition.DEFAULT_PATH)
+      return sprintf(DEFAULT_XML_TEMPLATE, UMPTG::EPUB::Archive::OEBPS::Rendition.DEFAULT_PATH)
     end
 
     private
 
     def init_renditions()
       return @rootfiles.children.collect do |r|
-        entry = @epub.archive.find(entry_name: r['full-path']).first
+        entry = @epub.files.find(entry_name: r['full-path']).first
         raise "invalid entry" if entry.nil?
-        UMPTG::EPUB::OEBPS::Rendition.new(
+        UMPTG::EPUB::Archive::OEBPS::Rendition.new(
               epub: @epub,
-              archive_entry: entry
+              file_entry: entry
             )
       end
     end

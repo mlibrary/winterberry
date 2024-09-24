@@ -1,6 +1,6 @@
-module UMPTG::EPUB::OEBPS::Metadata::DC
+module UMPTG::EPUB::Archive::OEBPS::Metadata::DC
 
-  class Terms < UMPTG::EPUB::OEBPS::Metadata::Terms
+  class Terms < UMPTG::EPUB::Archive::OEBPS::Metadata::Terms
     attr_reader :ns_prefix
 
     NAMESPACE_URI = "http://purl.org/dc/terms/"
@@ -8,7 +8,7 @@ module UMPTG::EPUB::OEBPS::Metadata::DC
     def initialize(args = {})
       super(args)
 
-      @ns_prefix = UMPTG::EPUB::OEBPS::Metadata::Metadata.namespace_prefix(obj_node, NAMESPACE_URI)
+      @ns_prefix = UMPTG::EPUB::Archive::OEBPS::Metadata::Metadata.namespace_prefix(obj_node, NAMESPACE_URI)
       @xpath_children = "./*[local-name()='meta' and starts-with(@property,concat('#{@ns_prefix}',':'))]"
     end
 

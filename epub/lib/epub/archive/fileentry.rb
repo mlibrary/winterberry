@@ -2,9 +2,9 @@ module UMPTG::EPUB::Archive
   require 'nokogiri'
   require 'mime/types'
 
-  class ArchiveEntry < UMPTG::Object
+  class FileEntry < UMPTG::Object
     attr_accessor :name, :content, :media_type
-    attr_reader :archive
+    attr_reader :files
 
     OPF_MEDIA_TYPE = "application/oebps-package+xml"
 
@@ -18,9 +18,9 @@ module UMPTG::EPUB::Archive
       @content = "" if @content.nil?
 
       @media_type = args[:entry_mediatype]
-      @media_type = ArchiveEntry.media_type(entry_name: @name) if @media_type.nil?
+      @media_type = FileEntry.media_type(entry_name: @name) if @media_type.nil?
 
-      @archive = args[:archive]
+      @files = args[:files]
       @document = nil
     end
 
@@ -42,7 +42,7 @@ module UMPTG::EPUB::Archive
       a = args.clone
       a[:entry_name] = @name
       a[:entry_content] = @document.nil? ? @content : @document.to_xml
-      ArchiveEntry.write(output_stream, a)
+      FileEntry.write(output_stream, a)
     end
 
     def self.write(output_stream, args = {})

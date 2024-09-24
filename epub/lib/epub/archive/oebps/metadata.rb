@@ -1,4 +1,4 @@
-module UMPTG::EPUB::OEBPS
+module UMPTG::EPUB::Archive::OEBPS
 
   require_relative File.join('metadata', 'node')
   require_relative File.join('metadata', 'terms')

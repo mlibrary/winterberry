@@ -1,6 +1,6 @@
-module UMPTG::EPUB::OEBPS::Metadata
+module UMPTG::EPUB::Archive::OEBPS::Metadata
 
-  class Node < UMPTG::EPUB::Node
+  class Node < UMPTG::EPUB::Archive::Node
 
     def initialize(args = {})
       super(args)

@@ -1,4 +1,4 @@
-module UMPTG::EPUB
+module UMPTG::EPUB::Archive
 
   require_relative File.join('oebps', 'manifest')
   require_relative File.join('oebps', 'metadata')

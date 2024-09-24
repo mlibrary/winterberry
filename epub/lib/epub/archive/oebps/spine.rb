@@ -1,6 +1,6 @@
-module UMPTG::EPUB::OEBPS
+module UMPTG::EPUB::Archive::OEBPS
 
-  class Spine < UMPTG::EPUB::Node
+  class Spine < UMPTG::EPUB::Archive::Node
 
     ITEMREF_TEMPLATE = <<-XMLTEMP
 <itemref idref="%s"/>
@@ -9,7 +9,6 @@ module UMPTG::EPUB::OEBPS
     def initialize(args = {})
       a = args.clone
       a[:xpath_node] = "//*[local-name()='spine']"
-      a[:xpath_children] =
       super(a)
 
       @manifest = args[:manifest]
@@ -41,7 +40,7 @@ module UMPTG::EPUB::OEBPS
     def entries(args = {})
       items = items(args)
       return items.collect {|n|
-          @rendition.epub.archive.find(entry_name: Manifest.MK_PATH(@archive_entry, n['href'])).first
+          @rendition.epub.files.find(entry_name: Manifest.MK_PATH(@files_entry, n['href'])).first
         }
     end
 

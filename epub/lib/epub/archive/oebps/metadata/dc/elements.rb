@@ -1,6 +1,6 @@
-module UMPTG::EPUB::OEBPS::Metadata::DC
+module UMPTG::EPUB::Archive::OEBPS::Metadata::DC
 
-  class Elements < UMPTG::EPUB::OEBPS::Metadata::Node
+  class Elements < UMPTG::EPUB::Archive::OEBPS::Metadata::Node
 
     NAMESPACE_URI = "http://purl.org/dc/elements/1.1/"
 
@@ -11,7 +11,7 @@ module UMPTG::EPUB::OEBPS::Metadata::DC
     def initialize(args = {})
       super(args)
 
-      @ns_prefix = UMPTG::EPUB::OEBPS::Metadata::Metadata.namespace_prefix(obj_node, NAMESPACE_URI)
+      @ns_prefix = UMPTG::EPUB::Archive::OEBPS::Metadata::Metadata.namespace_prefix(obj_node, NAMESPACE_URI)
       @xpath_children = "./*[namespace-uri()='#{NAMESPACE_URI}']"
     end
 

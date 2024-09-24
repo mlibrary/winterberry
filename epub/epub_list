@@ -43,7 +43,7 @@ def dump(label, items)
     when "Nokogiri::XML::Element"
       puts "#{n.name}:#{n['idref']}" if n.name == "itemref"
       puts "#{n.name}:#{n['id']},#{n['href']}" if n.name == "item"
-    when "UMPTG::EPUB::Archive::ArchiveEntry"
+    when "UMPTG::EPUB::Archive::FileEntry"
       puts "#{n.name}:#{n.media_type}"
     else
       puts "unsupported class:#{n.class.name}"
@@ -85,10 +85,10 @@ epub_path_list.each do |epub_path|
   entries = epub.rendition.manifest.entries
   dump('epub.rendition.manifest.entries', entries)
 
-  entries = epub.archive.find(entry_name: UMPTG::EPUB::OEBPS::Rendition.DEFAULT_PATH)
-  dump('epub.archive.find(entry_name: UMPTG::EPUB::OEBPS::Rendition.DEFAULT_PATH)', entries)
+  entries = epub.files.find(entry_name: UMPTG::EPUB::Archive::OEBPS::Rendition.DEFAULT_PATH)
+  dump('epub.files.find(entry_name: UMPTG::EPUB::Archive::OEBPS::Rendition.DEFAULT_PATH)', entries)
 
-  entries = epub.archive.find(media_type: "application/oebps-package+xml")
-  dump('epub.archive.find(media_type: "application/oebps-package+xml")', entries)
+  entries = epub.files.find(media_type: "application/oebps-package+xml")
+  dump('epub.files.find(media_type: "application/oebps-package+xml")', entries)
 end
 
