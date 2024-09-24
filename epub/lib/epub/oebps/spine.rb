@@ -39,9 +39,9 @@ module UMPTG::EPUB::OEBPS
     end
 
     def entries(args = {})
-      items = @rendition.spine_items(args)
+      items = items(args)
       return items.collect {|n|
-          @rendition.epub.archive.find(entry_name: Manifest.MK_PATH(@archive_entry, n['href']))
+          @rendition.epub.archive.find(entry_name: Manifest.MK_PATH(@archive_entry, n['href'])).first
         }
     end
 

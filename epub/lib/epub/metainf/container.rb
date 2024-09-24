@@ -68,7 +68,7 @@ module UMPTG::EPUB::MetaInf
 
     def init_renditions()
       return @rootfiles.children.collect do |r|
-        entry = @epub.archive.find(entry_name: r['full-path'])
+        entry = @epub.archive.find(entry_name: r['full-path']).first
         raise "invalid entry" if entry.nil?
         UMPTG::EPUB::OEBPS::Rendition.new(
               epub: @epub,

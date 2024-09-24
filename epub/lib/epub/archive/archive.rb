@@ -102,12 +102,18 @@ module UMPTG::EPUB::Archive
     end
 
     def find(args = {})
+      e_list = []
+
       entry_name = args[:entry_name]
-      return @name2entry[entry_name] unless entry_name.nil? or entry_name.strip.empty?
+      e_list << @name2entry[entry_name] unless entry_name.nil? or entry_name.strip.empty?
+
+      media_type = args[:media_type]
+      e_list += @entries.select {|e| e.media_type == media_type }
+      return e_list
     end
 
     def add(args = {})
-      entry = find(args)
+      entry = find(args).first
       if entry.nil?
         a = args.clone
         a[:archive] = self
@@ -115,7 +121,7 @@ module UMPTG::EPUB::Archive
         @entries << entry
         @name2entry[entry.name] = entry
       else
-        entry.replace(entry_content: entry_content)
+        entry.replace(entry_content: args[:entry_content])
       end
       return entry
     end

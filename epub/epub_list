@@ -84,5 +84,11 @@ epub_path_list.each do |epub_path|
 
   entries = epub.rendition.manifest.entries
   dump('epub.rendition.manifest.entries', entries)
+
+  entries = epub.archive.find(entry_name: UMPTG::EPUB::OEBPS::Rendition.DEFAULT_PATH)
+  dump('epub.archive.find(entry_name: UMPTG::EPUB::OEBPS::Rendition.DEFAULT_PATH)', entries)
+
+  entries = epub.archive.find(media_type: "application/oebps-package+xml")
+  dump('epub.archive.find(media_type: "application/oebps-package+xml")', entries)
 end
 

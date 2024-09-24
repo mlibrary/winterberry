@@ -39,7 +39,7 @@ module UMPTG::EPUB::OEBPS
 
       manifest_nav_node = @manifest.navigation()
       nav_href = Manifest.MK_PATH(@entry, manifest_nav_node["href"])
-      nav_entry = @entry.archive.find(entry_name: nav_href)
+      nav_entry = @entry.archive.find(entry_name: nav_href).first
       a[:archive_entry] = nav_entry
       @navigation = Navigation.new(a)
     end

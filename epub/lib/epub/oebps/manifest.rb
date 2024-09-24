@@ -63,7 +63,7 @@ module UMPTG::EPUB::OEBPS
     def entries(args = {})
       items = find(args)
       e_list = items.collect {|n|
-          @rendition.epub.archive.find(entry_name: Manifest.MK_PATH(@archive_entry, n['href']))
+          @rendition.epub.archive.find(entry_name: Manifest.MK_PATH(@archive_entry, n['href'])).first
         }
     end
 
