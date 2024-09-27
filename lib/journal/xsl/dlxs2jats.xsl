@@ -1087,11 +1087,11 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
     </xsl:template>
 
     <xsl:template match="NOTE1[(empty(preceding-sibling::*) or preceding-sibling::*[position()=1 and local-name()!='NOTE1']) and (empty(following-sibling::*) or following-sibling::*[position()=1 and local-name()!='NOTE1'])]">
+        <xsl:variable name="titleNode" select="./preceding-sibling::*[position()=1 and local-name()='HEAD']"/>
+        <xsl:if test="exists($titleNode)">
+            <xsl:apply-templates select="$titleNode" mode="group-title"/>
+        </xsl:if>
         <xsl:element name="fn-group">
-            <xsl:variable name="titleNode" select="./preceding-sibling::*[position()=1 and local-name()='HEAD']"/>
-            <xsl:if test="exists($titleNode)">
-                <xsl:apply-templates select="$titleNode" mode="group-title"/>
-            </xsl:if>
             <xsl:call-template name="add-footnote">
                 <xsl:with-param name="fnNode" select="."/>
             </xsl:call-template>
@@ -1099,11 +1099,11 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
     </xsl:template>
 
     <xsl:template match="NOTE1[(empty(preceding-sibling::*) or preceding-sibling::*[position()=1 and local-name()!='NOTE1']) and following-sibling::*[position()=1 and local-name()='NOTE1']]">
+        <xsl:variable name="titleNode" select="./preceding-sibling::*[position()=1 and local-name()='HEAD']"/>
+        <xsl:if test="exists($titleNode)">
+            <xsl:apply-templates select="$titleNode" mode="group-title"/>
+        </xsl:if>
         <xsl:element name="fn-group">
-            <xsl:variable name="titleNode" select="./preceding-sibling::*[position()=1 and local-name()='HEAD']"/>
-            <xsl:if test="exists($titleNode)">
-                <xsl:apply-templates select="$titleNode" mode="group-title"/>
-            </xsl:if>
             <xsl:call-template name="add-footnote">
                 <xsl:with-param name="fnNode" select="."/>
             </xsl:call-template>

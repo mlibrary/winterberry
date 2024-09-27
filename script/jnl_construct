@@ -19,7 +19,7 @@ options.journal_dir = Dir.pwd
 options.generate_xhtml = false
 options.article_type = nil
 option_parser = OptionParser.new do |opts|
-  opts.banner = "Usage: #{File.basename(__FILE__)} [-f production|preview|staging] [-d journal_dir] [-x] [journal_name...]"
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-f production|preview|staging] [-d journal_dir] [-t article_type] [-x] [journal_name...]"
   opts.on('-d', '--directory [DIRECTORY]', 'Journal directory') do |da|
     options.journal_dir = da
   end
@@ -140,6 +140,12 @@ def detect(path)
   return ""
 end
 
+if options.article_type.nil?
+  script_logger.info("no article type assigned")
+else
+  script_logger.info("assigning article type #{options.article_type}")
+end
+
 encoder = HTMLEntities.new
 journal_name_list.each do |journal_name|
   dlxs_file = File.join(dlxs_dir, journal_name + ".xml")
@@ -255,7 +261,7 @@ journal_name_list.each do |journal_name|
          encoder.encode(embed_code), encoder.encode(css_embed_code))
   end
   resource_list_param2 = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<resources>" + resource_list.join + "</resources>"
-  rfile = File.expand_path('junk.xml')
+  rfile = File.expand_path(File.basename(__FILE__) + "_resources.xml")
   File.write(rfile, resource_list_param2)
   resource_list_param = resource_list_param[0..-3]
 
@@ -271,7 +277,7 @@ journal_name_list.each do |journal_name|
           logger: script_logger,
           parameters: params
           )
-  #FileUtils.rm(rfile)
+  FileUtils.rm(rfile)
 
   if rc and options.generate_xhtml
     html_file = File.join(File.dirname(jats_file), File.basename(jats_file, ".*") + ".html")

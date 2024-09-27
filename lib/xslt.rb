@@ -3,6 +3,7 @@ module UMPTG
   require 'nokogiri'
 
   require_relative File.join("logger")
+  require_relative File.join("xml", "util")
 
   class XSLT
     @@XSL_DIR = File.join(__dir__, 'xsl')
