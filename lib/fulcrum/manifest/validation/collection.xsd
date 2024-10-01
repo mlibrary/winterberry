@@ -603,7 +603,7 @@
     </xs:complexType>
     <xs:complexType name="type_fileset_external_resource">
         <xs:complexContent>
-            <xs:extension base="type_fileset_base">
+            <xs:extension base="type_fileset_external_resource_base">
                 <xs:all>
                     <!--
                     <xs:element ref="label"/>

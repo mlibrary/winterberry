@@ -207,9 +207,7 @@ module UMPTG::Fulcrum::Manifest
                 extensions
               )
       @entity_encoder = HTMLEntities.new
-      #puts "caption1:#{caption}"
       caption = @markdown.render(@entity_encoder.encode(caption.force_encoding("UTF-8")))
-      #puts "caption2:#{caption}"
 
       return caption
     end
