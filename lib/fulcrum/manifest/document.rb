@@ -175,6 +175,13 @@ module UMPTG::Fulcrum::Manifest
     end
 
     # Method returns the file name for a resource.
+    def fileset_external_resource_url(file_name)
+      fileset = fileset(file_name)
+      url = fileset['external_resource_url']
+      return url.nil? ? "" : url.strip
+    end
+
+    # Method returns the file name for a resource.
     def fileset_alt(file_name)
       fileset = fileset(file_name)
       alt = fileset['alternative_text']
@@ -187,6 +194,18 @@ module UMPTG::Fulcrum::Manifest
       caption = fileset['caption']
       caption = fileset['title'] if caption.nil? or caption.strip.empty?
       caption = "" if caption.nil? or caption.strip.empty?
+
+      extensions = {
+        autolink: true,
+        fenced_code_blocks: true
+      }
+      @markdown = Redcarpet::Markdown.new(
+                Redcarpet::Render::HTML,
+                extensions
+              )
+      @entity_encoder = HTMLEntities.new
+      caption = @markdown.render(@entity_encoder.encode(caption.force_encoding("UTF-8")))
+
       return caption
     end
 

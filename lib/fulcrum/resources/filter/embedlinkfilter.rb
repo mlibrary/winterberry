@@ -196,7 +196,11 @@ module UMPTG::Fulcrum::Resources::Filter
 
               def_node_list = block_list.select {|n| n.classes().include?("default-media-display") }
               if def_node_list.count == 0
-                caption_node.add_child(CLASS_FORMAT_STR % ["default-media-display", resource_name, cf, "true"])
+                if manifest.fileset_external_resource_url(resource_name).empty?
+                  caption_node.add_child(CLASS_FORMAT_STR % ["default-media-display", resource_name, cf, "true"])
+                else
+                  caption_node.add_child(FORMAT_STR % [resource_name, cf, "true"])
+                end
               end
 =begin
               disp_node_list = block_list.select {|n| n.classes().include?("default-media-display") }

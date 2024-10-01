@@ -116,13 +116,13 @@ module UMPTG::EPUB
       if args.key?(:media_type)
         media_type = args[:media_type]
 
-        item_id = "item#{File.basename(entry.name).gsub(/[. ]+/,'_')}"
+        item_id = "item_#{File.basename(entry.name).gsub(/[. ]+/,'_')}"
         item_node = epub_manifest_node.xpath("./*[local-name()='item' and @id='#{item_id}']").first
 
         if item_node.nil?
           ename = entry.name.delete_prefix(File.dirname(opf_name) + "/")
           item_node = opf_doc.parse(
-              "<item id=\"item#{File.basename(entry.name).gsub(/[. ]+/,'_')}\" href=\"#{ename}\"/>"
+              "<item id=\"item_#{File.basename(entry.name).gsub(/[. ]+/,'_')}\" href=\"#{ename}\"/>"
             ).first
           epub_manifest_node.add_child(item_node)
         end
