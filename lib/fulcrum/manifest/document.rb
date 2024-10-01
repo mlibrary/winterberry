@@ -3,6 +3,8 @@ module UMPTG::Fulcrum::Manifest
   require 'redcarpet'
   require 'uri'
 
+  require_relative('xhtmlrenderer')
+
   @@BLANK_ROW_FILE_NAME = "***row left intentionally blank***"
   #@@BLANK_ROW_FILE_NAME = "*** row intentionally left blank ***"
 
@@ -200,11 +202,14 @@ module UMPTG::Fulcrum::Manifest
         fenced_code_blocks: true
       }
       @markdown = Redcarpet::Markdown.new(
-                Redcarpet::Render::HTML,
+                XHTMLRenderer,
+                #Redcarpet::Render::HTML,
                 extensions
               )
       @entity_encoder = HTMLEntities.new
+      #puts "caption1:#{caption}"
       caption = @markdown.render(@entity_encoder.encode(caption.force_encoding("UTF-8")))
+      #puts "caption2:#{caption}"
 
       return caption
     end
