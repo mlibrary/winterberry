@@ -169,7 +169,7 @@ module UMPTG::Fulcrum::Resources::Filter
             last_block.add_child(link_container)
           end
           link_container.add_class("default-media-display")
-          link_container.add_child(" " + link_markup)
+          link_container.add_child(". " + link_markup)
           fragment_node.remove_class("enhanced-media-display")
 =end
           caption_field = reference_node["data-fulcrum-embed-caption-field"]
