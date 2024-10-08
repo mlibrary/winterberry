@@ -21,7 +21,7 @@ options = OpenStruct.new
 options.create_fulcrum = false
 #options.dest_dir = root_dir
 #options.src_dir = root_dir
-options.dest_dir = "S:/Information Management/Fulcrum/MPS/HEB/Round21/PTG/Fulcrum_import"
+options.dest_dir = "S:/Information Management/Fulcrum/MPS/HEB/Round21/PTG/Fulcrum_import/Fulcrum"
 options.src_dir = "I:/SPO/ACLS/Backlist\ Rounds/ACLS 21"
 option_parser = OptionParser.new do |opts|
   opts.banner = "Usage: #{File.basename(__FILE__)} [-c] [-s src_dir] [-d output_dir] heb_production_file [heb_production_file...]"
@@ -184,23 +184,24 @@ heb_production_file_list.each do |heb_production_file|
       next
     end
 
-    title_dir = File.join(src_dir, heb_title.heb_id)
+    #title_dir = File.join(src_dir, heb_title.heb_id)
+    title_dir = File.join(dest_dir, heb_title.heb_id)
     if options.create_fulcrum
       FileUtils.mkdir_p(title_dir)
-      script_logger.info("created directory #{File.basename(title_dir)}")
+      script_logger.info("created directory #{title_dir}")
     end
 
     script_logger.warn("multiple cover files found.") if heb_title.cover_file_list.count > 1
     heb_title.cover_file_list.each do |cover_file|
       fulcrum_cover_file = File.join(title_dir, File.basename(cover_file))
       FileUtils.copy_file(cover_file, fulcrum_cover_file) if options.create_fulcrum
-      script_logger.info("Cover: #{fulcrum_cover_file}")
+      script_logger.info("Cover: #{cover_file}=>#{fulcrum_cover_file}")
     end
 
     heb_title.epub_file_list.each do |epub_file|
       fulcrum_epub_file = File.join(title_dir, File.basename(epub_file))
       FileUtils.copy_file(epub_file, fulcrum_epub_file) if options.create_fulcrum
-      script_logger.info("EPUB: #{fulcrum_epub_file}")
+      script_logger.info("EPUB: #{epub_file}=>#{fulcrum_epub_file}")
 
       if heb_title.cover_file_list.empty?
         epub = UMPTG::EPUB::Archive.new(epub_file: epub_file)
@@ -220,7 +221,8 @@ heb_production_file_list.each do |heb_production_file|
     heb_title.pdf_file_list.each do |pdf_file|
       fulcrum_pdf_file = File.join(title_dir, File.basename(pdf_file))
       FileUtils.copy_file(pdf_file, fulcrum_pdf_file) if options.create_fulcrum
-      script_logger.info("PDF: #{fulcrum_pdf_file}")
+      script_logger.info("PDF: #{pdf_file}=>#{fulcrum_pdf_file}")
     end
+    break
   end
 end
