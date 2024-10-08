@@ -14,7 +14,8 @@ module UMPTG
             leverpress: "MPS",
             michigan: "UMP",
             ummaa: "UMMAA",
-            vermont: "MPS"
+            vermont: "MPS",
+            westminster: "MPS"
             }
     @@PRESS_SUB_DIR = {
             aberdeenunipress: "Aberdeen",
@@ -22,7 +23,8 @@ module UMPTG
             bar:   "BAR",
             heb:   "HEB",
             leverpress: "Lever",
-            vermont: "UVM"
+            vermont: "UVM",
+            westminster: "Westminster"
             }
     @@DEFAULT = :ebc
 
