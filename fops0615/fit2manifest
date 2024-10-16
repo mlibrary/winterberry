@@ -1,0 +1,162 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Script builds Fulcrum import CSVs from one
+# or more FIT files.
+
+require 'optparse'
+require 'ostruct'
+require 'os'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+# Process the script parameters.
+options = OpenStruct.new
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} fulcrum_import_dir fit_file"
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    script_logger.info(opts)
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count != 2
+  script_logger.info(option_parser.help)
+  exit 0
+end
+
+# Process the command line parameters.
+fulcrum_import_dir = ARGV[0]
+fit_file = ARGV[1]
+
+fulcrum_import_dir = File.expand_path(fulcrum_import_dir)
+unless Dir.exist?(fulcrum_import_dir)
+  script_logger.error("invalid Fulcrum directory #{fulcrum_import_dir}.")
+  exit(1)
+end
+script_logger.info("using Fulcrum directory #{fulcrum_import_dir}")
+
+fit_file = File.expand_path(fit_file)
+unless File.exist?(fit_file)
+  script_logger.error("invalid FIT file #{fit_file}.")
+  exit(1)
+end
+script_logger.info("using FIT file #{File.basename(fit_file)}")
+STDOUT.flush
+
+require 'csv'
+
+require_relative File.join(root_dir, 'lib', 'fulcrum', 'manifest')
+
+MONOGRAPH_HEADERS = UMPTG::Fulcrum::Manifest::Validation::CollectionSchema.headers()
+
+CSV::Converters[:strip_field] = ->(value) { value.strip rescue value }
+begin
+  fit_csv = CSV.parse(
+            File.read(fit_file),
+            headers: true,
+            converters: :strip_field,
+            return_headers: false)
+rescue Exception => e
+  raise e.message
+end
+
+zero_cnt = 0
+Dir.glob(File.join(fulcrum_import_dir, "*")).each do |import_dir|
+  heb_id = File.basename(import_dir)
+
+  heb_title_rows = fit_csv.select {|r| r['Partner ID'] == heb_id }
+  script_logger.info("#{heb_id}:#{heb_title_rows.count}")
+
+  zero_cnt += 1 if heb_title_rows.count == 0
+  next if heb_title_rows.count == 0
+
+  title = heb_title_rows[0]['Title']
+  subtitle = heb_title_rows[0]['Subtitle']
+  title += ": " + subtitle unless subtitle.nil? or subtitle.strip.empty?
+
+  isbns = heb_title_rows.collect {|r| "#{r['EAN']} (#{r['Format']})" }
+
+  author_list = []
+  4.times do |i|
+    author_name = heb_title_rows[0]["AuthorLastName#{i}"] || ""
+    author_name += ", " + heb_title_rows[0]["AuthorFirstName#{i}"].strip unless heb_title_rows[0]["AuthorFirstName#{i}"].nil?
+    author_name += " " + heb_title_rows[0]["AuthorMiddleName#{i}"].strip unless heb_title_rows[0]["AuthorMiddleName#{i}"].nil?
+
+    unless author_name.empty?
+      author_role = heb_title_rows[0]["AuthorType#{i}"]
+      author_role = author_role.nil? ? "" : author_role.strip.downcase
+
+      author_entry = (author_role.empty? or author_role == "author") ? author_name : "#{author_name} (#{author_role})"
+      author_list << author_entry
+    end
+  end
+
+  languages = []
+  planguage = heb_title_rows[0]["PrimaryLanguage"]
+  slanguage = heb_title_rows[0]["SecondaryLanguage"]
+  languages << planguage unless planguage.nil? or planguage.strip.empty?
+  languages << slanguage unless slanguage.nil? or slanguage.strip.empty?
+
+  monograph_row = {
+        "File Name" => UMPTG::Fulcrum::Manifest.MONOGRAPH_FILE_NAME,
+        "Title" => title,
+        "ISBN(s)" => isbns.join(';'),
+        "Creator(s)" => author_list.join(';'),
+        "Language" => languages.join(';'),
+        "Pub Year" => heb_title_rows[0]['CopyrightYear'],
+        "Publisher" => heb_title_rows[0]['Publlisher'],
+        "Pub Location" => heb_title_rows[0]['Publisher Location'],
+        "Rightsholder" => heb_title_rows[0]['Copyright Holder'],
+        "Description" => heb_title_rows[0]['LongDescription'],
+        "Keywords" => heb_title_rows[0]['Keywords'],
+        "Subject" => heb_title_rows[0]['All Subjects'],
+        "Series" => heb_title_rows[0]['Series'],
+        "Identifier(s)" => heb_id
+      }
+
+  file_list = Dir.glob(File.join(import_dir, "*"))
+  rep_row_list = []
+  file_list.each do |fl|
+    file_name = File.basename(fl)
+    ext = File.extname(file_name)
+    next if ext.nil? or ext.strip.empty?
+
+    case ext.strip.downcase
+    when '.jpg', '.png', '.bmp', '.jpeg'
+      rep_kind = 'cover'
+    when '.epub'
+      rep_kind = 'epub'
+    when '.pdf'
+      rep_kind = 'pdf_ebook'
+    else
+      puts "Skipping file #{file_name}"
+      next
+    end
+
+    rep_row_list << {
+          'File Name' => file_name,
+          'Title' => file_name,
+          'Representative Kind' => rep_kind
+      }
+  end
+
+  manifest_file = File.join(import_dir, "manifest.csv")
+  CSV.open(
+          manifest_file,
+          "w",
+          write_headers: true,
+          headers: MONOGRAPH_HEADERS
+        ) do |csv|
+    rep_row_list.each {|r| csv << r }
+    csv << monograph_row
+  end
+  script_logger.info("save manifest file #{manifest_file}")
+end
+script_logger.info("zero count:#{zero_cnt}")
