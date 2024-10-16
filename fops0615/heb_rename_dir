@@ -1,0 +1,94 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Script renames HEB Round 21 Fulcrum import directories
+# from ISBN to HEBID
+
+require 'optparse'
+require 'ostruct'
+require 'os'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+# Process the script parameters.
+options = OpenStruct.new
+options.create_fulcrum = false
+#options.dest_dir = root_dir
+#options.src_dir = root_dir
+options.dest_dir = "S:/Information Management/Fulcrum/MPS/HEB/Round21/PTG/Fulcrum_import/Fulcrum"
+options.src_dir = "I:/SPO/ACLS/Backlist\ Rounds/ACLS 21"
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} heb_production_file heb_import_dir [heb_import_dir...]"
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    script_logger.info(opts)
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  script_logger.info(option_parser.help)
+  exit 0
+end
+
+# Process the command line parameters.
+heb_production_file = ARGV[0]
+heb_import_dir_list = ARGV[1..-1]
+
+require 'fileutils'
+require 'csv'
+
+heb_production_file = File.expand_path(heb_production_file)
+unless File.exist?(heb_production_file)
+  script_logger.error("invalid HEB production file #{heb_production_file}.")
+  exit(1)
+end
+script_logger.info("*** processing #{File.basename(heb_production_file)} ***")
+
+begin
+  heb_production_csv = CSV.parse(
+            File.read(heb_production_file),
+            headers: true,
+            return_headers: false)
+rescue Exception => e
+  raise e.message
+end
+
+heb_import_dir_list.each do |heb_import_dir|
+  heb_import_dir = File.expand_path(heb_import_dir)
+  unless Dir.exist?(heb_import_dir)
+    script_logger.error("invalid HEB directory path #{heb_import_dir}.")
+    next
+  end
+  script_logger.info("*** processing #{File.basename(heb_import_dir)} ***")
+  STDOUT.flush
+
+  Dir.glob(File.join(heb_import_dir, "*")).each do |heb_dir|
+    isbn = File.basename(heb_dir)
+    next if isbn.start_with?('heb')
+=begin
+    heb_id_rows = heb_production_csv.select do |r|
+      next if r['Names of Files Provided'].nil? or r['Names of Files Provided'].strip.empty?
+      heb_isbn = r['Names of Files Provided'].split(';').find do |f|
+        #puts "#{isbn},#{File.basename(f, '.*')}"
+        File.basename(f, '*') == isbn
+      end
+      !heb_isbn.nil?
+    end
+    heb_id_list = heb_id_rows.collect {|r| r['HEB ID (DO NOT USE FM; assign all new HEB IDs)'] }
+=end
+    heb_id_rows = heb_production_csv.select {|r| r['ISBN-13'] == isbn}
+    heb_id_list = heb_id_rows.collect {|r| r['HEBID'] }
+    script_logger.info("processing directory #{isbn}...found #{heb_id_list.count} IDs #{heb_id_list.join(',')}")
+    next if heb_id_list.empty?
+
+    new_heb_dir = File.join(File.dirname(heb_dir), heb_id_list.first)
+    FileUtils.mv(heb_dir, new_heb_dir)
+    script_logger.info("move #{isbn} to #{heb_id_list.first}")
+  end
+end
