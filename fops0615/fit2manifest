@@ -77,7 +77,8 @@ Dir.glob(File.join(fulcrum_import_dir, "*")).each do |import_dir|
   zero_cnt += 1 if heb_title_rows.count == 0
   next if heb_title_rows.count == 0
 
-  title = heb_title_rows[0]['Title']
+  title = heb_title_rows[0]['TitlePrefix'] || ""
+  title += heb_title_rows[0]['Title']
   subtitle = heb_title_rows[0]['Subtitle']
   title += ": " + subtitle unless subtitle.nil? or subtitle.strip.empty?
 
