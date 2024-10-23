@@ -77,12 +77,14 @@ Dir.glob(File.join(fulcrum_import_dir, "*")).each do |import_dir|
   zero_cnt += 1 if heb_title_rows.count == 0
   next if heb_title_rows.count == 0
 
-  title = heb_title_rows[0]['TitlePrefix'] || ""
+  title_pre = heb_title_rows[0]['TitlePrefix'] || ""
+  title_pre = title_pre.strip
+  title = title_pre.empty? ? "" : title_pre + " "
   title += heb_title_rows[0]['Title']
   subtitle = heb_title_rows[0]['Subtitle']
   title += ": " + subtitle unless subtitle.nil? or subtitle.strip.empty?
 
-  isbns = heb_title_rows.collect {|r| "#{r['EAN']} (#{r['Format']})" }
+  isbns = heb_title_rows.collect {|r| "#{r['EAN']} (#{r['Format'].downcase})" }
 
   author_list = []
   4.times do |i|
@@ -112,14 +114,14 @@ Dir.glob(File.join(fulcrum_import_dir, "*")).each do |import_dir|
         "Creator(s)" => author_list.join(';'),
         "Language" => languages.join(';'),
         "Pub Year" => heb_title_rows[0]['CopyrightYear'],
-        "Publisher" => heb_title_rows[0]['Publlisher'],
+        "Publisher" => heb_title_rows[0]['Publisher'],
         "Pub Location" => heb_title_rows[0]['Publisher Location'],
         "Rightsholder" => heb_title_rows[0]['Copyright Holder'],
         "Description" => heb_title_rows[0]['LongDescription'],
         "Keywords" => heb_title_rows[0]['Keywords'],
         "Subject" => heb_title_rows[0]['All Subjects'],
         "Series" => heb_title_rows[0]['Series'],
-        "Identifier(s)" => heb_id
+        "Identifier(s)" => "heb_id:" + heb_id
       }
 
   file_list = Dir.glob(File.join(import_dir, "*"))
