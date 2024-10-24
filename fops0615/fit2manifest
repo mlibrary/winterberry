@@ -157,6 +157,7 @@ Dir.glob(File.join(fulcrum_import_dir, "*")).each do |import_dir|
           write_headers: true,
           headers: MONOGRAPH_HEADERS
         ) do |csv|
+    csv << { "File Name" => "***row left intentionally blank***" }
     rep_row_list.each {|r| csv << r }
     csv << monograph_row
   end
