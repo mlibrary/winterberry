@@ -6,7 +6,6 @@ module UMPTG::Fulcrum::Metadata::Actions
   # the base to include the figure caption and associated
   # resource name.
   class FigureObject < MarkerObject
-    attr_accessor :caption_text
 
     # Arguments:
     #   :node         XML fragment node, @src contains resource name.
@@ -26,10 +25,6 @@ module UMPTG::Fulcrum::Metadata::Actions
       @resource_name = (rname.nil? or rname.strip.empty?) ? "" : File.basename(rname.strip)
 
       raise "#{@node.name} unsupported figure object." if @resource_name.empty?
-
-      @caption = @properties[:caption]
-      @caption_text = @caption.nil? ? "" : \
-            @caption.text.strip.gsub(/[\n]+/, ' ')
     end
   end
 end

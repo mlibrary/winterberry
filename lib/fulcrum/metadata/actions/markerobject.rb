@@ -5,8 +5,8 @@ module UMPTG::Fulcrum::Metadata::Actions
   # the Marker node while this class extends
   # the base to include the resource name.
   class MarkerObject < UMPTG::Object
-    attr_accessor :resource_name
-    attr_reader :node, :name, :alt_text, :caption, :caption_text
+    attr_accessor :resource_name, :caption_text
+    attr_reader :node, :name, :alt_text, :caption
 
     # Arguments:
     #   :node           XML node
@@ -20,7 +20,13 @@ module UMPTG::Fulcrum::Metadata::Actions
       @name = @properties[:name]
       @resource_name = @properties[:resource_name]
       @caption = @properties[:caption]
-      @caption_text = @properties[:caption_text]
+
+      if @properties.key?(:caption_text)
+        @caption_text = @properties[:caption_text]
+      else
+        @caption_text = @caption.nil? ? "" : \
+              @caption.text.strip.gsub(/[\n]+/, ' ')
+      end
 
       @alt_text = @node.has_attribute?("alt") ? @node["alt"] : ""
     end
