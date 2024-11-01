@@ -245,9 +245,9 @@ module UMPTG::Fulcrum::Manifest
           link = fileset["handle"] if link.empty?
           link = "https://www.fulcrum.org/downloads/#{noid}" if link.nil? or link.strip.empty?
         else
-          link = doi
-          link = fileset["handle"] if link.nil? or link.strip.empty?
-          link = fileset["link"] if link.nil? or link.strip.empty?
+          link = doi || ""
+          link = fileset["handle"] || "" if link.strip.empty?
+          link = fileset["link"] || "" if link.strip.empty?
           link = link[12..-3] if link.start_with?("=HYPERLINK")
           #link = fileset["link"][12..-3] if link.nil? or link.strip.empty?
         end

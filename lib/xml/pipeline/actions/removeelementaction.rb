@@ -11,7 +11,7 @@ module UMPTG::XML::Pipeline::Actions
       action_node.remove()
       add_info_msg("removed element #{action_node_name}")
 
-      @status = Action.COMPLETED
+      @status = UMPTG::Action.COMPLETED
     end
   end
 end

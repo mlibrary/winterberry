@@ -1,12 +1,14 @@
 module UMPTG::Fulcrum::Resources
   require_relative(File.join("filter", "embedlinkfilter"))
   require_relative(File.join("filter", "fulcrumcssfilter"))
+  require_relative(File.join("filter", "removefigcaptionfilter"))
   require_relative(File.join("filter", "resourcereferencefilter"))
   require_relative(File.join("filter", "updatealttextfilter"))
 
   FILTERS = {
       embed_link: Filter::EmbedLinkFilter,
       fulcrum_css: Filter::FulcrumCSSFilter,
+      remove_figcaption: Filter::RemoveFigcaptionFilter,
       resource_reference: Filter::ResourceReferenceFilter,
       update_alt: Filter::UpdateAltTextFilter
     }
