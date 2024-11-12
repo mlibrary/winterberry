@@ -13,6 +13,7 @@
     <xsl:param name="EXCLUDE_ISBN" select="''"/>
     <xsl:param name="ENCODING_NAME" select="'utf-8'"/>
     <xsl:param name="UMP_URL_PREFIX" select="'https://press.umich.edu/isbn/'"/>
+    <xsl:param name="MPS_URL_PREFIX" select="'https://services.publishing.umich.edu/isbn/'"/>
     <xsl:param name="UMP_DEPOSITOR" select="'scpo'"/>
     <xsl:param name="UMP_EMAIL" select="'mpub.xref@gmail.com'"/>
     <xsl:param name="UMP_REGISTRANT" select="'MPublishing'"/>
@@ -127,19 +128,26 @@
                             </xsl:otherwise>
                         </xsl:choose>
                     </xsl:element>
+                    <xsl:variable name="imprint" select="translate(./groupentry3, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz')"/>
+                    <xsl:variable name="url_prefix">
+                        <xsl:choose>
+                            <xsl:when test="$imprint='amherst college' or $imprint='bridwell press' or $imprint='lever press' or $imprint='maize books'"><xsl:value-of select="$MPS_URL_PREFIX"/></xsl:when>
+                            <xsl:otherwise><xsl:value-of select="$UMP_URL_PREFIX"/></xsl:otherwise>
+                        </xsl:choose>
+                    </xsl:variable>
                     <xsl:variable name="resourceValue">
                         <xsl:choose>
                             <xsl:when test="starts-with(./resource, 'https://www.fulcrum.org/')">
                                 <xsl:value-of select="./resource"/>
                             </xsl:when>
                             <xsl:when test="$pbisac_active='true' and ./printISBN">
-                                <xsl:value-of select="concat($UMP_URL_PREFIX, ./printISBN)"/>
+                                <xsl:value-of select="concat($url_prefix, ./printISBN)"/>
                             </xsl:when>
                             <xsl:when test="$pbisac_active='true' and ./eISBN">
-                                <xsl:value-of select="concat($UMP_URL_PREFIX, ./eISBN)"/>
+                                <xsl:value-of select="concat($url_prefix, ./eISBN)"/>
                             </xsl:when>
                             <xsl:when test="$sbisac_active='true' and ./secondaryISBN">
-                                <xsl:value-of select="concat($UMP_URL_PREFIX, ./secondaryISBN)"/>
+                                <xsl:value-of select="concat($url_prefix, ./secondaryISBN)"/>
                             </xsl:when>
                             <xsl:otherwise>
                                 <xsl:message>WARNING: bookkey <xsl:value-of select="./bookkey"/> no active ISBN found, using current resource.</xsl:message>
