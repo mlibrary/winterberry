@@ -32,7 +32,9 @@ module UMPTG::XML::Pipeline::Actions
         add_info_msg("#{reference_node.name}: added previous sibling markup #{markup}.")
       when :replace_content
         reference_node.content = ""
-        reference_node.add_child(fragment)
+        # If markup just text, then this is empty.
+        #reference_node.add_child(fragment)
+        reference_node.add_child(markup)
         add_info_msg("#{reference_node.name}: replaced content markup #{markup}.")
       when :replace_node
         reference_name = reference_node.name

@@ -104,18 +104,20 @@ epub_file_list.each do |epub_file|
 
   if options.normalize
 
-    # Generate XHTML navigation file
-    ncx_doc = Nokogiri::XML::Document.parse(epub.ncx.first.content)
-    toc_doc = UMPTG::EPUB::Migrator.ncx_to_xhtml(ncx_doc)
+    unless epub.navigation.count > 0
+      # Generate XHTML navigation file
+      ncx_doc = Nokogiri::XML::Document.parse(epub.ncx.first.content)
+      toc_doc = UMPTG::EPUB::Migrator.ncx_to_xhtml(ncx_doc)
 
-    ncx_name = epub.ncx.last.name
-    toc_name = File.join(File.dirname(ncx_name), File.basename(ncx_name, ".*") + "_navigation.xhtml")
-    epub.add(
-          entry_name: toc_name,
-          entry_content: UMPTG::XML.doc_to_xml(toc_doc),
-          media_type: "application/xhtml+xml",
-          properties: "nav"
-        )
+      ncx_name = epub.ncx.last.name
+      toc_name = File.join(File.dirname(ncx_name), File.basename(ncx_name, ".*") + "_navigation.xhtml")
+      epub.add(
+            entry_name: toc_name,
+            entry_content: UMPTG::XML.doc_to_xml(toc_doc),
+            media_type: "application/xhtml+xml",
+            properties: "nav"
+          )
+    end
 
     # Update file name extensions
     xhtml_entries.each do |entry|
