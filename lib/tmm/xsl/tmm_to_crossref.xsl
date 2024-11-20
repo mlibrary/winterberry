@@ -18,6 +18,7 @@
     <xsl:param name="UMP_EMAIL" select="'mpub.xref@gmail.com'"/>
     <xsl:param name="UMP_REGISTRANT" select="'MPublishing'"/>
     <xsl:param name="UMP_PUBLISHER_PLACE" select="'Ann Arbor, MI'"/>
+    <xsl:param name="MPS_SERVICES_IMPRINTS" select="'amherst college;bridwell press;lever press;maize books'"/>
 
     <xsl:output method="xml" encoding="utf-8" omit-xml-declaration="no" indent="yes"/>
     <xsl:strip-space elements="*"/>
@@ -26,6 +27,7 @@
     <xsl:variable name="NAMESPACE_URL" select="'http://www.crossref.org/schema/5.3.1'"/>
     <xsl:variable name="EXCLUDE_ISBN_LIST" select="concat(';',translate($EXCLUDE_ISBN,' ',''),';')"/>
     <xsl:variable name="FORMAT_BISAC_LIST" select="concat(';',$BISAC_LIST,';')"/>
+    <xsl:variable name="FORMAT_MPS_SERVICES_IMPRINTS" select="concat(';',$MPS_SERVICES_IMPRINTS,';')"/>
 
     <xsl:template match="root">
         <xsl:if test="normalize-space($BATCH_ID)!='' and normalize-space($TIMESTAMP)!=''">
@@ -131,7 +133,7 @@
                     <xsl:variable name="imprint" select="translate(./groupentry3, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz')"/>
                     <xsl:variable name="url_prefix">
                         <xsl:choose>
-                            <xsl:when test="$imprint='amherst college' or $imprint='bridwell press' or $imprint='lever press' or $imprint='maize books'"><xsl:value-of select="$MPS_URL_PREFIX"/></xsl:when>
+                            <xsl:when test="contains($FORMAT_MPS_SERVICES_IMPRINTS,$imprint)"><xsl:value-of select="$MPS_URL_PREFIX"/></xsl:when>
                             <xsl:otherwise><xsl:value-of select="$UMP_URL_PREFIX"/></xsl:otherwise>
                         </xsl:choose>
                     </xsl:variable>
