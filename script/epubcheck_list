@@ -47,7 +47,7 @@ end
 
 epub_file_list.each do |epub_file|
   epub_file = File.expand_path(epub_file)
-  unless File.exist?(epub_file)
+  unless File.file?(epub_file)
     script_logger.error("invalid EPUB file path #{epub_file}.")
     next
   end
@@ -55,10 +55,13 @@ epub_file_list.each do |epub_file|
   STDOUT.flush
 
   log_file = File.join(File.dirname(epub_file), File.basename(epub_file, ".*") + "_epubcheck.xml")
+  #log_file = File.join(File.dirname(epub_file), \
+  #      File.basename(epub_file, ".*") +"_epubcheck_v" + options.version.gsub(/\./, '_') + ".xml")
   UMPTG::EPUBCheck.check_file(
       epub_file: epub_file,
       logfile: log_file,
       version: options.version
       )
+  script_logger.info("Log saved in file #{File.basename(log_file)}")
 end
 
