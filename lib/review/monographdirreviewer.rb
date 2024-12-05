@@ -86,11 +86,10 @@ module UMPTG::Review
           path_list.each do |path|
             resource_name = ""
             unless @monograph_dir.manifest.nil?
-              fileset = @monograph_dir.manifest.fileset(path)
-              if fileset["file_name"].empty? and !resources_manifest.nil?
-                fileset = resources_manifest.fileset(File.basename(path))
+              resource_name = @monograph_dir.manifest.fileset_file_name(path)
+              if resource_name.empty? and !resources_manifest.nil?
+                resource_name = resources_manifest.fileset_file_name(File.basename(path))
               end
-              resource_name = fileset["file_name"]
             end
             if resource_name.strip.empty?
               @review_logger.warn("resource file not found for reference \"#{File.basename(path)}\".")

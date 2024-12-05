@@ -29,6 +29,8 @@ module UMPTG::Fulcrum::Manifest
 
   LINK_HREF_MARKUP = "%s/downloads/%s?file=embed_css"
 
+  RESOURCE_IDENT_REGEX = "[;]?[ ]*youtube_id:[ ]*(%s)[ ]*[;]?"
+
   class Document < UMPTG::Object
     attr_reader :name, :noid, :csv, :monograph_row, :isbn, :headers
 
@@ -122,14 +124,25 @@ module UMPTG::Fulcrum::Manifest
       return row
     end
 
+    def fileset_ident(file_name)
+      regex = sprintf(RESOURCE_IDENT_REGEX, file_name)
+      fileset_row = @csv.find {|row| !row['identifier(s)'].nil? and row['identifier(s)'].match?(regex) }
+      fileset_row['file_name'] = file_name unless fileset_row.nil?
+      return fileset_row
+    end
+
     def fileset(file_name)
       unless file_name.nil?
-        file_name_base = File.basename(file_name, ".*").downcase
-        fileset_row = @csv.find {|row| !row['file_name'].nil? and File.basename(row['file_name'], ".*").downcase == file_name_base }
+        file_name_base = File.basename(file_name, ".*")
+        file_name_base_lc = file_name_base.downcase
+        fileset_row = @csv.find {|row| !row['file_name'].nil? and File.basename(row['file_name'], ".*").downcase == file_name_base_lc }
         if fileset_row.nil?
-          file_name_base = file_name_base.gsub(/[ ]+/, '_')
-          fileset_row = @csv.find {|row| !row['file_name'].nil? and File.basename(row['file_name'], ".*").downcase == file_name_base }
+          file_name_base_lc = file_name_base_lc.gsub(/[ ]+/, '_')
+          fileset_row = @csv.find {|row| !row['file_name'].nil? and File.basename(row['file_name'], ".*").downcase == file_name_base_lc }
         end
+
+        fileset_row = fileset_ident(file_name_base) if fileset_row.nil?
+
         if fileset_row.nil?
           fn = HTMLEntities.new.decode(file_name)
           fileset_row = @csv.find {|row| row['external_resource_url'] == fn }
@@ -173,6 +186,15 @@ module UMPTG::Fulcrum::Manifest
     def fileset_file_name(file_name)
       fileset = fileset(file_name)
       fname = fileset['file_name']
+      if fname.nil? or fname.empty?
+        ident = fileset['identifier(s)']
+        unless ident.nil?
+          regex = sprintf(RESOURCE_IDENT_REGEX, file_name)
+          m = ident.match(regex)
+          fname = m[1] unless m.nil?
+        end
+      end
+
       return fname.nil? ? "" : fname
     end
 

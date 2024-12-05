@@ -15,28 +15,36 @@ module UMPTG::Fulcrum::Metadata
     def update_fmsl(args = {})
       fmsl_file = args[:fmsl_file]
       entry_actions = args[:entry_actions]
-
+=begin
       fmsl_csv = CSV.parse(
                 File.read(fmsl_file),
                 :headers => true,
                 :return_headers => false
                 )
+=end
+      fmsl = UMPTG::Fulcrum::Manifest::Document.new(
+                  csv_file: fmsl_file,
+                  convert_headers: false
+              )
 
       entry_actions.each do |ea|
         ea.action_result.actions.each do |a|
           a.object_list.each do |o|
-            #fmsl_row = monograph_dir.fmsl.fileset(o.resource_name)
-            file_name_base = File.basename(o.resource_name, ".*").downcase
-            fmsl_row = fmsl_csv.find {|row| !row['File Name'].nil? and File.basename(row['File Name'], ".*").downcase == file_name_base }
-            if fmsl_row.nil?
+            fmsl_row = fmsl.fileset(o.resource_name)
+            if fmsl_row['file_name'].empty?
               logger.warn("resource #{o.resource_name} not found.")
               next
             end
             #script_logger.info("updating resource #{o.resource_name}.")
 
+=begin
             alt = fmsl_row["Alternative Text"]
             caption = fmsl_row["Caption"]
             resource_name = fmsl_row["File Name"]
+=end
+            alt = fmsl_row["alternative_text"]
+            caption = fmsl_row["caption"]
+            resource_name = o.resource_name
             epub_alt = o.alt_text
             epub_caption = o.caption_text
 
@@ -63,7 +71,7 @@ module UMPTG::Fulcrum::Metadata
           end
         end
       end
-      return fmsl_csv
+      return fmsl.csv
     end
   end
 end
