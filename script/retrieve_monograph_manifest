@@ -56,7 +56,7 @@ service = UMPTG::Services::Heliotrope.new(
 
 monograph_id_list.each do |monograph_id|
   # Attempt to download the monograph manifest.
-  service_response = service.monograph_export(identifier: monograph_id)
+  service_response = service.monograph_export(noid: monograph_id)
 
   unless service_response.empty?
     # Not empty, save the manifest using its id as the file name.
