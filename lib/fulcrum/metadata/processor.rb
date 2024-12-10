@@ -15,35 +15,24 @@ module UMPTG::Fulcrum::Metadata
     def update_fmsl(args = {})
       fmsl_file = args[:fmsl_file]
       entry_actions = args[:entry_actions]
-=begin
       fmsl_csv = CSV.parse(
                 File.read(fmsl_file),
                 :headers => true,
                 :return_headers => false
                 )
-=end
-      fmsl = UMPTG::Fulcrum::Manifest::Document.new(
-                  csv_file: fmsl_file,
-                  convert_headers: false
-              )
 
       entry_actions.each do |ea|
         ea.action_result.actions.each do |a|
           a.object_list.each do |o|
-            fmsl_row = fmsl.fileset(o.resource_name)
-            if fmsl_row['file_name'].empty?
+            fmsl_row = fileset(fmsl_csv, o.resource_name)
+            if fmsl_row.nil?
               logger.warn("resource #{o.resource_name} not found.")
               next
             end
             #script_logger.info("updating resource #{o.resource_name}.")
 
-=begin
             alt = fmsl_row["Alternative Text"]
             caption = fmsl_row["Caption"]
-            resource_name = fmsl_row["File Name"]
-=end
-            alt = fmsl_row["alternative_text"]
-            caption = fmsl_row["caption"]
             resource_name = o.resource_name
             epub_alt = o.alt_text
             epub_caption = o.caption_text
@@ -71,7 +60,39 @@ module UMPTG::Fulcrum::Metadata
           end
         end
       end
-      return fmsl.csv
+      return fmsl_csv
     end
+
+    private
+
+    def fileset_ident(fmsl_csv, file_name)
+      regex = sprintf("[;]?[ ]*youtube_id:[ ]*(%s)[ ]*[;]?", file_name)
+      fileset_row = fmsl_csv.find {|row| !row['Identifier(s)'].nil? and row['Identifier(s)'].match?(regex) }
+      fileset_row['File Name'] = file_name unless fileset_row.nil?
+      return fileset_row
+    end
+
+    def fileset(fmsl_csv, file_name)
+      unless file_name.nil?
+        file_name_base = File.basename(file_name, ".*")
+        file_name_base_lc = file_name_base.downcase
+        fileset_row = fmsl_csv.find {|row| !row['File Name'].nil? and File.basename(row['File Name'], ".*").downcase == file_name_base_lc }
+        if fileset_row.nil?
+          file_name_base_lc = file_name_base_lc.gsub(/[ ]+/, '_')
+          fileset_row = fmsl_csv.find {|row| !row['File Name'].nil? and File.basename(row['File Name'], ".*").downcase == file_name_base_lc }
+        end
+
+        fileset_row = fileset_ident(fmsl_csv, file_name_base) if fileset_row.nil?
+
+        if fileset_row.nil?
+          fn = HTMLEntities.new.decode(file_name)
+          fileset_row = fmsl_csv.find {|row| row['External Resource Url'] == fn }
+        end
+        return fileset_row unless fileset_row.nil?
+      end
+
+      return nil
+    end
+
   end
 end
