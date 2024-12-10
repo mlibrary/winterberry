@@ -79,6 +79,7 @@ module UMPTG::Journal::Resource::Filter
       jats_media_markup = @manifest.fileset_embed_jats_markup(
                   file_name: fileset['file_name'],
                   caption_markup: caption_markup,
+                  figure_id: fig_node['id'],
                   renderer: UMPTG::Journal::JATSRenderer.new
                 )
       unless jats_media_markup.strip.empty?

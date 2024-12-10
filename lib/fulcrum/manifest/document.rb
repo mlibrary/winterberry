@@ -331,6 +331,7 @@ module UMPTG::Fulcrum::Manifest
     def fileset_embed_jats_markup(args = {})
       file_name = args[:file_name]
       caption_markup = args[:caption_markup]
+      figure_id = args[:figure_id]
       renderer = args[:renderer]
 
       fileset = fileset(file_name)
@@ -377,6 +378,7 @@ module UMPTG::Fulcrum::Manifest
         media_doc = Nokogiri::XML::Document.new
         media_element = media_doc.create_element("media")
 
+        media_element['id'] = figure_id unless figure_id.nil? or figure_id.strip.empty?
         media_element['xlink:href'] = embed_link
         media_element['mimetype'] = fileset['resource_type']
         media_element['mime-subtype'] = File.extname(fileset['file_name'])[1..-1].downcase
