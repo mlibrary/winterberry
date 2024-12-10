@@ -61,7 +61,10 @@ unless File.directory?(monograph_base)
 end
 
 monograph_path_list = File.readlines(monograph_path_file)
+script_logger.info("Monograph directories: #{monograph_path_list.count}")
 
+print_cnt = 0
+skipped_cnt = 0
 monograph_path_list.each do |monograph_path|
   monograph_path.strip!
   noid = File.basename(monograph_path)
@@ -70,53 +73,70 @@ monograph_path_list.each do |monograph_path|
     script_logger.error("invalid monograph directory #{monograph_path}")
     next
   end
-  script_logger.info("using monograph directory #{monograph_path} #{noid}")
+  script_logger.info("*** using monograph directory #{monograph_path} ***")
 
   manifest_file = File.join(monograph_path, "manifest.csv")
   unless File.file?(manifest_file)
     script_logger.error("invalid monograph manifest file #{manifest_file}")
+    skipped_cnt += 1
     next
   end
 
   manifest = UMPTG::Fulcrum::Manifest::Document.new(
                 csv_file: manifest_file
               )
+  script_logger.info("Formats:#{manifest.isbn}")
+
   open_access = manifest.monograph_row['open_access?'] || "no"
   is_open_access = open_access.strip.downcase == "yes"
   unless is_open_access
     script_logger.warn("not open access, skipping")
+    skipped_cnt += 1
     next
   end
+
+  script_logger.info("#{manifest.representatives().count} representatives found: #{manifest.representatives().keys.join(',')}")
 
   ebook_representatives = manifest.representatives().select {|k,r| k == 'epub' or k == 'pdf_ebook' }
   if ebook_representatives.empty?
     script_logger.warn("no ebooks, skipping")
+    skipped_cnt += 1
     next
   end
-  script_logger.info("#{ebook_representatives.count} ebooks found.")
-  script_logger.info("formats:#{manifest.isbn.keys.join(',')}")
+
+  downloads = ebook_representatives.select {|k,r| !r['allow_download?'].nil? and r['allow_download?'].strip.downcase == 'yes' }
+  if downloads.empty?
+    script_logger.warn("no downloadable ebooks, skipping")
+    skipped_cnt += 1
+    next
+  end
+  script_logger.info("#{downloads.count} downloadable ebooks found")
 
   format_isbn = {}
   ["hardcover", "paper", "paperback"].each do |f|
     format_isbn = manifest.isbn.select {|k,v| k.strip.downcase == f }
-    if format_isbn.empty?
-      script_logger.warn("no #{f} found.")
-    elsif
-      script_logger.info("found #{f}.")
-      break
-    end
+    break unless format_isbn.empty?
+    script_logger.warn("no #{f} found.")
   end
-  next if format_isbn.empty?
+  if format_isbn.empty?
+    script_logger.warn("no print ISBN found, skipping.")
+    skipped_cnt += 1
+    next
+  end
 
-  script_logger.info(format_isbn)
+  print_cnt += 1
+  script_logger.info("Found print ISBN: #{format_isbn}")
   isbn = format_isbn.values.first.gsub(/\-/, '')
+
+  #FileUtils.mkdir_p(output_dir_path)
   ebook_representatives.each do |f,r|
     src_name = r['title']
     src_path = File.join(monograph_path, src_name)
     dest_name = isbn + File.extname(src_name)
-    dest_path = File.join(output_dir_path, noid, dest_name)
+    dest_path = File.join(output_dir_path, dest_name)
     script_logger.info("cp \"#{src_path}\" \"#{dest_path}\"")
-    FileUtils.mkdir_p(File.dirname(dest_path))
     FileUtils.cp(src_path, dest_path)
   end
 end
+script_logger.info("Total copied: #{print_cnt}")
+script_logger.warn("Total skipped: #{skipped_cnt}") if skipped_cnt > 0
