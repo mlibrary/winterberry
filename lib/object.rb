@@ -1,5 +1,7 @@
 module UMPTG
   class Object
+    attr_accessor :properties
+
     def initialize(args = {})
       @properties = args.clone
     end

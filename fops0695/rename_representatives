@@ -1,0 +1,142 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Script takes a list of extracted monograph directories
+# and renames the representatives to the monograph
+# hardcover/paper ISBN.
+
+require 'optparse'
+require 'ostruct'
+require 'os'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+# Process the script parameters.
+options = OpenStruct.new
+options.directory_path = "S:/Information\ Management/Fulcrum/PTG/tickets/FOPS-0695/ebooks"
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-o output_dir] monograph_path_file"
+  opts.on('-o', '--output_dir [DIRECTORY]', 'Path of output directory') do |dir_path|
+    options.directory_path = dir_path
+  end
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    script_logger.info(opts)
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  script_logger.info(option_parser.help)
+  exit(0)
+end
+monograph_path_file = ARGV[0]
+
+monograph_path_file = File.expand_path(monograph_path_file)
+unless File.file?(monograph_path_file)
+  script_logger.error("invalid monograph path file #{monograph_path_file}")
+  exit(1)
+end
+
+output_dir_path = File.expand_path(options.directory_path)
+unless File.directory?(output_dir_path)
+  script_logger.error("invalid output directory #{options.directory_path}")
+  exit(1)
+end
+
+require 'fileutils'
+require_relative File.join(root_dir, 'lib', 'fulcrum', 'manifest')
+
+MONOGRAPH_DIR_BASE = "S:/Information\ Management/Fulcrum/PTG/tickets/FOPS-0695/extract"
+monograph_base = File.join(File.dirname(monograph_path_file), 'extract')
+
+unless File.directory?(monograph_base)
+  script_logger.error("invalid monograph base #{monograph_base}")
+  exit(1)
+end
+
+monograph_path_list = File.readlines(monograph_path_file)
+script_logger.info("Monograph directories: #{monograph_path_list.count}")
+
+print_cnt = 0
+skipped_cnt = 0
+monograph_path_list.each do |monograph_path|
+  monograph_path.strip!
+  noid = File.basename(monograph_path)
+  monograph_path = File.expand_path(monograph_path, MONOGRAPH_DIR_BASE)
+  unless File.exist?(monograph_path)
+    script_logger.error("invalid monograph directory #{monograph_path}")
+    next
+  end
+  script_logger.info("*** using monograph directory #{monograph_path} ***")
+
+  manifest_file = File.join(monograph_path, "manifest.csv")
+  unless File.file?(manifest_file)
+    script_logger.error("invalid monograph manifest file #{manifest_file}")
+    skipped_cnt += 1
+    next
+  end
+
+  manifest = UMPTG::Fulcrum::Manifest::Document.new(
+                csv_file: manifest_file
+              )
+  script_logger.info("Formats:#{manifest.isbn}")
+
+  open_access = manifest.monograph_row['open_access?'] || "no"
+  is_open_access = open_access.strip.downcase == "yes"
+  unless is_open_access
+    script_logger.warn("not open access, skipping")
+    skipped_cnt += 1
+    next
+  end
+
+  script_logger.info("#{manifest.representatives().count} representatives found: #{manifest.representatives().keys.join(',')}")
+
+  ebook_representatives = manifest.representatives().select {|k,r| k == 'epub' or k == 'pdf_ebook' }
+  if ebook_representatives.empty?
+    script_logger.warn("no ebooks, skipping")
+    skipped_cnt += 1
+    next
+  end
+
+  downloads = ebook_representatives.select {|k,r| !r['allow_download?'].nil? and r['allow_download?'].strip.downcase == 'yes' }
+  if downloads.empty?
+    script_logger.warn("no downloadable ebooks, skipping")
+    skipped_cnt += 1
+    next
+  end
+  script_logger.info("#{downloads.count} downloadable ebooks found")
+
+  format_isbn = {}
+  ["hardcover", "paper", "paperback"].each do |f|
+    format_isbn = manifest.isbn.select {|k,v| k.strip.downcase == f }
+    break unless format_isbn.empty?
+    script_logger.warn("no #{f} found.")
+  end
+  if format_isbn.empty?
+    script_logger.warn("no print ISBN found, skipping.")
+    skipped_cnt += 1
+    next
+  end
+
+  print_cnt += 1
+  script_logger.info("Found print ISBN: #{format_isbn}")
+  isbn = format_isbn.values.first.gsub(/\-/, '')
+
+  #FileUtils.mkdir_p(output_dir_path)
+  ebook_representatives.each do |f,r|
+    src_name = r['title']
+    src_path = File.join(monograph_path, src_name)
+    dest_name = isbn + File.extname(src_name)
+    dest_path = File.join(output_dir_path, dest_name)
+    script_logger.info("cp \"#{src_path}\" \"#{dest_path}\"")
+    FileUtils.cp(src_path, dest_path)
+  end
+end
+script_logger.info("Total copied: #{print_cnt}")
+script_logger.warn("Total skipped: #{skipped_cnt}") if skipped_cnt > 0
