@@ -20,6 +20,13 @@ module UMPTG::XML
       raise "invalid encoding name #{encoding_name}" if enc.nil?
 
       xml_content = File.open(xml_file, "r", encoding: enc.name) {|fp| fp.read }
+
+      xml_content = UMPTG::XML.remove_bom(xml_content)
+=begin
+      # Remove BOM from content if present.
+      bom = xml_content[0].each_byte.map { |b| b.to_s(16) }.join
+      xml_content = xml_content[1..-1] if bom.downcase == "efbbbf"
+=end
       unless xml_content[0..200].match?(/<\?xml[ ]*[^\?]+\?>/)
         pi = sprintf(@@XML_PI_FORMAT, enc.name)
         xml_content = pi + "\n" + xml_content
@@ -45,6 +52,15 @@ module UMPTG::XML
     return xml_doc
   end
 
+  def self.remove_bom(content = "")
+    # Remove BOM from content if present.
+    unless content.nil? or content.strip.empty?
+      bom = content[0].each_byte.map { |b| b.to_s(16) }.join
+      content = content[1..-1] if bom.downcase == "efbbbf"
+    end
+    return content
+  end
+
   def self.XML_PI(args = {})
     encoding = args[:encoding]
     encoding = 'UTF-8' if encoding.nil? or encoding.strip.empty?
@@ -57,7 +73,7 @@ module UMPTG::XML
 
   def self.doc_to_xml(doc)
     pref = @@XML_PI + "\n"
-    pref += @@HTML_DT + "\n" if doc.root.name.downcase == "html"
+    #pref += @@HTML_DT + "\n" if doc.root.name.downcase == "html"
     return  pref + doc.xpath("/*").to_s
   end
 

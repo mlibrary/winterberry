@@ -35,7 +35,7 @@ option_parser = OptionParser.new do |opts|
   opts.on('-l', '--link default|fulcrum|ump', 'Use which link as resource') do |link|
     options.monograph_link = link.to_sym
   end
-  opts.on('-n', '--encoding', 'Encoding UTF-8|Windows-1252') do |enc|
+  opts.on('-n', '--encoding encoding_name', 'Encoding UTF-8|Windows-1252') do |enc|
     options.encoding = enc
   end
   opts.on_tail('-h', '--help', 'Print this help message') do
@@ -127,12 +127,6 @@ doi_report_file_list.each do |doi_report_file|
           xml_file: doi_report_file,
           encoding: enc.name
         )
-=begin
-  fp = File.open(doi_report_file, "r", encoding: enc.name)
-  xml_content = fp.read
-  doi_report_doc = Nokogiri::XML(XML_PI + "\n" + xml_content)
-  #doi_report_doc = Nokogiri::XML(File.open(doi_report_file))
-=end
 
   book_node_list = []
   if id_list_csv[:include].nil?
@@ -235,26 +229,7 @@ doi_report_file_list.each do |doi_report_file|
   end
 
   avoid_dups = {}
-=begin
-  crossref_markup = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
-  crossref_markup += "<root>"
-  book_node_list.each do |book_node|
-    bookkey = book_node.xpath("./*[local-name()='bookkey']").first.content
-    if avoid_dups.key?(bookkey)
-      avoid_dups[bookkey] << book_node
-      script_logger.warn("duplicate found #{bookkey}, skipping")
-      next
-    end
-    avoid_dups[bookkey] = [book_node]
 
-    markup = book_node.to_xml.force_encoding(enc.name).encode("UTF-8")
-    crossref_markup += markup
-  end
-  crossref_markup += "</root>"
-  crossref_doc = Nokogiri::XML.parse(crossref_markup)
-=end
-
-  #crossref_doc = Nokogiri::XML(XML_PI + "\n<root></root>")
   crossref_doc = Nokogiri::XML("<?xml version=\"1.0\" encoding=\"utf-8\"?>" + "\n<root></root>")
 
   root_node = crossref_doc.document.root
@@ -290,30 +265,10 @@ doi_report_file_list.each do |doi_report_file|
       STDOUT.flush
 
       exclude_list << "   " + monograph_id + "   "
-=begin
-      # Remove excluded title from the source document.
-      case id_header
-      when "Book Key"
-        # Assume the monograph ID is a book key.
-        bnode_list = crossref_doc.xpath("//*[local-name()='bookkey' and string()='#{monograph_id}']/ancestor::*[local-name()='book'][1]")
-      when "ISBN"
-        bnode_list = crossref_doc.xpath("//*[(local-name()='eISBN' or local-name()='printISBN') and string()='#{monograph_id}']/ancestor::*[local-name()='book'][1]")
-      when "DOI"
-        bnode_list = crossref_doc.xpath("//*[(local-name()='doi') and string()='#{monograph_id}']/ancestor::*[local-name()='book'][1]")
-      when "NOID"
-        bnode_list = crossref_doc.xpath("//*[local-name()='resource' and contains(string(),'#{monograph_id}')]/ancestor::*[local-name()='book'][1]")
-      else
-        script_logger.error("unknown ID type #{id_header}. Skipping.")
-        next
-      end
-      script_logger.info("#{id_header} found #{bnode_list.count} book nodes to exclude for ID #{monograph_id}.")
-      bnode_list.each {|bnode| bnode.remove }
-=end
     end
   end
 
   doi_report_edit_file = File.join(File.dirname(doi_report_file), File.basename(doi_report_file, ".*") + "_edited" + File.extname(doi_report_file))
-  #File.write(doi_report_edit_file, crossref_doc.to_xml)
   File.open(doi_report_edit_file, "w", encoding: enc.name) do |f|
     f.write(crossref_doc.to_xml)
   end

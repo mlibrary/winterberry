@@ -1,0 +1,31 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Script for removing file BOM header.
+
+# Process the command line parameters.
+xml_file_list = ARGV
+
+xml_file_list.each do |xml_file|
+  # Expand the file path
+  xml_file = File.expand_path(xml_file)
+  unless File.file?(xml_file)
+    puts "Error: invalid XML file #{xml_file}"
+    next
+  end
+  puts "Processing XML file #{File.basename(xml_file)}"
+
+  # Read file
+  xml_fp = File.open(xml_file)
+  xml_content = xml_fp.read
+  xml_fp.close
+
+  # Remove the BOM header if present.
+  bom = xml_content[0].each_byte.map { |b| b.to_s(16) }.join
+  xml_content = xml_content[1..-1] if bom.downcase == "efbbbf"
+
+  # Write new file.
+  new_xml_file = File.join(File.dirname(xml_file), File.basename(xml_file, ".*") + "_nobom" + File.extname(xml_file))
+  File.write(new_xml_file, xml_content)
+  puts "Saved #{new_xml_file}"
+end
