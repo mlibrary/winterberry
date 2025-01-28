@@ -1,0 +1,76 @@
+#!/usr/bin/env ruby
+# encoding: utf-8
+
+# Script that loads the ToFulcrum CSV
+# and determines the DOI for a list of
+# ISBN(s).
+
+require 'optparse'
+require 'ostruct'
+require 'os'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+# Process the script parameters.
+options = OpenStruct.new
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)}  to_fulcrum_csv_file isbns_file"
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    puts opts
+    exit(0)
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 2
+  puts option_parser.help
+  exit(0)
+end
+
+to_fulcrum_csv_file = ARGV[0]
+isbns_file = ARGV[1]
+
+require_relative File.join(root_dir, 'lib', 'csvfile')
+
+to_fulcrum_csv_file = File.expand_path(to_fulcrum_csv_file)
+unless File.file?(to_fulcrum_csv_file)
+  script_logger.error("path \"#{File.basename(to_fulcrum_csv_file)}\" is not an existing ToFulcrum CSV file.")
+  exit(1)
+end
+
+isbns_file = File.expand_path(isbns_file)
+unless File.file?(isbns_file)
+  script_logger.error("path \"#{File.basename(isbns_file)}\" is not an existing ISBN(s) CSV file.")
+  exit(1)
+end
+
+to_fulcrum_csv = UMPTG::CSVFile.read(csv_path: to_fulcrum_csv_file)
+isbns_list = File.readlines(isbns_file, chomp: true)
+
+not_found = []
+has_doi = []
+no_doi = []
+isbns_list.each do |isbns|
+  b = isbns.strip.downcase
+  row = to_fulcrum_csv.find {|r| r['ISBN(s)'].strip.downcase.gsub(/\-/,'') == b }
+  if row.nil?
+    #script_logger.warn("ISBN(s) \"#{isbns}\" not found.")
+    not_found << isbns
+    next
+  end
+
+  doi = row['DOI'] || ""
+  doi.strip!
+  has_doi << "#{isbns}:#{doi}" unless doi.empty?
+  no_doi << isbns if doi.empty?
+end
+script_logger.info("Has DOI  :#{has_doi.count}")
+script_logger.info("Not Found:#{not_found.count}")
+#not_found.each {|d| puts d }
+script_logger.info("No DOI   :#{no_doi.count}")
+no_doi.each {|d| puts d }

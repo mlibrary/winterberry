@@ -1,0 +1,72 @@
+#!/usr/bin/env ruby
+# encoding: utf-8
+
+# Script that loads a Crossref submission
+# XML file and a list of DOIs and determines
+# whether each DOI has a Fulcrum URL assigned.
+
+require 'optparse'
+require 'ostruct'
+require 'os'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+# Process the script parameters.
+options = OpenStruct.new
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)}  crossref_file doi_file"
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    puts opts
+    exit(0)
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 2
+  puts option_parser.help
+  exit(0)
+end
+
+crossref_file = ARGV[0]
+doi_file = ARGV[1]
+
+crossref_file = File.expand_path(crossref_file)
+unless File.file?(crossref_file)
+  script_logger.error("path \"#{File.basename(crossref_file)}\" is not an existing Crossref XML file.")
+  exit(1)
+end
+
+doi_file = File.expand_path(doi_file)
+unless File.file?(doi_file)
+  script_logger.error("path \"#{File.basename(doi_file)}\" is not an existing DOI file.")
+  exit(1)
+end
+
+require_relative File.join(root_dir, "lib", "xml")
+
+crossref_doc = UMPTG::XML.parse(
+          xml_file: crossref_file
+        )
+doi_list = File.readlines(doi_file, chomp: true)
+
+ll = doi_list.collect {|d| "text()='#{d}'" }
+xpath = "//*[local-name()='doi' and (" + ll.join(' or ') + ")]"
+#script_logger.info(xpath)
+
+exclude_isbns = []
+node_list = crossref_doc.xpath(xpath)
+node_list.each do |node|
+  resource = node.parent.xpath("./*[local-name()='resource']").first.content
+  exclude_isbns << node.parent.parent.xpath("./*[local-name()='isbn']").first.content \
+      if resource.start_with?("https://press.umich.edu/")
+end
+script_logger.info("Found #{node_list.count} DOIs, excluding #{exclude_isbns.count}")
+
+exclude_isbns_file = File.join(File.dirname(crossref_file), "exclude_isbns.csv")
+File.write(exclude_isbns_file, "ISBN\n" + exclude_isbns.join("\n"))
+script_logger.info("Save file #{exclude_isbns_file}")

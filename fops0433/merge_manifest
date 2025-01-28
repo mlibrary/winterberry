@@ -1,0 +1,78 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# This script inputs one or more monograph manifest files
+# and merges the files into 1 spreadsheet.
+#
+# Invoke this script without any parameters to display the usage.
+
+require 'optparse'
+require 'ostruct'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+# Process the script parameters.
+options = OpenStruct.new
+options.output_file = File.join(Dir.pwd, "monograph_manifest.csv")
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-o <output_file>] <manifest_file> [<manifest_file>..]"
+  opts.on('-o', '--output_file <output_file>', 'Output file path') do |output_file|
+    options.output_file = output_file
+  end
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    script_logger.info(opts)
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  script_logger.info(option_parser.help)
+  exit 0
+end
+
+require_relative File.join(root_dir, 'lib', 'fulcrum')
+
+# Rest of the parameters is a list of monograph identifiers.
+manifest_file_list = ARGV
+
+monograph_manifest_rows = []
+manifest_headers = nil
+manifest_file_list.each do |manifest_file|
+  manifest_file = File.expand_path(manifest_file)
+  unless File.file?(manifest_file)
+    script_logger.error("path \"#{File.basename(manifest_file)}\" is not an existing manifest file.")
+    next
+  end
+  script_logger.info("*** #{manifest_file} **")
+  STDOUT.flush
+
+  manifest = UMPTG::Fulcrum::Manifest::Document.new(
+                csv_file: manifest_file
+              )
+  if manifest.csv.nil?
+    script_logger.error("unable to load manifest")
+    next
+  end
+
+  manifest_headers = manifest.headers if manifest_headers.nil?
+  monograph_manifest_rows << manifest.monograph_row
+end
+
+# Write CSV file.
+unless monograph_manifest_rows.empty?
+  CSV.open(
+          options.output_file,
+          "w",
+          write_headers: false,
+        ) do |csv|
+    csv << manifest_headers
+    monograph_manifest_rows.each {|r| csv << r }
+  end
+  script_logger.info("saved CSV file #{options.output_file}")
+end
