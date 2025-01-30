@@ -362,7 +362,7 @@ File.open(cmds_file, "w") do |fp|
     fmsl_file = minfo[:fmsl_file]
     next if fmsl_file.nil?
     f = File.join("/#{fmsl_file[0]}", fmsl_file[2..-1].gsub(' ', '\ '))
-    fp.puts "bundle exec ruby script/migrate_fmsl -c #{f}"
+    fp.puts "bundle exec ruby script#{File::SEPARATOR}migrate_fmsl -c #{f}"
   end
   fp.puts
 
@@ -388,19 +388,61 @@ File.open(cmds_file, "w") do |fp|
         resources_dir = File.join(application_monograph_dir, File.basename(monograph_resources_dir))
         monograph_has_resources = true
       end
-      fp.puts "#{prefix}bundle exec script/import -m #{noid} -d #{resources_dir}"
-      fp.puts
+      fp.puts "#{prefix}bundle exec script#{File::SEPARATOR}import -m #{noid} -d #{resources_dir}"
     end
   end
+  fp.puts
+  fp.puts "# Process resources"
+  monograph_info.each do |monograph_id,minfo|
+    monograph_dir = minfo[:monograph_dir]
+    unless monograph_dir.nil?
+      monograph_resources_dir = minfo[:monograph_resources_dir]
+      prefix = monograph_resources_dir.nil? ? "#" : ""
 
+      f = File.join("#{File::SEPARATOR}#{monograph_dir[0]}", monograph_dir[2..-1].gsub(' ', '\ '))
+      fp.puts "#{prefix}bundle exec ruby script#{File::SEPARATOR}monograph_resource_metadata #{f}"
+    end
+  end
+  fp.puts
+  fp.puts "# Create components (nectar)"
+  components_files.each do |product,comp_file|
+    fp.puts "bundle exec ruby bin#{File::SEPARATOR}restrict_items.rb -f #{comp_file} -p #{product} >& #{greensub_task_dir}/restrict_items_#{product}.log"
+  end
+  fp.puts
+  fp.puts "# DOI Submission"
+  includes_file = File.join(task_dir, "doi_submission_includes.csv")
+  File.open(includes_file, "w") do |f|
+    f.puts "ISBN"
+    f.puts monograph_info.keys.join("\n")
+  end
+  tocrossref_dir = File.join(fulcrum_dir, "TMMDataTransfer", "ToCrossref")
+  tocrossref_pattern = um_press_dir.downcase == "mps" ? \
+          File.join(tocrossref_dir, "*_MPS.xml") : \
+          File.join(tocrossref_dir, "*_UMPRE.xml")
+  src_tocrossref_file = Dir.glob(tocrossref_pattern).last
+  dest_tocrossref_file = File.join(task_dir, File.basename(src_tocrossref_file))
+  fp.puts "bundle exec ruby script#{File::SEPARATOR}crossref_generate -l fulcrum -i #{includes_file.gsub(' ', '\ ')} #{dest_tocrossref_file.gsub(' ', '\ ')}"
+  FileUtils.copy(src_tocrossref_file, dest_tocrossref_file)
+  fp.puts
+
+  fp.puts "# Rails console"
+  fp.puts "bundle exec rails console"
+  fp.puts
+
+  fp.puts "# Publish monographs (fulcrum-211)"
+  fp.puts "%w[#{monograph_noid_list.join(' ')}].each do |noid|"
+  fp.puts "\tPublishJob.perform_now(Monograph.find(noid))"
+  fp.puts "end;0"
+  fp.puts
+  fp.puts "# Monograph information"
+  fp.puts monograph_info.keys.join(' ')
+  fp.puts monograph_info.keys.select {|k| monograph_info[k][:fmsl_file] != nil }.join(' ')
+  monograph_info.each do |monograph_id,minfo|
+    mminfo = minfo.delete_if {|key,value| key == :monograph_dir or key == :monograph_resources_dir or key == :fmsl_file}
+    fp.puts "#{monograph_id},#{mminfo.values.join(',')}"
+  end
+  fp.puts
   if monograph_has_resources
-    fp.puts "# Unpack EPUB representatives"
-    epub_noid_list = monograph_info.values.collect {|minfo| minfo[:epub_noid]}
-    pdf_noid_list = monograph_info.values.collect {|minfo| minfo[:pdf_noid]}
-    fp.puts "%w[#{epub_noid_list.join(' ')}].each do |noid|"
-    fp.puts "\tUnpackJob.perform_now(noid,'epub')"
-    fp.puts "end;0"
-    fp.puts
     fp.puts "# Resource processing ticket comment"
     fp.puts "[~jilliand] [~mbakeryo]"
     fp.puts "Resource processed the following titles:"
@@ -420,39 +462,6 @@ File.open(cmds_file, "w") do |fp|
     fp.puts "# "
     fp.puts
   end
-
-  fp.puts "# Create components (nectar)"
-  components_files.each do |product,comp_file|
-    fp.puts "bundle exec ruby bin/restrict_items.rb -f #{comp_file} -p #{product} >& #{greensub_task_dir}/restrict_items_#{product}.log"
-    fp.puts
-  end
-
-  fp.puts "# DOI Submission"
-  includes_file = File.join(task_dir, "doi_submission_includes.csv")
-  File.open(includes_file, "w") do |f|
-    f.puts "ISBN"
-    f.puts monograph_info.keys.join("\n")
-  end
-  tocrossref_dir = File.join(fulcrum_dir, "TMMDataTransfer", "ToCrossref")
-  tocrossref_pattern = um_press_dir.downcase == "mps" ? \
-          File.join(tocrossref_dir, "*_MPS.xml") : \
-          File.join(tocrossref_dir, "*_UMPRE.xml")
-  src_tocrossref_file = Dir.glob(tocrossref_pattern).last
-  dest_tocrossref_file = File.join(task_dir, File.basename(src_tocrossref_file))
-  fp.puts "bundle exec ruby script/crossref_generate -l fulcrum -i #{includes_file.gsub(' ', '\ ')} #{dest_tocrossref_file.gsub(' ', '\ ')}"
-  FileUtils.copy(src_tocrossref_file, dest_tocrossref_file)
-  fp.puts
-
-  fp.puts "# Rails console"
-  fp.puts "bundle exec rails console"
-  fp.puts
-
-  fp.puts "# Publish monographs (fulcrum-211)"
-  fp.puts "%w[#{monograph_noid_list.join(' ')}].each do |noid|"
-  fp.puts "\tPublishJob.perform_now(Monograph.find(noid))"
-  fp.puts "end;0"
-
-  fp.puts
   fp.puts "# Publishing ticket comment"
   fp.puts "[~mbakeryo]"
   fp.puts "Created the components *#{components_files.keys.join('*, *')}* and marked the monographs public. Also, the DOIs were successfully submitted to CrossRef for deposit. The results can be found in the attached zip files:"
@@ -460,6 +469,15 @@ File.open(cmds_file, "w") do |fp|
   fp.puts
   fp.puts "Reassigning to [~mbakeryo]."
   fp.puts
+  if monograph_has_resources
+    fp.puts "# Unpack EPUB representatives"
+    epub_noid_list = monograph_info.values.collect {|minfo| minfo[:epub_noid]}
+    pdf_noid_list = monograph_info.values.collect {|minfo| minfo[:pdf_noid]}
+    fp.puts "%w[#{epub_noid_list.join(' ')}].each do |noid|"
+    fp.puts "\tUnpackJob.perform_now(noid,'epub')"
+    fp.puts "end;0"
+    fp.puts
+  end
   fp.puts "# Unpack representatives"
   monograph_info.each do |monograph_id,minfo|
     epub_noid = minfo[:epub_noid]
@@ -469,15 +487,6 @@ File.open(cmds_file, "w") do |fp|
     fp.puts "\tUnpackJob.perform_now('','')" if epub_noid.nil? and pdf_noid.nil?
     fp.puts "\tUnpackJob.perform_now('#{epub_noid}','epub')" unless epub_noid.nil?
     fp.puts "\tUnpackJob.perform_now('#{pdf_noid}','pdf_ebook')" unless pdf_noid.nil?
-  end
-  fp.puts
-
-  fp.puts "# Monograph information"
-  fp.puts monograph_info.keys.join(' ')
-  fp.puts monograph_info.keys.select {|k| monograph_info[k][:fmsl_file] != nil }.join(' ')
-  monograph_info.each do |monograph_id,minfo|
-    mminfo = minfo.delete_if {|key,value| key == :monograph_dir or key == :monograph_resources_dir or key == :fmsl_file}
-    fp.puts "#{monograph_id},#{mminfo.values.join(',')}"
   end
   fp.puts
   fp.puts "# Create monographs"
