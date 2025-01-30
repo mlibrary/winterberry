@@ -62,7 +62,6 @@ unless UMPTG::Press.valid(options.press)
 end
 
 um_press_dir = UMPTG::Press.press_dir(options.press)
-um_press_subdir = UMPTG::Press.press_subdir(options.press)
 
 # Determine publishing directory
 publish_dir = File.join(fulcrum_dir, "PTG", "PublishingSteps", um_press_dir)
@@ -76,14 +75,20 @@ greensub_publish_dir = File.join(options.greensub_dir, "PTG", "PublishingSteps",
                           um_press_dir)
 
 # Determine the Fulcrum monograph directory
-sd_dir = um_press_subdir.nil? ? um_press_dir : File.join(um_press_dir, um_press_subdir)
+monograph_dept_dir = sd_dir = nil
+["Fulcrum_Synced", "Fulcrum_Unsynced"].each do |d|
+  sd_dir = File.join(d, um_press_dir)
+  mdd = File.join(fulcrum_dir, sd_dir)
+  next unless File.directory?(mdd)
 
-monograph_dept_dir = File.join(fulcrum_dir, sd_dir)
-unless File.directory?(monograph_dept_dir)
-  script_logger.fatal("monograph directory #{monograph_dept_dir} does not exist.")
+  monograph_dept_dir = mdd
+  break
+end
+if monograph_dept_dir.nil?
+  script_logger.fatal("no press directory found for #{um_press_dir}.")
   exit 1
 end
-
+script_logger.info("found press directory #{um_press_dir}.")
 
 # Create the task processing directory.
 task_dir = File.join(publish_dir, task_id)
