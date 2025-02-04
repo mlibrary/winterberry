@@ -365,7 +365,21 @@ File.open(cmds_file, "w") do |fp|
     fp.puts "bundle exec ruby script#{File::SEPARATOR}migrate_fmsl -c #{f}"
   end
   fp.puts
+  fp.puts "# Process resources"
+  monograph_info.each do |monograph_id,minfo|
+    monograph_dir = minfo[:monograph_dir]
+    unless monograph_dir.nil?
+      monograph_resources_dir = minfo[:monograph_resources_dir]
+      prefix = monograph_resources_dir.nil? ? "#" : ""
 
+      f = File.join("#{File::SEPARATOR}#{monograph_dir[0]}", monograph_dir[2..-1].gsub(' ', '\ '))
+      fp.puts "#{prefix}bundle exec ruby script#{File::SEPARATOR}monograph_resource_metadata #{f}"
+    end
+  end
+  fp.puts
+  fp.puts "# Review monographs"
+  fp.puts "bundle exec ruby script#{File::SEPARATOR}review_monograph -n -u #{monograph_info.keys.join(' ')}"
+  fp.puts
   fp.puts "# Import resources"
   monograph_has_resources = false
   monograph_info.each do |monograph_id,minfo|
@@ -389,18 +403,6 @@ File.open(cmds_file, "w") do |fp|
         monograph_has_resources = true
       end
       fp.puts "#{prefix}bundle exec script#{File::SEPARATOR}import -m #{noid} -d #{resources_dir}"
-    end
-  end
-  fp.puts
-  fp.puts "# Process resources"
-  monograph_info.each do |monograph_id,minfo|
-    monograph_dir = minfo[:monograph_dir]
-    unless monograph_dir.nil?
-      monograph_resources_dir = minfo[:monograph_resources_dir]
-      prefix = monograph_resources_dir.nil? ? "#" : ""
-
-      f = File.join("#{File::SEPARATOR}#{monograph_dir[0]}", monograph_dir[2..-1].gsub(' ', '\ '))
-      fp.puts "#{prefix}bundle exec ruby script#{File::SEPARATOR}monograph_resource_metadata #{f}"
     end
   end
   fp.puts
@@ -438,13 +440,14 @@ File.open(cmds_file, "w") do |fp|
   fp.puts monograph_info.keys.join(' ')
   fp.puts monograph_info.keys.select {|k| monograph_info[k][:fmsl_file] != nil }.join(' ')
   monograph_info.each do |monograph_id,minfo|
-    mminfo = minfo.delete_if {|key,value| key == :monograph_dir or key == :monograph_resources_dir or key == :fmsl_file}
+    #mminfo = minfo.delete_if {|key,value| key == :monograph_dir or key == :monograph_resources_dir or key == :fmsl_file}
+    mminfo = minfo.select {|key,value| key != :monograph_dir and key != :monograph_resources_dir and key != :fmsl_file}
     fp.puts "#{monograph_id},#{mminfo.values.join(',')}"
   end
   fp.puts
   if monograph_has_resources
     fp.puts "# Resource processing ticket comment"
-    fp.puts "[~jilliand] [~mbakeryo]"
+    fp.puts "[~jilliand] [~mhylton] [~mbakeryo]"
     fp.puts "Resource processed the following titles:"
     monograph_info.each do |monograph_id,minfo|
       monograph_dir = minfo[:monograph_dir]

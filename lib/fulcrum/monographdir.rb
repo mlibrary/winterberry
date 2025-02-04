@@ -3,7 +3,7 @@ module UMPTG::Fulcrum
   require_relative "manifest"
 
   #@@DEFAULT_PUBLISHER_DIR = OS.windows? ? "s:/Information\ Management/Fulcrum" : "/mnt/umptmm"
-  @@DEFAULT_DIR = "s:/Information\ Management/Fulcrum"
+  @@DEFAULT_DIR = "s:/Information\ Management/Fulcrum/Fulcrum_Synced"
   @@DEFAULT_PUBLISHER = "UMP"
 
   class MonographDir < UMPTG::Object
