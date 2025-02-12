@@ -59,14 +59,21 @@ xpath = "//*[local-name()='doi' and (" + ll.join(' or ') + ")]"
 #script_logger.info(xpath)
 
 exclude_isbns = []
+include_isbns = []
 node_list = crossref_doc.xpath(xpath)
 node_list.each do |node|
   resource = node.parent.xpath("./*[local-name()='resource']").first.content
   exclude_isbns << node.parent.parent.xpath("./*[local-name()='isbn']").first.content \
       if resource.start_with?("https://press.umich.edu/")
+  include_isbns << node.parent.parent.xpath("./*[local-name()='isbn']").first.content \
+      if resource.start_with?("https://www.fulcrum.org/")
 end
 script_logger.info("Found #{node_list.count} DOIs, excluding #{exclude_isbns.count}")
 
 exclude_isbns_file = File.join(File.dirname(crossref_file), "exclude_isbns.csv")
 File.write(exclude_isbns_file, "ISBN\n" + exclude_isbns.join("\n"))
 script_logger.info("Save file #{exclude_isbns_file}")
+
+include_isbns_file = File.join(File.dirname(crossref_file), "include_isbns.csv")
+File.write(include_isbns_file, "ISBN\n" + include_isbns.join("\n"))
+script_logger.info("Save file #{include_isbns_file}")

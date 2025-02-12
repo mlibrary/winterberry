@@ -127,6 +127,10 @@ doi_report_file_list.each do |doi_report_file|
           xml_file: doi_report_file,
           encoding: enc.name
         )
+  script_logger.info("errors:#{doi_report_doc.errors.count}")
+  doi_report_doc.errors.each do |e|
+    script_logger.error(e)
+  end
 
   book_node_list = []
   if id_list_csv[:include].nil?

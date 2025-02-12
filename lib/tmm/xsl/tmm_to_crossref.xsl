@@ -18,7 +18,7 @@
     <xsl:param name="UMP_EMAIL" select="'mpub.xref@gmail.com'"/>
     <xsl:param name="UMP_REGISTRANT" select="'MPublishing'"/>
     <xsl:param name="UMP_PUBLISHER_PLACE" select="'Ann Arbor, MI'"/>
-    <xsl:param name="MPS_SERVICES_IMPRINTS" select="'amherst college press;bridwell press;lever press;maize books'"/>
+    <xsl:param name="MPS_SERVICES_IMPRINTS" select="'against the grain, llc;amherst college press;bridwell press;lever press;maize books;westminster'"/>
 
     <xsl:output method="xml" encoding="utf-8" omit-xml-declaration="no" indent="yes"/>
     <xsl:strip-space elements="*"/>
