@@ -123,7 +123,7 @@
                     <xsl:element name="doi" namespace="{$NAMESPACE_URL}">
                         <xsl:choose>
                             <xsl:when test="./doi">
-                                <xsl:value-of select="substring-after(./doi,'https://doi.org/')"/>
+                                <xsl:value-of select="substring-after(./doi,'://doi.org/')"/>
                             </xsl:when>
                             <xsl:otherwise>
                                 <xsl:value-of select="concat('10.3998/mpub.',./workkey)"/>
