@@ -18,7 +18,7 @@
     <xsl:param name="UMP_EMAIL" select="'mpub.xref@gmail.com'"/>
     <xsl:param name="UMP_REGISTRANT" select="'MPublishing'"/>
     <xsl:param name="UMP_PUBLISHER_PLACE" select="'Ann Arbor, MI'"/>
-    <xsl:param name="MPS_SERVICES_IMPRINTS" select="'against the grain, llc;amherst college press;bridwell press;lever press;maize books;westminster'"/>
+    <xsl:param name="MPS_SERVICES_IMPRINTS" select="'a2ru intervals;against the grain, llc;american pancreatic association;amherst college press;bridwell press;disobedience press;faculty reprints;health sciences publishing services;lever press;maize books;michigan publishing services;no imprint;open humanities press;school for environment sustainability;society for cinema and media studies;university of westminster press;'"/>
 
     <xsl:output method="xml" encoding="utf-8" omit-xml-declaration="no" indent="yes"/>
     <xsl:strip-space elements="*"/>
