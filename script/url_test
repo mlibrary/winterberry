@@ -45,12 +45,12 @@ url_list.each do |url|
   url_dest = ''
   unless body.nil? or body.empty?
     body_doc = Nokogiri::XML(body)
+=begin
     node = body_doc.xpath("//*[local-name()='META' and @HTTP-EQUIV='Location']").first
     url_dest = node['Content'] unless node.nil?
-=begin
+=end
     node = body_doc.xpath("//*[local-name()='a']").first
     url_dest = node["href"]
-=end
   end
   script_logger.info("#{url}:#{url_dest}")
 end

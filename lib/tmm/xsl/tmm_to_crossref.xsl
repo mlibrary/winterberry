@@ -12,6 +12,7 @@
     <xsl:param name="BISAC_LIST" select="'temporarily out of stock;on demand;active;not yet published'"/>
     <xsl:param name="EXCLUDE_ISBN" select="''"/>
     <xsl:param name="ENCODING_NAME" select="'utf-8'"/>
+    <xsl:param name="ELOQUENCE_VERIFICATION" select="'true'"/>
     <xsl:param name="UMP_URL_PREFIX" select="'https://press.umich.edu/isbn/'"/>
     <xsl:param name="MPS_URL_PREFIX" select="'https://services.publishing.umich.edu/isbn/'"/>
     <xsl:param name="UMP_DEPOSITOR" select="'scpo'"/>
@@ -74,7 +75,14 @@
                         strip out the "Supporting Graduate Writers" since Fulcrum field
                         fullTextOnFulcrum="N".
                     -->
-                    <xsl:apply-templates select="book[starts-with(eloquenceVerificationStatus,'Passed') and not(contains($EXCLUDE_ISBN_LIST,printISBN))]"/>
+                    <xsl:choose>
+                        <xsl:when test="$ELOQUENCE_VERIFICATION='false'">
+                            <xsl:apply-templates select="book[not(contains($EXCLUDE_ISBN_LIST,printISBN))]"/>
+                        </xsl:when>
+                        <xsl:otherwise>
+                            <xsl:apply-templates select="book[starts-with(eloquenceVerificationStatus,'Passed') and not(contains($EXCLUDE_ISBN_LIST,printISBN))]"/>
+                        </xsl:otherwise>
+                    </xsl:choose>
                 </xsl:element>
             </xsl:element>
         </xsl:if>

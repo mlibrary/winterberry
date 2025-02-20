@@ -24,8 +24,9 @@ options.id_list_files = {
   }
 options.monograph_link = :default
 options.encoding = "windows-1252"
+options.eloquence_verification = true
 option_parser = OptionParser.new do |opts|
-  opts.banner = "Usage: #{File.basename(__FILE__)} [-e isbn_list_file] [-i isbn_list_file] [-l default|fulcrum|ump] doi_report_file"
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-e isbn_list_file] [-i isbn_list_file] [-l default|fulcrum|ump] [-nv] doi_report_file"
   opts.on('-e', '--exclude id_list_file', 'File containing list of ISBNs to exclude') do |id_list_file|
     options.id_list_files[:exclude] = id_list_file
   end
@@ -37,6 +38,9 @@ option_parser = OptionParser.new do |opts|
   end
   opts.on('-n', '--encoding encoding_name', 'Encoding UTF-8|Windows-1252') do |enc|
     options.encoding = enc
+  end
+  opts.on('-nv', '--no_eloquence_verification', 'Eloquence verification not required') do |da|
+    options.eloquence_verification = false
   end
   opts.on_tail('-h', '--help', 'Print this help message') do
     script_logger.info(opts)
@@ -299,7 +303,8 @@ doi_report_file_list.each do |doi_report_file|
       "BATCH_ID" => "'#{batch_id}'",
       "TIMESTAMP" => "'#{timestamp}'",
       "EXCLUDE_ISBN" => "'#{exclude_list.join(';')}'",
-      "ENCODING_NAME" => "'#{enc.name}'"
+      "ENCODING_NAME" => "'#{enc.name}'",
+      "ELOQUENCE_VERIFICATION" => "'#{options.eloquence_verification}'"
     }
 
   UMPTG::XSLT.transform(
