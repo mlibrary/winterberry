@@ -173,7 +173,7 @@ monograph_id_list.each do |monograph_id|
 
   series_id = ""
   case options.press
-  when :aberdeen, :amherst, :aperio, :ebc, :michelt, :leverpress, :maize, :ummaa, :vermont, :westminster
+  when :aberdeen, :amherst, :aperio, :atg, :ebc, :michelt, :leverpress, :maize, :ummaa, :vermont, :westminster
     series_id = monograph_row["doi"]
 
     if series_id.nil?
@@ -275,7 +275,7 @@ else
       end
     end
 
-    unless options.press == :aberdeen or options.press == :vermont or options.press == :westminster
+    unless options.press == :aberdeen or options.press == :atg or options.press == :vermont or options.press == :westminster
       if options.press == :ebc and pub_year <= 2011
         perd = "2011pre"
       elsif options.press == :bar and pub_year < 2020
@@ -299,7 +299,7 @@ else
 
     unless options.press == :michelt or options.press == :amherst \
           or options.press == :aberdeen or options.press == :vermont \
-          or options.press == :westminster
+          or options.press == :westminster or options.press == :atg
       case options.press
       when :bar
         if minfo[:monograph_series][0].downcase == 'b'

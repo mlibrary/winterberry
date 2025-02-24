@@ -4,6 +4,7 @@ module UMPTG
     @@PRESS_DIR = {
             aberdeenunipress: "Aberdeen",
             amherst: "Amherst",
+            atg: "Charleston",
             bar:   "BAR",
             cjs:   "CJS",
             csas:   "CSAS",
