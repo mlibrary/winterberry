@@ -85,7 +85,7 @@ monograph_id_list.each do |monograph_id|
               )
   if manifest.csv.nil?
     script_logger.error("no manifest found for identifier #{identifier}")
-=begin
+#=begin
     field_values = []
     manifest_headers.each do |h|
       if h == "Monograph ID"
@@ -95,7 +95,7 @@ monograph_id_list.each do |monograph_id|
       field_values << ""
     end
     monograph_manifest_rows << field_values
-=end
+#=end
     next
   end
 

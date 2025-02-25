@@ -1,0 +1,110 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Script inputs a list of epubcheck log files and
+# organizes the error messages
+
+require 'optparse'
+require 'ostruct'
+require 'os'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+# Process the script parameters.
+options = OpenStruct.new
+options.normalize = false
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} epubcheck_xml_file [epubcheck_xml_file...]"
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    script_logger.info(opts)
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  script_logger.info(option_parser.help)
+  return
+end
+
+# Process the command line parameters.
+epubcheck_xml_file_list = ARGV
+
+require 'nokogiri'
+
+require_relative File.join(root_dir, "lib", "xml", "pipeline")
+
+class Filter < UMPTG::XML::Pipeline::Filter
+  XPATH = <<-SXPATH
+  //*[
+  local-name()='message'
+  ]
+  SXPATH
+
+  def initialize(args = {})
+    args[:name] = :epubcheck_msgs
+    args[:xpath] = XPATH
+
+    super(args)
+  end
+
+  def create_actions(args = {})
+    name = args[:name]
+    reference_node = args[:reference_node]
+
+    action = UMPTG::XML::Pipeline::Action.new(args)
+
+    id = reference_node["id"]
+    msg = reference_node.text
+    action.add_warning_msg(msg)
+
+    return [ action ]
+  end
+end
+
+processor = UMPTG::XML::Pipeline::Processor.new(
+      name: "EPUBCheck_msgs",
+      filters: {
+            epubcheck_msgs: Filter
+          },
+      options: {
+          epubcheck_msgs: true
+      }
+    )
+
+msg_ids = {}
+epubcheck_xml_file_list.each do |epubcheck_xml_file|
+  unless File.file?(epubcheck_xml_file)
+    script_logger.error("invalid XML file #{epubcheck_xml_file}")
+    next
+  end
+  script_logger.info("processing XML file #{File.basename(epubcheck_xml_file)}")
+
+  xml_doc = Nokogiri::XML(File.read(epubcheck_xml_file))
+  result = processor.run(
+      xml_doc,
+      normalize: true
+    )
+
+  # Report results
+=begin
+  UMPTG::XML::Pipeline::Action.display_messages(
+        actions: result.actions,
+        logger: script_logger
+        )
+=end
+  result.actions.each do |action|
+    id = action.reference_node["id"]
+    msg_ids[id] = [] unless msg_ids.key?(id)
+    msg_ids[id] << action.reference_node.text
+  end
+end
+msg_ids.each do |k,v|
+  script_logger.info("#{k},#{v.count}:#{v.first}")
+  #v.each {|m| script_logger.info(m) }
+end
