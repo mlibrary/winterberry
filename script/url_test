@@ -40,17 +40,35 @@ require 'nokogiri'
 url_list = ARGV
 
 url_list.each do |url|
-  uri = URI(url)
-  body = Net::HTTP.get(uri)
-  url_dest = ''
-  unless body.nil? or body.empty?
-    body_doc = Nokogiri::XML(body)
-=begin
-    node = body_doc.xpath("//*[local-name()='META' and @HTTP-EQUIV='Location']").first
-    url_dest = node['Content'] unless node.nil?
-=end
-    node = body_doc.xpath("//*[local-name()='a']").first
-    url_dest = node["href"]
+  url_file = File.expand_path(url)
+  if File.file?(url_file)
+    url_path_list = File.readlines(url_file).map(&:chomp)
+    logger_file = File.join(File.dirname(url_file), File.basename(url_file, ".*") + "_resolution.txt")
+    out_logger = UMPTG::Logger.create(logger_file: logger_file)
+  else
+    url_path_list = [ url ]
+    out_logger = UMPTG::Logger.create(logger_fp: STDOUT)
   end
-  script_logger.info("#{url}:#{url_dest}")
+  url_path_list.each do |url_path|
+    uri = URI(url_path)
+    begin
+      body = Net::HTTP.get(uri)
+    rescue StandardError => e
+      script_logger.error("#{url_path}: #{e.message}")
+      out_logger.info("#{url_path}:failed")
+      next
+    end
+
+    url_dest = ''
+    unless body.nil? or body.empty?
+      body_doc = Nokogiri::XML(body)
+=begin
+      node = body_doc.xpath("//*[local-name()='META' and @HTTP-EQUIV='Location']").first
+      url_dest = node['Content'] unless node.nil?
+=end
+      node = body_doc.xpath("//*[local-name()='a']").first
+      url_dest = node["href"]
+    end
+    out_logger.info("#{url_path}:#{url_dest}")
+  end
 end

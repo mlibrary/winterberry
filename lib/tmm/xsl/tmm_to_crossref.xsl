@@ -77,7 +77,10 @@
                     -->
                     <xsl:choose>
                         <xsl:when test="$ELOQUENCE_VERIFICATION='false'">
+                            <!--
                             <xsl:apply-templates select="book[not(contains($EXCLUDE_ISBN_LIST,printISBN))]"/>
+                            -->
+                            <xsl:apply-templates select="book[not(contains($EXCLUDE_ISBN_LIST,printISBN)) and (starts-with(resource,'https://www.fulcrum.org/') or starts-with(eloquenceVerificationStatus,'Passed'))]"/>
                         </xsl:when>
                         <xsl:otherwise>
                             <xsl:apply-templates select="book[starts-with(eloquenceVerificationStatus,'Passed') and not(contains($EXCLUDE_ISBN_LIST,printISBN))]"/>
