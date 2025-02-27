@@ -418,9 +418,7 @@ File.open(cmds_file, "w") do |fp|
     f.puts monograph_info.keys.join("\n")
   end
   tocrossref_dir = File.join(fulcrum_dir, "TMMDataTransfer", "ToCrossref")
-  tocrossref_pattern = um_press_dir.downcase == "mps" ? \
-          File.join(tocrossref_dir, "*_MPS.xml") : \
-          File.join(tocrossref_dir, "*_UMPRE.xml")
+  tocrossref_pattern = File.join(tocrossref_dir, "*_MPS_UMPRE.xml")
   src_tocrossref_file = Dir.glob(tocrossref_pattern).last
   dest_tocrossref_file = File.join(task_dir, File.basename(src_tocrossref_file))
   fp.puts "bundle exec ruby script#{File::SEPARATOR}crossref_generate -l fulcrum -i #{includes_file.gsub(' ', '\ ')} #{dest_tocrossref_file.gsub(' ', '\ ')}"

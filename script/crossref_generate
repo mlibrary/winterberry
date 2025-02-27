@@ -23,8 +23,8 @@ options.id_list_files = {
     include: nil
   }
 options.monograph_link = :default
-options.encoding = "windows-1252"
-options.eloquence_verification = true
+options.encoding = "UTF-8"
+options.eloquence_verification = false
 option_parser = OptionParser.new do |opts|
   opts.banner = "Usage: #{File.basename(__FILE__)} [-n UTF-8|Windows-1252] [-e isbn_list_file] [-i isbn_list_file] [-l default|fulcrum|ump] [-v] doi_report_file"
   opts.on('-e', '--exclude id_list_file', 'File containing list of ISBNs to exclude') do |id_list_file|
@@ -39,8 +39,8 @@ option_parser = OptionParser.new do |opts|
   opts.on('-n', '--encoding encoding_name', 'Encoding UTF-8|Windows-1252') do |enc|
     options.encoding = enc
   end
-  opts.on('-v', '--no_eloquence_verification', 'Eloquence verification not required') do |da|
-    options.eloquence_verification = false
+  opts.on('-v', '--eloquence_verification', 'Eloquence verification required') do |da|
+    options.eloquence_verification = true
   end
   opts.on_tail('-h', '--help', 'Print this help message') do
     script_logger.info(opts)
@@ -76,7 +76,6 @@ require 'csv'
 require_relative File.join(root_dir, "lib", "fulcrum")
 require_relative File.join(root_dir, 'lib', 'xslt')
 
-ENCODING_WINDOWS_1252 = Encoding::find("Windows-1252")
 XML_PI = "<?xml version=\"1.0\" encoding=\"#{enc.name}\"?>"
 
 # If monograph ID include or exclude files were provided,
