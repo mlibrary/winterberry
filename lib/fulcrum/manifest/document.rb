@@ -59,6 +59,11 @@ module UMPTG::Fulcrum::Manifest
 
         raise "found #{csv_body[@properties[:monograph_id]].count} manifests for identifier #{@properties[:monograph_id]}" \
             unless csv_body.nil? or csv_body[@properties[:monograph_id]].count < 2
+=begin
+        unless csv_body.nil? or csv_body[@properties[:monograph_id]].count < 2
+          csv_body[@properties[:monograph_id]] = [csv_body[@properties[:monograph_id]].first]
+        end
+=end
       else
         # No content specified
         csv_body = nil
