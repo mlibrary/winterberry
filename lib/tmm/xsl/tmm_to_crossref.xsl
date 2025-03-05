@@ -106,6 +106,9 @@
                         <xsl:apply-templates select="./*[local-name()='titleprefixandtitle' or local-name()='subtitle']"/>
                     </xsl:element>
                 </xsl:if>
+                <!--
+                <xsl:apply-templates select="./bookkey"/>
+                -->
                 <xsl:apply-templates select="./pubyear"/>
                 <!--
                 <xsl:apply-templates select="./printISBN|./eISBN"/>
@@ -236,6 +239,12 @@
             <xsl:element name="year" namespace="{$NAMESPACE_URL}">
                 <xsl:value-of select="text()"/>
             </xsl:element>
+        </xsl:element>
+    </xsl:template>
+
+    <xsl:template match="bookkey">
+        <xsl:element name="edition_number" namespace="{$NAMESPACE_URL}">
+            <xsl:value-of select="text()"/>
         </xsl:element>
     </xsl:template>
 
