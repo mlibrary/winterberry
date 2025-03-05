@@ -7,6 +7,7 @@ module UMPTG::XML::Pipeline
   require_relative(File.join("actions", "removeattributeaction"))
   require_relative(File.join("actions", "removeelementaction"))
   require_relative(File.join("actions", "removenamespaceaction"))
+  require_relative(File.join("actions", "renameelementaction"))
   require_relative(File.join("actions", "setattributevalueaction"))
   require_relative(File.join("actions", "stripattributevalueaction"))
   require_relative(File.join("actions", "tablemarkupaction"))
