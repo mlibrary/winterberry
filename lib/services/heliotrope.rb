@@ -61,6 +61,7 @@ module UMPTG::Services
 
         # Try each type until success
         ["isbn", "identifier", "doi"].each do |t|
+        ["isbn", "doi", "identifier"].each do |t|
           case
           when t == "doi", identifier.start_with?(@@DOI_PREFIX)
             id = identifier.delete_prefix(@@DOI_PREFIX)
