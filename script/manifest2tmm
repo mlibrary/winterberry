@@ -1,0 +1,155 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# This script inputs one or more Fulcrum monograph manifest and generates
+# a TMM XML file.
+#
+# Invoke this script without any parameters to display the usage.
+
+require 'optparse'
+require 'ostruct'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+# Process the script parameters.
+options = OpenStruct.new
+options.output_file = File.join(root_dir, File.basename(__FILE__, ".*") + ".xml")
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-o <output_dir>] <manifest_file> [<manifest_file>..]"
+  opts.on('-o', '--output_file <output_file>', 'Output file path') do |output_file|
+    options.output_file = output_file
+  end
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    script_logger.info(opts)
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  script_logger.info(option_parser.help)
+  exit 0
+end
+
+# Rest of the parameters is a list of manifest files.
+manifest_file_list = ARGV
+
+output_file = File.expand_path(options.output_file)
+
+require_relative File.join(root_dir, 'lib', 'fulcrum')
+
+PUBLISHERS = {
+      "michigan" => "University of Michigan Press"
+    }
+
+tmm_doc = Nokogiri::XML("<?xml version=\"1.0\" encoding=\"utf-8\"?>" + "\n<root></root>")
+
+manifest_file_list.each do |manifest_file|
+  manifest_file = File.expand_path(manifest_file)
+  unless File.file?(manifest_file)
+    script_logger.error("invalid manifest file #{manifest_file}")
+    next
+  end
+  script_logger.info("*** #{File.basename(manifest_file)} **")
+  STDOUT.flush
+
+  manifest = UMPTG::Fulcrum::Manifest::Document.new(
+                csv_file: manifest_file
+              )
+  if manifest.csv.nil?
+    script_logger.error("no manifest found for identifier #{identifier}")
+    next
+  end
+
+  book_doc = Nokogiri::XML::DocumentFragment.parse("<book></>")
+
+  # bookkey use the NOID
+  book_doc.first_element_child.add_child("<bookkey>#{manifest.noid}</>")
+
+  # Creator(s), need to parse text, assume lastname, firstname middle (role)
+  creator_list = manifest.monograph_row["creator(s)"]
+  #script_logger.info(creator_list)
+  ndx = 0
+  creator_list.split(';').each do |creator|
+    creator = creator.strip
+    creator.match(/^([^,]+)[ ]*,[ ]*([^\(]+)[ ]*[\(]?([^\)]*)[\)]?/) do |md|
+      ndx += 1
+      role = (md.length < 4 or md[3].strip.empty?) ? "Author" : md[3].strip
+      book_doc.first_element_child.add_child("<authortype#{ndx}>#{role}</>")
+      book_doc.first_element_child.add_child("<authorlastname#{ndx}>#{md[1].strip}</>") \
+            unless md.length < 2 or md[1].strip.empty?
+      book_doc.first_element_child.add_child("<authorfirstname#{ndx}>#{md[2].strip}</>") \
+            unless md.length < 3 or md[2].strip.empty?
+    end
+  end
+
+  # Title, look for colon to split title
+  full_title = manifest.monograph_row['title']
+  #script_logger.info(full_title)
+  unless full_title.empty?
+    ft = full_title.split(':')
+    book_doc.first_element_child.add_child("<titleprefixandtitle>#{ft[0].strip}</>")
+    book_doc.first_element_child.add_child("<subtitle>#{ft[1].strip}</>") if ft.count > 1
+  end
+
+  # Pubyear
+  pubyear = manifest.monograph_row['pub_year']
+  #script_logger.info(pubyear)
+  book_doc.first_element_child.add_child("<pubyear>#{pubyear.strip}</>") \
+      unless pubyear.nil? or pubyear.strip.empty?
+
+  # ISBN(s), want print ISBN and print format
+  #script_logger.info("#{manifest.monograph_row['isbn(s)']}")
+  format = 'hardcover' if manifest.isbn.key?('hardcover')
+  format = 'paper' if format.nil? and manifest.isbn.key?('paper')
+  if format.nil?
+    format = 'All Ebooks (OA)'
+    isbn = manifest.isbn['open access']
+    isbn = "" if isbn.nil?
+  else
+    f = format
+    isbn = manifest.isbn[format]
+  end
+  book_doc.first_element_child.add_child("<format>#{format}</>")
+  book_doc.first_element_child.add_child("<printISBN>#{isbn.gsub(/-/, "")}</>")
+
+  # Press
+  press = manifest.monograph_row['press']
+  #script_logger.info(press)
+  press = PUBLISHERS[press] if PUBLISHERS.key?(press)
+  book_doc.first_element_child.add_child("<groupentry3>#{press}</>")
+
+  # Resource, Fulcrum link
+  link = manifest.monograph_row['link'][12..-3]
+  #script_logger.info(link)
+  book_doc.first_element_child.add_child("<resource>#{link}</>")
+
+  # DOI
+  doi = manifest.monograph_row['doi']
+  #script_logger.info(doi)
+  book_doc.first_element_child.add_child("<doi>#{doi}</>")
+
+  # Primary BISAC
+  is_published = manifest.monograph_row['published?']
+  #script_logger.info(is_published)
+  status = is_published ? "Active" : "Not Yet Published"
+  book_doc.first_element_child.add_child("<primaryBISAC>#{status}</>")
+
+  # Full Text on Fulcrum, always Y
+  book_doc.first_element_child.add_child("<fullTextOnFulcrum>Y</>")
+
+  # Eloquence verification, always Passed
+  book_doc.first_element_child.add_child("<eloquenceVerificationStatus>Passed</>")
+
+  tmm_doc.root.add_child(book_doc)
+end
+
+# Write TMM file.
+#script_logger.info(tmm_doc.to_xml)
+UMPTG::XML.save(tmm_doc, output_file)
+script_logger.info("saved XML file #{output_file}")

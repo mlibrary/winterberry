@@ -60,7 +60,7 @@ module UMPTG::Services
         id2noid_list[identifier] = []
 
         # Try each type until success
-        ["isbn", "identifier", "doi"].each do |t|
+        #["isbn", "identifier", "doi"].each do |t|
         ["isbn", "doi", "identifier"].each do |t|
           case
           when t == "doi", identifier.start_with?(@@DOI_PREFIX)
