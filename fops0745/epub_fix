@@ -66,9 +66,11 @@ epub_file_list.each do |epub_file|
 
   epub = UMPTG::EPUB(epub_file: epub_file)
 
-  epub_version = epub.version
-  epub_version = epub_version.nil? ? "" : epub_version
-  script_logger.info("version: #{epub_version}")
+  epub_version = epub.version || ""
+  epub_identifier = epub.metadata['identifier'] || ""
+  #puts epub.metadata
+  script_logger.info("version: #{epub_version}, identifier: #{epub_identifier}")
+
   STDOUT.flush
 =begin
   if epub_version.start_with?("3.")
@@ -96,38 +98,23 @@ epub_file_list.each do |epub_file|
       )
 
   if options.normalize
-=begin
-    unless epub.navigation.count > 0
-      # Generate XHTML navigation file
+    unless epub_identifier.empty? or epub.navigation.count == 0
       ncx_doc = Nokogiri::XML::Document.parse(epub.ncx.first.content)
-      toc_doc = UMPTG::EPUB::Migrator.ncx_to_xhtml(ncx_doc)
+      ncx_head_node = ncx_doc.xpath("/*[local-name()='ncx']/*[local-name()='head']").first
+      unless ncx_head_node.nil?
+        dtb_uid_node = ncx_head_node.xpath("./*[local-name()='meta' and @name='dtb:uid']").first
+        if dtb_uid_node.nil?
+          ncx_head_node.add_child("<meta name=\"dtb:uid\" content=\"#{epub_identifier}\"/>")
+        else
+          dtb_uid_node['content'] = epub_identifier
+        end
 
-      ncx_name = epub.ncx.last.name
-      toc_name = File.join(File.dirname(ncx_name), File.basename(ncx_name, ".*") + "_navigation.xhtml")
-      epub.add(
-            entry_name: toc_name,
-            entry_content: UMPTG::XML.doc_to_xml(toc_doc),
-            media_type: "application/xhtml+xml",
-            properties: "nav"
-          )
-    end
-
-    # Update file name extensions
-    xhtml_entries.each do |entry|
-      next if entry.nil?
-
-      nme = entry.name
-      new_name = UMPTG::EPUB::Migrator.fix_ext(entry.name)
-      unless nme == new_name
-        epub.remove(entry_name: nme)
         epub.add(
-            entry_name: new_name,
-            entry_content: entry.content
-          )
-        epub_processor.logger.info("renamed entry #{nme} to #{new_name}")
+              entry_name: epub.ncx.first.name,
+              entry_content: UMPTG::XML.doc_to_xml(ncx_doc)
+            )
       end
     end
-=end
   end
 
   if epub.modified

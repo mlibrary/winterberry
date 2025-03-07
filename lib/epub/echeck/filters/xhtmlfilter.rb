@@ -80,11 +80,19 @@ module UMPTG::EPUB::ECheck::Filter
 
       case
       when (["meta"].include?(reference_node.name) \
-            or ["doc-biblioentry", "doc-cover", "doc-endnote", "doc-endnotes"].include?(role))
+            or ["doc-biblioentry", "doc-cover", "doc-endnote", "doc-endnotes", "doc-footnote"].include?(role))
         actions << UMPTG::XML::Pipeline::Actions::RemoveAttributeAction.new(
                   name: name,
                   reference_node: reference_node,
                   attribute_name: "role",
+                  warning_message: "#{name}, found #{reference_node.name}/@role=\"#{role}\"."
+                )
+      when ["noteref"].include?(role)
+        actions << UMPTG::XML::Pipeline::Actions::SetAttributeValueAction.new(
+                  name: name,
+                  reference_node: reference_node,
+                  attribute_name: "role",
+                  attribute_value: "doc-" + role,
                   warning_message: "#{name}, found #{reference_node.name}/@role=\"#{role}\"."
                 )
       end

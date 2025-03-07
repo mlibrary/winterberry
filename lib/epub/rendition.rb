@@ -43,6 +43,15 @@ module UMPTG::EPUB
       return ver
     end
 
+    def identifier()
+      if ver.nil? or ver.empty?
+        ver = @opf_doc.root['version']
+      else
+        @opf_doc.root['version'] = ver
+      end
+      return ver
+    end
+
     def metadata
       meta = {}
       @opf_doc.root.xpath("./*[local-name()='metadata']/*").each {|n| meta[n.name]= n.content }
