@@ -69,6 +69,7 @@ epub_file_list.each do |epub_file|
   epub_version = epub.version
   epub_version = epub_version.nil? ? "" : epub_version
   script_logger.info("version: #{epub_version}")
+  STDOUT.flush
 =begin
   if epub_version.start_with?("3.")
     script_logger.info("EPUB 3.x compliant. Skipping")
