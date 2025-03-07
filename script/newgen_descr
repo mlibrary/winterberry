@@ -1,0 +1,62 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Script to extract ISBN,DESCRIPTION from ONIX file.
+
+require 'optparse'
+require 'ostruct'
+require 'os'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+# Process the script parameters.
+options = OpenStruct.new
+options.normalize = false
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-n] xml_file [xml_file...]"
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    script_logger.info(opts)
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  script_logger.info(option_parser.help)
+  return
+end
+
+# Process the command line parameters.
+xml_file_list = ARGV
+
+require 'nokogiri'
+
+require_relative File.join(root_dir, "lib", "xml", "util")
+
+xml_file_list.each do |xml_file|
+  unless File.file?(xml_file)
+    script_logger.error("invalid XML file #{xml_file}")
+    exit 1
+  end
+  script_logger.info("processing XML file #{File.basename(xml_file)}")
+
+  xml_doc = Nokogiri::XML(File.read(xml_file))
+
+  csv_file = File.join(File.dirname(xml_file), File.basename(xml_file, ".*") + ".csv")
+  File.open(csv_file, "w") do |fp|
+    xml_doc.xpath("//*[local-name()='Product']").each do |product|
+      isbn_node = product.xpath("./*[local-name()='ProductIdentifier'][1]/*[local-name()='ProductIDType' and text()='03']/../*[local-name()='IDValue']").first
+      isbn = isbn_node.nil? ? "" : isbn_node.content
+      descr_node = product.xpath(".//*[local-name()='TextContent' and *[local-name()='TextType' and text()='03'] and *[local-name()='ContentAudience' and text()='00']]/*[local-name()='Text' and @textformat='02']").first
+      descr = descr_node.nil? ? "" : descr_node.content
+      descr = descr.gsub(/"/,"\"\"")
+      fp.puts("#{isbn},\"#{descr}\"\n")
+    end
+  end
+  script_logger.info("Saved CSV file #{csv_file}")
+end
