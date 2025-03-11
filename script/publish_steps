@@ -64,7 +64,7 @@ end
 um_press_dir = UMPTG::Press.press_dir(options.press)
 
 # Determine publishing directory
-publish_dir = File.join(fulcrum_dir, "PTG", "PublishingSteps", um_press_dir)
+publish_dir = File.join("c:/Users/tbelc/Documents/Fulcrum", "PTG", "PublishingSteps", um_press_dir)
 unless File.directory?(publish_dir)
   script_logger.fatal("processing directory #{publish_dir} does not exist.")
   exit 1
@@ -115,7 +115,8 @@ monograph_id_list.each do |monograph_id|
     script_logger.warn("monograph directory using id #{monograph_id} not found.")
     monograph_dir = nil
   else
-    monograph_dir = monograph_dir_list[0]
+    #monograph_dir = monograph_dir_list[0]
+    monograph_dir = monograph_dir_list.last
     script_logger.warn("Multiple monograph directories found for id #{monograph_id}. Using #{monograph_dir}") \
           if monograph_dir_list.count > 1
     script_logger.info("Using monograph directory #{monograph_dir}") if monograph_dir_list.count == 1
