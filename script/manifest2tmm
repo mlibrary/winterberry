@@ -21,7 +21,7 @@ script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
 options = OpenStruct.new
 options.output_file = File.join(root_dir, File.basename(__FILE__, ".*") + ".xml")
 option_parser = OptionParser.new do |opts|
-  opts.banner = "Usage: #{File.basename(__FILE__)} [-o <output_dir>] <manifest_file> [<manifest_file>..]"
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-o <output_file>] <manifest_file> [<manifest_file>..]"
   opts.on('-o', '--output_file <output_file>', 'Output file path') do |output_file|
     options.output_file = output_file
   end
