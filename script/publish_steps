@@ -64,14 +64,16 @@ end
 um_press_dir = UMPTG::Press.press_dir(options.press)
 
 # Determine publishing directory
-publish_dir = File.join("c:/Users/tbelc/Documents/Fulcrum", "PTG", "PublishingSteps", um_press_dir)
+#ptg_dir = "PTG"
+ptg_dir = "PTGtemp"
+publish_dir = File.join(fulcrum_dir, ptg_dir, "PublishingSteps", um_press_dir)
 unless File.directory?(publish_dir)
   script_logger.fatal("processing directory #{publish_dir} does not exist.")
   exit 1
 end
-application_publish_dir = File.join(options.application_dir, "PTG", "PublishingSteps", \
+application_publish_dir = File.join(options.application_dir, ptg_dir, "PublishingSteps", \
                           um_press_dir)
-greensub_publish_dir = File.join(options.greensub_dir, "PTG", "PublishingSteps", \
+greensub_publish_dir = File.join(options.greensub_dir, ptg_dir, "PublishingSteps", \
                           um_press_dir)
 
 # Determine the Fulcrum monograph directory
@@ -174,7 +176,7 @@ monograph_id_list.each do |monograph_id|
 
   series_id = ""
   case options.press
-  when :aberdeen, :amherst, :aperio, :atg, :ebc, :michelt, :leverpress, :maize, :ummaa, :vermont, :westminster
+  when :aberdeen, :amherst, :aperio, :atg, :ebc, :michelt, :leverpress, :livedplaces, :maize, :ummaa, :vermont, :westminster
     series_id = monograph_row["doi"]
 
     if series_id.nil?
@@ -265,7 +267,7 @@ else
 
     product = ""
     case options.press
-    when :aberdeen, :amherst, :michelt, :ummaa, :vermont, :westminster
+    when :aberdeen, :amherst, :livedplaces, :michelt, :ummaa, :vermont, :westminster
       product = options.press.to_s
     end
     unless product.strip.empty?
@@ -276,7 +278,7 @@ else
       end
     end
 
-    unless options.press == :aberdeen or options.press == :atg or options.press == :vermont or options.press == :westminster
+    unless options.press == :aberdeen or options.press == :atg or options.press == :livedplaces or options.press == :vermont or options.press == :westminster
       if options.press == :ebc and pub_year <= 2011
         perd = "2011pre"
       elsif options.press == :bar and pub_year < 2020
@@ -300,7 +302,8 @@ else
 
     unless options.press == :michelt or options.press == :amherst \
           or options.press == :aberdeen or options.press == :vermont \
-          or options.press == :westminster or options.press == :atg
+          or options.press == :westminster or options.press == :atg \
+          or options.press == :livedplaces
       case options.press
       when :bar
         if minfo[:monograph_series][0].downcase == 'b'
@@ -495,7 +498,7 @@ File.open(cmds_file, "w") do |fp|
   fp.puts "find /mnt/umptmm/<monograph_dir>/ -maxdepth 1 -mindepth 1 -type d -print0 | sort -zn | xargs -0 -I '{}' echo bundle exec script/import -d '{}' -p <heb|michigan|um-pccn> -v private -q"
   fp.puts
   fp.puts "# Replace resources"
-  fp.puts "bundle exec rake \"heliotrope:replace_files[#{File.join(options.application_dir, "PTG", "replace_files")}, noid]\""
+  fp.puts "bundle exec rake \"heliotrope:replace_files[#{File.join(options.application_dir, ptg_dir, "replace_files")}, noid]\""
   fp.puts
   fp.puts "# Retrieve NOIDs"
   fp.puts "bundle exec rake \"heliotrope:qc_csv_heb[2018-06-08T00:00:00-04:00]\""
