@@ -50,6 +50,9 @@ url_list.each do |url|
     out_logger = UMPTG::Logger.create(logger_fp: STDOUT)
   end
   url_path_list.each do |url_path|
+    script_logger.info(url_path)
+    STDOUT.flush
+
     uri = URI(url_path)
     begin
       body = Net::HTTP.get(uri)
