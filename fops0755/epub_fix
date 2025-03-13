@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
-# FOPS-745 Migrate EPUB 3.x to pass EPUBCheck v5.2.1.
+# FOPS-755 add accessibility metadata to one or more EPUBs.
 
 require 'optparse'
 require 'ostruct'

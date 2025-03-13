@@ -1,0 +1,91 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# FOPS-755 update UMP shared folder with one or more EPUBs.
+
+require 'optparse'
+require 'ostruct'
+require 'os'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+# Process the script parameters.
+options = OpenStruct.new
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-n] epub_file [epub_file...]"
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    script_logger.info(opts)
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  script_logger.info(option_parser.help)
+  return
+end
+
+# Process the command line parameters.
+epub_file_list = ARGV
+
+UMP_FOLDER = "s:/Information\ Management/Fulcrum/Fulcrum_Synced/UMP"
+#UMP_FOLDER = "s:/Information\ Management/Fulcrum/PTGtemp/tickets/FOPS-0755/test/UMP"
+
+require 'fileutils'
+
+epub_file_list.each do |epub_file|
+  unless File.file?(epub_file)
+    script_logger.error("invalid EPUB file #{epub_file}")
+    exit 1
+  end
+  script_logger.info("processing EPUB file #{File.basename(epub_file)}")
+  STDOUT.flush
+
+  # Search for the EPUB in the UMP shared folder
+  ump_epub_list = Dir.glob(File.join(UMP_FOLDER, "*", File.basename(epub_file)))
+  if ump_epub_list.empty?
+    script_logger.error("UMP EPUB not found for #{File.basename(epub_file)}")
+    next
+  end
+  ump_epub = ump_epub_list.first
+  script_logger.info("Using UMP EPUB #{ump_epub} for #{File.basename(epub_file)}") \
+      if ump_epub_list.count == 1
+  script_logger.warn("Multiple UMP EPUBs found. Using #{ump_epub} for #{File.basename(epub_file)}") \
+      if ump_epub_list.count > 1
+  ump_dir = File.dirname(ump_epub)
+
+  # Determine the number of archived versions.
+  archive_dir = File.join(ump_dir, "archive")
+  FileUtils.mkdir_p(archive_dir) unless File.directory?(archive_dir)
+  pth = File.join(archive_dir, File.basename(epub_file, ".*") + "*" + File.extname(epub_file))
+  archive_epub_list = Dir.glob(pth)
+  ver_num = archive_epub_list.count + 1
+
+  # Archive current EPUB.
+  archive_epub = File.join(archive_dir, File.basename(epub_file, ".*") + "_version#{ver_num}" + File.extname(epub_file))
+  FileUtils.cp(ump_epub, archive_epub)
+  script_logger.info("UMP EPUB #{ump_epub} archived #{File.basename(archive_epub)}.")
+
+  # Update EPUB in the UMP folder.
+  FileUtils.cp(epub_file, ump_epub)
+  script_logger.info("UMP EPUB #{ump_epub} updated.")
+
+=begin
+  # Find UMP shared folder
+  dir_list = Dir.glob(File.join(UMP_FOLDER, File.basename(epub_file, ".*") + "*"))
+  if dir_list.empty?
+    script_logger.error("UMP folder not found for #{File.basename(epub_file)}")
+    next
+  end
+  ump_dir = dir_list.first
+  script_logger.info("Using UMP folder #{ump_dir} for #{File.basename(epub_file)}") \
+      if dir_list.count == 1
+  script_logger.warn("Multiple UMP folders found. Using #{ump_dir} for #{File.basename(epub_file)}") \
+      if dir_list.count > 1
+=end
+end
