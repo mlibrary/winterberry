@@ -67,8 +67,7 @@ epub_file_list.each do |epub_file|
   epub = UMPTG::EPUB(epub_file: epub_file)
 
   epub_version = epub.version || ""
-  epub_identifier = epub.metadata['identifier'] || ""
-  #puts epub.metadata
+  epub_identifier = epub.identifiers['pub-id'] || ""
   script_logger.info("version: #{epub_version}, identifier: #{epub_identifier}")
 
   STDOUT.flush

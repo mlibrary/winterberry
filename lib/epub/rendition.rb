@@ -43,13 +43,11 @@ module UMPTG::EPUB
       return ver
     end
 
-    def identifier()
-      if ver.nil? or ver.empty?
-        ver = @opf_doc.root['version']
-      else
-        @opf_doc.root['version'] = ver
-      end
-      return ver
+    def identifiers()
+      ident_list = @opf_doc.root.xpath("./*[local-name()='metadata']/*[name()='dc:identifier']")
+      identifiers = {}
+      ident_list.each {|n| identifiers[n['id']] = n.content.nil? ? "" : n.content.strip }
+      return identifiers
     end
 
     def metadata

@@ -80,7 +80,7 @@ module UMPTG::EPUB::ECheck::Filter
 
       case
       when (["meta"].include?(reference_node.name) \
-            or ["doc-biblioentry", "doc-cover", "doc-endnote", "doc-endnotes", "doc-footnote"].include?(role))
+            or ["doc-biblioentry", "doc-cover", "doc-endnote", "doc-endnotes", "doc-footnote", "doc-halftitle"].include?(role))
         actions << UMPTG::XML::Pipeline::Actions::RemoveAttributeAction.new(
                   name: name,
                   reference_node: reference_node,
