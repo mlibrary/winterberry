@@ -247,6 +247,11 @@ module UMPTG::EPUB
       return rend.version
     end
 
+    def identifiers(args = {})
+      label, rend = rendition(args)
+      return rend.identifiers
+    end
+
     def opf(args = {})
       label, rend = rendition(args)
       return @name2entry[label]

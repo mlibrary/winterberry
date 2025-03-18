@@ -43,6 +43,13 @@ module UMPTG::EPUB
       return ver
     end
 
+    def identifiers()
+      ident_list = @opf_doc.root.xpath("./*[local-name()='metadata']/*[name()='dc:identifier']")
+      identifiers = {}
+      ident_list.each {|n| identifiers[n['id']] = n.content.nil? ? "" : n.content.strip }
+      return identifiers
+    end
+
     def metadata
       meta = {}
       @opf_doc.root.xpath("./*[local-name()='metadata']/*").each {|n| meta[n.name]= n.content }
