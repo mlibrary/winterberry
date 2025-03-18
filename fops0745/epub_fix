@@ -112,6 +112,8 @@ epub_file_list.each do |epub_file|
               entry_name: epub.ncx.first.name,
               entry_content: UMPTG::XML.doc_to_xml(ncx_doc)
             )
+        epub_processor.logger.info("Updated identifier #{epub_identifier}")
+        script_logger.info("Updated identifier #{epub_identifier}")
       end
     end
   end
