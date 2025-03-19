@@ -72,6 +72,6 @@ url_list.each do |url|
       node = body_doc.xpath("//*[local-name()='a']").first
       url_dest = node["href"]
     end
-    out_logger.info("#{url_path}:#{url_dest}")
+    out_logger.info("#{url_path},#{url_dest}")
   end
 end
