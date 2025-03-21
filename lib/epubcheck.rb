@@ -75,7 +75,7 @@ module UMPTG
     end
 
     def self.versions_default(args = {})
-      return VERSIONS.first
+      return VERSIONS.last
     end
   end
 end

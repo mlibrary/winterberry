@@ -64,8 +64,7 @@ end
 um_press_dir = UMPTG::Press.press_dir(options.press)
 
 # Determine publishing directory
-#ptg_dir = "PTG"
-ptg_dir = "PTGtemp"
+ptg_dir = "PTG"
 publish_dir = File.join(fulcrum_dir, ptg_dir, "PublishingSteps", um_press_dir)
 unless File.directory?(publish_dir)
   script_logger.fatal("processing directory #{publish_dir} does not exist.")
