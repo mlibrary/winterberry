@@ -79,6 +79,18 @@ THTML
       end
       return toc_doc
     end
+
+    def update_ncx_identifier(ncx_doc, epub_identifier)
+      ncx_head_node = ncx_doc.xpath("/*[local-name()='ncx']/*[local-name()='head']").first
+      unless ncx_head_node.nil?
+        dtb_uid_node = ncx_head_node.xpath("./*[local-name()='meta' and @name='dtb:uid']").first
+        if dtb_uid_node.nil?
+          ncx_head_node.add_child("<meta name=\"dtb:uid\" content=\"#{epub_identifier}\"/>")
+        else
+          dtb_uid_node['content'] = epub_identifier
+        end
+      end
+    end
   end
 
   class Processor < UMPTG::XML::Pipeline::Processor

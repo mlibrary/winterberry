@@ -313,10 +313,16 @@ module UMPTG::EPUB
     end
 
     def xhtml(args = {})
+      xhtml_list = []
+      renditions.each do |rend|
+        xhtml_list += rend.xhtml_items.collect {|item| entry(File.join(File.dirname(rend.name), item['href'])) }
+      end
+=begin
       label, rend = rendition(args)
       xhtml_list = rend.xhtml_items.collect do |item|
         entry(File.join(File.dirname(label), item['href']))
       end
+=end
       return xhtml_list
     end
 

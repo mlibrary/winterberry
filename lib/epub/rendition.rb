@@ -73,7 +73,8 @@ module UMPTG::EPUB
     end
 
     def xhtml_items
-      return find_media_type('application/xhtml+xml')
+      return find_media_type('application/xhtml+xml') \
+          + find_media_type('application/oebps-page-map+xml')
     end
 
     def nav_items

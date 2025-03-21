@@ -105,8 +105,20 @@ epub_file_list.each do |epub_file|
   if options.normalize
 
     unless epub.navigation.count > 0
-      # Generate XHTML navigation file
       ncx_doc = Nokogiri::XML::Document.parse(epub.ncx.first.content)
+
+      # Update the NCX identifier to match the OPF identifier
+      epub_identifier = epub.identifiers.first.last || ""
+      unless epub_identifier.empty?
+        UMPTG::EPUB::Migrator.update_ncx_identifier(ncx_doc, epub_identifier)
+        epub.add(
+              entry_name: epub.ncx.first.name,
+              entry_content: UMPTG::XML.doc_to_xml(ncx_doc)
+            )
+        epub_processor.logger.info("Updated identifier to \"#{epub_identifier}\"")
+      end
+
+      # Generate XHTML navigation file
       toc_doc = UMPTG::EPUB::Migrator.ncx_to_xhtml(ncx_doc)
 
       ncx_name = epub.ncx.last.name

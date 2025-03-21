@@ -23,7 +23,6 @@ module UMPTG::XML::Pipeline
       a = args.clone()
       actions = []
       @selector.references(xml_doc).each do |n|
-        a = args.clone()
         a[:reference_node] = n
         act_list = create_actions(a)
         actions += act_list
