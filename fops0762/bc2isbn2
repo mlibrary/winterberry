@@ -1,0 +1,116 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# FOPS-762
+# Script inputs a spreadsheet containing a mapping of
+# bar codes to isbn.
+#
+
+require 'optparse'
+require 'ostruct'
+require 'os'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+# Process the script parameters.
+options = OpenStruct.new
+options.file_dir_list = [
+      "s:/Information\ Management/Fulcrum/PTG/tickets/FOPS-0105/ocr/ocr_completed"
+      #"s:/Information\ Management/Fulcrum/PTG/tickets/FOPS-0762/test"
+    ]
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} metadata_file bar_code [bar_code...]"
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    script_logger.info(opts)
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  script_logger.info(option_parser.help)
+  return
+end
+
+# Process the command line parameters.
+metadata_file = ARGV[0]
+bar_code_list = ARGV[1..-1]
+
+require_relative File.join(root_dir, "lib", "csvfile")
+
+metadata_file = File.expand_path(metadata_file)
+unless File.file?(metadata_file)
+  script_logger.error("invalid metadata file path #{metadata_file}.")
+  exit(1)
+end
+script_logger.info("*** processing #{File.basename(metadata_file)} ***")
+STDOUT.flush
+
+metadata_csv = UMPTG::CSVFile.read(csv_path: metadata_file)
+
+ISBNS_TMM = [
+'9780472050536', '9780472061761', '9780472063093', '9780472063161',
+'9780472063321', '9780472064335', '9780472064496', '9780472064502',
+'9780472064557', '9780472064625', '9780472064649', '9780472064786',
+'9780472064816', '9780472065141', '9780472065172', '9780472065318',
+'9780472065561', '9780472065905', '9780472065929', '9780472066261',
+'9780472066414', '9780472066773', '9780472066827', '9780472066988',
+'9780472067688', '9780472067831', '9780472070534', '9780472080861',
+'9780472081059', '9780472084166', '9780472085385', '9780472085606',
+'9780472085989', '9780472087556', '9780472089451', '9780472093670',
+'9780472094332', '9780472094349', '9780472094493', '9780472094509',
+'9780472094554', '9780472094622', '9780472094646', '9780472094783',
+'9780472094813', '9780472095148', '9780472095179', '9780472095315',
+'9780472095568', '9780472095926', '9780472096268', '9780472096411',
+'9780472096770', '9780472096824', '9780472096985', '9780472097685',
+'9780472097838', '9780472100132', '9780472100262', '9780472100392',
+'9780472100507', '9780472100538', '9780472100941', '9780472101023',
+'9780472101030', '9780472101573', '9780472101641', '9780472101870',
+'9780472102068', '9780472102341', '9780472102464', '9780472102884',
+'9780472103003', '9780472103034', '9780472103058', '9780472103065',
+'9780472103157', '9780472104048', '9780472104062', '9780472104284',
+'9780472105281', '9780472105366', '9780472105465', '9780472105502',
+'9780472105519', '9780472105533', '9780472105656', '9780472105762',
+'9780472105809', '9780472105823', '9780472105847', '9780472106240',
+'9780472106431', '9780472106745', '9780472106769', '9780472107315',
+'9780472108114', '9780472108183', '9780472108398', '9780472108732',
+'9780472108749', '9780472109043', '9780472109296', '9780472109470',
+'9780472109500', '9780472109579', '9780472109616', '9780472110117',
+'9780472110377', '9780472111084', '9780472111220', '9780472112470',
+'9780472113194', '9780472117512',
+'9780472082803','9780472086955'
+]
+ISBNS_NO_TMM = [
+'9780472063673', '9780472085903', '9780472087624', '9780472093090',
+'9780472093168', '9780472093182', '9780472093328', '9780472100835',
+'9780472298723', '9780472504657', '9780472650958', '9780472894000',
+'9781122284776'
+]
+
+bar_code_list.each do |bar_code|
+  metadata_row = metadata_csv.find {|r| r['Publisher File ID'] == bar_code }
+  if metadata_row.nil?
+    script_logger.warn("#{bar_code}: found 0 rows")
+  else
+    #script_logger.info("found row for bar code #{bar_code}")
+    isbn_list = metadata_row['ISBN']
+    if isbn_list.nil? or isbn_list.empty?
+      script_logger.warn("#{bar_code}: found 0 ISBNs")
+    else
+      isbn13_list = isbn_list.split(';').select {|n| ISBNS_TMM.include?(n.strip) }
+      if isbn13_list.empty?
+        isbn13_list = isbn_list.split(';').select {|n| ISBNS_NO_TMM.include?(n.strip) }
+        isbn13 = isbn13_list.empty? ? "" : isbn13_list.first.strip
+        script_logger.info("NO TMM #{bar_code}: #{isbn13}")
+      else
+        script_logger.info("TMM    #{bar_code}: #{isbn13_list.first.strip}")
+      end
+    end
+  end
+  STDOUT.flush
+end
