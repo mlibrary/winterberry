@@ -143,6 +143,7 @@ monograph_id_list.each do |monograph_id|
   else
     identifier = monograph_id
   end
+=begin
   manifest = UMPTG::Fulcrum::Manifest::Document.new(
                 monograph_id: identifier
               )
@@ -153,6 +154,35 @@ monograph_id_list.each do |monograph_id|
   end
   monograph_noid = monograph_row['noid']
   script_logger.info("using NOID #{monograph_noid}")
+=end
+  mnl = service.monograph_noid(
+              monograph_id: identifier
+              )
+  monograph_noid_list = mnl[identifier]
+  if monograph_noid_list.empty?
+    script_logger.error("monograph NOID not found for #{identifier}")
+    next
+  end
+  script_logger.warn("#{identifier}: found #{monograph_noid_list.count} monographs. Using first one found.") \
+      if monograph_noid_list.count> 1
+  monograph_noid = monograph_noid_list.first
+  mbl = service.monograph_export(
+                noid: monograph_noid
+              )
+  manifest_body_list = mbl[monograph_noid]
+  if manifest_body_list.empty?
+    script_logger.error("monograph manifest not found for #{monograph_noid}")
+    next
+  end
+
+  manifest = UMPTG::Fulcrum::Manifest::Document.new(
+                csv_body: manifest_body_list.first
+              )
+  monograph_row = manifest.monograph_row
+  if monograph_row.nil?
+    script_logger.error("manifest monograph row not found for #{monograph_noid}")
+    next
+  end
 
   # Find EPUB representative NOID
   epub_noid = nil
