@@ -1,0 +1,88 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# FOPS-762
+# Script inputs a mapping of bar code to isbn
+# and locates and renames a file.
+#
+
+require 'optparse'
+require 'ostruct'
+require 'os'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+# Process the script parameters.
+options = OpenStruct.new
+options.input_dir = "s:/Information\ Management/Fulcrum/PTG/tickets/FOPS-0105/ocr/ocr_completed"
+#options.input_dir = "s:/Information\ Management/Fulcrum/PTG/tickets/FOPS-0762/ocr_completed_test"
+options.output_dir = "s:/Information\ Management/Fulcrum/PTG/tickets/FOPS-0762/PDFs_current"
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-i <input_dir>] [-o <output_dir>] bc2isbn.csv [bc2isbn.csv...]"
+  opts.on('-i', '--input_dir [DIRECTORY]', 'Input directory') do |file_dir|
+    options.input_dir = file_dir
+  end
+  opts.on('-o', '--output_dir [DIRECTORY]', 'Output directory') do |file_dir|
+    options.output_dir = file_dir
+  end
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    script_logger.info(opts)
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  script_logger.info(option_parser.help)
+  return
+end
+
+# Process the command line parameters.
+bc2isbn_file_list = ARGV
+
+input_dir = File.expand_path(options.input_dir)
+unless File.directory?(input_dir)
+  script_logger.error("invalid input directory #{input_dir}.")
+  exit(1)
+end
+
+output_dir = File.expand_path(options.output_dir)
+unless File.directory?(output_dir)
+  script_logger.error("invalid input directory #{output_dir}.")
+  exit(1)
+end
+
+require 'fileutils'
+require_relative File.join(root_dir, "lib", "csvfile")
+
+bc_dir_path = {}
+bc2isbn_file_list.each do |bc2isbn_file|
+  bc2isbn_file = File.expand_path(bc2isbn_file)
+  unless File.file?(bc2isbn_file)
+    script_logger.error("invalid mapping file #{bc2isbn_file}.")
+    next
+  end
+
+  bc2isbn_csv = UMPTG::CSVFile.read(csv_path: bc2isbn_file)
+
+  dir_list = Dir.glob(File.join(input_dir, "*.pdf"))
+  script_logger.info("#{input_dir}:#{dir_list.count}")
+  dir_list.each do |pdf_file|
+    bc = File.basename(pdf_file, ".*")[0..13]
+    bc_row = bc2isbn_csv.find {|r| r['Bar Code'] == bc }
+    if bc_row.nil?
+      #script_logger.warn("#{pdf_file}: bar code not found")
+      next
+    end
+    isbn = bc_row['ISBN']
+    new_pdf_file = File.join(output_dir, isbn + "_web" + File.extname(pdf_file))
+    script_logger.info("cp #{pdf_file} #{new_pdf_file}")
+    FileUtils.cp_r(pdf_file, new_pdf_file, preserve: true)
+    STDOUT.flush
+  end
+end
