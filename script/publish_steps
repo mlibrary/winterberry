@@ -158,14 +158,15 @@ monograph_id_list.each do |monograph_id|
   mnl = service.monograph_noid(
               monograph_id: identifier
               )
-  monograph_noid_list = mnl[identifier]
-  if monograph_noid_list.empty?
+  if mnl.empty?
     script_logger.error("monograph NOID not found for #{identifier}")
     next
   end
-  script_logger.warn("#{identifier}: found #{monograph_noid_list.count} monographs. Using first one found.") \
-      if monograph_noid_list.count> 1
-  monograph_noid = monograph_noid_list.first
+  monograph_noid = mnl[identifier].first
+  script_logger.info("#{identifier}: found #{mnl.count} monograph, NOID #{monograph_noid}.") \
+      if mnl.count == 1
+  script_logger.warn("#{identifier}: found #{mnl.count} monographs. Using first one found, NOID #{monograph_noid}.") \
+      if mnl.count > 1
   mbl = service.monograph_export(
                 noid: monograph_noid
               )
