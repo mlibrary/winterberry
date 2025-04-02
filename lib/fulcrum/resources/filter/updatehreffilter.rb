@@ -9,7 +9,7 @@ module UMPTG::Fulcrum::Resources::Filter
     SXPATH
 
     def initialize(args = {})
-      args[:name] = :embed_link
+      args[:name] = :update_href
       args[:xpath] = XPATH
       super(args)
     end
