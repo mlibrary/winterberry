@@ -1,0 +1,188 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# FOPS-745 create a shared folder for each NOID specified
+
+require 'optparse'
+require 'ostruct'
+require 'os'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+# Process the script parameters.
+options = OpenStruct.new
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} epub_file [epub_file...]"
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    script_logger.info(opts)
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  script_logger.info(option_parser.help)
+  return
+end
+
+# Process the command line parameters.
+noid_list = ARGV
+
+EXTRACT_FOLDER = "s:/Information\ Management/Fulcrum/PTG/tickets/FOPS-0745/EPUBs/Fulcrum/extract/michigan"
+#EPUB_FOLDER = "s:/Information\ Management/Fulcrum/PTG/tickets/FOPS-0745/EPUB_replacements/Fulcrum"
+EPUB_FOLDER = "s:/Information\ Management/Fulcrum/PTG/tickets/FOPS-0745/EPUB_replacements/Fixed_layout"
+SHARED_FOLDER = "s:/Information\ Management/Fulcrum/PTG/tickets/FOPS-0745/Fulcrum"
+
+require 'fileutils'
+
+require_relative File.join(root_dir, "lib", "fulcrum")
+
+noid_list.each do |noid|
+  script_logger.info
+  script_logger.info("*** processing NOID file #{noid} ***")
+  STDOUT.flush
+
+  # Search for the EPUB in the UMP shared folder
+  noid_dir_path = File.join(EXTRACT_FOLDER, noid)
+  noid_dir_list = Dir.glob(noid_dir_path)
+  noid_dir = noid_dir_list.first
+  if noid_dir.nil? or !File.directory?(noid_dir)
+    script_logger.error("NOID directory #{noid} not found")
+    next
+  end
+  script_logger.info("Using NOID directory #{noid_dir}") \
+      if noid_dir_list.count == 1
+  script_logger.warn("Multiple NOID directories found. Using #{noid_dir}") \
+      if noid_dir_list.count > 1
+
+  manifest_file = File.join(noid_dir, "manifest.csv")
+  unless File.file?(manifest_file)
+    script_logger.error("Manifest file for NOID directory #{noid} not found")
+    next
+  end
+
+  manifest = UMPTG::Fulcrum::Manifest::Document.new(
+                csv_file: manifest_file
+              )
+
+  epub_row = manifest.representatives['epub']
+  if epub_row.nil?
+    script_logger.warn("no EPUB found NOID #{noid} #{manifest.representatives.keys}")
+    next
+  end
+  epub_name = epub_row['file_name']
+
+  updated_epub_file = File.join(EPUB_FOLDER, File.basename(epub_name))
+  unless File.file?(updated_epub_file)
+    script_logger.warn("updated EPUB #{updated_epub_file} not found")
+    next
+  end
+
+  oa_isbn = manifest.isbn.select {|key,val|
+      ['open access', 'oa access', 'oa', 'open-access', 'ebook', 'e-book'].include?(key.downcase)
+    }
+  if oa_isbn.empty?
+    script_logger.warn("no ebook for NOID #{noid} #{manifest.isbn}")
+    next
+  end
+  new_dir_name = oa_isbn.values.first.gsub(/-/,'')
+
+  new_dir_path = File.join(SHARED_FOLDER, new_dir_name)
+  script_logger.info("Shared folder #{new_dir_path}")
+  if File.directory?(new_dir_path)
+    script_logger.warn("Shared folder #{new_dir_path} exists. Skipping")
+    next
+  end
+  FileUtils.cp_r(noid_dir_path, new_dir_path)
+
+  pth = File.join(new_dir_path, "*{_epubcheck.xml,.db}")
+  Dir.glob(pth).each do |f|
+    script_logger.info("removed file #{File.basename(f)}")
+    FileUtils.rm(f)
+  end
+
+  rep_name_list = manifest.representatives.values.collect {|r| r['file_name'] }
+
+  resources_dir = File.join(new_dir_path, "resources")
+  new_dir_file_list = Dir.glob(File.join(new_dir_path, "*"))
+  resource_file_list = new_dir_file_list.select do |f|
+    !rep_name_list.include?(File.basename(f))
+  end
+  if resource_file_list.count == 1 \
+        and File.basename(resource_file_list[0]).downcase == "manifest.csv"
+    script_logger.info("removed file #{File.basename(resource_file_list[0])}")
+    FileUtils.rm(resource_file_list[0])
+  elsif resource_file_list.count > 0
+    script_logger.info("create resources directory")
+    FileUtils.mkdir_p(resources_dir)
+    resource_file_list.each do |f|
+      new_f = File.join(resources_dir, File.basename(f))
+      script_logger.info("moved #{File.basename(f)} to #{File.basename(resources_dir)} directory")
+      FileUtils.mv(f, new_f)
+    end
+  end
+
+  script_logger.info("create archive directory")
+  archive_dir = File.join(new_dir_path, "archive")
+  FileUtils.mkdir_p(archive_dir)
+
+  pth = File.join(new_dir_path, "*.epub")
+  Dir.glob(pth).each do |f|
+    new_f = File.join(archive_dir, File.basename(f, ".*") + "_version1" + File.extname(f))
+    script_logger.info("archive EPUB #{File.basename(f)}")
+    FileUtils.mv(f, new_f)
+  end
+
+  new_epub_file = File.join(new_dir_path, epub_name)
+  script_logger.info("copied updated EPUB #{updated_epub_file}")
+  FileUtils.cp_r(updated_epub_file, new_epub_file)
+
+=begin
+  pth = File.join(new_dir_path, "*.csv")
+  Dir.glob(pth).each do |f|
+    new_f = File.join(archive_dir, File.basename(f, ".*") + "_version1" + File.extname(f))
+    script_logger.info("remove file #{File.basename(f)}")
+    FileUtils.rm(f, new_f)
+  end
+
+  new_manifest_file = File.join(new_dir_path, "manifest.csv")
+  FileUtils.rm(new_manifest_file)
+=end
+
+=begin
+  # Determine the number of archived versions.
+  archive_dir = File.join(ump_dir, "archive")
+  #FileUtils.mkdir_p(archive_dir) unless File.directory?(archive_dir)
+  pth = File.join(archive_dir, File.basename(epub_file, ".*") + "*" + File.extname(epub_file))
+  archive_epub_list = Dir.glob(pth)
+  ver_num = archive_epub_list.count + 1
+
+  # Archive current EPUB.
+  archive_epub = File.join(archive_dir, File.basename(epub_file, ".*") + "_version#{ver_num}" + File.extname(epub_file))
+  #FileUtils.cp(ump_epub, archive_epub)
+  script_logger.info("UMP EPUB #{ump_epub} archived #{File.basename(archive_epub)}.")
+
+  # Update EPUB in the UMP folder.
+  #FileUtils.cp(epub_file, ump_epub)
+  script_logger.info("UMP EPUB #{ump_epub} updated.")
+=end
+
+=begin
+  # Find UMP shared folder
+  dir_list = Dir.glob(File.join(UMP_FOLDER, File.basename(epub_file, ".*") + "*"))
+  if dir_list.empty?
+    script_logger.error("UMP folder not found for #{File.basename(epub_file)}")
+    next
+  end
+  ump_dir = dir_list.first
+  script_logger.info("Using UMP folder #{ump_dir} for #{File.basename(epub_file)}") \
+      if dir_list.count == 1
+  script_logger.warn("Multiple UMP folders found. Using #{ump_dir} for #{File.basename(epub_file)}") \
+      if dir_list.count > 1
+=end
+end
