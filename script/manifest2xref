@@ -1,0 +1,132 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# This script inputs one or more Fulcrum monograph manifest and generates
+# a Crossref submission file.
+#
+# Invoke this script without any parameters to display the usage.
+
+require 'optparse'
+require 'ostruct'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+# Process the script parameters.
+options = OpenStruct.new
+options.output_file = File.join(root_dir, File.basename(__FILE__, ".*") + ".xml")
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-o <output_file>] <manifest_file> [<manifest_file>..]"
+  opts.on('-o', '--output_file <output_file>', 'Output file path') do |output_file|
+    options.output_file = output_file
+  end
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    script_logger.info(opts)
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  script_logger.info(option_parser.help)
+  exit 0
+end
+
+# Rest of the parameters is a list of manifest files.
+manifest_file_list = ARGV
+
+output_file = File.expand_path(options.output_file)
+
+require 'mime/types'
+require_relative File.join(root_dir, 'lib', 'fulcrum')
+
+ROOT_XML = <<-RXML
+<doi_batch xmlns="http://www.crossref.org/schema/5.3.1"
+xmlns:ali="http://www.niso.org/schemas/ali/1.0/"
+xmlns:jats="http://www.ncbi.nlm.nih.gov/JATS1"
+xmlns:fr="http://www.crossref.org/fundref.xsd"
+xmlns:rel="http://www.crossref.org/relations.xsd"
+xmlns:ai="http://www.crossref.org/AccessIndicators.xsd"
+xmlns:ct="http://www.crossref.org/clinicaltrials.xsd"
+xmlns:mml="http://www.w3.org/1998/Math/MathML"
+xmlns:xlink="http://www.w3.org/1999/xlink">
+<head>
+<doi_batch_id>%s</doi_batch_id>
+<timestamp>%s</timestamp>
+<depositor>
+<depositor_name>scpo</depositor_name>
+<email_address>mpub.xref@gmail.com</email_address>
+</depositor>
+<registrant>MPublishing</registrant>
+</head>
+<body>
+</body>
+</doi_batch>
+RXML
+
+COMP_XML = <<-CXML
+<component parent_relation="isPartOf">
+<description>%s</description>
+<format mime_type="%s"></format>
+<doi_data>
+<doi>%s</doi>
+<resource>%s</resource>
+</doi_data>
+</component>
+CXML
+
+
+time = Time.now
+# [Y0001]-[M01]-[D01]T[H01]:[m01]:[s01][Z]
+batch_id = "#{time.strftime("%Y-%m-%dT%H:%M:%S")}#{sprintf("%03d:00", time.utc_offset/3600)}"
+
+# [Y0001][M01][D01][H01][m01][s01]00000
+timestamp = time.strftime("%Y%m%d%H%M%S") + "00000"
+
+root_xml = sprintf(ROOT_XML, batch_id, timestamp)
+xref_doc = Nokogiri::XML("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" + root_xml)
+xref_root = xref_doc.xpath("//*[local-name()='body']").first
+
+manifest_file_list.each do |manifest_file|
+  manifest_file = File.expand_path(manifest_file)
+  unless File.file?(manifest_file)
+    script_logger.error("invalid manifest file #{manifest_file}")
+    next
+  end
+  script_logger.info("*** #{File.basename(manifest_file)} **")
+  STDOUT.flush
+
+  manifest = UMPTG::Fulcrum::Manifest::Document.new(
+                csv_file: manifest_file
+              )
+
+  monograph_doi = (manifest.monograph_row['doi'] || "").strip.delete_prefix('https://doi.org/')
+  if monograph_doi.empty?
+    script_logger.error("no monograph DOI")
+    next
+  end
+  comp_root_xml = "<sa_component parent_doi=\"#{monograph_doi}\"><component_list></></>"
+  comp_doc = Nokogiri::XML::DocumentFragment.parse(comp_root_xml)
+  comp_list_node = comp_doc.first_element_child.first_element_child
+
+  manifest.resources.each do |resource_row|
+    doi = (resource_row['doi'] || "").strip.delete_prefix('https://doi.org/')
+    next if doi.empty?
+
+    comp_xml = sprintf(COMP_XML,
+          resource_row['title'],
+          MIME::Types.type_for(resource_row['file_name']).first,
+          doi,
+          resource_row['link'][12..-3]
+        )
+    comp_list_node.add_child(comp_xml)
+  end
+  xref_root.add_child(comp_doc.first_element_child.to_xml)
+end
+
+UMPTG::XML.save(xref_doc, output_file)
+script_logger.info("saved XML file #{output_file}")

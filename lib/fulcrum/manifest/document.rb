@@ -129,6 +129,12 @@ module UMPTG::Fulcrum::Manifest
       return row
     end
 
+    def resources(args = {})
+      return @csv.select {|r|
+            (r['representative_kind'] || "").strip.empty? and !((r['resource_type'] || "").strip.empty?)
+          }
+    end
+
     def fileset_ident(file_name)
       regex = sprintf(RESOURCE_IDENT_REGEX, file_name)
       fileset_row = @csv.find {|row| !row['identifier(s)'].nil? and row['identifier(s)'].match?(regex) }
