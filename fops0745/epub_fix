@@ -65,7 +65,7 @@ epub_file_list.each do |epub_file|
   epub = UMPTG::EPUB(epub_file: epub_file)
 
   epub_version = epub.version || ""
-  epub_identifier = epub.identifiers['pub-id'] || ""
+  epub_identifier = epub.identifiers['pub-id'] || epub.identifiers['BookID'] || ""
   script_logger.info("version: #{epub_version}, identifier: #{epub_identifier}")
 
   STDOUT.flush
@@ -104,7 +104,6 @@ epub_file_list.each do |epub_file|
             entry_content: UMPTG::XML.doc_to_xml(ncx_doc)
           )
       epub_processor.logger.info("Updated identifier #{epub_identifier}")
-      script_logger.info("Updated identifier #{epub_identifier}")
     end
   end
 
