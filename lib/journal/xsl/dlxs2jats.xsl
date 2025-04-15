@@ -973,7 +973,7 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
         </xsl:element>
     </xsl:template>
 
-    <xsl:template match="FIGURE[exists(@ENTITY) or exists(@REND) or exists(@REF)]">
+    <xsl:template match="FIGURE[(not(exists(@TYPE)) or @TYPE!='inline') and (exists(@ENTITY) or exists(@REND) or exists(@REF))]">
         <xsl:element name="fig">
             <xsl:apply-templates select="@*[name()!='ENTITY' and name()!='REND']"/>
 
