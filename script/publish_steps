@@ -76,14 +76,21 @@ greensub_publish_dir = File.join(options.greensub_dir, ptg_dir, "PublishingSteps
                           um_press_dir)
 
 # Determine the Fulcrum monograph directory
-monograph_dept_dir = sd_dir = nil
-["Fulcrum_Synced", "Fulcrum_Unsynced"].each do |d|
-  sd_dir = File.join(d, um_press_dir)
-  mdd = File.join(fulcrum_dir, sd_dir)
-  next unless File.directory?(mdd)
+case options.press
+when 'bar'
+  sd_dir = File.join('Fulcrum_Unsynced', um_press_dir)
+  #monograph_dept_dir = 's:/Information\ Management/Fulcrum/Fulcrum_Unsynced/barpublishing/Fulcrum/'
+  monograph_dept_dir = File.join(fulcrum_dir, sd_dir, 'Fulcrum')
+else
+  monograph_dept_dir = sd_dir = nil
+  ["Fulcrum_Synced", "Fulcrum_Unsynced"].each do |d|
+    sd_dir = File.join(d, um_press_dir)
+    mdd = File.join(fulcrum_dir, sd_dir)
+    next unless File.directory?(mdd)
 
-  monograph_dept_dir = mdd
-  break
+    monograph_dept_dir = mdd
+    break
+  end
 end
 if monograph_dept_dir.nil?
   script_logger.fatal("no press directory found for #{um_press_dir}.")
