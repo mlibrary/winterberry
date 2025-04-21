@@ -1,7 +1,13 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
-# Generate publishing steps
+# Generate publishing steps data files
+# Usage: publish_steps [-d <fulcrum_dir>] [-p press] <task_id> <monograph_id> [<monograph_id>..]
+#      -p, --press [press]              Press aberdeenunipress|amherst|atg|bridwell|bar|cjs|csas|cseas|ebc|heb|leverpress|livedplaces|lrccs|maizebooks|ummaa|michigan|vermont|westminster
+#      -d, --directory [DIRECTORY]      Fulcrum directory
+#      -h, --help
+#      task_id                          JIRA task, e.g. FOPS-xxxx
+#      monograph_id                     monograph ISBN
 
 require 'optparse'
 require 'ostruct'
@@ -47,6 +53,7 @@ require_relative File.join(root_dir, "lib", "logger")
 require_relative File.join(root_dir, "lib", "services")
 require_relative File.join(root_dir, "lib", "fulcrum", "manifest")
 
+# Create a logger for the script
 script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
 
 # Verify existence of the source/project root directories.
@@ -56,11 +63,13 @@ unless File.directory?(fulcrum_dir)
   exit 1
 end
 
+# Verify that specified press is valid
 unless UMPTG::Press.valid(options.press)
   script_logger.fatal("invalid press #{options.press}")
   exit 1
 end
 
+# Map the press to proper shared folder.
 um_press_dir = UMPTG::Press.press_dir(options.press)
 
 # Determine publishing directory
@@ -108,7 +117,8 @@ script_logger.info("Using task directory #{File.basename(task_dir)}")
 # Create the serivce for retrieving the NOID manifest.
 service = UMPTG::Services::Heliotrope.new()
 
-# For each monograph ID, retrieve NOID, DOI, and BAR number
+# For each monograph ID, retrieve
+#   NOID, Series ID, Fulcrum Link
 monograph_info = {}
 monograph_noid_list = []
 monograph_date = {}
@@ -140,7 +150,8 @@ monograph_id_list.each do |monograph_id|
     end
   end
 
-  # Use the monograph ID to retrieve the manifest from Fulcrum.
+  # From the press, determine the format for the Identifer to use
+  # to query Fulcrum.
   case options.press
   when :bar
     #identifier = "bar_number:#{monograph_id}"
@@ -151,6 +162,7 @@ monograph_id_list.each do |monograph_id|
     identifier = monograph_id
   end
 =begin
+  # Use the monograph ID to retrieve the manifest from Fulcrum.
   manifest = UMPTG::Fulcrum::Manifest::Document.new(
                 monograph_id: identifier
               )
@@ -162,6 +174,10 @@ monograph_id_list.each do |monograph_id|
   monograph_noid = monograph_row['noid']
   script_logger.info("using NOID #{monograph_noid}")
 =end
+
+  # Use the Identifier to retrieve the monograph NOID. Returns a list
+  # as the Identifer may be associated with multiple monographs. The
+  # first one returned is used.
   mnl = service.monograph_noid(
               monograph_id: identifier
               )
@@ -174,6 +190,8 @@ monograph_id_list.each do |monograph_id|
       if mnl.count == 1
   script_logger.warn("#{identifier}: found #{mnl.count} monographs. Using first one found, NOID #{monograph_noid}.") \
       if mnl.count > 1
+
+  # Use the NOID to retrieve the monograph manifest CSV.
   mbl = service.monograph_export(
                 noid: monograph_noid
               )
@@ -183,9 +201,12 @@ monograph_id_list.each do |monograph_id|
     next
   end
 
+  # From the manifest CSV, create a Fulcrum manifest object.
   manifest = UMPTG::Fulcrum::Manifest::Document.new(
                 csv_body: manifest_body_list.first
               )
+
+  # Retrieve the monograph row entry.
   monograph_row = manifest.monograph_row
   if monograph_row.nil?
     script_logger.error("manifest monograph row not found for #{monograph_noid}")
@@ -202,6 +223,7 @@ monograph_id_list.each do |monograph_id|
     script_logger.info("using EPUB NOID #{epub_noid} for id #{monograph_id}")
   end
 
+  # Find the PDF representative NOID
   pdf_noid = nil
   pdf_row = manifest.representative_row(kind: "pdf_ebook")
   if pdf_row.nil?
@@ -211,6 +233,8 @@ monograph_id_list.each do |monograph_id|
     script_logger.info("using PDF NOID #{pdf_noid} for id #{monograph_id}")
   end
 
+  # Determine the monograph series ID. Most presses use DOI.
+  # BAR and HEB use their respective IDs.
   series_id = ""
   case options.press
   when :aberdeen, :amherst, :aperio, :atg, :ebc, :michelt, :leverpress, :livedplaces, :maize, :ummaa, :vermont, :westminster
@@ -298,6 +322,7 @@ when :heb
   application_cfile = File.join(application_task_dir, File.basename(cfile))
   components_files["heb"] = application_cfile
 else
+  # Non-HEB, use press name in file name.
   component_product = {}
   monograph_info.each do |monograph_id,minfo|
     pub_year = minfo[:monograph_pub_date].year
@@ -315,6 +340,7 @@ else
       end
     end
 
+    # Determine product name
     unless options.press == :aberdeen or options.press == :atg or options.press == :livedplaces or options.press == :vermont or options.press == :westminster
       if options.press == :ebc and pub_year <= 2011
         perd = "2011pre"
@@ -337,6 +363,7 @@ else
       end
     end
 
+    # Handle non-MPS imprints
     unless options.press == :michelt or options.press == :amherst \
           or options.press == :aberdeen or options.press == :vermont \
           or options.press == :westminster or options.press == :atg \
@@ -373,6 +400,8 @@ else
     end
   end
 
+  # Create product component CSV files
+  # NOID,Series ID
   component_product.each do |product,minfo_list|
     cfile = File.join(task_dir, "noid_#{product}.csv")
     File.open(cfile, "w") do |fp|

@@ -61,15 +61,11 @@ module UMPTG::Services
 
         # Try each type until success
         #["isbn", "identifier", "doi"].each do |t|
-        ["isbn", "doi", "identifier"].each do |t|
-          case
-          when t == "doi", identifier.start_with?(@@DOI_PREFIX)
-            id = identifier.delete_prefix(@@DOI_PREFIX)
-          else
-            id = identifier
-          end
+        ["isbn", "doi", "identifier"].each do |type|
+          id = (type == "doi" and identifier.start_with?(@@DOI_PREFIX)) ? \
+                identifier.delete_prefix(@@DOI_PREFIX) : identifier
           begin
-            response = connection.get("noids?#{t}=#{id}")
+            response = connection.get("noids?#{type}=#{id}")
           rescue StandardError => e
             e.message
           end
