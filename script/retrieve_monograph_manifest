@@ -56,11 +56,17 @@ service = UMPTG::Services::Heliotrope.new(
 
 monograph_id_list.each do |monograph_id|
   # Attempt to download the monograph manifest.
-  service_response = service.monograph_export(noid: monograph_id)
+  #service_response = service.monograph_export(noid: monograph_id)
+  service_response = service.monograph_export(identifier: monograph_id)
 
   unless service_response.empty?
     # Not empty, save the manifest using its id as the file name.
-    output_path = File.join(options.directory_path, File.basename(monograph_id) + ".csv")
+    csv_name = monograph_id
+    csv_name = csv_name.downcase.delete_prefix("bar_number:")
+    csv_name = csv_name.downcase.delete_prefix("heb_id:")
+    csv_name = csv_name.delete_prefix("https://doi.org/").gsub(/\//,'_')
+
+    output_path = File.join(options.directory_path, csv_name + ".csv")
 
     puts "Writing CSV file #{output_path}"
     File.open(output_path, "w") do |f|

@@ -1,8 +1,11 @@
-require 'faraday'
-require 'faraday_middleware'
-require 'json'
-
+# Module that contains classes for accessing REST services.
 module UMPTG::Services
+  require 'faraday'
+  require 'faraday_middleware'
+  require 'json'
+
+  # Class for accessing Fulcrum services on either
+  # production (default), preview, or staging.
   class Heliotrope
     @@FULCRUM_API = 'https://www.fulcrum.org/api'
     @@FULCRUM_TOKEN = 'eyJhbGciOiJIUzI1NiJ9.eyJlbWFpbCI6InRiZWxjQHVtaWNoLmVkdSIsInBpbiI6IiQyYSQxMCR6VE83Z2VvbmtRaEhhbUZCTkNNYTRPbHJ4NlJSWC9TTlZVN1Uzd3lUTUVrQkouTU92eWp6UyJ9.64lOKeT4zfrd7sbKNxUALOEIJRRiu5liDNbFixBLf9Y'
@@ -13,13 +16,14 @@ module UMPTG::Services
 
     @@DOI_PREFIX = "https://doi.org/"
 
-     attr_reader :connection
+    attr_reader :connection
+
     #
     # Configuration
     #
     def initialize(options = {})
+      # Determine the host to access, production is default.
       fulcrum_host = options[:fulcrum_host] || "production"
-
       case fulcrum_host
       when "production"
         @base = options[:base] || ENV['TURNSOLE_HELIOTROPE_API'] || @@FULCRUM_API
@@ -37,68 +41,53 @@ module UMPTG::Services
     end
 
     #
-    # Monograph NOID
-    #
-    # ISBN may contain dashes.
-    # Identifier may be HEB ID or BAR number.
-    # DOI should not contain the prefix.
-    def monograph_noid(args = {})
-      id2noid_list = {}
-      case
-      when args.include?(:identifier)
-        identifier_list = [ args[:identifier] ]
-      when args.include?(:identifier_list)
-        identifier_list = args[:identifier_list]
-      when args.include?(:monograph_id)
-        identifier_list = [ args[:monograph_id] ]
-      else
-        return id2noid_list
-      end
+    # Retrieve a list of monograph NOIDs for the list of specified
+    # identifiers, either a ISBN, imprint identifier, or DOI.
+    #   identifier -  either an ISBN (may contain dashes),
+    #                 or imprint id (HEB ID, BAR number),
+    #                 or DOI.
+    def monograph_noid(identifier:)
+      identifier_list = identifier.kind_of?(Array) ? identifier : [identifier]
 
-      # Attempt to retrieve the NOID for the specified identifier
-      identifier_list.each do |identifier|
-        id2noid_list[identifier] = []
+      # Attempt to retrieve the NOID(s) for the specified identifier
+      id2noid_list = {}
+      identifier_list.each do |id|
+        # Initialize each identifier result to an empty array.
+        id2noid_list[id] = []
 
         # Try each type until success
         #["isbn", "identifier", "doi"].each do |t|
         ["isbn", "doi", "identifier"].each do |type|
-          id = (type == "doi" and identifier.start_with?(@@DOI_PREFIX)) ? \
-                identifier.delete_prefix(@@DOI_PREFIX) : identifier
+          idd = type == "doi" ? id.delete_prefix(@@DOI_PREFIX) : id
           begin
-            response = connection.get("noids?#{type}=#{id}")
+            response = connection.get("noids?#{type}=#{idd}")
           rescue StandardError => e
             e.message
           end
+          next if response.nil? or !response.success? or response.body.empty?
 
-          unless response.nil? or !response.success? or response.body.empty?
-            id2noid_list[identifier] = response.body.collect { |b| b['id'] }
-            break
-          end
+          # Multiple NOIDs may be found.
+          id2noid_list[id] = response.body.collect { |b| b['id'] }
+          break
         end
       end
       return id2noid_list
     end
 
-    # Monograph Manifest from the NOID or an identifier
-    #
-    def monograph_export(args = {})
-      #noid = args.key?(:noid) ? args[:noid] : monograph_noid(args)
-      noid_list = {}
-      case
-      when args.include?(:noid)
-        noid_list[args[:noid]] = [ args[:noid] ]
-      when args.include?(:noid_list)
-        args[:noid_list].each do |noid|
-          noid_list[noid] = [ noid ]
-        end
-      else
-        noid_list = monograph_noid(args)
-        noid_list[args[:monograph_id]] = [args[:monograph_id]] if noid_list.empty? and args.include?(:monograph_id)
-      end
+    # Retrieve a list of monograph manifests for the
+    # list of specified identifiers.
+    #   identifier -  either an ISBN (may contain dashes),
+    #                 or imprint id (HEB ID, BAR number),
+    #                 or DOI.
+    def monograph_export(identifier:)
+      # Map the list of identifiers to a list of NOIDs.
+      noid_list = monograph_noid(identifier: identifier)
 
+      # For each NOID, retrieve the monograph manifest.
       id2manifest_list = {}
-      noid_list.each do |identifier,noid_list|
-        id2manifest_list[identifier] = []
+      noid_list.each do |id,noid_list|
+        # Initialize this identifier result to an empty array
+        id2manifest_list[id] = []
 
         noid_list.each do |noid|
           begin
@@ -106,7 +95,9 @@ module UMPTG::Services
           rescue StandardError => e
             puts e.message
           end
-          id2manifest_list[identifier] << response.body unless response.nil? or !response.success?
+
+          # Append manifest to result array.
+          id2manifest_list[id] << response.body unless response.nil? or !response.success?
         end
       end
       return id2manifest_list

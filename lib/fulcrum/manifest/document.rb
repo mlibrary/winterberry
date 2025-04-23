@@ -32,7 +32,8 @@ module UMPTG::Fulcrum::Manifest
   RESOURCE_IDENT_REGEX = "[;]?[ ]*youtube_id:[ ]*(%s)[ ]*[;]?"
 
   class Document < UMPTG::Object
-    attr_reader :name, :noid, :csv, :monograph_row, :isbn, :headers
+    attr_reader :name, :noid, :csv, :monograph_row, :isbn, :headers, \
+          :press, :doi, :open_access
 
     def initialize(args = {})
       super(args)
@@ -97,13 +98,41 @@ module UMPTG::Fulcrum::Manifest
           end
 
           @monograph_row = @csv.find {|row| row['file_name'] == UMPTG::Fulcrum::Manifest.MONOGRAPH_FILE_NAME }
-          @noid = @monograph_row['noid'] unless @monograph_row.nil?
-          @isbn = {}
-          unless @monograph_row.nil?
+          if @monograph_row.nil?
+            @doi = @noid = @press = nil
+            @isbn = {}
+            @open_access = false
+          else
+            @doi = @monograph_row['doi']
+            @noid = @monograph_row['noid']
+            @press = @monograph_row['press']
             @isbn = parse_isbns(@monograph_row['isbn(s)'])
+            @open_access = parse_isbns(@monograph_row['open_access?'])
           end
         end
       end
+    end
+
+    # Determine the monograph series ID.
+    # BAR: BAR number.
+    # HEB: HEB ID.
+    # Otherwise: monograph DOI
+    def series_id(args = {})
+      identifiers = @monograph_row["identifier(s)"]
+      identifier_list = identifiers.nil? ? [] : identifiers.split(';')
+
+      case @press
+      when "barpublishing"
+        list = identifier_list.select {|d| d.strip.downcase.start_with?('bar_number:') }
+        series_id = list.first.strip.delete_prefix('bar_number:').strip unless list.empty?
+      when "heb"
+        #list = identifier_list.select {|id| id.strip.downcase.match?(/^heb[0-9]{5}\.[0-9]{4}\.[0-9]{3}/) }
+        list = identifier_list.select {|id| id.strip.downcase.start_with?("heb_id:") }
+        series_id = list.first.strip.delete_prefix('heb_id:').strip unless list.empty?
+      else
+        series_id = @doi
+      end
+      return series_id
     end
 
     def representatives()

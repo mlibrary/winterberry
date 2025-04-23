@@ -38,27 +38,7 @@ service = UMPTG::Services::Heliotrope.new(
                 :fulcrum_host => options.fulcrum_host
               )
 
-monograph_noids = service.monograph_noid(identifier_list: monograph_id_list)
+monograph_noids = service.monograph_noid(identifier: monograph_id_list)
 monograph_noids.each do |id,noid_list|
   puts "#{id}:#{noid_list.count},#{noid_list.join(',')}"
 end
-
-=begin
-noid_list = []
-id_noid_list = []
-monograph_id_list.each do |monograph_id|
-  #puts "*" * 10 + " #{monograph_id} " + "*" * 10
-  #STDOUT.flush
-
-  monograph_noid = service.monograph_noid(identifier: monograph_id)
-  noid_list << monograph_noid[monograph_id]
-  id_noid_list << "#{monograph_noid[monograph_id].first},#{monograph_id}"
-end
-#puts noid_list.join(' ')
-#puts id_noid_list.join(' ')
-puts "NOID,ISBN"
-id_noid_list.each do |k|
-  #puts "#{k},#{v.first}"
-  puts k
-end
-=end
