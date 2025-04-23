@@ -107,7 +107,8 @@ module UMPTG::Fulcrum::Manifest
             @noid = @monograph_row['noid']
             @press = @monograph_row['press']
             @isbn = parse_isbns(@monograph_row['isbn(s)'])
-            @open_access = parse_isbns(@monograph_row['open_access?'])
+            op = @monograph_row['open_access?'] || ""
+            @open_access = (op.strip.downcase == "yes")
           end
         end
       end
@@ -118,8 +119,8 @@ module UMPTG::Fulcrum::Manifest
     # HEB: HEB ID.
     # Otherwise: monograph DOI
     def series_id(args = {})
-      identifiers = @monograph_row["identifier(s)"]
-      identifier_list = identifiers.nil? ? [] : identifiers.split(';')
+      identifiers = @monograph_row["identifier(s)"] || ""
+      identifier_list = identifiers.split(';')
 
       case @press
       when "barpublishing"

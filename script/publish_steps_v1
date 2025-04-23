@@ -1,0 +1,573 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Generate publishing steps data files
+# Usage: publish_steps [-d <fulcrum_dir>] [-p press] <task_id> <monograph_id> [<monograph_id>..]
+#      -p, --press [press]              Press aberdeenunipress|amherst|atg|bridwell|bar|cjs|csas|cseas|ebc|heb|leverpress|livedplaces|lrccs|maizebooks|ummaa|michigan|vermont|westminster
+#      -d, --directory [DIRECTORY]      Fulcrum directory
+#      -h, --help
+#      task_id                          JIRA task, e.g. FOPS-xxxx
+#      monograph_id                     monograph ISBN
+
+require 'optparse'
+require 'ostruct'
+require 'os'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "press")
+
+# Process the script parameters.
+options = OpenStruct.new
+options.greensub_dir = "/mnt/umptmm"
+options.application_dir = "/fulcrum/data/tmm"
+options.fulcrum_dir = OS.windows? ? "s:/Information\ Management/Fulcrum" : options.application_dir
+#options.fulcrum_dir = "c:/Users/tbelc/Documents/Fulcrum"
+options.press = :ebc
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-d <fulcrum_dir>] [-p press] <task_id> <monograph_id> [<monograph_id>..]"
+  opts.on('-p', '--press [press]', "Press #{UMPTG::Press.press_list()}") do |press|
+    options.press = press.to_sym
+  end
+  opts.on('-d', '--directory [DIRECTORY]', 'Fulcrum directory') do |fulcrum_dir|
+    options.fulcrum_dir = fulcrum_dir
+  end
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    puts opts
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 2
+  puts option_parser.help
+  return
+end
+
+task_id = ARGV[0]
+monograph_id_list = ARGV[1..-1]
+
+require 'fileutils'
+require_relative File.join(root_dir, "lib", "logger")
+require_relative File.join(root_dir, "lib", "services")
+require_relative File.join(root_dir, "lib", "fulcrum", "manifest")
+
+# Create a logger for the script
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+# Verify existence of the source/project root directories.
+fulcrum_dir = File.expand_path(options.fulcrum_dir)
+unless File.directory?(fulcrum_dir)
+  script_logger.fatal("source directory #{fulcrum_dir} does not exist.")
+  exit 1
+end
+
+# Verify that specified press is valid
+unless UMPTG::Press.valid(options.press)
+  script_logger.fatal("invalid press #{options.press}")
+  exit 1
+end
+
+# Map the press to proper shared folder.
+um_press_dir = UMPTG::Press.press_dir(options.press)
+
+# Determine publishing directory
+ptg_dir = "PTG"
+publish_dir = File.join(fulcrum_dir, ptg_dir, "PublishingSteps", um_press_dir)
+unless File.directory?(publish_dir)
+  script_logger.fatal("processing directory #{publish_dir} does not exist.")
+  exit 1
+end
+application_publish_dir = File.join(options.application_dir, ptg_dir, "PublishingSteps", \
+                          um_press_dir)
+greensub_publish_dir = File.join(options.greensub_dir, ptg_dir, "PublishingSteps", \
+                          um_press_dir)
+
+# Determine the Fulcrum monograph directory
+case options.press
+when 'bar'
+  sd_dir = File.join('Fulcrum_Unsynced', um_press_dir)
+  #monograph_dept_dir = 's:/Information\ Management/Fulcrum/Fulcrum_Unsynced/barpublishing/Fulcrum/'
+  monograph_dept_dir = File.join(fulcrum_dir, sd_dir, 'Fulcrum')
+else
+  monograph_dept_dir = sd_dir = nil
+  ["Fulcrum_Synced", "Fulcrum_Unsynced"].each do |d|
+    sd_dir = File.join(d, um_press_dir)
+    mdd = File.join(fulcrum_dir, sd_dir)
+    next unless File.directory?(mdd)
+
+    monograph_dept_dir = mdd
+    break
+  end
+end
+if monograph_dept_dir.nil?
+  script_logger.fatal("no press directory found for #{um_press_dir}.")
+  exit 1
+end
+script_logger.info("found press directory #{um_press_dir}.")
+
+# Create the task processing directory.
+task_dir = File.join(publish_dir, task_id)
+FileUtils.mkdir_p task_dir
+application_task_dir = File.join(application_publish_dir, task_id)
+greensub_task_dir = File.join(greensub_publish_dir, task_id)
+script_logger.info("Using task directory #{File.basename(task_dir)}")
+
+# Create the serivce for retrieving the NOID manifest.
+service = UMPTG::Services::Heliotrope.new()
+
+# For each monograph ID, retrieve
+#   NOID, Series ID, Fulcrum Link
+monograph_info = {}
+monograph_noid_list = []
+monograph_date = {}
+monograph_id_list.each do |monograph_id|
+  # Process monograph ID.
+  script_logger.info("*" * 10 + " #{monograph_id} " + "*" * 10)
+  STDOUT.flush
+
+  # Find the directory using the monograph id.
+  monograph_dir_list = Dir.glob(File.join(monograph_dept_dir, monograph_id + "*"))
+  if monograph_dir_list.empty?
+    script_logger.warn("monograph directory using id #{monograph_id} not found.")
+    monograph_dir = nil
+  else
+    #monograph_dir = monograph_dir_list[0]
+    monograph_dir = monograph_dir_list.last
+    script_logger.warn("Multiple monograph directories found for id #{monograph_id}. Using #{monograph_dir}") \
+          if monograph_dir_list.count > 1
+    script_logger.info("Using monograph directory #{monograph_dir}") if monograph_dir_list.count == 1
+
+    resources_dir_list = Dir.glob(File.join(monograph_dir, "[Rr]esources"))
+    if resources_dir_list.empty?
+      script_logger.warn("no resources directory found for #{File.basename(monograph_dir)}")
+      monograph_resources_dir = fmsl_file = nil
+    else
+      monograph_resources_dir = resources_dir_list.first
+      fmsl_file = Dir.glob(File.join(monograph_resources_dir, "*.{xlsx,csv}")).first
+      script_logger.warn("no FMSL file found for  #{File.basename(monograph_dir)}") if fmsl_file.nil?
+    end
+  end
+
+  # From the press, determine the format for the Identifer to use
+  # to query Fulcrum.
+  case options.press
+  when :bar
+    #identifier = "bar_number:#{monograph_id}"
+    identifier = monograph_id
+  when :heb
+    identifier = "heb_id:#{monograph_id}"
+  else
+    identifier = monograph_id
+  end
+=begin
+  # Use the monograph ID to retrieve the manifest from Fulcrum.
+  manifest = UMPTG::Fulcrum::Manifest::Document.new(
+                monograph_id: identifier
+              )
+  monograph_row = manifest.monograph_row
+  if monograph_row.nil?
+    script_logger.error("manifest not found for #{identifier}")
+    next
+  end
+  monograph_noid = monograph_row['noid']
+  script_logger.info("using NOID #{monograph_noid}")
+
+  # Use the Identifier to retrieve the monograph NOID. Returns a list
+  # as the Identifer may be associated with multiple monographs. The
+  # first one returned is used.
+  mnl = service.monograph_noid(
+              identifier: identifier
+              )
+  if mnl.empty?
+    script_logger.error("monograph NOID not found for #{identifier}")
+    next
+  end
+  monograph_noid = mnl[identifier].first
+  script_logger.info("#{identifier}: found #{mnl.count} monograph, NOID #{monograph_noid}.") \
+      if mnl.count == 1
+  script_logger.warn("#{identifier}: found #{mnl.count} monographs. Using first one found, NOID #{monograph_noid}.") \
+      if mnl.count > 1
+=end
+
+  # Use the NOID to retrieve the monograph manifest CSV.
+  mbl = service.monograph_export(
+                identifier: identifier
+              )
+  manifest_body_list = mbl[identifier]
+  if manifest_body_list.empty?
+    script_logger.error("monograph manifest not found for #{identifier}")
+    next
+  end
+
+  # From the manifest CSV, create a Fulcrum manifest object.
+  manifest = UMPTG::Fulcrum::Manifest::Document.new(
+                csv_body: manifest_body_list.first
+              )
+
+  # Retrieve the monograph row entry.
+  monograph_row = manifest.monograph_row
+  if monograph_row.nil?
+    script_logger.error("manifest monograph row not found for #{identifier}")
+    next
+  end
+  monograph_noid = manifest.noid
+  script_logger.info("using NOID #{monograph_noid}")
+
+  # Find EPUB representative NOID
+  epub_noid = nil
+  epub_row = manifest.representative_row(kind: "epub")
+  if epub_row.nil?
+    script_logger.warn("no EPUB row found for id #{monograph_id}")
+  else
+    epub_noid = epub_row['noid']
+    script_logger.info("using EPUB NOID #{epub_noid} for id #{monograph_id}")
+  end
+
+  # Find the PDF representative NOID
+  pdf_noid = nil
+  pdf_row = manifest.representative_row(kind: "pdf_ebook")
+  if pdf_row.nil?
+    script_logger.error("no PDF row found for id #{monograph_id}")
+  else
+    pdf_noid = pdf_row['noid']
+    script_logger.info("using PDF NOID #{pdf_noid} for id #{monograph_id}")
+  end
+
+  # Determine the monograph series ID. Most presses use DOI.
+  # BAR and HEB use their respective IDs.
+  series_id = ""
+  case options.press
+  when :aberdeen, :amherst, :aperio, :atg, :ebc, :michelt, :leverpress, :livedplaces, :maize, :ummaa, :vermont, :westminster
+    series_id = monograph_row["doi"]
+
+    if series_id.nil?
+=begin
+      script_logger.info("series_id: DOI not found, using ISBN")
+
+      series_id = manifest.isbn['open access'] if series_id.nil?
+      series_id = manifest.isbn['ebook'] if series_id.nil?
+      series_id = manifest.isbn['oa ebook'] if series_id.nil?
+      series_id.strip! unless series_id.nil?
+=end
+      script_logger.info("series_id: DOI not found, using Handle")
+
+      series_id = "https://hdl.handle.net/2027/fulcrum." + monograph_noid
+      script_logger.error("series_id: Handle not found.") if series_id.nil? or series_id.empty?
+    end
+  else
+    id_list = monograph_row["identifier(s)"]
+    unless id_list.nil?
+      id_a = id_list.split(';')
+      case options.press
+      when :bar
+        list = id_a.select {|id| id.strip.downcase.start_with?('bar_number:') }
+        series_id = list.first.strip.delete_prefix('bar_number:').strip unless list.empty?
+      when :heb
+        #list = id_a.select {|id| id.strip.downcase.match?(/^heb[0-9]{5}\.[0-9]{4}\.[0-9]{3}/) }
+        list = id_a.select {|id| id.strip.downcase.start_with?("heb_id:") }
+        series_id = list.first.strip.delete_prefix('heb_id:').strip unless list.empty?
+      end
+    end
+  end
+  if series_id.nil? or series_id.strip.empty?
+    script_logger.error("series ID not specified for id #{monograph_id}. Skipping.")
+    next
+  end
+
+  pub_date_str = monograph_row['pub_year']
+  if pub_date_str.nil?
+    script_logger.warn("pub_year not specified for id #{monograph_id}")
+    pub_date = Date.today
+  else
+    pub_date = Date.strptime(pub_date_str, '%Y')
+  end
+
+  # Determine whether title is OA.
+  unless options.press == :bar \
+        or monograph_row['open_access?'].nil? \
+        or monograph_row['open_access?'].downcase == 'no'
+    open_access = "open_access"
+  else
+    open_access = ""
+  end
+
+  minfo = {
+       monograph_noid: monograph_noid,
+       monograph_dir: monograph_dir,
+       monograph_resources_dir: monograph_resources_dir,
+       fmsl_file: fmsl_file,
+       epub_noid: epub_noid,
+       pdf_noid: pdf_noid,
+       monograph_url: monograph_row["link"][12..-3],
+       monograph_doi: monograph_row["doi"],
+       monograph_series: series_id,
+       monograph_pub_date: pub_date,
+       monograph_open_access: open_access
+       }
+
+  monograph_info[monograph_id] = minfo
+  monograph_noid_list << monograph_noid
+end
+
+# Write components file.
+components_files = {}
+case options.press
+when :heb
+  cfile = File.join(task_dir, "noid_heb.csv")
+  File.open(cfile, "w") do |fp|
+    monograph_info.each do |monograph_id,minfo|
+      fp.puts "#{minfo[:monograph_noid]},#{minfo[:monograph_series]}"
+    end
+  end
+  application_cfile = File.join(application_task_dir, File.basename(cfile))
+  components_files["heb"] = application_cfile
+else
+  # Non-HEB, use press name in file name.
+  component_product = {}
+  monograph_info.each do |monograph_id,minfo|
+    pub_year = minfo[:monograph_pub_date].year
+
+    product = ""
+    case options.press
+    when :aberdeen, :amherst, :livedplaces, :michelt, :ummaa, :vermont, :westminster
+      product = options.press.to_s
+    end
+    unless product.strip.empty?
+      if component_product.key?(product)
+        component_product[product] << minfo
+      else
+        component_product[product] = [minfo]
+      end
+    end
+
+    # Determine product name
+    unless options.press == :aberdeen or options.press == :atg or options.press == :livedplaces or options.press == :vermont or options.press == :westminster
+      if options.press == :ebc and pub_year <= 2011
+        perd = "2011pre"
+      elsif options.press == :bar and pub_year < 2020
+        perd = "pre"
+      else
+        perd = pub_year.to_s
+      end
+
+      case options.press
+      when :ebc, :ummaa
+        product = "ebc_" + perd
+      else
+        product = options.press.to_s + "_" + perd
+      end
+      if component_product.key?(product)
+        component_product[product] << minfo
+      else
+        component_product[product] = [minfo]
+      end
+    end
+
+    # Handle non-MPS imprints
+    unless options.press == :michelt or options.press == :amherst \
+          or options.press == :aberdeen or options.press == :vermont \
+          or options.press == :westminster or options.press == :atg \
+          or options.press == :livedplaces
+      case options.press
+      when :bar
+        if minfo[:monograph_series][0].downcase == 'b'
+          product += "_brit"
+        else
+          product += "_int"
+        end
+      when :ebc, :ummaa
+        product = "ebc_complete"
+      end
+      if component_product.key?(product)
+        component_product[product] << minfo
+      else
+        component_product[product] = [minfo]
+      end
+
+      unless minfo[:monograph_open_access].empty?
+        case options.press
+        when :aperio, :ebc, :leverpress, :ummaa
+          product = "ebc_oa"
+        else
+          raise "Found open access for press #{options.press}, #{minfo}"
+        end
+        if component_product.key?(product)
+          component_product[product] << minfo
+        else
+          component_product[product] = [minfo]
+        end
+      end
+    end
+  end
+
+  # Create product component CSV files
+  # NOID,Series ID
+  component_product.each do |product,minfo_list|
+    cfile = File.join(task_dir, "noid_#{product}.csv")
+    File.open(cfile, "w") do |fp|
+      minfo_list.each do |minfo|
+        fp.puts "#{minfo[:monograph_noid]},#{minfo[:monograph_series]}"
+      end
+    end
+    application_cfile = File.join(greensub_task_dir, File.basename(cfile))
+    components_files[product] = application_cfile
+  end
+end
+
+# Write the commands file.
+cmds_file = File.join(task_dir, task_id + ".txt")
+File.open(cmds_file, "w") do |fp|
+  fp.puts "# Server information fulcrum-21{1,2}"
+  fp.puts "[tbelc@tang:~]$ eval `ssh-agent -s`"
+  fp.puts "[tbelc@tang:~]$ ssh-add ~/.ssh/heliotrope-deploy"
+  fp.puts "Enter passphrase for /home/tbelc/.ssh/heliotrope-deploy: deploy"
+  fp.puts "Identity added: /home/tbelc/.ssh/heliotrope-deploy (/home/tbelc/.ssh/heliotrope-deploy)"
+  fp.puts "[tbelc@tang:~]$ ssh -A fulcrum@fulcrum-211"
+  fp.puts "[fulcrum@fulcrum-211:~]$ cd app/current"
+  fp.puts "[fulcrum@fulcrum-211:~/app/current]$ "
+  fp.puts
+
+  fp.puts "# Migrate FMSLs"
+  monograph_info.each do |monograph_id,minfo|
+    fmsl_file = minfo[:fmsl_file]
+    next if fmsl_file.nil?
+    f = File.join("/#{fmsl_file[0]}", fmsl_file[2..-1].gsub(' ', '\ '))
+    fp.puts "bundle exec ruby script#{File::SEPARATOR}migrate_fmsl -c #{f}"
+  end
+  fp.puts
+  fp.puts "# Process resources"
+  monograph_info.each do |monograph_id,minfo|
+    monograph_dir = minfo[:monograph_dir]
+    unless monograph_dir.nil?
+      monograph_resources_dir = minfo[:monograph_resources_dir]
+      prefix = monograph_resources_dir.nil? ? "#" : ""
+
+      f = File.join("#{File::SEPARATOR}#{monograph_dir[0]}", monograph_dir[2..-1].gsub(' ', '\ '))
+      fp.puts "#{prefix}bundle exec ruby script#{File::SEPARATOR}monograph_resource_metadata #{f}"
+    end
+  end
+  fp.puts
+  fp.puts "# Review monographs"
+  fp.puts "bundle exec ruby script#{File::SEPARATOR}review_monograph -n -u #{monograph_info.keys.join(' ')}"
+  fp.puts
+  fp.puts "# Import resources"
+  monograph_has_resources = false
+  monograph_info.each do |monograph_id,minfo|
+    noid = minfo[:monograph_noid]
+
+    prefix = ""
+    monograph_dir = minfo[:monograph_dir]
+    unless monograph_dir.nil?
+      monograph_resources_dir = minfo[:monograph_resources_dir]
+
+      application_monograph_dir = File.join(
+                  options.application_dir,
+                  sd_dir,
+                  File.basename(monograph_dir)
+                )
+      if monograph_resources_dir.nil?
+        resources_dir = File.join(application_monograph_dir, "Resources")
+        prefix = "#"
+      else
+        resources_dir = File.join(application_monograph_dir, File.basename(monograph_resources_dir))
+        monograph_has_resources = true
+      end
+      fp.puts "#{prefix}bundle exec script#{File::SEPARATOR}import -m #{noid} -d #{resources_dir}"
+    end
+  end
+  fp.puts
+  fp.puts "# Create components (nectar)"
+  components_files.each do |product,comp_file|
+    fp.puts "bundle exec ruby bin#{File::SEPARATOR}restrict_items.rb -f #{comp_file} -p #{product} >& #{greensub_task_dir}/restrict_items_#{product}.log"
+  end
+  fp.puts
+  fp.puts "# DOI Submission"
+  includes_file = File.join(task_dir, "doi_submission_includes.csv")
+  File.open(includes_file, "w") do |f|
+    f.puts "ISBN"
+    f.puts monograph_info.keys.join("\n")
+  end
+  tocrossref_dir = File.join(fulcrum_dir, "TMMDataTransfer", "ToCrossref")
+  tocrossref_pattern = File.join(tocrossref_dir, "*_MPS_UMPRE.xml")
+  src_tocrossref_file = Dir.glob(tocrossref_pattern).last
+  dest_tocrossref_file = File.join(task_dir, File.basename(src_tocrossref_file))
+  fp.puts "bundle exec ruby script#{File::SEPARATOR}crossref_generate -l fulcrum -i #{includes_file.gsub(' ', '\ ')} #{dest_tocrossref_file.gsub(' ', '\ ')}"
+  FileUtils.copy(src_tocrossref_file, dest_tocrossref_file)
+  fp.puts
+
+  fp.puts "# Rails console"
+  fp.puts "bundle exec rails console"
+  fp.puts
+
+  fp.puts "# Publish monographs (fulcrum-211)"
+  fp.puts "%w[#{monograph_noid_list.join(' ')}].each do |noid|"
+  fp.puts "\tPublishJob.perform_now(Monograph.find(noid))"
+  fp.puts "end;0"
+  fp.puts
+  fp.puts "# Monograph information"
+  fp.puts monograph_info.keys.join(' ')
+  fp.puts monograph_info.keys.select {|k| monograph_info[k][:fmsl_file] != nil }.join(' ')
+  monograph_info.each do |monograph_id,minfo|
+    #mminfo = minfo.delete_if {|key,value| key == :monograph_dir or key == :monograph_resources_dir or key == :fmsl_file}
+    mminfo = minfo.select {|key,value| key != :monograph_dir and key != :monograph_resources_dir and key != :fmsl_file}
+    fp.puts "#{monograph_id},#{mminfo.values.join(',')}"
+  end
+  fp.puts
+  if monograph_has_resources
+    fp.puts "# Resource processing ticket comment"
+    fp.puts "[~jilliand] [~mhylton] [~mbakeryo]"
+    fp.puts "Resource processed the following titles:"
+    monograph_info.each do |monograph_id,minfo|
+      monograph_dir = minfo[:monograph_dir]
+      unless monograph_dir.nil? or minfo[:monograph_resources_dir].nil?
+        fp.puts "# #{File.basename(monograph_dir)}"
+      end
+    end
+    fp.puts "No Fulcrum EPUB Specification infractions found with the following titles. UnpackJob was executed in the Fulcrum Rails console to force the resources to be embedded and the EPUBs have been updated on Fulcrum."
+    fp.puts "# "
+    fp.puts
+    fp.puts "Fulcrum EPUB Specification infractions were found for the following titles. The EPUBs for these were normalized and should be updated on Fulcrum overnight."
+    fp.puts "# "
+    fp.puts
+    fp.puts "The following issues were encountered and corrected:"
+    fp.puts "# "
+    fp.puts
+  end
+  fp.puts "# Publishing ticket comment"
+  fp.puts "[~mbakeryo]"
+  fp.puts "Created the components *#{components_files.keys.join('*, *')}* and marked the monographs public. Also, the DOIs were successfully submitted to CrossRef for deposit. The results can be found in the attached zip files:"
+  fp.puts "#{task_id}.zip"
+  fp.puts
+  fp.puts "Reassigning to [~mbakeryo]."
+  fp.puts
+  if monograph_has_resources
+    fp.puts "# Unpack EPUB representatives"
+    epub_noid_list = monograph_info.values.collect {|minfo| minfo[:epub_noid]}
+    pdf_noid_list = monograph_info.values.collect {|minfo| minfo[:pdf_noid]}
+    fp.puts "%w[#{epub_noid_list.join(' ')}].each do |noid|"
+    fp.puts "\tUnpackJob.perform_now(noid,'epub')"
+    fp.puts "end;0"
+    fp.puts
+  end
+  fp.puts "# Unpack representatives"
+  monograph_info.each do |monograph_id,minfo|
+    epub_noid = minfo[:epub_noid]
+    pdf_noid = minfo[:pdf_noid]
+
+    fp.puts "#{monograph_id}:"
+    fp.puts "\tUnpackJob.perform_now('','')" if epub_noid.nil? and pdf_noid.nil?
+    fp.puts "\tUnpackJob.perform_now('#{epub_noid}','epub')" unless epub_noid.nil?
+    fp.puts "\tUnpackJob.perform_now('#{pdf_noid}','pdf_ebook')" unless pdf_noid.nil?
+  end
+  fp.puts
+  fp.puts "# Create monographs"
+  fp.puts "find /mnt/umptmm/<monograph_dir>/ -maxdepth 1 -mindepth 1 -type d -print0 | sort -zn | xargs -0 -I '{}' echo bundle exec script/import -d '{}' -p <heb|michigan|um-pccn> -v private -q"
+  fp.puts
+  fp.puts "# Replace resources"
+  fp.puts "bundle exec rake \"heliotrope:replace_files[#{File.join(options.application_dir, ptg_dir, "replace_files")}, noid]\""
+  fp.puts
+  fp.puts "# Retrieve NOIDs"
+  fp.puts "bundle exec rake \"heliotrope:qc_csv_heb[2018-06-08T00:00:00-04:00]\""
+end
