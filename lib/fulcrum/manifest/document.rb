@@ -43,7 +43,7 @@ module UMPTG::Fulcrum::Manifest
       case
       when @properties.key?(:csv_body)
         body = @properties[:csv_body]
-        csv_body = { body => [ body ]}
+        csv_body = { "body" => [ body ]}
       when @properties.key?(:csv_file)
         csv_file = @properties[:csv_file]
         raise "Error: invalid CSV file path #{csv_file}" \
@@ -53,9 +53,7 @@ module UMPTG::Fulcrum::Manifest
         service = UMPTG::Services::Heliotrope.new(
                         :fulcrum_host => @properties[:fulcrum_host]
                       )
-        csv_body = service.monograph_export(noid: @properties[:monograph_id])
-        csv_body = service.monograph_export(identifier: @properties[:monograph_id]) \
-                      if csv_body[@properties[:monograph_id]].empty?
+        csv_body = service.monograph_export(identifier: @properties[:monograph_id])
         csv_body = nil if csv_body[@properties[:monograph_id]].empty?
 
         raise "found #{csv_body[@properties[:monograph_id]].count} manifests for identifier #{@properties[:monograph_id]}" \

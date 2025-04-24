@@ -1,6 +1,7 @@
 module UMPTG::Fulcrum
 
   require_relative "manifest"
+  require_relative File.join("..", "fmsl")
 
   #@@DEFAULT_PUBLISHER_DIR = OS.windows? ? "s:/Information\ Management/Fulcrum" : "/mnt/umptmm"
   @@DEFAULT_DIR = "s:/Information\ Management/Fulcrum/Fulcrum_Synced"
@@ -118,8 +119,11 @@ module UMPTG::Fulcrum
           if @fmsl_file.nil? or !File.file?(@fmsl_file)
             @logger.warn("no manifest file found")
           else
+            # Load the FMSL and migrate it to a Fulcrum metadata CSV.
+            fmsl_body = UMPTG::FMSL.load(fmsl_file: @fmsl_file)
+            fmsl_csv = UMPTG::FMSL.to_manifest(fmsl_body: fmsl_body)
             @fmsl = UMPTG::Fulcrum::Manifest::Document.new(
-                        csv_file: @fmsl_file,
+                        csv_body: fmsl_csv.to_s,
                         convert_headers: false
                     )
           end
