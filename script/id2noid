@@ -40,5 +40,6 @@ service = UMPTG::Services::Heliotrope.new(
 
 monograph_noids = service.monograph_noid(identifier: monograph_id_list)
 monograph_noids.each do |id,noid_list|
-  puts "#{id}:#{noid_list.count},#{noid_list.join(',')}"
+  #puts "#{id}:#{noid_list.count},#{noid_list.join(',')}"
+  puts "#{noid_list.join(',')},#{id}"
 end

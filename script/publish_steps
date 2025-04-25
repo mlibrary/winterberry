@@ -109,16 +109,15 @@ monograph_id_list.each do |monograph_id|
                   )
 
       # Retrieve the monograph row entry.
-      monograph_row = manifest.monograph_row
-      if monograph_row.nil?
-        script_logger.error("manifest monograph row not found")
+      if manifest.monograph_row.nil?
+        script_logger.error("Fulcrum monograph manifest not found")
         next
       end
-      script_logger.info("manifest monograph row found")
+      script_logger.info("Fulcrum monograph manifest found #{manifest.noid}")
 
       # Determine the press, Publication Date
       monograph_press = manifest.press.downcase
-      pub_date_str = monograph_row['pub_year']
+      pub_date_str = manifest.monograph_row['pub_year']
       if pub_date_str.nil?
         script_logger.warn("pub_year not specified for id #{monograph_id}")
         pub_date = Date.today
