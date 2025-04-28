@@ -168,7 +168,7 @@ doi_report_file_list.each do |doi_report_file|
       if bnode_list.empty? or options.monograph_link == :fulcrum
         # Assume the monograph ID is a Fulcrum Identifer.
         manifest_body_list = service.monograph_export(
-                      monograph_id: monograph_id
+                      identifier: monograph_id
                     )
         if manifest_body_list[monograph_id].empty?
           script_logger.warn("no manifest found for ID #{monograph_id}.")
