@@ -105,7 +105,7 @@ module UMPTG::Fulcrum
           @fmsl_file = File.join(@resources_dir, "manifest.csv")
           unless File.file?(@fmsl_file)
             @fmsl_file = nil
-            path_list = Dir.glob(File.join(@resources_dir, "*.csv"))
+            path_list = Dir.glob(File.join(@resources_dir, "*.{xlsx,csv}"))
             if path_list.empty?
               @logger.warn("no resources CSV for id #{@monograph_id}.")
             else

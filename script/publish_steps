@@ -280,7 +280,7 @@ File.open(cmds_file, "w") do |fp|
       else
         resources_dir = File.join(application_monograph_dir, File.basename(minfo.monograph_dir.resources_dir))
       end
-      fp.puts "#{prefix}bundle exec script#{File::SEPARATOR}import -m #{minfo.monograph_noid} -d #{resources_dir}"
+      fp.puts "#{prefix}bundle exec script#{File::SEPARATOR}import -m #{minfo.monograph_noid} -v private -d #{resources_dir}"
     end
   end
   fp.puts
