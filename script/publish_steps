@@ -313,6 +313,12 @@ File.open(cmds_file, "w") do |fp|
   fp.puts "\tPublishJob.perform_now(Monograph.find(noid))"
   fp.puts "end;0"
   fp.puts
+  fp.puts "# Register fileset DOIs"
+  fp.puts "%w[#{monograph_noid_list.join(' ')}].each do |noid|"
+  fp.puts "\tdoc = Crossref::FileSetMetadata.new(\"noid\").build"
+  fp.puts "\tresponse = Crossref::Register.new(doc.to_xml).post"
+  fp.puts "end;0"
+  fp.puts
   fp.puts "# Resource processing ticket comment"
   fp.puts "[~jilliand] [~mhylton] [~mbakeryo]"
   fp.puts "Resource processed the following titles:"
@@ -332,7 +338,7 @@ File.open(cmds_file, "w") do |fp|
   fp.puts
   fp.puts "# Publishing ticket comment"
   fp.puts "[~mbakeryo]"
-  fp.puts "Created the components *#{product_component_list.keys.join('*, *')}* and marked the monographs public. Also, the DOIs were successfully submitted to CrossRef for deposit. The results can be found in the attached zip files:"
+  fp.puts "Created the components *#{product_component_list.keys.join('*, *')}* and marked the monographs public. Also, the DOIs were successfully submitted to Crossref for deposit. The results can be found in the attached zip files:"
   fp.puts "#{task_id}.zip"
   fp.puts
   fp.puts "Reassigning to [~mbakeryo]."
