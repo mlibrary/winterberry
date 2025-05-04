@@ -10,5 +10,11 @@ module UMPTG::EPUB
       @action_result = @properties[:action_result]
       @entry = @properties[:entry]
     end
+
+    def select_by_name(args = {})
+      name = args[:name]
+
+      return action_result.actions.select {|a| a.name == name }
+    end
   end
 end

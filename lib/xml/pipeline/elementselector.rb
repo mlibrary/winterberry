@@ -4,6 +4,8 @@ module UMPTG::XML::Pipeline
 
   # Class is base for resource reference selection.
   class ElementSelector < UMPTG::Object
+    attr_reader :xpath
+
     def initialize(args = {})
       super(args)
       @xpath = @properties[:selection_xpath]

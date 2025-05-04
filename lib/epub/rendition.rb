@@ -52,8 +52,33 @@ module UMPTG::EPUB
 
     def metadata
       meta = {}
-      @opf_doc.root.xpath("./*[local-name()='metadata']/*").each {|n| meta[n.name]= n.content }
+      @opf_doc.root.xpath("./*[local-name()='metadata']/*").each do |n|
+        case n.name
+        when "meta"
+          prop = n['property']
+          if meta[prop].nil?
+            meta[prop] = [n.content.strip]
+          else
+            meta[prop] << n.content.strip
+          end
+        else
+          meta[n.name]= n.content
+        end
+      end
       return meta
+    end
+
+    def hasProperty(args = {})
+      property = args[:property] || ""
+      unless property.empty?
+        property_list =  metadata[property] || []
+        property_value = (args[:property_value] || "").strip.downcase
+        return !property_list.empty? if property_value.empty?
+
+        val_list = property_list.select {|m| m.downcase == property_value }
+        return !val_list.empty?
+      end
+      return false
     end
 
     def manifest

@@ -3,16 +3,17 @@ module UMPTG::XML::Pipeline
 
   class Filter < UMPTG::Object
 
-    attr_reader :name, :xpath
+    attr_reader :name, :xpath, :selector
 
     def initialize(args = {})
-      unless args.key?(:selector)
-        args[:selector] = ElementSelector.new(
-                selection_xpath: args[:xpath]
+      a = args.clone
+      unless a.key?(:selector)
+        a[:selector] = ElementSelector.new(
+                selection_xpath: a[:xpath]
               )
       end
 
-      super(args)
+      super(a)
 
       @name = @properties[:name]
       @xpath = @properties[:xpath]
@@ -21,6 +22,8 @@ module UMPTG::XML::Pipeline
 
     def run(xml_doc, args = {})
       a = args.clone()
+      a[:name] = @name
+
       actions = []
       @selector.references(xml_doc).each do |n|
         a[:reference_node] = n

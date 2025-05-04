@@ -34,10 +34,10 @@ module UMPTG::XML::Pipeline
 
       end
 
-      logger = args.key?(:logger) ? args[:logger] : UMPTG::Logger.create(logger_fp: STDOUT)
+      #logger = args.key?(:logger) ? args[:logger] : UMPTG::Logger.create(logger_fp: STDOUT)
       UMPTG::XML::Pipeline::Action.display_messages(
             actions: actions,
-            logger: logger
+            logger: args[:logger]
          )
       return UMPTG::XML::Pipeline::ActionResult.new(
               actions: actions,
@@ -46,8 +46,11 @@ module UMPTG::XML::Pipeline
     end
 
     def self.display_messages(args = {})
+      logger = args[:logger]
+      return if logger.nil?
+
       actions = args.key?(:actions) ? args[:actions] : []
-      logger = args.key?(:logger) ? args[:logger] : UMPTG::Logger.create(logger_fp: STDOUT)
+      #logger = args.key?(:logger) ? args[:logger] : UMPTG::Logger.create(logger_fp: STDOUT)
 
       actions.each do |action|
         action.messages.each do |msg|

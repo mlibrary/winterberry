@@ -34,6 +34,7 @@ module UMPTG::EPUB
 
       # Indicate the options selected for this run.
       @xml_processor.display_options()
+      @xml_processor.logger = nil
 
       entry_actions = []
 
@@ -89,6 +90,7 @@ module UMPTG::EPUB
         end
         @xml_processor.filters = sv_filters
       end
+      @xml_processor.logger = @logger
 
       entry_actions.each do |ea|
         @logger.info("Entry: #{ea.entry.name}")
