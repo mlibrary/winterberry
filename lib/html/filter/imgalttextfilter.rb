@@ -1,6 +1,6 @@
-module UMPTG::Fulcrum::Resources::Filter
+module UMPTG::HTML::Filter
 
-  class AltTextFilter < UMPTG::XML::Pipeline::Filter
+  class ImgAltTextFilter < UMPTG::XML::Pipeline::Filter
 
     XPATH = <<-SXPATH
     //*[

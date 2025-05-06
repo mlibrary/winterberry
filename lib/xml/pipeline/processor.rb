@@ -24,13 +24,21 @@ module UMPTG::XML::Pipeline
 
       super(a)
 
-      @filters = a[:filters].values
+      @filters = @properties[:filters].values
+      @path = @filters.collect {|f| f.xpath }.join('|')
     end
 
     def run(xml_doc, args = {})
       actions = []
-      @filters.each do |filter|
-        actions += filter.run(xml_doc, args)
+
+      a = args.clone()
+      a[:name] = @name
+      xml_doc.xpath(@path).each do |n|
+        a[:reference_node] = n
+        @filters.each do |f|
+          a[:name] = f.name
+          actions += f.create_actions(a)
+        end
       end
 
       # Return XML::ActionResult

@@ -30,15 +30,16 @@ module UMPTG::Fulcrum::Resources::Filter
       name = args[:name]
       reference_node = args[:reference_node]  # <meta> element
 
-      raise "unknown element #{reference_node.name}" unless reference_node.name == 'meta'
+      action_list = []
 
-      return [
-          UMPTG::XML::Pipeline::Action.new(
+      if reference_node.name == 'meta'
+        action_list << UMPTG::XML::Pipeline::Action.new(
                name: name,
                reference_node: reference_node,
                info_message: "#{name}, found #{reference_node}"
            )
-        ]
+      end
+      return action_list
     end
   end
 end

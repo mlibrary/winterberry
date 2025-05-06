@@ -358,6 +358,8 @@ module UMPTG::EPUB
           opf_entry = @name2entry[opf_file]
           raise "Error: invalid OPF path" if opf_entry.nil?
 
+          opf_entry.type = root_elem['media-type']
+
           rendition = Rendition.new(
                       name: opf_entry.name,
                       content: opf_entry.get_input_stream.read

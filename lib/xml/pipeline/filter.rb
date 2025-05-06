@@ -16,8 +16,8 @@ module UMPTG::XML::Pipeline
       super(a)
 
       @name = @properties[:name]
-      @xpath = @properties[:xpath]
       @selector = @properties[:selector]
+      @xpath = @selector.xpath
     end
 
     def run(xml_doc, args = {})
@@ -34,7 +34,9 @@ module UMPTG::XML::Pipeline
     end
 
     def create_actions(args = {})
-      act = UMPTG::XML::Pipeline::Action.new(args)
+      a = args.clone
+      act = UMPTG::XML::Pipeline::Action.new(a)
+      act.add_info_msg("#{name}, found #{a[:reference_node]}")
       return [ act ]
     end
   end

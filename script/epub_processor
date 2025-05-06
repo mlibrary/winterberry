@@ -1,0 +1,162 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Script for embedding resource links
+# epub_process -n -f embed_link -m manifest.csv book.epub
+
+require 'optparse'
+require 'ostruct'
+require 'os'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+# Process the script parameters.
+options = OpenStruct.new
+options.manifest_file = nil
+options.normalize = false
+options.filter_list = []
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-n] [-m manifest_file] [-f filter] epub_file [epub_file...]"
+  opts.on('-f', '--filter filter', 'Filter name') do |filter|
+    options.filter_list << filter.to_sym
+  end
+  opts.on('-m', '--manifest manifest_file', 'Resource manifest file') do |manifest_file|
+    options.manifest_file = manifest_file
+  end
+  opts.on('-n', '--normalize', 'Use which link as resource') do |flag|
+    options.normalize = true
+  end
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    script_logger.info(opts)
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  script_logger.info(option_parser.help)
+  return
+end
+
+# Process the command line parameters.
+epub_file_list = ARGV
+
+require_relative File.join(root_dir, "lib", "epub")
+require_relative File.join(root_dir, "lib", "fulcrum")
+require_relative File.join(root_dir, "lib", "xml", "pipeline")
+
+manifest = nil
+unless options.manifest_file.nil?
+  manifest_file = File.expand_path(options.manifest_file)
+  unless File.file?(manifest_file)
+    script_logger.error("#{manifest_file} is not a file.")
+    exit 1
+  end
+  manifest = UMPTG::Fulcrum::Manifest::Document.new(
+        csv_file: manifest_file
+      )
+end
+
+filter_list = options.filter_list.empty? ? [ :alt_text, :opf ] : options.filter_list
+
+ops = {}
+filter_list.each {|f| ops[f] = true }
+fixer_processor = UMPTG::Fulcrum::Resources::Processor.new(
+      name: "Fixer",
+      manifest: manifest,
+      process_figures: true,
+      options: ops
+    )
+
+epub_processor = UMPTG::Fulcrum::Resources.EPUBProcessor(
+      xml_processor: fixer_processor
+    )
+
+epub_file_list.each do |epub_file|
+  unless File.file?(epub_file)
+    script_logger.error("invalid EPUB file #{epub_file}")
+    exit 1
+  end
+  script_logger.info("*** processing EPUB file #{File.basename(epub_file)} ***")
+  STDOUT.flush
+
+  epub = UMPTG::EPUB(epub_file: epub_file)
+
+  logger_file =  File.join(
+            File.dirname(epub_file),
+            File.basename(epub_file, ".*") + "_" + File.basename(__FILE__) + ".log"
+            )
+  epub_processor.logger = UMPTG::Logger.create(logger_file: logger_file)
+  epub_processor.logger.info("Processing EPUB file #{File.basename(epub_file)}")
+  entry_actions = epub_processor.run(
+        epub,
+        {
+            normalize: options.normalize
+        }
+      )
+
+  alt_text_act = []
+  entry_actions.each do |ea|
+    alt_text_act += ea.select_by_name(name: :alt_text)
+  end
+  fixer_processor.logger.info("non-presentation images without alt text:#{alt_text_act.count}") if alt_text_act.empty?
+  fixer_processor.logger.warn("non-presentation images without alt text:#{alt_text_act.count}") unless alt_text_act.empty?
+
+  opf_act = []
+  entry_actions.each do |ea|
+    opf_act += ea.select_by_name(name: :opf)
+  end
+  fixer_processor.logger.info("metadata issues:#{opf_act.count}")
+
+  # <meta property="schema:accessModeSufficient">textual</meta>
+  act = opf_act.select {|a|
+      a.reference_node['property'] == 'schema:accessModeSufficient' and a.reference_node.content == "textual"
+    }
+  if act.empty?
+    fixer_processor.logger.warn("accessModeSufficient=textual not found")
+  else
+    fixer_processor.logger.info("accessModeSufficient=textual found")
+  end
+
+  # <meta property="schema:accessibilityFeature">alternativeText</meta>
+  act = opf_act.select {|a|
+      a.reference_node['property'] == 'schema:accessibilityFeature' and a.reference_node.content == "alternativeText"
+    }
+  if act.empty?
+    fixer_processor.logger.warn("accessibilityFeature=alternativeText not found")
+  else
+    fixer_processor.logger.info("accessibilityFeature=alternativeText found")
+  end
+
+  # <meta property="schema:accessibilityFeature">printPageNumbers</meta>
+  act = opf_act.select {|a|
+      a.reference_node['property'] == 'schema:accessibilityFeature' and a.reference_node.content == "printPageNumbers"
+    }
+  if act.empty?
+    fixer_processor.logger.warn("accessibilityFeature=printPageNumbers not found")
+  else
+    fixer_processor.logger.info("accessibilityFeature=printPageNumbers found")
+  end
+
+  # <meta property="pageBreakSource">...</meta>
+  act = opf_act.select {|a| a.reference_node['property'] == 'pageBreakSource' }
+  if act.empty?
+    fixer_processor.logger.warn("pageBreakSource not found")
+  else
+    fixer_processor.logger.info("pageBreakSource found")
+  end
+
+  if epub.modified
+    new_epub_file = File.join(
+            File.dirname(epub_file),
+            File.basename(epub_file, ".*") + "_" + File.basename(__FILE__) + File.extname(epub_file)
+            )
+    epub.save(epub_file: new_epub_file)
+    script_logger.info("Saved #{new_epub_file}.")
+  end
+end
