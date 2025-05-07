@@ -137,16 +137,20 @@ module UMPTG::Fulcrum
         end
         if epub_row.nil?
           epub_list = Dir.glob(File.join(@monograph_dir, "*.epub"))
-          raise "no monograph EPUB found" if epub_list.empty?
+          #raise "no monograph EPUB found" if epub_list.empty?
           epub_file_name = epub_list.first
           @epub_file = epub_list.first
         else
           epub_file_name = epub_row['file_name']
           @epub_file = File.expand_path(File.join(@monograph_dir, epub_file_name))
         end
-        archive_dir = File.join(@monograph_dir, "archive")
-        archived_epub_list = Dir.glob(File.join(archive_dir, "*.epub"))
-        @archived_epub_file = archived_epub_list.last
+        if @epub_file.nil?
+          @archived_epub_file = nil
+        else
+          archive_dir = File.join(@monograph_dir, "archive")
+          archived_epub_list = Dir.glob(File.join(archive_dir, "*.epub"))
+          @archived_epub_file = archived_epub_list.last
+        end
       end
     end
   end

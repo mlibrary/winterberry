@@ -151,10 +151,10 @@ monograph_id_list.each do |monograph_id|
 
       # Determine the Fulcrum press shared directory
       case monograph_press
-      when 'bar'
+      when 'barpublishing'
         sd_dir = File.join('Fulcrum_Unsynced', monograph_press)
-        #monograph_press_dir = 's:/Information\ Management/Fulcrum/Fulcrum_Unsynced/barpublishing/Fulcrum/'
-        monograph_press_dir = File.join(fulcrum_dir, sd_dir, 'Fulcrum')
+        monograph_press_dir = 's:/Information\ Management/Fulcrum/Fulcrum_Unsynced/barpublishing/Fulcrum/'
+        #monograph_press_dir = File.join(fulcrum_dir, sd_dir, 'Fulcrum')
       else
         press_name = monograph_press == "michigan" ? "UMP" : monograph_press
         monograph_press_dir = sd_dir = nil
