@@ -1,6 +1,7 @@
 module UMPTG::Fulcrum::Resources
   require_relative(File.join("filter", "alttextfilter"))
   require_relative(File.join("filter", "embedlinkfilter"))
+  require_relative(File.join("filter", "extdescrfilter"))
   require_relative(File.join("filter", "fulcrumcssfilter"))
   require_relative(File.join("filter", "opffilter"))
   require_relative(File.join("filter", "removefigcaptionfilter"))
@@ -11,6 +12,7 @@ module UMPTG::Fulcrum::Resources
   FILTERS = {
       alt_text: Filter::AltTextFilter,
       embed_link: Filter::EmbedLinkFilter,
+      ext_descr: Filter::ExtDescrFilter,
       fulcrum_css: Filter::FulcrumCSSFilter,
       opf: Filter::OPFFilter,
       remove_figcaption: Filter::RemoveFigcaptionFilter,
@@ -25,6 +27,10 @@ module UMPTG::Fulcrum::Resources
 
   def self.EmbedLinkFilter(args = {})
     return FILTERS[:embed_link].new(args)
+  end
+
+  def self.ExtDescrFilter(args = {})
+    return FILTERS[:ext_descr].new(args)
   end
 
   def self.FulcrumCSSFilter(args = {})

@@ -1,4 +1,4 @@
-module UMPTG::HTML::Filter
+module UMPTG::HTML::Pipeline::Filter
 
   class ImgAltTextFilter < UMPTG::XML::Pipeline::Filter
 
@@ -10,7 +10,7 @@ module UMPTG::HTML::Filter
 
     def initialize(args = {})
       a = args.clone
-      a[:name] = :alt_text
+      a[:name] = :html_img_alttext
       a[:xpath] = XPATH
       super(a)
     end
@@ -42,6 +42,13 @@ module UMPTG::HTML::Filter
                          "#{name}, #{reference_node.name} no alt text src=\"#{reference_node['src']}\" role=\"#{reference_node['role']}\""
                    )
 =end
+          else
+            action_list << UMPTG::XML::Pipeline::Action.new(
+                     name: name,
+                     reference_node: reference_node,
+                     info_message: \
+                       "#{name}, found #{reference_node}"
+                 )
           end
         end
       end

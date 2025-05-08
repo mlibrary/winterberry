@@ -2,7 +2,7 @@ module UMPTG::XML::Pipeline
 
   class Processor < UMPTG::Object
 
-    attr_accessor :logger, :filters, :options
+    attr_accessor :logger, :filters, :options, :xpath
 
     def initialize(args = {})
       a = args.clone
@@ -25,7 +25,7 @@ module UMPTG::XML::Pipeline
       super(a)
 
       @filters = @properties[:filters].values
-      @path = @filters.collect {|f| f.xpath }.join('|')
+      @xpath = @filters.collect {|f| f.xpath }.join('|')
     end
 
     def run(xml_doc, args = {})
@@ -33,7 +33,7 @@ module UMPTG::XML::Pipeline
 
       a = args.clone()
       a[:name] = @name
-      xml_doc.xpath(@path).each do |n|
+      xml_doc.xpath(@xpath).each do |n|
         a[:reference_node] = n
         @filters.each do |f|
           a[:name] = f.name

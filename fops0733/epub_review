@@ -62,7 +62,7 @@ unless options.manifest_file.nil?
       )
 end
 
-filter_list = options.filter_list.empty? ? [ :alt_text, :opf ] : options.filter_list
+filter_list = options.filter_list.empty? ? [ :alt_text, :ext_descr, :opf ] : options.filter_list
 
 ops = {}
 filter_list.each {|f| ops[f] = true }
@@ -104,8 +104,15 @@ epub_file_list.each do |epub_file|
   entry_actions.each do |ea|
     alt_text_act += ea.select_by_name(name: :alt_text)
   end
-  fixer_processor.logger.info("non-presentation images without alt text:#{alt_text_act.count}") if alt_text_act.empty?
-  fixer_processor.logger.warn("non-presentation images without alt text:#{alt_text_act.count}") unless alt_text_act.empty?
+  act_text_msg = "non-presentation images without alt text:#{alt_text_act.count}"
+  fixer_processor.logger.info(act_text_msg) if alt_text_act.empty?
+  fixer_processor.logger.warn(act_text_msg) unless alt_text_act.empty?
+
+  ext_descr_act = []
+  entry_actions.each do |ea|
+    ext_descr_act += ea.select_by_name(name: :ext_descr)
+  end
+  fixer_processor.logger.info("extended description references:#{ext_descr_act.count}")
 
   opf_act = []
   entry_actions.each do |ea|

@@ -1,4 +1,4 @@
-module UMPTG::HTML
+module UMPTG::HTML::Pipeline
 
   class Processor < UMPTG::XML::Pipeline::Processor
 

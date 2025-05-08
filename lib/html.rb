@@ -1,5 +1,5 @@
 module UMPTG
-  require_relative(File.join("..", "xml"))
+  require_relative("xml")
 
-  require_relative(File.join("html", "filter"))
+  require_relative(File.join("html", "pipeline"))
 end
