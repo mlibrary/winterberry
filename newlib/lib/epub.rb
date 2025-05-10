@@ -5,6 +5,7 @@ module UMPTG
   require_relative File.join('epub', 'oebps')
   require_relative File.join('epub', 'xhtml')
   require_relative File.join('epub', 'pipeline')
+  require_relative File.join('epub', 'util')
 
   class << self
     def EPUB(args = {})
