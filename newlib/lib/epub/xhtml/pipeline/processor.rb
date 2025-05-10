@@ -1,6 +1,6 @@
-module UMPTG::HTML::Pipeline
+module UMPTG::EPUB::XHTML::Pipeline
 
-  class Processor < UMPTG::XML::Pipeline::Processor
+  class Processor < UMPTG::HTML::Pipeline::Processor
 
     def initialize(args = {})
       a = args.clone

@@ -10,34 +10,44 @@ module UMPTG::XML::Pipeline
       @logger = a.key?(:logger) ? a[:logger] : UMPTG::Logger.create(logger_fp: STDOUT)
       @options = a.key?(:options) ? a[:options] : {}
 
-      m_filters = a.key?(:filters) ? a[:filters] : []
+      if a[:filters].nil?
+        a[:filters] = FILTERS
+        a[:options][:xml_default] = false
+      else
+        a[:filters] = a[:filters].merge(FILTERS)
+      end
+
+      m_filters = a[:filters]
       a[:filters] = {}
       @options.each do |k,v|
         next unless v
 
         cl = m_filters[k]
-        raise "undefined filter #{k}" if cl.nil?
+        #raise "undefined filter #{k}" if cl.nil?
+        next if cl.nil?
 
         a[:filters][k] = cl.new(args)
       end
-      raise "No filters defined" if a[:filters].empty?
+      #raise "No filters defined" if a[:filters].empty?
 
       super(a)
 
       @filters = @properties[:filters].values
-      @xpath = @filters.collect {|f| f.xpath }.join('|')
+      @xpath = @filters.collect {|f| f.xpath }.join('|') || ""
     end
 
     def run(xml_doc, args = {})
       actions = []
 
-      a = args.clone()
-      a[:name] = @name
-      xml_doc.xpath(@xpath).each do |n|
-        a[:reference_node] = n
-        @filters.each do |f|
-          a[:name] = f.name
-          actions += f.create_actions(a)
+      unless @xpath.empty?
+        a = args.clone()
+        a[:name] = @name
+        xml_doc.xpath(@xpath).each do |n|
+          a[:reference_node] = n
+          @filters.each do |f|
+            a[:name] = f.name
+            actions += f.create_actions(a)
+          end
         end
       end
 
@@ -53,7 +63,7 @@ module UMPTG::XML::Pipeline
     end
 
     def display_options()
-      @options.each {|o,v| @logger.info("#{o}:#{v}") }
+      @options.each {|o,v| @logger.info("#{o}:#{v}") if @properties[:filters].key?(o) }
     end
   end
 end

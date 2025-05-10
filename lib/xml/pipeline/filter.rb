@@ -8,6 +8,8 @@ module UMPTG::XML::Pipeline
     def initialize(args = {})
       a = args.clone
       unless a.key?(:selector)
+        a[:xpath] = "//*" if a[:xpath].nil?
+
         a[:selector] = ElementSelector.new(
                 selection_xpath: a[:xpath]
               )
@@ -40,4 +42,17 @@ module UMPTG::XML::Pipeline
       return [ act ]
     end
   end
+
+  FILTERS = {
+        xml_default: UMPTG::XML::Pipeline::Filter
+      }
+
+  def self.DefaultFilter(args = {})
+    return FILTERS[:xml_default].new(args)
+  end
+
+  def self.FILTERS
+    return FILTERS
+  end
+
 end
