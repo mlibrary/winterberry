@@ -1,4 +1,4 @@
-module UMPTG::HTML::Pipeline::Filter
+module UMPTG::XHTML::Pipeline::Filter
 
   class ImgAltTextFilter < UMPTG::XML::Pipeline::Filter
 
@@ -10,7 +10,7 @@ module UMPTG::HTML::Pipeline::Filter
 
     def initialize(args = {})
       a = args.clone
-      a[:name] = :html_img_alttext
+      a[:name] = :xhtml_img_alttext
       a[:xpath] = XPATH
       super(a)
     end

@@ -2,7 +2,7 @@ module UMPTG::XML::Pipeline
 
   class Processor < UMPTG::Object
 
-    attr_accessor :logger, :filters, :options, :xpath
+    attr_accessor :logger, :filters, :name, :options, :xpath
 
     def initialize(args = {})
       a = args.clone
@@ -32,6 +32,7 @@ module UMPTG::XML::Pipeline
 
       super(a)
 
+      @name = @properties[:name]
       @filters = @properties[:filters].values
       @xpath = @filters.collect {|f| f.xpath }.join('|') || ""
     end
@@ -55,6 +56,19 @@ module UMPTG::XML::Pipeline
       args[:actions] = actions
       args[:logger] = @logger
       return UMPTG::XML::Pipeline::Action.process_actions(args)
+    end
+
+    def process_action_results(args = {})
+      action_results = args[:action_results]
+      llogger = args[:logger] || @logger
+
+      actions = []
+      action_results.each {|ar| actions += ar.actions }
+      UMPTG::XML::Pipeline::Action.process_actions(
+            actions: actions,
+            normalize: false,
+            logger: llogger
+          )
     end
 
     def filter(filter_name)

@@ -1,4 +1,4 @@
-module UMPTG::HTML
+module UMPTG::XHTML
   require_relative(File.join("pipeline", "filter"))
   require_relative(File.join("pipeline", "processor"))
 

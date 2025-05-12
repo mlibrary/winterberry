@@ -55,12 +55,12 @@ PROCESSORS = {
                                                  epub_oebps_test: true
                                              }
                                            ),
-      "application/xhtml+xml" => UMPTG::EPUB::XHTML::Processor(
+      "application/xhtml+xml" => UMPTG::XHTML::Processor(
                                     name: "XHTMLProcessor",
                                     options: {
                                         epub_xhtml_test: false,
-                                        html_img_alttext: true,
-                                        html_extdescr: true
+                                        xhtml_img_alttext: true,
+                                        xhtml_extdescr: true
                                     }
                                   ),
       "application/epub+zip" => UMPTG::EPUB::Processor(
@@ -70,8 +70,8 @@ PROCESSORS = {
                                         epub_oebps_test: false,
                                         epub_oebps_accessible: true,
                                         epub_xhtml_test: false,
-                                        html_img_alttext: true,
-                                        html_extdescr: true
+                                        xhtml_img_alttext: true,
+                                        xhtml_extdescr: true
                                     }
                                   )
     }
@@ -100,30 +100,38 @@ file_list.each do |f|
 
   new_f = File.join(
           File.dirname(f),
-          File.basename(f, ".*") + File.basename(__FILE__) + File.extname(f)
+          File.basename(f, ".*") + "_" + File.basename(__FILE__) + File.extname(f)
           )
 
   case mime_type
   when "application/epub+zip"
     epub = UMPTG::EPUB(epub_path: f)
-    result = processor.run(
+    entry_actions = processor.run(
               epub,
               {
                   normalize: options.normalize
               }
            )
     modified = epub.modified
-    epub.save(epub_file: new_f) if modified
+    epub.save(epub_file: new_f) if options.normalize and modified
+
+    processor.process_entry_actions(
+            entry_actions: entry_actions
+          )
   else
     doc = Nokogiri::XML(File.read(f))
-    result = processor.run(
+    action_result = processor.run(
               doc,
               {
                   normalize: options.normalize
               }
             )
-    modified = result.modified
-    UMPTG::XML.save(doc, new_f) if modified
+    modified = action_result.modified
+    UMPTG::XML.save(doc, new_f) if action_result.modified and modified
+
+    processor.process_action_results(
+            action_results: [ action_result ]
+          )
   end
-  script_logger.info("Saved File #{new_f}.") if modified
+  script_logger.info("Saved File #{new_f}.") if options.normalize and modified
 end

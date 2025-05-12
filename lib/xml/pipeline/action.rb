@@ -19,7 +19,9 @@ module UMPTG::XML::Pipeline
 
     def self.process_actions(args = {})
       actions = args.key?(:actions) ? args[:actions] : []
-      normalize = args.key?(:normalize) ? args[:normalize] : false
+      #normalize = args.key?(:normalize) ? args[:normalize] : false
+      normalize = args[:normalize] || false
+      display_msgs = args[:display_msgs] || true
 
       modified = false
       if normalize
@@ -27,18 +29,14 @@ module UMPTG::XML::Pipeline
           a.process(args)
           modified = true if a.normalize and a.status == UMPTG::Action.COMPLETED
         end
-        return UMPTG::XML::Pipeline::ActionResult.new(
-                actions: actions,
-                modified: modified
-                )
-
+      end
+      if display_msgs
+        UMPTG::XML::Pipeline::Action.display_messages(
+              actions: actions,
+              logger: args[:logger]
+           )
       end
 
-      #logger = args.key?(:logger) ? args[:logger] : UMPTG::Logger.create(logger_fp: STDOUT)
-      UMPTG::XML::Pipeline::Action.display_messages(
-            actions: actions,
-            logger: args[:logger]
-         )
       return UMPTG::XML::Pipeline::ActionResult.new(
               actions: actions,
               modified: modified

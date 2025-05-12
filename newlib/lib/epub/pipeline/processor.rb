@@ -17,7 +17,7 @@ module UMPTG::EPUB::Pipeline
                             options: a[:options]
                           ) \
                  if a[:oebps_processor].nil?
-      a[:xhtml_processor] = UMPTG::EPUB::XHTML::Processor(
+      a[:xhtml_processor] = UMPTG::XHTML::Processor(
                             name: "XHTMLProcessor",
                             options: a[:options]
                           ) \
@@ -76,7 +76,8 @@ module UMPTG::EPUB::Pipeline
         UMPTG::XML::Pipeline::Action.process_actions(
               actions: ea.action_result.actions,
               logger: @logger,
-              normalize: false
+              normalize: false,
+              display_msgs: false
               )
         #ea.action_result.actions.each {|a| @logger.info(a) }
 
@@ -118,6 +119,22 @@ module UMPTG::EPUB::Pipeline
       @logger.info("Normalization not necessary.") unless epub.modified
 
       return entry_actions
+    end
+
+    def process_entry_actions(args = {})
+      entry_actions = args[:entry_actions]
+      llogger = args[:logger] || @logger
+
+      @processors.each do |k,p|
+        action_results = []
+        entry_actions.each do |ea|
+          action_results << ea.action_result if ea.entry.media_type == k
+        end
+        p.process_action_results(
+              action_results: action_results,
+              logger: llogger
+            )
+      end
     end
 
     def filters()
