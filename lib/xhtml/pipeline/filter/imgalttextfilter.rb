@@ -54,5 +54,17 @@ module UMPTG::XHTML::Pipeline::Filter
       end
       return action_list
     end
+
+    def process_actions(args = {})
+      actions = args[:actions]
+      logger = args[:logger]
+
+      cnt = 0
+      actions.each {|a| a.messages.each {|m| cnt += 1 if m.level == UMPTG::Message.WARNING } }
+
+      act_text_msg = "non-presentation images without alt text:#{cnt}"
+      logger.info(act_text_msg) if cnt == 0
+      logger.warn(act_text_msg) unless cnt == 0
+    end
   end
 end

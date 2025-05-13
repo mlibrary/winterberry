@@ -48,6 +48,16 @@ module UMPTG::EPUB::Archive::OEBPS
       return @navigation.toc
     end
 
+    def cover
+      cover_node = @metadata.find(meta_name: "cover").first
+      cover_item = epub.rendition.manifest.find(entry_properties: cover_node['content']).first \
+          unless cover_node.nil?
+
+      cover_entry = epub.rendition.manifest.entries(entry_id: cover_item['id']).first \
+          unless cover_item.nil?
+      return cover_entry
+    end
+
     def self.DEFAULT_PATH
       return DEFAULT_PATH
     end

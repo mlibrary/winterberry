@@ -125,15 +125,17 @@ module UMPTG::EPUB::Pipeline
       entry_actions = args[:entry_actions]
       llogger = args[:logger] || @logger
 
+      a = args.clone
+      a[:logger] = llogger
+
       @processors.each do |k,p|
         action_results = []
         entry_actions.each do |ea|
           action_results << ea.action_result if ea.entry.media_type == k
         end
-        p.process_action_results(
-              action_results: action_results,
-              logger: llogger
-            )
+
+        a[:action_results] = action_results
+        p.process_action_results(a)
       end
     end
 

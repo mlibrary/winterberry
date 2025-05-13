@@ -60,6 +60,19 @@ module UMPTG::XML::Pipeline
 
     def process_action_results(args = {})
       action_results = args[:action_results]
+
+      a = args.clone
+
+      @filters.each do |f|
+        act = []
+        action_results.each {|ar| act += ar.actions.select {|a| a.name == f.name } }
+
+        a[:actions] = act
+        f.process_actions(a)
+      end
+
+=begin
+      action_results = args[:action_results]
       llogger = args[:logger] || @logger
 
       actions = []
@@ -69,6 +82,7 @@ module UMPTG::XML::Pipeline
             normalize: false,
             logger: llogger
           )
+=end
     end
 
     def filter(filter_name)
