@@ -69,6 +69,7 @@ module UMPTG::EPUB::Archive
           end
         end
       end
+      @modified = false
 
       @container_entry = @name2entry[UMPTG::EPUB::Archive::MetaInf::Container.DEFAULT_PATH]
       raise "unable to find #{container_path}" if @container_entry.nil?
