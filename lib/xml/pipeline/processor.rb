@@ -62,13 +62,12 @@ module UMPTG::XML::Pipeline
       action_results = args[:action_results]
 
       a = args.clone
-
       @filters.each do |f|
-        act = []
-        action_results.each {|ar| act += ar.actions.select {|a| a.name == f.name } }
+        actions = []
+        action_results.each {|ar| actions += ar.actions.select {|a| a.name == f.name } }
 
-        a[:actions] = act
-        f.process_actions(a)
+        a[:actions] = actions
+        f.process_action_results(a)
       end
 
 =begin

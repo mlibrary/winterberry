@@ -62,7 +62,8 @@ module UMPTG::XHTML::Pipeline::Filter
       return action_list
     end
 
-    def process_actions(args = {})
+    def process_action_results(args = {})
+      action_results = args[:action_results]
       actions = args[:actions]
       logger = args[:logger]
 
