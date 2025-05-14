@@ -115,7 +115,7 @@ file_list.each do |f|
     modified = epub.modified
     epub.save(epub_file: new_f) if options.normalize and modified
 
-    processor.process_entry_actions(
+    processor.report_entry_action_results(
             entry_actions: entry_actions
           )
   else

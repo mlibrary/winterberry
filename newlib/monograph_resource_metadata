@@ -103,21 +103,7 @@ monograph_dir_list.each do |mdir|
       fmsl_csv: fmsl_csv,
       logger: epub_processor.logger
     }
-  epub_processor.process_entry_actions(ea_args)
-
-=begin
-  xhtml_processor = epub_processor.processors[:xhtml_processor]
-  xhtml_processor.process_
-  xhtml_filters = xhtml_processor.property(:filters)
-  resdata_filter = xhtml_filters[:xhtml_resource_metadata]
-  puts "properties:#{resdata_filter.class}"
-
-  fmsl_csv = resdata_filter.update_fmsl(
-      fmsl_file: monograph_dir.fmsl_file,
-      entry_actions: entry_actions,
-      logger: epub_processor.logger
-    )
-=end
+  epub_processor.report_entry_action_results(ea_args)
 
   # Add new columns to the CSV headers if needed.
   new_fmsl_headers = fmsl_csv.headers

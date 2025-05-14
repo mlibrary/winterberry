@@ -1,8 +1,12 @@
 module UMPTG::EPUB::NCX
   require_relative File.join('pipeline', 'filter')
-  require_relative File.join('pipeline', 'processor')
 
   def self.Processor(args = {})
-    return Pipeline::Processor.new(args)
+    a = args.clone
+
+    a[:filters] = a[:filters].nil? ? UMPTG::EPUB::NCX::Pipeline.FILTERS : \
+                  a[:filters].merge(UMPTG::EPUB::NCX::Pipeline.FILTERS)
+
+    return UMPTG::XML::Processor(a)
   end
 end

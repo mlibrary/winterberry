@@ -41,6 +41,12 @@ module UMPTG::XML::Pipeline
       act.add_info_msg("#{name}, found #{a[:reference_node]}")
       return [ act ]
     end
+
+    def report_action_results(args = {})
+      action_results = args[:action_results]
+      actions = args[:actions]
+      logger = args[:logger]
+    end
   end
 
   FILTERS = {
