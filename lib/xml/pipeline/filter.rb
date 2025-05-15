@@ -42,10 +42,15 @@ module UMPTG::XML::Pipeline
       return [ act ]
     end
 
-    def report_action_results(args = {})
+    def process_action_results(args = {})
       action_results = args[:action_results]
       actions = args[:actions]
       logger = args[:logger]
+
+      cnt = 0
+      actions.each {|a| a.messages.each {|m| cnt += 1 if a.normalize and a.status == UMPTG::Action.COMPLETED } }
+
+      logger.info("completed actions:#{cnt}")
     end
   end
 

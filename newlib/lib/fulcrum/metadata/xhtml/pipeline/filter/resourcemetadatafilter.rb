@@ -1,4 +1,4 @@
-module UMPTG::XHTML::Pipeline::Filter
+module UMPTG::Fulcrum::Metadata::XHTML::Pipeline::Filter
 
   class ResourceMetadataFilter < UMPTG::XML::Pipeline::Filter
 
@@ -13,7 +13,7 @@ module UMPTG::XHTML::Pipeline::Filter
     SXPATH
 
     def initialize(args = {})
-      args[:name] = :resource_metadata
+      args[:name] = :xhtml_resource_metadata
       args[:xpath] = RESOURCE_XPATH
       super(args)
     end
