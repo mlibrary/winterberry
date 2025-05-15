@@ -42,7 +42,7 @@ module UMPTG::EPUB::OEBPS::Pipeline::Filter
       return action_list
     end
 
-    def report_action_results(args = {})
+    def process_action_results(args = {})
       action_results = args[:action_results]
       actions = args[:actions]
       logger = args[:logger]

@@ -121,7 +121,7 @@ module UMPTG::EPUB::Pipeline
       return entry_actions
     end
 
-    def report_entry_action_results(args = {})
+    def process_entry_action_results(args = {})
       entry_actions = args[:entry_actions]
       llogger = args[:logger] || @logger
 
@@ -135,7 +135,7 @@ module UMPTG::EPUB::Pipeline
         end
 
         a[:action_results] = action_results
-        p.report_action_results(a)
+        p.process_action_results(a)
       end
     end
 

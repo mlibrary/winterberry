@@ -58,7 +58,7 @@ module UMPTG::XML::Pipeline
       return UMPTG::XML::Pipeline::Action.process_actions(args)
     end
 
-    def report_action_results(args = {})
+    def process_action_results(args = {})
       action_results = args[:action_results]
 
       a = args.clone
@@ -67,7 +67,7 @@ module UMPTG::XML::Pipeline
         action_results.each {|ar| actions += ar.actions.select {|a| a.name == f.name } }
 
         a[:actions] = actions
-        f.report_action_results(a)
+        f.process_action_results(a)
       end
 
 =begin

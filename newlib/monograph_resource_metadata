@@ -103,7 +103,7 @@ monograph_dir_list.each do |mdir|
       fmsl_csv: fmsl_csv,
       logger: epub_processor.logger
     }
-  epub_processor.report_entry_action_results(ea_args)
+  epub_processor.process_entry_action_results(ea_args)
 
   # Add new columns to the CSV headers if needed.
   new_fmsl_headers = fmsl_csv.headers
