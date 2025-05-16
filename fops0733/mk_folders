@@ -45,6 +45,8 @@ reps_dir_list.each do |reps_dir|
   STDOUT.flush
 
   Dir.glob(File.join(reps_dir, "*")).each do |rep_file|
+    next unless File.file?(rep_file)
+
     dname = File.basename(rep_file, ".*")
     d_path = File.join(reps_dir, dname)
 
