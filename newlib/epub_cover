@@ -48,12 +48,14 @@ epub_file_list.each do |epub_file|
   puts "version: #{epub.rendition.version}"
 
   cover_entry = epub.rendition.cover
-  unless cover_entry.nil?
+  if cover_entry.nil?
+    script_logger.warn("no cover entry found.")
+  else
     puts cover_entry.name
 
-    cover_file = File.join(File.dirname(epub_file), File.basename(cover_entry.name))
+    cover_file = File.join(File.dirname(epub_file), File.basename(epub_file, ".*") + "_" + File.basename(cover_entry.name))
     File.binwrite(cover_file, cover_entry.content)
-    puts "Save cover #{cover_file}"
+    script_logger.info("Save cover #{cover_file}")
   end
 end
 

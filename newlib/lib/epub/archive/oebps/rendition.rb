@@ -50,8 +50,8 @@ module UMPTG::EPUB::Archive::OEBPS
 
     def cover
       cover_node = @metadata.find(meta_name: "cover").first
-      cover_item = epub.rendition.manifest.find(entry_properties: cover_node['content']).first \
-          unless cover_node.nil?
+      #cover_item = epub.rendition.manifest.find(entry_properties: cover_node['content']).first unless cover_node.nil?
+      cover_item = epub.rendition.manifest.find(entry_id: cover_node['content']).first unless cover_node.nil?
 
       cover_entry = epub.rendition.manifest.entries(entry_id: cover_item['id']).first \
           unless cover_item.nil?
