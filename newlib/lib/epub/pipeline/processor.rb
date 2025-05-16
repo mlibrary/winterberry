@@ -6,29 +6,29 @@ module UMPTG::EPUB::Pipeline
 
     def initialize(args = {})
       a = args.clone
+      a2 = args.clone
 
-      a[:ncx_processor] = UMPTG::EPUB::NCX::Processor(
-                            name: "NCXProcessor",
-                            options: a[:options]
-                          ) \
-                 if a[:ncx_procesor].nil?
-      a[:oebps_processor] = UMPTG::EPUB::OEBPS::Processor(
-                            name: "OEBPSProcessor",
-                            options: a[:options]
-                          ) \
-                 if a[:oebps_processor].nil?
-      a[:xhtml_processor] = UMPTG::XHTML::Processor(
-                            name: "XHTMLProcessor",
-                            options: a[:options]
-                          ) \
-                 if a[:xhtml_processor].nil?
-      a[:xml_processor] = UMPTG::XML::Processor(
-                            name: "XMLProcessor",
-                            options: a[:options]
-                          ) \
-                 if a[:xml_processor].nil?
+      a[:name] = "NCXProcessor"
+      a2[:ncx_processor] = UMPTG::EPUB::NCX::Processor(a) \
+                 if a2[:ncx_procesor].nil?
 
-      super(a)
+      a[:name] = "OEBPSProcessor"
+      a2[:oebps_processor] = UMPTG::EPUB::OEBPS::Processor(a) \
+                 if a2[:oebps_processor].nil?
+
+      a[:name] = "FulcrumXHTMLProcessor"
+      a2[:xhtml_processor] = UMPTG::XHTML::Processor(a) \
+                 if a2[:xhtml_processor].nil?
+=begin
+      a2[:xhtml_processor] = UMPTG::Fulcrum::Resources::XHTML::Processor(a) \
+                 if a2[:xhtml_processor].nil?
+=end
+
+      a[:name] = "XMLProcessor"
+      a2[:xml_processor] = UMPTG::XML::Processor(a) \
+                 if a2[:xml_processor].nil?
+
+      super(a2)
 
       @logger = @properties.key?(:logger) ? @properties[:logger] : UMPTG::Logger.create(logger_fp: STDOUT)
 
