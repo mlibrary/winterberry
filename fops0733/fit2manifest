@@ -144,7 +144,12 @@ Dir.glob(File.join(fulcrum_import_dir, "*")).each do |import_dir|
           "Keywords" => isbn_title_rows[0]['Keywords'],
           "Subject" => isbn_title_rows[0]['All Subjects'],
           "DOI" => isbn_title_rows[0]['DOI'],
-          "Series" => isbn_title_rows[0]['Series']
+=begin
+          "Funder" => "Big Ten Academic Alliance",
+          "Funder Display" => "This open-access version is made available with the support of Big Ten Academic Alliance member libraries.",
+=end
+          "Series" => "Indigenous North Americans"
+#          "Series" => isbn_title_rows[0]['Series']
         }
   end
 
