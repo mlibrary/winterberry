@@ -105,7 +105,7 @@ monograph_id_list.each do |monograph_id|
     next
   end
 =end
-  manifest_body_list = service.monograph_export(monograph_id: identifier)
+  manifest_body_list = service.monograph_export(identifier: identifier)
   manifest_body = manifest_body_list[identifier].first
   if manifest_body.nil?
     script_logger.warn("no manifest found for identifier #{identifier}")

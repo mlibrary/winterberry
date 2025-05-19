@@ -7,6 +7,6 @@ module UMPTG::Fulcrum::Metadata::XHTML
     a[:filters] = a[:filters].nil? ? UMPTG::Fulcrum::Metadata::XHTML::Pipeline.FILTERS : \
                   a[:filters].merge(UMPTG::Fulcrum::Metadata::XHTML::Pipeline.FILTERS)
 
-    return UMPTG::XML::Processor(a)
+    return UMPTG::XHTML::Processor(a)
   end
 end

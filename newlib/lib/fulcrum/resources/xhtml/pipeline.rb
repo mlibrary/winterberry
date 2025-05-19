@@ -7,6 +7,6 @@ module UMPTG::Fulcrum::Resources::XHTML
     a[:filters] = a[:filters].nil? ? UMPTG::Fulcrum::Resources::XHTML::Pipeline.FILTERS : \
                   a[:filters].merge(UMPTG::Fulcrum::Resources::XHTML::Pipeline.FILTERS)
 
-    return UMPTG::XML::Processor(a)
+    return UMPTG::XHTML::Processor(a)
   end
 end
