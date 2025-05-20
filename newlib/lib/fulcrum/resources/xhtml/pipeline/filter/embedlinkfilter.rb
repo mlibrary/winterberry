@@ -152,8 +152,8 @@ module UMPTG::Fulcrum::Resources::XHTML::Pipeline::Filter
           block_list = caption_node.xpath(".//*[local-name()='p' or local-name()='div']")
 
           # FOPS-487
-          #link_descr = "View Fulcrum resource"
-          link_descr = manifest.fileset_link(resource_name_list.first)
+          link_descr = "View resource"
+          #link_descr = manifest.fileset_link(resource_name_list.first)
           link_markup = manifest.fileset_link_markup(
                   resource_name_list.first,
                   {
@@ -171,8 +171,12 @@ module UMPTG::Fulcrum::Resources::XHTML::Pipeline::Filter
             last_block.add_child(link_container)
           end
           link_container.add_class("default-media-display")
-          #link_container.add_child(". " + link_markup)
-          link_container.add_child(". See " + link_markup + ".")
+          if last_block.content.strip.end_with?('.')
+            ll = " " + link_markup + "."
+          else
+            ll = ". " + link_markup + "."
+          end
+          link_container.add_child(ll)
           fragment_node.remove_class("enhanced-media-display")
 
 =begin

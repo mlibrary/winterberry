@@ -65,7 +65,11 @@ unless options.manifest_file.nil?
 end
 
 #filter_list = options.filter_list.empty? ? [ :xhtml_embed_link ] : options.filter_list
-filter_list = options.filter_list.empty? ? [ :epub_oebps_accessible, :xhtml_img_alttext, :xhtml_extdescr ] : options.filter_list
+#=begin
+filter_list = options.filter_list.empty? ? \
+      [ :epub_oebps_accessmode, :epub_oebps_accessfeature, :xhtml_img_alttext, :xhtml_extdescr ] : \
+      options.filter_list
+#=end
 
 ops = {}
 filter_list.each {|f| ops[f] = true }
@@ -79,7 +83,9 @@ epub_processor = UMPTG::EPUB::Processor(
           name: "EPUBProcessor",
           xhtml_processor: xhtml_processor,
           options: {
-              epub_oebps_accessible: true,
+              epub_oebps_accessible: false,
+              epub_oebps_accessmode: true,
+              epub_oebps_accessfeature: true,
               xhtml_img_alttext: true,
               xhtml_extdescr: true
           }
