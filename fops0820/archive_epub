@@ -1,0 +1,65 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Script archives EPUBs within a monograph directory.
+
+require 'optparse'
+require 'ostruct'
+require 'os'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+# Process the script parameters.
+options = OpenStruct.new
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} monograph_dir [monograph_dir...]"
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    script_logger.info(opts)
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  script_logger.info(option_parser.help)
+  exit 0
+end
+
+# Process the command line parameters.
+monograph_dir_list = ARGV
+
+monograph_dir_list.each do |monograph_dir|
+  monograph_dir = File.expand_path(monograph_dir)
+  unless File.directory?(monograph_dir)
+    script_logger.error("invalid monograph directory #{monograph_dir}")
+    next
+  end
+  script_logger.info("processing monograph directory #{monograph_dir}")
+  STDOUT.flush
+
+  epub_file = File.join(monograph_dir, File.basename(monograph_dir, ".*") + ".epub")
+  unless File.file?(epub_file)
+    script_logger.error("invalid EPUB file #{epub_file}")
+    next
+  end
+
+  replace_epub_file = File.join(monograph_dir, File.basename(monograph_dir, ".*") + "_replace.epub")
+  unless File.file?(replace_epub_file)
+    script_logger.error("invalid replace EPUB file #{replace_epub_file}")
+    next
+  end
+
+  archive_dir = File.join(monograph_dir, "archive")
+  FileUtils.mkdir_p(archive_dir)
+
+  archive_epub_file = File.join(archive_dir, File.basename(epub_file, ".*") + "_version1" + File.extname(epub_file))
+  FileUtils.mv(epub_file, archive_epub_file)
+  script_logger.info("mv #{epub_file} #{archive_epub_file}")
+  FileUtils.mv(replace_epub_file, epub_file)
+  script_logger.info("mv #{replace_epub_file} #{epub_file}")
+end
