@@ -25,7 +25,7 @@
     <xsl:strip-space elements="*"/>
 
     <!-- Current Crossref namespace -->
-    <xsl:variable name="NAMESPACE_URL" select="'http://www.crossref.org/schema/5.3.1'"/>
+    <xsl:variable name="NAMESPACE_URL" select="'http://www.crossref.org/schema/5.4.0'"/>
     <xsl:variable name="EXCLUDE_ISBN_LIST" select="concat(';',translate($EXCLUDE_ISBN,' ',''),';')"/>
     <xsl:variable name="FORMAT_BISAC_LIST" select="concat(';',$BISAC_LIST,';')"/>
     <xsl:variable name="FORMAT_MPS_SERVICES_IMPRINTS" select="concat(';',$MPS_SERVICES_IMPRINTS,';')"/>
@@ -34,10 +34,10 @@
         <xsl:if test="normalize-space($BATCH_ID)!='' and normalize-space($TIMESTAMP)!=''">
             <xsl:element name="doi_batch" namespace="{$NAMESPACE_URL}">
                 <xsl:attribute name="version">
-                    <xsl:value-of select="'5.3.1'"/>
+                    <xsl:value-of select="'5.4.0'"/>
                 </xsl:attribute>
                 <xsl:attribute name="xsi:schemaLocation">
-                    <xsl:value-of select="'http://www.crossref.org/schema/5.3.1 http://www.crossref.org/schema/deposit/crossref5.3.1.xsd'"/>
+                    <xsl:value-of select="concat($NAMESPACE_URL,' ','https://www.crossref.org/schemas/crossref5.4.0.xsd')"/>
                 </xsl:attribute>
                 <xsl:element name="head" namespace="{$NAMESPACE_URL}">
                     <xsl:element name="doi_batch_id" namespace="{$NAMESPACE_URL}">
