@@ -87,6 +87,7 @@ epub_processor = UMPTG::EPUB::Processor(
               epub_oebps_accessmode: true,
               epub_oebps_accessfeature: true,
               xhtml_img_alttext: true,
+              xhtml_update_href: false,
               xhtml_extdescr: true
           }
     )
