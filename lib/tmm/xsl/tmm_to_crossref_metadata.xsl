@@ -3,32 +3,18 @@
         version="1.1"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
-        xmlns:date="http://exslt.org/dates-and-times"
-        extension-element-prefixes="date"
 >
-    <!-- Defined paramters that can be overridden -->
-    <xsl:param name="BATCH_ID"/>
-    <xsl:param name="TIMESTAMP"/>
-    <xsl:param name="BISAC_LIST" select="'temporarily out of stock;on demand;active;not yet published'"/>
-    <xsl:param name="EXCLUDE_ISBN" select="''"/>
-    <xsl:param name="ENCODING_NAME" select="'utf-8'"/>
-    <xsl:param name="ELOQUENCE_VERIFICATION" select="'false'"/>
-    <xsl:param name="UMP_URL_PREFIX" select="'https://press.umich.edu/isbn/'"/>
-    <xsl:param name="MPS_URL_PREFIX" select="'https://services.publishing.umich.edu/isbn/'"/>
-    <xsl:param name="UMP_DEPOSITOR" select="'scpo'"/>
-    <xsl:param name="UMP_EMAIL" select="'mpub.xref@gmail.com'"/>
-    <xsl:param name="UMP_REGISTRANT" select="'MPublishing'"/>
-    <xsl:param name="UMP_PUBLISHER_PLACE" select="'Ann Arbor, MI'"/>
+    <!--
+    xmlns:date="http://exslt.org/dates-and-times"
+    extension-element-prefixes="date"
+    -->
+
+    <xsl:include href="tmm_to_crossref_common.xsl"/>
+
     <xsl:param name="MPS_SERVICES_IMPRINTS" select="'a2ru intervals;against the grain, llc;american pancreatic association;amherst college press;bridwell press;disobedience press;faculty reprints;health sciences publishing services;lever press;maize books;michigan publishing services;no imprint;open humanities press;school for environment sustainability;society for cinema and media studies;university of westminster press;'"/>
 
-    <xsl:output method="xml" encoding="utf-8" omit-xml-declaration="no" indent="yes"/>
-    <xsl:strip-space elements="*"/>
-
-    <!-- Current Crossref namespace -->
-    <xsl:variable name="NAMESPACE_URL" select="'http://www.crossref.org/schema/5.4.0'"/>
-    <xsl:variable name="EXCLUDE_ISBN_LIST" select="concat(';',translate($EXCLUDE_ISBN,' ',''),';')"/>
-    <xsl:variable name="FORMAT_BISAC_LIST" select="concat(';',$BISAC_LIST,';')"/>
     <xsl:variable name="FORMAT_MPS_SERVICES_IMPRINTS" select="concat(';',$MPS_SERVICES_IMPRINTS,';')"/>
+    <xsl:variable name="NAMESPACE_URL" select="'http://www.crossref.org/schema/5.4.0'"/>
 
     <xsl:template match="root">
         <xsl:if test="normalize-space($BATCH_ID)!='' and normalize-space($TIMESTAMP)!=''">
