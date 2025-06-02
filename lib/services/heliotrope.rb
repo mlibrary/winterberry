@@ -70,6 +70,9 @@ module UMPTG::Services
           id2noid_list[id] = response.body.collect { |b| b['id'] }
           break
         end
+        if id2noid_list[id].empty?
+          id2noid_list[id] << id
+        end
       end
       return id2noid_list
     end
