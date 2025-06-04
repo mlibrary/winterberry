@@ -1,10 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <xsl:stylesheet
         version="1.1"
-        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
 >
-    <!-- Defined paramters that can be overridden -->
+    <!-- Defined parameters that can be overridden -->
     <xsl:param name="BATCH_ID"/>
     <xsl:param name="TIMESTAMP"/>
     <xsl:param name="BISAC_LIST" select="'temporarily out of stock;on demand;active;not yet published'"/>
