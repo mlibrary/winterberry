@@ -117,11 +117,15 @@
                         <xsl:variable name="format_base_ndx" select="count(./*[local-name()='format1']/preceding-sibling::*)"/>
                         <xsl:variable name="format_hc_ndx" select="count(./*[starts-with(local-name(),'format') and text()='Hardcover']/preceding-sibling::*)"/>
                         <xsl:variable name="format_paper_ndx" select="count(./*[starts-with(local-name(),'format') and text()='Paper']/preceding-sibling::*)"/>
-                        <xsl:variable name="format_oa_ndx" select="count(./*[starts-with(local-name(),'format') and text()='All Ebooks (OA)']/preceding-sibling::*)"/>
-                        <xsl:variable name="format_ebook_ndx" select="count(./*[starts-with(local-name(),'format') and text()='All Ebooks']/preceding-sibling::*)"/>
+                        <xsl:variable name="format_pr_ndx" select="count(./*[starts-with(local-name(),'format') and (text()='Hardcover' or text()='Paper')][1]/preceding-sibling::*)"/>
+                        <xsl:variable name="format_oa_ndx" select="count(./*[starts-with(local-name(),'format') and text()='All Ebooks (OA)'][1]/preceding-sibling::*)"/>
+                        <xsl:variable name="format_ebook_ndx" select="count(./*[starts-with(local-name(),'format') and text()='All Ebooks'][1]/preceding-sibling::*)"/>
 
                         <xsl:variable name="format_print_ndx">
                             <xsl:choose>
+                                <xsl:when test="$pbisac_active and $format_pr_ndx > 0">
+                                    <xsl:value-of select="$format_pr_ndx"/>
+                                </xsl:when>
                                 <xsl:when test="$pbisac_active and $format_hc_ndx > 0">
                                     <xsl:value-of select="$format_hc_ndx"/>
                                 </xsl:when>
@@ -133,9 +137,19 @@
                                 </xsl:otherwise>
                             </xsl:choose>
                         </xsl:variable>
-                        <xsl:if test="$format_print_ndx > 0">
+                        <xsl:variable name="printISBN">
+                            <xsl:choose>
+                                <xsl:when test="$format_print_ndx > 0">
+                                    <xsl:value-of select="$isbn_list[$format_print_ndx - $format_base_ndx + 1]"/>
+                                </xsl:when>
+                                <xsl:otherwise>
+                                    <xsl:value-of select="./ISBN1"/>
+                                </xsl:otherwise>
+                            </xsl:choose>
+                        </xsl:variable>
+                        <xsl:if test="$printISBN != ''">
                             <xsl:call-template name="create_isbn">
-                                <xsl:with-param name="isbn" select="$isbn_list[$format_print_ndx - $format_base_ndx + 1]"/>
+                                <xsl:with-param name="isbn" select="$printISBN"/>
                                 <xsl:with-param name="media_type" select="'print'"/>
                             </xsl:call-template>
                         </xsl:if>
@@ -152,9 +166,19 @@
                                 </xsl:otherwise>
                             </xsl:choose>
                         </xsl:variable>
-                        <xsl:if test="$format_electronic_ndx > 0">
+                        <xsl:variable name="eISBN">
+                            <xsl:choose>
+                                <xsl:when test="$format_electronic_ndx > 0">
+                                    <xsl:value-of select="$isbn_list[$format_electronic_ndx - $format_base_ndx + 1]"/>
+                                </xsl:when>
+                                <xsl:otherwise>
+                                    <xsl:value-of select="''"/>
+                                </xsl:otherwise>
+                            </xsl:choose>
+                        </xsl:variable>
+                        <xsl:if test="$eISBN != ''">
                             <xsl:call-template name="create_isbn">
-                                <xsl:with-param name="isbn" select="$isbn_list[$format_electronic_ndx - $format_base_ndx + 1]"/>
+                                <xsl:with-param name="isbn" select="$eISBN"/>
                                 <xsl:with-param name="media_type" select="'electronic'"/>
                             </xsl:call-template>
                         </xsl:if>
@@ -197,14 +221,16 @@
                                         <xsl:value-of select="concat($url_prefix, ./secondaryISBN)"/>
                                     </xsl:when>
                                     -->
-                                    <xsl:when test="$pbisac_active=true and ./ISBN1">
-                                        <xsl:value-of select="concat($url_prefix, ./ISBN1)"/>
+                                    <xsl:when test="$printISBN !=''">
+                                        <xsl:value-of select="concat($url_prefix, $printISBN)"/>
                                     </xsl:when>
-                                    <xsl:when test="$sbisac_active=true and ./ISBN2">
-                                        <xsl:value-of select="concat($url_prefix, ./ISBN2)"/>
+                                    <xsl:when test="$eISBN !=''">
+                                        <xsl:value-of select="concat($url_prefix, $eISBN)"/>
                                     </xsl:when>
                                     <xsl:otherwise>
+                                        <!--
                                         <xsl:message>WARNING: bookkey <xsl:value-of select="./bookkey"/> no active ISBN found, using current resource.</xsl:message>
+                                        -->
                                         <xsl:value-of select="./resource"/>
                                     </xsl:otherwise>
                                 </xsl:choose>
