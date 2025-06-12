@@ -151,7 +151,7 @@ doi_report_file_list.each do |doi_report_file|
         # Assume the monograph ID is a book key.
         bnode_list = doi_report_doc.xpath("//*[local-name()='bookkey' and string()='#{monograph_id}']/ancestor::*[local-name()='book'][1]")
       when "ISBN"
-        bnode_list = doi_report_doc.xpath("//*[(local-name()='eISBN' or local-name()='printISBN') and string()='#{monograph_id}']/ancestor::*[local-name()='book'][1]")
+        bnode_list = doi_report_doc.xpath("//*[(local-name()='eISBN' or local-name()='printISBN' or local-name()='secondaryISBN') and string()='#{monograph_id}']/ancestor::*[local-name()='book'][1]")
       when "DOI"
         doi_value = "https://doi.org/" + monograph_id
         bnode_list = doi_report_doc.xpath("//*[(local-name()='doi') and string()='#{doi_value}']/ancestor::*[local-name()='book'][1]")
@@ -192,9 +192,9 @@ doi_report_file_list.each do |doi_report_file|
             script_logger.info("format #{format} ISBN #{isbn}.")
             case format
             when 'ebook','open access'
-              bnode_list = doi_report_doc.xpath("//*[local-name()='eISBN' and string()='#{isbn}']/ancestor::*[local-name()='book'][1]")
+              bnode_list = doi_report_doc.xpath("//*[(local-name()='eISBN' or local-name()='secondaryISBN') and string()='#{isbn}']/ancestor::*[local-name()='book'][1]")
             else
-              bnode_list = doi_report_doc.xpath("//*[local-name()='printISBN' and string()='#{isbn}']/ancestor::*[local-name()='book'][1]")
+              bnode_list = doi_report_doc.xpath("//*[(local-name()='printISBN' or local-name()='secondaryISBN') and string()='#{isbn}']/ancestor::*[local-name()='book'][1]")
             end
             break unless bnode_list.empty?
 
