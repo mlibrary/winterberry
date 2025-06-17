@@ -103,8 +103,25 @@
                             <!--
                             <xsl:apply-templates select="./*[starts-with(local-name(),'authortype') and text()!='Contributor']"/>
                             -->
-                            <xsl:apply-templates select="./*[starts-with(local-name(),'authorprimaryind') and text()='Y']"/>
-                            <xsl:apply-templates select="./*[starts-with(local-name(),'authorprimaryind') and text()!='Y']"/>
+                            <xsl:variable name="primary_cnt" select="count(./*[starts-with(local-name(),'authorprimaryind') and text()='Y'])"/>
+                            <xsl:choose>
+                                <xsl:when test="$primary_cnt = 0">
+                                    <xsl:apply-templates select="./*[starts-with(local-name(),'authorprimaryind')][1]">
+                                        <xsl:with-param name="primary" select="'Y'"/>
+                                    </xsl:apply-templates>
+                                    <xsl:apply-templates select="./*[starts-with(local-name(),'authorprimaryind')][position() > 1]">
+                                        <xsl:with-param name="primary" select="'N'"/>
+                                    </xsl:apply-templates>
+                                </xsl:when>
+                                <xsl:otherwise>
+                                    <xsl:apply-templates select="./*[starts-with(local-name(),'authorprimaryind') and text()='Y']">
+                                        <xsl:with-param name="primary" select="'Y'"/>
+                                    </xsl:apply-templates>
+                                    <xsl:apply-templates select="./*[starts-with(local-name(),'authorprimaryind') and text()!='Y']">
+                                        <xsl:with-param name="primary" select="'N'"/>
+                                    </xsl:apply-templates>
+                                </xsl:otherwise>
+                            </xsl:choose>
                         </xsl:element>
                     </xsl:if>
                     <xsl:if test="./titleprefixandtitle or ./subittle">
@@ -129,13 +146,13 @@
 
                     <xsl:variable name="format_print_ndx">
                         <xsl:choose>
-                            <xsl:when test="$format_pr_ndx > 0 and contains($FORMAT_BISAC_LIST,translate($bisac_list[$format_pr_ndx], 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'))">
+                            <xsl:when test="$format_pr_ndx > 0 and contains($FORMAT_BISAC_LIST,translate($bisac_list[$format_pr_ndx - $format_base_ndx + 1], 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'))">
                                 <xsl:value-of select="$format_pr_ndx"/>
                             </xsl:when>
-                            <xsl:when test="$format_hc_ndx > 0 and contains($FORMAT_BISAC_LIST,translate($bisac_list[$format_hc_ndx], 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'))">
+                            <xsl:when test="$format_hc_ndx > 0 and contains($FORMAT_BISAC_LIST,translate($bisac_list[$format_hc_ndx - $format_base_ndx + 1], 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'))">
                                 <xsl:value-of select="$format_hc_ndx"/>
                             </xsl:when>
-                            <xsl:when test="$format_paper_ndx > 0 and contains($FORMAT_BISAC_LIST,translate($bisac_list[$format_paper_ndx], 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'))">
+                            <xsl:when test="$format_paper_ndx > 0 and contains($FORMAT_BISAC_LIST,translate($bisac_list[$format_paper_ndx - $format_base_ndx + 1], 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'))">
                                 <xsl:value-of select="$format_paper_ndx"/>
                             </xsl:when>
                             <xsl:otherwise>
@@ -153,6 +170,7 @@
                             </xsl:otherwise>
                         </xsl:choose>
                     </xsl:variable>
+
                     <xsl:if test="$printISBN != ''">
                         <xsl:call-template name="create_isbn">
                             <xsl:with-param name="isbn" select="$printISBN"/>
@@ -230,17 +248,10 @@
     </xsl:template>
 
     <xsl:template match="*[starts-with(local-name(),'authorprimaryind')]">
-        <xsl:variable name="primary" select="."/>
+        <xsl:param name="primary"/>
+
         <xsl:variable name="ordinal" select="substring-after(local-name(),'authorprimaryind')"/>
         <xsl:variable name="role" select="translate(normalize-space(preceding-sibling::*[starts-with(local-name(),concat('authortype',$ordinal))][1]), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz')"/>
-
-        <!--
-        <xsl:element name="twb" namespace="{$NAMESPACE_URL}">
-            <xsl:attribute name="primary"><xsl:value-of select="$primary"/></xsl:attribute>
-            <xsl:attribute name="ordinal"><xsl:value-of select="$ordinal"/></xsl:attribute>
-            <xsl:attribute name="role"><xsl:value-of select="$role"/></xsl:attribute>
-        </xsl:element>
-        -->
 
         <!--
         QQQ: Shouldn't all roles be allowed?
@@ -282,55 +293,6 @@
                 <xsl:if test="preceding-sibling::*[starts-with(local-name(),concat('authorlastname',$ordinal)) and text()]">
                     <xsl:element name="surname" namespace="{$NAMESPACE_URL}">
                         <xsl:value-of select="normalize-space(preceding-sibling::*[starts-with(local-name(),concat('authorlastname',$ordinal))][1])"/>
-                    </xsl:element>
-                </xsl:if>
-            </xsl:element>
-        </xsl:if>
-    </xsl:template>
-
-    <xsl:template match="*[starts-with(local-name(),'authortype')]">
-        <xsl:variable name="ordinal" select="substring-after(local-name(),'authortype')"/>
-        <xsl:variable name="role" select="translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz')"/>
-        <!--
-        QQQ: Shouldn't all roles be allowed?
-        <xsl:if test="$role='author' or $role='contributor' or $role='translator' or contains($role, 'editor')">
-        -->
-        <xsl:if test="$role='author' or $role='editor' or $role='contributor' or $role='translator' or contains($role, 'editor')">
-            <xsl:element name="person_name" namespace="{$NAMESPACE_URL}">
-                <xsl:attribute name="sequence">
-                    <xsl:choose>
-                        <xsl:when test="$ordinal='1'">
-                            <xsl:value-of select="'first'"/>
-                        </xsl:when>
-                        <xsl:otherwise>
-                            <xsl:value-of select="'additional'"/>
-                        </xsl:otherwise>
-                    </xsl:choose>
-                </xsl:attribute>
-                <xsl:attribute name="contributor_role">
-                    <xsl:choose>
-                        <xsl:when test="$role='author' or $role='contributor'">
-                            <xsl:value-of select="'author'"/>
-                        </xsl:when>
-                        <xsl:when test="$role='editor' or contains($role, 'editor')">
-                            <xsl:value-of select="'editor'"/>
-                        </xsl:when>
-                        <xsl:when test="$role='translator'">
-                            <xsl:value-of select="$role"/>
-                        </xsl:when>
-                        <xsl:otherwise>
-                            <!--<xsl:value-of select="text()"/>-->
-                        </xsl:otherwise>
-                    </xsl:choose>
-                </xsl:attribute>
-                <xsl:if test="following-sibling::*[starts-with(local-name(),concat('authorfirstname',$ordinal)) and text()]">
-                    <xsl:element name="given_name" namespace="{$NAMESPACE_URL}">
-                        <xsl:value-of select="normalize-space(following-sibling::*[starts-with(local-name(),concat('authorfirstname',$ordinal))][1])"/>
-                    </xsl:element>
-                </xsl:if>
-                <xsl:if test="following-sibling::*[starts-with(local-name(),concat('authorlastname',$ordinal)) and text()]">
-                    <xsl:element name="surname" namespace="{$NAMESPACE_URL}">
-                        <xsl:value-of select="normalize-space(following-sibling::*[starts-with(local-name(),concat('authorlastname',$ordinal))][1])"/>
                     </xsl:element>
                 </xsl:if>
             </xsl:element>
