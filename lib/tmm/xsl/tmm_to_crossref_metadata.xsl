@@ -72,176 +72,219 @@
     </xsl:template>
 
     <xsl:template match="book">
+        <!--
         <xsl:variable name="pbisac" select="translate(./primaryBISAC, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz')"/>
         <xsl:variable name="sbisac" select="translate(./secondaryBISAC, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz')"/>
         <xsl:variable name="pbisac_active" select="contains($FORMAT_BISAC_LIST,$pbisac)"/>
         <xsl:variable name="sbisac_active" select="contains($FORMAT_BISAC_LIST,$sbisac)"/>
+        -->
 
-        <xsl:if test="$pbisac_active or $sbisac_active">
-            <xsl:variable name="doi">
-                <xsl:choose>
-                    <xsl:when test="./doi">
-                        <xsl:value-of select="normalize-space(./doi)"/>
-                    </xsl:when>
-                    <xsl:when test="./OAURL">
-                        <xsl:value-of select="normalize-space(./OAURL)"/>
-                    </xsl:when>
-                    <xsl:otherwise>
-                        <xsl:value-of select="''"/>
-                    </xsl:otherwise>
-                </xsl:choose>
-            </xsl:variable>
-            <xsl:if test="$doi != ''">
-                <xsl:element name="book" namespace="{$NAMESPACE_URL}">
-                    <xsl:attribute name="book_type"><xsl:value-of select="'monograph'"/></xsl:attribute>
-                    <xsl:element name="book_metadata" namespace="{$NAMESPACE_URL}">
-                        <xsl:attribute name="language"><xsl:value-of select="'en'"/></xsl:attribute>
-                        <xsl:if test="./*[starts-with(local-name(),'authortype') and (text()='Author' or text()='Editor' or contains(text(),'Editor'))]">
-                            <!-- QQQ: Restricted to author and editor. Should all roles be allowed? -->
-                            <xsl:element name="contributors" namespace="{$NAMESPACE_URL}">
-                                <xsl:apply-templates select="./*[starts-with(local-name(),'authortype') and text()!='Contributor']"/>
-                            </xsl:element>
-                        </xsl:if>
-                        <xsl:if test="./titleprefixandtitle or ./subittle">
-                            <xsl:element name="titles" namespace="{$NAMESPACE_URL}">
-                                <xsl:apply-templates select="./*[local-name()='titleprefixandtitle' or local-name()='subtitle']"/>
-                            </xsl:element>
-                        </xsl:if>
-                        <!--
-                        <xsl:apply-templates select="./bookkey"/>
-                        -->
-                        <xsl:apply-templates select="./pubyear"/>
+        <xsl:variable name="doi">
+            <xsl:choose>
+                <xsl:when test="./doi">
+                    <xsl:value-of select="normalize-space(./doi)"/>
+                </xsl:when>
+                <xsl:when test="./OAURL">
+                    <xsl:value-of select="normalize-space(./OAURL)"/>
+                </xsl:when>
+                <xsl:otherwise>
+                    <xsl:value-of select="''"/>
+                </xsl:otherwise>
+            </xsl:choose>
+        </xsl:variable>
+        <xsl:if test="$doi != ''">
+            <xsl:element name="book" namespace="{$NAMESPACE_URL}">
+                <xsl:attribute name="book_type"><xsl:value-of select="'monograph'"/></xsl:attribute>
+                <xsl:element name="book_metadata" namespace="{$NAMESPACE_URL}">
+                    <xsl:attribute name="language"><xsl:value-of select="'en'"/></xsl:attribute>
+                    <xsl:if test="./*[starts-with(local-name(),'authortype') and (text()='Author' or text()='Editor' or contains(text(),'Editor'))]">
+                        <!-- QQQ: Restricted to author and editor. Should all roles be allowed? -->
+                        <xsl:element name="contributors" namespace="{$NAMESPACE_URL}">
+                            <!--
+                            <xsl:apply-templates select="./*[starts-with(local-name(),'authortype') and text()!='Contributor']"/>
+                            -->
+                            <xsl:apply-templates select="./*[starts-with(local-name(),'authorprimaryind') and text()='Y']"/>
+                            <xsl:apply-templates select="./*[starts-with(local-name(),'authorprimaryind') and text()!='Y']"/>
+                        </xsl:element>
+                    </xsl:if>
+                    <xsl:if test="./titleprefixandtitle or ./subittle">
+                        <xsl:element name="titles" namespace="{$NAMESPACE_URL}">
+                            <xsl:apply-templates select="./*[local-name()='titleprefixandtitle' or local-name()='subtitle']"/>
+                        </xsl:element>
+                    </xsl:if>
+                    <!--
+                    <xsl:apply-templates select="./bookkey"/>
+                    -->
+                    <xsl:apply-templates select="./pubyear"/>
 
-                        <xsl:variable name="isbn_list" select="./*[starts-with(local-name(),'ISBN') and text()!='']"/>
+                    <xsl:variable name="isbn_list" select="./*[starts-with(local-name(),'ISBN')]"/>
+                    <xsl:variable name="bisac_list" select="./*[starts-with(local-name(),'BISAC')]"/>
 
-                        <xsl:variable name="format_base_ndx" select="count(./*[local-name()='format1']/preceding-sibling::*)"/>
-                        <xsl:variable name="format_hc_ndx" select="count(./*[starts-with(local-name(),'format') and text()='Hardcover']/preceding-sibling::*)"/>
-                        <xsl:variable name="format_paper_ndx" select="count(./*[starts-with(local-name(),'format') and text()='Paper']/preceding-sibling::*)"/>
-                        <xsl:variable name="format_pr_ndx" select="count(./*[starts-with(local-name(),'format') and (text()='Hardcover' or text()='Paper')][1]/preceding-sibling::*)"/>
-                        <xsl:variable name="format_oa_ndx" select="count(./*[starts-with(local-name(),'format') and text()='All Ebooks (OA)'][1]/preceding-sibling::*)"/>
-                        <xsl:variable name="format_ebook_ndx" select="count(./*[starts-with(local-name(),'format') and text()='All Ebooks'][1]/preceding-sibling::*)"/>
+                    <xsl:variable name="format_base_ndx" select="count(./*[local-name()='format1']/preceding-sibling::*)"/>
+                    <xsl:variable name="format_hc_ndx" select="count(./*[starts-with(local-name(),'format') and text()='Hardcover']/preceding-sibling::*)"/>
+                    <xsl:variable name="format_paper_ndx" select="count(./*[starts-with(local-name(),'format') and text()='Paper']/preceding-sibling::*)"/>
+                    <xsl:variable name="format_pr_ndx" select="count(./*[starts-with(local-name(),'format') and (text()='Hardcover' or text()='Paper')][1]/preceding-sibling::*)"/>
+                    <xsl:variable name="format_oa_ndx" select="count(./*[starts-with(local-name(),'format') and text()='All Ebooks (OA)'][1]/preceding-sibling::*)"/>
+                    <xsl:variable name="format_ebook_ndx" select="count(./*[starts-with(local-name(),'format') and text()='All Ebooks'][1]/preceding-sibling::*)"/>
 
-                        <xsl:variable name="format_print_ndx">
+                    <xsl:variable name="format_print_ndx">
+                        <xsl:choose>
+                            <xsl:when test="$format_pr_ndx > 0 and contains($FORMAT_BISAC_LIST,translate($bisac_list[$format_pr_ndx], 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'))">
+                                <xsl:value-of select="$format_pr_ndx"/>
+                            </xsl:when>
+                            <xsl:when test="$format_hc_ndx > 0 and contains($FORMAT_BISAC_LIST,translate($bisac_list[$format_hc_ndx], 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'))">
+                                <xsl:value-of select="$format_hc_ndx"/>
+                            </xsl:when>
+                            <xsl:when test="$format_paper_ndx > 0 and contains($FORMAT_BISAC_LIST,translate($bisac_list[$format_paper_ndx], 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'))">
+                                <xsl:value-of select="$format_paper_ndx"/>
+                            </xsl:when>
+                            <xsl:otherwise>
+                                <xsl:value-of select="'0'"/>
+                            </xsl:otherwise>
+                        </xsl:choose>
+                    </xsl:variable>
+                    <xsl:variable name="printISBN">
+                        <xsl:choose>
+                            <xsl:when test="$format_print_ndx > 0">
+                                <xsl:value-of select="$isbn_list[$format_print_ndx - $format_base_ndx + 1]"/>
+                            </xsl:when>
+                            <xsl:otherwise>
+                                <xsl:value-of select="./ISBN1"/>
+                            </xsl:otherwise>
+                        </xsl:choose>
+                    </xsl:variable>
+                    <xsl:if test="$printISBN != ''">
+                        <xsl:call-template name="create_isbn">
+                            <xsl:with-param name="isbn" select="$printISBN"/>
+                            <xsl:with-param name="media_type" select="'print'"/>
+                        </xsl:call-template>
+                    </xsl:if>
+                    <xsl:variable name="format_electronic_ndx">
+                        <xsl:choose>
+                            <xsl:when test="$format_ebook_ndx > 0">
+                                <xsl:value-of select="$format_ebook_ndx"/>
+                            </xsl:when>
+                            <xsl:when test="$format_oa_ndx > 0">
+                                <xsl:value-of select="$format_oa_ndx"/>
+                            </xsl:when>
+                            <xsl:otherwise>
+                                <xsl:value-of select="'0'"/>
+                            </xsl:otherwise>
+                        </xsl:choose>
+                    </xsl:variable>
+                    <xsl:variable name="eISBN">
+                        <xsl:choose>
+                            <xsl:when test="$format_electronic_ndx > 0">
+                                <xsl:value-of select="$isbn_list[$format_electronic_ndx - $format_base_ndx + 1]"/>
+                            </xsl:when>
+                            <xsl:otherwise>
+                                <xsl:value-of select="''"/>
+                            </xsl:otherwise>
+                        </xsl:choose>
+                    </xsl:variable>
+                    <xsl:if test="$eISBN != ''">
+                        <xsl:call-template name="create_isbn">
+                            <xsl:with-param name="isbn" select="$eISBN"/>
+                            <xsl:with-param name="media_type" select="'electronic'"/>
+                        </xsl:call-template>
+                    </xsl:if>
+
+                    <xsl:apply-templates select="./groupentry3"/>
+                    <xsl:element name="doi_data" namespace="{$NAMESPACE_URL}">
+                        <xsl:element name="doi" namespace="{$NAMESPACE_URL}">
+                            <xsl:value-of select="substring-after($doi,'://doi.org/')"/>
+                        </xsl:element>
+                        <xsl:variable name="imprint" select="translate(./groupentry3, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz')"/>
+                        <xsl:variable name="url_prefix">
                             <xsl:choose>
-                                <xsl:when test="$pbisac_active and $format_pr_ndx > 0">
-                                    <xsl:value-of select="$format_pr_ndx"/>
-                                </xsl:when>
-                                <xsl:when test="$pbisac_active and $format_hc_ndx > 0">
-                                    <xsl:value-of select="$format_hc_ndx"/>
-                                </xsl:when>
-                                <xsl:when test="$sbisac_active and $format_paper_ndx > 0">
-                                    <xsl:value-of select="$format_paper_ndx"/>
-                                </xsl:when>
-                                <xsl:otherwise>
-                                    <xsl:value-of select="'0'"/>
-                                </xsl:otherwise>
+                                <xsl:when test="contains($FORMAT_MPS_SERVICES_IMPRINTS,$imprint)"><xsl:value-of select="$MPS_URL_PREFIX"/></xsl:when>
+                                <xsl:otherwise><xsl:value-of select="$UMP_URL_PREFIX"/></xsl:otherwise>
                             </xsl:choose>
                         </xsl:variable>
-                        <xsl:variable name="printISBN">
+                        <xsl:variable name="resourceValue">
                             <xsl:choose>
-                                <xsl:when test="$format_print_ndx > 0">
-                                    <xsl:value-of select="$isbn_list[$format_print_ndx - $format_base_ndx + 1]"/>
+                                <xsl:when test="starts-with(./resource, 'https://www.fulcrum.org/')">
+                                    <xsl:value-of select="./resource"/>
+                                </xsl:when>
+                                <xsl:when test="$printISBN !=''">
+                                    <xsl:value-of select="concat($url_prefix, $printISBN)"/>
+                                </xsl:when>
+                                <xsl:when test="$eISBN !=''">
+                                    <xsl:value-of select="concat($url_prefix, $eISBN)"/>
                                 </xsl:when>
                                 <xsl:otherwise>
-                                    <xsl:value-of select="./ISBN1"/>
-                                </xsl:otherwise>
-                            </xsl:choose>
-                        </xsl:variable>
-                        <xsl:if test="$printISBN != ''">
-                            <xsl:call-template name="create_isbn">
-                                <xsl:with-param name="isbn" select="$printISBN"/>
-                                <xsl:with-param name="media_type" select="'print'"/>
-                            </xsl:call-template>
-                        </xsl:if>
-                        <xsl:variable name="format_electronic_ndx">
-                            <xsl:choose>
-                                <xsl:when test="$format_ebook_ndx > 0">
-                                    <xsl:value-of select="$format_ebook_ndx"/>
-                                </xsl:when>
-                                <xsl:when test="$format_oa_ndx > 0">
-                                    <xsl:value-of select="$format_oa_ndx"/>
-                                </xsl:when>
-                                <xsl:otherwise>
-                                    <xsl:value-of select="'0'"/>
-                                </xsl:otherwise>
-                            </xsl:choose>
-                        </xsl:variable>
-                        <xsl:variable name="eISBN">
-                            <xsl:choose>
-                                <xsl:when test="$format_electronic_ndx > 0">
-                                    <xsl:value-of select="$isbn_list[$format_electronic_ndx - $format_base_ndx + 1]"/>
-                                </xsl:when>
-                                <xsl:otherwise>
-                                    <xsl:value-of select="''"/>
-                                </xsl:otherwise>
-                            </xsl:choose>
-                        </xsl:variable>
-                        <xsl:if test="$eISBN != ''">
-                            <xsl:call-template name="create_isbn">
-                                <xsl:with-param name="isbn" select="$eISBN"/>
-                                <xsl:with-param name="media_type" select="'electronic'"/>
-                            </xsl:call-template>
-                        </xsl:if>
-
-                        <xsl:apply-templates select="./groupentry3"/>
-                        <xsl:element name="doi_data" namespace="{$NAMESPACE_URL}">
-                            <xsl:element name="doi" namespace="{$NAMESPACE_URL}">
-                                <xsl:value-of select="substring-after($doi,'://doi.org/')"/>
-                                <!--
-                                <xsl:choose>
-                                    <xsl:when test="normalize-space(./doi) != ''">
-                                        <xsl:value-of select="substring-after(./doi,'://doi.org/')"/>
-                                    </xsl:when>
-                                    <xsl:otherwise>
-                                        <xsl:value-of select="concat('10.3998/mpub.',./workkey)"/>
-                                    </xsl:otherwise>
-                                </xsl:choose>
-                                -->
-                            </xsl:element>
-                            <xsl:variable name="imprint" select="translate(./groupentry3, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz')"/>
-                            <xsl:variable name="url_prefix">
-                                <xsl:choose>
-                                    <xsl:when test="contains($FORMAT_MPS_SERVICES_IMPRINTS,$imprint)"><xsl:value-of select="$MPS_URL_PREFIX"/></xsl:when>
-                                    <xsl:otherwise><xsl:value-of select="$UMP_URL_PREFIX"/></xsl:otherwise>
-                                </xsl:choose>
-                            </xsl:variable>
-                            <xsl:variable name="resourceValue">
-                                <xsl:choose>
-                                    <xsl:when test="starts-with(./resource, 'https://www.fulcrum.org/')">
-                                        <xsl:value-of select="./resource"/>
-                                    </xsl:when>
                                     <!--
-                                    <xsl:when test="$pbisac_active='true' and ./printISBN">
-                                        <xsl:value-of select="concat($url_prefix, ./printISBN)"/>
-                                    </xsl:when>
-                                    <xsl:when test="$pbisac_active='true' and ./eISBN">
-                                        <xsl:value-of select="concat($url_prefix, ./eISBN)"/>
-                                    </xsl:when>
-                                    <xsl:when test="$sbisac_active='true' and ./secondaryISBN">
-                                        <xsl:value-of select="concat($url_prefix, ./secondaryISBN)"/>
-                                    </xsl:when>
+                                    <xsl:message>WARNING: bookkey <xsl:value-of select="./bookkey"/> no active ISBN found, using current resource.</xsl:message>
                                     -->
-                                    <xsl:when test="$printISBN !=''">
-                                        <xsl:value-of select="concat($url_prefix, $printISBN)"/>
-                                    </xsl:when>
-                                    <xsl:when test="$eISBN !=''">
-                                        <xsl:value-of select="concat($url_prefix, $eISBN)"/>
-                                    </xsl:when>
-                                    <xsl:otherwise>
-                                        <!--
-                                        <xsl:message>WARNING: bookkey <xsl:value-of select="./bookkey"/> no active ISBN found, using current resource.</xsl:message>
-                                        -->
-                                        <xsl:value-of select="./resource"/>
-                                    </xsl:otherwise>
-                                </xsl:choose>
-                            </xsl:variable>
-                            <xsl:element name="resource" namespace="{$NAMESPACE_URL}">
-                                <xsl:value-of select="$resourceValue"/>
-                            </xsl:element>
+                                    <xsl:value-of select="./resource"/>
+                                </xsl:otherwise>
+                            </xsl:choose>
+                        </xsl:variable>
+                        <xsl:element name="resource" namespace="{$NAMESPACE_URL}">
+                            <xsl:value-of select="$resourceValue"/>
                         </xsl:element>
                     </xsl:element>
                 </xsl:element>
-            </xsl:if>
+            </xsl:element>
+        </xsl:if>
+    </xsl:template>
+
+    <xsl:template match="*[starts-with(local-name(),'authorprimaryind')]">
+        <xsl:variable name="primary" select="."/>
+        <xsl:variable name="ordinal" select="substring-after(local-name(),'authorprimaryind')"/>
+        <xsl:variable name="role" select="translate(normalize-space(preceding-sibling::*[starts-with(local-name(),concat('authortype',$ordinal))][1]), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz')"/>
+
+        <!--
+        <xsl:element name="twb" namespace="{$NAMESPACE_URL}">
+            <xsl:attribute name="primary"><xsl:value-of select="$primary"/></xsl:attribute>
+            <xsl:attribute name="ordinal"><xsl:value-of select="$ordinal"/></xsl:attribute>
+            <xsl:attribute name="role"><xsl:value-of select="$role"/></xsl:attribute>
+        </xsl:element>
+        -->
+
+        <!--
+        QQQ: Shouldn't all roles be allowed?
+        <xsl:if test="$role='author' or $role='contributor' or $role='translator' or contains($role, 'editor')">
+        -->
+        <xsl:if test="$role='author' or $role='editor' or $role='contributor' or $role='translator' or contains($role, 'editor')">
+            <xsl:element name="person_name" namespace="{$NAMESPACE_URL}">
+                <xsl:attribute name="sequence">
+                    <xsl:choose>
+                        <xsl:when test="$primary='Y'">
+                            <xsl:value-of select="'first'"/>
+                        </xsl:when>
+                        <xsl:otherwise>
+                            <xsl:value-of select="'additional'"/>
+                        </xsl:otherwise>
+                    </xsl:choose>
+                </xsl:attribute>
+                <xsl:attribute name="contributor_role">
+                    <xsl:choose>
+                        <xsl:when test="$role='author' or $role='contributor'">
+                            <xsl:value-of select="'author'"/>
+                        </xsl:when>
+                        <xsl:when test="$role='editor' or contains($role, 'editor')">
+                            <xsl:value-of select="'editor'"/>
+                        </xsl:when>
+                        <xsl:when test="$role='translator'">
+                            <xsl:value-of select="$role"/>
+                        </xsl:when>
+                        <xsl:otherwise>
+                            <!--<xsl:value-of select="text()"/>-->
+                        </xsl:otherwise>
+                    </xsl:choose>
+                </xsl:attribute>
+                <xsl:if test="preceding-sibling::*[starts-with(local-name(),concat('authorfirstname',$ordinal)) and text()]">
+                    <xsl:element name="given_name" namespace="{$NAMESPACE_URL}">
+                        <xsl:value-of select="normalize-space(preceding-sibling::*[starts-with(local-name(),concat('authorfirstname',$ordinal))][1])"/>
+                    </xsl:element>
+                </xsl:if>
+                <xsl:if test="preceding-sibling::*[starts-with(local-name(),concat('authorlastname',$ordinal)) and text()]">
+                    <xsl:element name="surname" namespace="{$NAMESPACE_URL}">
+                        <xsl:value-of select="normalize-space(preceding-sibling::*[starts-with(local-name(),concat('authorlastname',$ordinal))][1])"/>
+                    </xsl:element>
+                </xsl:if>
+            </xsl:element>
         </xsl:if>
     </xsl:template>
 
@@ -319,24 +362,6 @@
 
     <xsl:template match="bookkey">
         <xsl:element name="edition_number" namespace="{$NAMESPACE_URL}">
-            <xsl:value-of select="text()"/>
-        </xsl:element>
-    </xsl:template>
-
-    <xsl:template match="printISBN|secondaryISBN">
-        <xsl:element name="isbn" namespace="{$NAMESPACE_URL}">
-            <xsl:attribute name="media_type">
-                <xsl:value-of select="'print'"/>
-            </xsl:attribute>
-            <xsl:value-of select="text()"/>
-        </xsl:element>
-    </xsl:template>
-
-    <xsl:template match="eISBN">
-        <xsl:element name="isbn" namespace="{$NAMESPACE_URL}">
-            <xsl:attribute name="media_type">
-                <xsl:value-of select="'electronic'"/>
-            </xsl:attribute>
             <xsl:value-of select="text()"/>
         </xsl:element>
     </xsl:template>
