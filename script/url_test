@@ -70,7 +70,7 @@ url_list.each do |url|
       url_dest = node['Content'] unless node.nil?
 =end
       node = body_doc.xpath("//*[local-name()='a']").first
-      url_dest = node["href"]
+      url_dest = node.nil? ? "(unknown)" : node["href"]
     end
     out_logger.info("#{url_path},#{url_dest}")
   end

@@ -72,23 +72,19 @@
     </xsl:template>
 
     <xsl:template match="book">
-        <!--
-        <xsl:variable name="pbisac" select="translate(./primaryBISAC, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz')"/>
-        <xsl:variable name="sbisac" select="translate(./secondaryBISAC, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz')"/>
-        <xsl:variable name="pbisac_active" select="contains($FORMAT_BISAC_LIST,$pbisac)"/>
-        <xsl:variable name="sbisac_active" select="contains($FORMAT_BISAC_LIST,$sbisac)"/>
-        -->
-
         <xsl:variable name="doi">
             <xsl:choose>
-                <xsl:when test="./doi">
+                <xsl:when test="normalize-space(./doi) != ''">
                     <xsl:value-of select="normalize-space(./doi)"/>
                 </xsl:when>
-                <xsl:when test="./OAURL">
+                <xsl:when test="normalize-space(./OAURL) != ''">
                     <xsl:value-of select="normalize-space(./OAURL)"/>
                 </xsl:when>
                 <xsl:otherwise>
+                    <!--
                     <xsl:value-of select="''"/>
+                    -->
+                    <xsl:value-of select="concat('https://doi.org/10.3998/mpub.',./bookkey)"/>
                 </xsl:otherwise>
             </xsl:choose>
         </xsl:variable>
