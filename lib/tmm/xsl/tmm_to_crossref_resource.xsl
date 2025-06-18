@@ -37,11 +37,13 @@
                     <!-- Strip out titles that have not passed Eloquence verification. -->
                     <xsl:choose>
                         <xsl:when test="$ELOQUENCE_VERIFICATION='true'">
-                            <xsl:variable name="pbisac" select="translate(./primaryBISAC, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz')"/>
                             <xsl:apply-templates select="book[contains($FORMAT_IMPRINTS,translate(./groupentry3,'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz')) and starts-with(eloquenceVerificationStatus,'Passed') and not(contains($EXCLUDE_ISBN_LIST,printISBN))]"/>
                         </xsl:when>
                         <xsl:otherwise>
+                            <!--
                             <xsl:apply-templates select="book[contains($FORMAT_IMPRINTS,translate(./groupentry3,'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz')) and not(contains($EXCLUDE_ISBN_LIST,printISBN))]"/>
+                            -->
+                            <xsl:apply-templates select="book[contains($FORMAT_IMPRINTS,translate(./groupentry3,'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz'))]"/>
                         </xsl:otherwise>
                     </xsl:choose>
                 </xsl:element>
