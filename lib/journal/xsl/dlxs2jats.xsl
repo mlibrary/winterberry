@@ -1341,12 +1341,34 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
 
     <xsl:template match="CELL">
         <xsl:variable name="border" select="ancestor::*[local-name()='TABLE'][1]/@BORDER"/>
-        <xsl:element name="td">
-            <xsl:if test="$border > '0'">
-                <xsl:attribute name="style" select="concat('border:',$TABLE_BORDER_STYLE,'padding:',$TABLE_PADDING_STYLE)"/>
+        <xsl:variable name="style">
+            <xsl:choose>
+                <xsl:when test="$border > '0'">
+                    <xsl:value-of select="concat('border:',$TABLE_BORDER_STYLE,'padding:',$TABLE_PADDING_STYLE)"/>
+                </xsl:when>
+                <xsl:otherwise>
+                    <xsl:value-of select="''"/>
+                </xsl:otherwise>
+            </xsl:choose>
+        </xsl:variable>
+        <xsl:variable name="role" select="translate(@ROLE, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz')"/>
+        <xsl:variable name="elem_name">
+            <xsl:choose>
+                <xsl:when test="$role = 'label'">
+                    <xsl:value-of select="'th'"/>
+                </xsl:when>
+                <xsl:otherwise>
+                    <xsl:value-of select="'td'"/>
+                </xsl:otherwise>
+            </xsl:choose>
+        </xsl:variable>
+
+        <xsl:element name="{$elem_name}">
+            <xsl:if test="$style != ''">
+                <xsl:attribute name="style" select="$style"/>
             </xsl:if>
             <xsl:choose>
-                <xsl:when test="exists(@ROLE)">
+                <xsl:when test="exists(@ROLE) and $role != 'label'">
                     <xsl:attribute name="content-type" select="@ROLE"/>
                 </xsl:when>
                 <xsl:when test="exists(@TYPE)">
