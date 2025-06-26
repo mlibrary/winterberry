@@ -1,0 +1,105 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# FOPS-826
+# Script inputs a spreadsheet containing a mapping of
+# print ISBN to eISBN, locates a file with that print ISBN
+# and renames it to the eISBN.
+#
+
+require 'optparse'
+require 'ostruct'
+require 'os'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+# Process the script parameters.
+options = OpenStruct.new
+options.file_dir_list = [
+      "s:/Information\ Management/Fulcrum/UMP_backlist/Round_2025_Codemantra/Fulcrum_ready2"
+      #"s:/Information\ Management/Fulcrum/UMP_backlist/Round_2025_Codemantra/Fulcrum_ready_test"
+    ]
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-d <file_dir>] metadata_file [metadata_file...]"
+  opts.on('-d', '--directory [DIRECTORY]', 'File directory') do |file_dir|
+    options.file_dir_list << file_dir
+  end
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    script_logger.info(opts)
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  script_logger.info(option_parser.help)
+  return
+end
+
+# Process the command line parameters.
+metadata_file_list = ARGV
+
+file_dir_list = []
+options.file_dir_list.each do |file_dir|
+  file_dir = File.expand_path(file_dir)
+  unless File.directory?(file_dir)
+    script_logger.error("invalid file directory #{file_dir}.")
+    exit(1)
+  end
+  file_dir_list << file_dir
+end
+
+require 'fileutils'
+require_relative File.join(root_dir, "lib", "csvfile")
+
+metadata_csv_list = {}
+metadata_file_list.each do |metadata_file|
+  metadata_file = File.expand_path(metadata_file)
+  unless File.exist?(metadata_file)
+    script_logger.error("invalid metadata file path #{metadata_file}.")
+    next
+  end
+  script_logger.info("*** processing #{File.basename(metadata_file)} ***")
+  STDOUT.flush
+
+  metadata_csv_list[metadata_file] = UMPTG::CSVFile.read(csv_path: metadata_file)
+end
+
+file_dir_list.each do |file_dir|
+  Dir.glob(File.join(file_dir, "*")).each do |path|
+    if File.directory?(path)
+      isbn = File.basename(path, ".*")[0..13]
+      metadata_csv_list.each do |metadata_file, metadata_csv|
+        metadata_row = metadata_csv.find {|r| r['PrintISBN'].gsub(/-/,'') == isbn unless r['PrintISBN'].nil? }
+        if metadata_row.nil?
+          script_logger.warn("found 0 rows for ISBN #{isbn}")
+        else
+          #script_logger.info("found row for ISBN #{isbn}")
+          eisbn = metadata_row['EAN'].gsub(/-/,'')
+          script_logger.info("#{isbn}=>#{eisbn}")
+          Dir.glob(File.join(path, "*")).each do |f|
+            fn = File.basename(f, ".*")[0..13]
+            if fn == isbn
+              new_fn = File.join(path, eisbn + File.extname(f))
+              script_logger.info("moving file #{File.basename(f)} to #{File.basename(new_fn)}")
+              FileUtils.mv(f, new_fn)
+            else
+              script_logger.warn("skipping file #{File.basename(f)}")
+            end
+          end
+          new_path = File.join(File.dirname(path), eisbn)
+          script_logger.info("moving directory #{File.basename(path)} to #{File.basename(new_path)}")
+          FileUtils.mv(path, new_path)
+        end
+      end
+    else
+      script_logger.warn("skipping file #{File.basename(path)}")
+    end
+    STDOUT.flush
+  end
+end
