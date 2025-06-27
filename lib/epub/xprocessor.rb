@@ -25,10 +25,6 @@ module UMPTG::EPUB
     def run(epub, args = {})
       raise "No XML processor specified" if @xml_processor.nil?
 
-      spine_entries = args[:spine_entries]
-
-      run_args = args.clone()
-
       # Set XML processor logger to be this logger.
       @xml_processor.logger = @logger
 
@@ -38,57 +34,21 @@ module UMPTG::EPUB
 
       entry_actions = []
 
-      # Process the EPUB OPF if that filter is provided.
-      filters = @xml_processor.filters.clone
-      opf_filter = filters.select {|f| f.name == :opf }.first
-      unless opf_filter.nil?
-        actions = opf_filter.run(epub.opf_doc, args)
-
-        run_args[:actions] = actions
-        result = UMPTG::XML::Pipeline::Action.process_actions(run_args)
-        entry_actions << EntryActions.new(
-                  entry: epub.opf,
-                  action_result: result
-                  )
-      end
-
-      # Process the EPUB NCX if that filter is provided.
-      filters = @xml_processor.filters.clone
-      ncx_filter = filters.select {|f| f.name == :ncx }.first
-      unless ncx_filter.nil?
-        epub.ncx.each do |ncx|
-          xml_doc = UMPTG::XML.parse(xml_content: ncx.content)
-          @logger.error("#{ncx.name}: #{xml_doc.errors.count} parse errors") unless xml_doc.errors.empty?
-
-          actions = ncx_filter.run(xml_doc, args)
-
-          run_args[:actions] = actions
-          result = UMPTG::XML::Pipeline::Action.process_actions(run_args)
-          entry_actions << EntryActions.new(
-                    entry: ncx,
-                    action_result: result
-                    )
-        end
-      end
-
-      # Process EPUB spine.
-      filters = filters.delete_if {|f| f.name == :opf or f.name == :ncx }
-      unless filters.empty?
-        sv_filters = @xml_processor.filters
-        @xml_processor.filters = filters
-
-        spine_entries = epub.spine if spine_entries.nil?
-        spine_entries.each do |entry|
+      ([epub.opf] + epub.manifest).each do |entry|
+        case
+        when entry.type.end_with?("+xml")
           xml_doc = UMPTG::XML.parse(xml_content: entry.content)
           @logger.error("#{entry.name}: #{xml_doc.errors.count} parse errors") unless xml_doc.errors.empty?
 
           result = @xml_processor.run(xml_doc, args)
-          entry_actions << EntryActions.new(
-                    entry: entry,
-                    action_result: result
-                    )
+        else
+          result = nil
         end
-        @xml_processor.filters = sv_filters
+        entry_actions << EntryActions.new(
+                  entry: entry,
+                  action_result: result
+                  ) \
+           unless result.nil?
       end
       @xml_processor.logger = @logger
 
@@ -134,7 +94,6 @@ module UMPTG::EPUB
       else
         logger.info("Error: 0")
       end
-
       @logger.info("Normalization not necessary.") unless epub.modified
 
       return entry_actions

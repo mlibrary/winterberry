@@ -28,8 +28,9 @@ module UMPTG::Review
       update_css = args.key?(:update_css) ? args[:update_css] : false
       review_resources = args.key?(:review_resources) ? args[:review_resources] : true
 
-      epub_file = @monograph_dir.archived_epub_file
-      epub_file = @monograph_dir.epub_file if epub_file.nil? or epub_file.empty?
+      #epub_file = @monograph_dir.archived_epub_file
+      #epub_file = @monograph_dir.epub_file if epub_file.nil? or epub_file.empty?
+      epub_file = Dir.glob(File.join(@monograph_dir.monograph_dir, "*.epub")).first
       if epub_file.nil?
         @review_logger.error("no EPUB file for id #{@monograph_dir.monograph_id}")
         return

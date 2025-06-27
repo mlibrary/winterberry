@@ -1,0 +1,133 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# New version of process_monograph_resource_metadata
+
+require 'optparse'
+require 'ostruct'
+require 'os'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+# Process the script parameters.
+options = OpenStruct.new
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} monograph_dir [monograph_dir...]"
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    script_logger.info(opts)
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  script_logger.info(option_parser.help)
+  return
+end
+
+# Process the command line parameters.
+monograph_dir_list = ARGV
+
+require_relative File.join(script_dir, "lib", "epub")
+require_relative File.join(root_dir, "lib", "fulcrum", "monographdir")
+require_relative File.join(script_dir, "lib", "fulcrum", "metadata")
+
+xhtml_processor = UMPTG::Fulcrum::Metadata::XHTML::Processor(
+          name: "FulcrumResourceMetadataProcessor",
+          options: {
+              xhtml_resource_metadata: true
+          }
+    )
+epub_processor = UMPTG::EPUB::Processor(
+          name: "EPUBProcessor",
+          xhtml_processor: xhtml_processor,
+          options: {
+              epub_ncx_test: false,
+              epub_oebps_test: false,
+              epub_oebps_accessible: false,
+              epub_xhtml_test: false,
+              xhtml_img_alttext: false
+          }
+    )
+
+monograph_dir_list.each do |mdir|
+  monograph_dir = UMPTG::Fulcrum::MonographDir.new(
+            monograph_dir: mdir
+            )
+  if monograph_dir.monograph_dir.nil?
+    script_logger.error("invalid monograph directory #{mdir}")
+    next
+  end
+  script_logger.info("processing monograph directory #{monograph_dir.monograph_dir}")
+
+  # Create the monograph processing directory.
+  FileUtils.mkdir_p monograph_dir.processing_dir
+
+  # Create the processing log file for this monograph directory.
+  logger_file =  File.join(
+            monograph_dir.processing_dir,
+            File.basename(__FILE__) + ".log"
+            )
+  logger = UMPTG::Logger.create(logger_file: logger_file)
+  #xml_processor.logger = logger
+  epub_processor.logger = logger
+  epub_processor.logger.info("*** Processing Monograph directory #{File.basename(monograph_dir.monograph_dir)} ***")
+
+  if monograph_dir.fmsl_file.nil?
+    epub_processor.logger.warn("no FMSL file loaded.")
+    next
+  end
+
+  epub = UMPTG::EPUB(epub_path: monograph_dir.epub_file)
+
+  epub_processor.logger.info("Using EPUB #{File.basename(monograph_dir.epub_file)}.")
+  entry_actions = epub_processor.run(
+        epub,
+        {
+          normalize: true
+        }
+      )
+
+  epub_processor.logger.info("Using FMSL #{File.basename(monograph_dir.fmsl_file)}.")
+  epub_processor.logger.warn("No alt text/caption found for resource \"***row left intentionally blank***\".")
+
+  fmsl_csv = CSV.parse(
+            File.read(monograph_dir.fmsl_file),
+            :headers => true,
+            :return_headers => false
+            )
+
+  ea_args = {
+      entry_actions:entry_actions,
+      fmsl_csv: fmsl_csv,
+      logger: epub_processor.logger
+    }
+  epub_processor.process_entry_action_results(ea_args)
+
+  # Add new columns to the CSV headers if needed.
+  new_fmsl_headers = fmsl_csv.headers
+  new_fmsl_headers << "Caption" unless new_fmsl_headers.include?("Caption")
+  new_fmsl_headers << "Alternative Text" unless new_fmsl_headers.include?("Alternative Text")
+
+  # Save the updated FMSL in the resource processing directory.
+  new_fmsl_file = File.join(monograph_dir.processing_dir, File.basename(monograph_dir.fmsl_file))
+  CSV.open(
+          new_fmsl_file,
+          "w",
+          :write_headers=> true,
+          :headers => new_fmsl_headers
+        ) do |csv|
+    fmsl_csv.each do |fmsl_row|
+      new_row = {}
+      fmsl_row.each do |key,value|
+        new_row[key] = value.strip.force_encoding("UTF-8") unless value.nil?
+      end
+      csv << new_row
+    end
+  end
+end

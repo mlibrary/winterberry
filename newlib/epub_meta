@@ -1,0 +1,91 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Test new version of EPUB.
+
+require 'optparse'
+require 'ostruct'
+require 'os'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+# Process the script parameters.
+options = OpenStruct.new
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} epub_file [epub_file...]"
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    script_logger.info(opts)
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  script_logger.info(option_parser.help)
+  return
+end
+
+# Process the command line parameters.
+epub_file_list = ARGV
+
+require_relative File.join(script_dir, "lib", "epub")
+
+def dump_list(label, m_list)
+  puts "==== #{label} ==========="
+  puts "m_list:#{m_list.count}"
+  m_list.each do |p|
+    puts "#{p.name} #{p['property']}=#{p.content}" if p.key?('property')
+    puts "#{p.name} #{p['name']}=#{p['content']}" if p.key?('name')
+    puts "#{p.namespace.prefix}:#{p.name}=#{p.content}" if p.namespace.href == UMPTG::EPUB::Archive::OEBPS::Metadata::DC::Elements.NAMESPACE_URI
+  end
+end
+
+epub_file_list.each do |epub_file|
+  epub_file = File.expand_path(epub_file)
+  unless File.file?(epub_file)
+    script_logger.error("invalid directory #{epub_file}")
+    next
+  end
+  script_logger.info("processing directory #{File.basename(epub_file)}")
+
+  epub = UMPTG::EPUB(epub_path: epub_file)
+
+  puts "version: #{epub.rendition.version}"
+
+  #epub.rendition.metadata.add(property: "twb1", value: "Property #1")
+  
+  dump_list('metadata.find',
+        epub.rendition.metadata.find)
+  dump_list('metadata.find(meta_property: "dcterms:modified", meta_name: "cover")',
+        epub.rendition.metadata.find(meta_property: "dcterms:modified", meta_name: "cover"))
+  dump_list('metadata.terms.find',
+        epub.rendition.metadata.terms.find)
+  dump_list('metadata.dc.find',
+        epub.rendition.metadata.dc.find)
+  dump_list('metadata.dc.find(element_name: "creator")',
+        epub.rendition.metadata.dc.find(element_name: "creator"))
+  dump_list('metadata.dc.find(meta_property: "modified", element_name: "title")',
+        epub.rendition.metadata.dc.find(meta_property: "modified", element_name: "title"))
+  dump_list('metadata.dc.elements.find',
+        epub.rendition.metadata.dc.elements.find)
+  dump_list('metadata.dc.elements.identifier',
+        epub.rendition.metadata.dc.elements.identifier)
+  dump_list('metadata.dc.terms.find',
+        epub.rendition.metadata.dc.terms.find)
+  dump_list('metadata.dc.terms.modified',
+        epub.rendition.metadata.dc.terms.modified)
+  dump_list('metadata.schema.find',
+        epub.rendition.metadata.schema.find)
+  dump_list('metadata.schema.find(meta_property: "accessibilityFeature")',
+        epub.rendition.metadata.schema.find(meta_property: "accessibilityFeature"))
+  dump_list('metadata.schema.terms.find',
+        epub.rendition.metadata.schema.terms.find)
+  dump_list('metadata.schema.terms.accessMode',
+        epub.rendition.metadata.schema.terms.accessMode)
+end
+
