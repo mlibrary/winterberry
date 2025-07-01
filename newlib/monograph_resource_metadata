@@ -59,22 +59,18 @@ monograph_dir_list.each do |mdir|
   monograph_dir = UMPTG::Fulcrum::MonographDir.new(
             monograph_dir: mdir
             )
-  if monograph_dir.monograph_dir.nil?
-    script_logger.error("invalid monograph directory #{mdir}")
-    next
-  end
   script_logger.info("processing monograph directory #{monograph_dir.monograph_dir}")
 
   # Create the monograph processing directory.
-  FileUtils.mkdir_p monograph_dir.processing_dir
+  processing_dir = File.join(monograph_dir.monograph_dir, "resource_processing")
+  FileUtils.mkdir_p processing_dir
 
   # Create the processing log file for this monograph directory.
   logger_file =  File.join(
-            monograph_dir.processing_dir,
+            processing_dir,
             File.basename(__FILE__) + ".log"
             )
   logger = UMPTG::Logger.create(logger_file: logger_file)
-  #xml_processor.logger = logger
   epub_processor.logger = logger
   epub_processor.logger.info("*** Processing Monograph directory #{File.basename(monograph_dir.monograph_dir)} ***")
 
@@ -115,7 +111,7 @@ monograph_dir_list.each do |mdir|
   new_fmsl_headers << "Alternative Text" unless new_fmsl_headers.include?("Alternative Text")
 
   # Save the updated FMSL in the resource processing directory.
-  new_fmsl_file = File.join(monograph_dir.processing_dir, File.basename(monograph_dir.fmsl_file))
+  new_fmsl_file = File.join(processing_dir, File.basename(monograph_dir.fmsl_file))
   CSV.open(
           new_fmsl_file,
           "w",

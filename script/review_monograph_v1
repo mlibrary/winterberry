@@ -22,20 +22,20 @@ require_relative File.join(root_dir, "lib", "fulcrum")
 
 # Process the script parameters.
 options = OpenStruct.new
+options.publisher_dir = File.join(UMPTG::Fulcrum.DEFAULT_DIR, UMPTG::Fulcrum.DEFAULT_PUBLISHER)
 options.normalize = false
 options.normalize_caption_class = false
 options.update_css = false
-options.manifest_file = nil
 option_parser = OptionParser.new do |opts|
-  opts.banner = "Usage: #{File.basename(__FILE__)} [-f production|preview|staging] [-n] [-c] [-u] [-m manifest_file] <monograph_dir> [<monograph_dir>...]"
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-d <publisher_dir>] [-f production|preview|staging] [-n] [-c] [-u] <monograph_id> [<monograph_id>...]"
   opts.on('-c', '--normalize_caption_class', 'Normalize caption class attribute') do |normalize|
     options.normalize_caption_class = true
   end
+  opts.on('-d', '--publisher_directory [DIRECTORY]', 'Publisher site directory') do |publisher_dir|
+    options.publisher_dir = publisher_dir
+  end
   opts.on('-f', '--fulcrum_host [production|preview|staging]', 'Fulcrum environment') do |fulcrum_host|
     options.fulcrum_host = fulcrum_host
-  end
-  opts.on('-m manifest_file', '--manifest_file manifest_file', 'manifest_file') do |mf|
-    options.manifest_file = mf
   end
   opts.on('-n', '--normalize', 'Normalize EPUB') do |normalize|
     options.normalize = true
@@ -55,29 +55,28 @@ if ARGV.count < 1
 end
 
 # Process the command line parameters.
-monograph_dir_list = ARGV
-
-manifest_file = options.manifest_file
-unless manifest_file.nil?
-  manifest_file = File.expand_path(manifest_file)
-  unless File.file?(manifest_file)
-    script_logger.error("invalid manifest file #{manifest_file}")
-    exit 1
-  end
-end
+monograph_id_list = ARGV
 
 require 'fileutils'
 
 require_relative File.join(root_dir, "lib", "review")
 
-monograph_dir_list.each do |mdir|
-  script_logger.info("*" * 10 + " #{mdir} " + "*" * 10)
+monograph_id_list.each do |monograph_id|
+  script_logger.info("*" * 10 + " #{monograph_id} " + "*" * 10)
 
   monograph_dir = UMPTG::Fulcrum::MonographDir.new(
-              monograph_dir: mdir,
+              publisher_dir: options.publisher_dir,
               fulcrum_host: options.fulcrum_host,
-              manifest_file: manifest_file
+              monograph_id: monograph_id
           )
+  if monograph_dir.monograph_dir.nil?
+    script_logger.error("no monograph directory found for ID #{monograph_id}.")
+    next
+  end
+  if !Dir.exist?(monograph_dir.monograph_dir)
+    script_logger.error("invalid monograph directory #{monograph_dir.monograph_dir}.")
+    next
+  end
 
   reviewer = UMPTG::Review::MonographDirReviewer.new(
               monograph_dir: monograph_dir

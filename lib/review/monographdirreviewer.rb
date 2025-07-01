@@ -77,8 +77,10 @@ module UMPTG::Review
           @review_logger.warn("no resources CSV for id #{@monograph_dir.monograph_id}.")
           return
         end
-        csv_path = @monograph_dir.fmsl_file
-        @review_logger.info("using resources directory CSV #{File.basename(csv_path)}.")
+        @review_logger.info("using resources directory CSV #{File.basename(@monograph_dir.fmsl_file)}.")
+
+        @review_logger.warn("monograph manifest not found") \
+              if @monograph_dir.manifests.empty?
 
         total_references = 0
         epub_reviewer.resource_path_list.each do |entry_name,path_list|
@@ -86,8 +88,8 @@ module UMPTG::Review
           total_references += path_list.count
           path_list.each do |path|
             resource_name = ""
-            unless @monograph_dir.manifest.nil?
-              resource_name = @monograph_dir.manifest.fileset_file_name(path)
+            unless @monograph_dir.manifests.empty?
+              resource_name = @monograph_dir.manifests.first.fileset_file_name(path)
               if resource_name.empty? and !resources_manifest.nil?
                 resource_name = resources_manifest.fileset_file_name(File.basename(path))
               end
