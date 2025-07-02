@@ -61,10 +61,20 @@ module UMPTG::EPUB::Archive::OEBPS
     end
 
     def entries(args = {})
+      e_list = []
+      find(args).each do |n|
+        entry_name = Manifest.MK_PATH(@files_entry, n['href'])
+        entry = @rendition.epub.files.find(entry_name: entry_name).first
+        e_list << entry unless entry.nil?
+      end
+=begin
       items = find(args)
+      puts items
       e_list = items.collect {|n|
           @rendition.epub.files.find(entry_name: Manifest.MK_PATH(@files_entry, n['href'])).first
         }
+=end
+      return e_list
     end
 
     def self.MK_PATH(file_entry, entry_name)
