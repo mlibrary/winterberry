@@ -18,9 +18,13 @@ script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
 # Process the script parameters.
 options = OpenStruct.new
 options.message_type = :works
+options.fields = []
 option_parser = OptionParser.new do |opts|
-  opts.banner = "Usage: #{File.basename(__FILE__)} [-t funders|works] doi [doi...]"
-  opts.on('-t', '--type [funders|works]', 'Message type [funders|works]') do |type|
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-t funders|prefixes|works] [-f field] [doi|doi_file] ..."
+  opts.on('-f', '--field field', 'Field name [resource|link]') do |f|
+    options.fields << f
+  end
+  opts.on('-t', '--type [funders|prefixes|works]', 'Message type [funders|works]') do |type|
     options.message_type = type.to_sym
   end
   opts.on_tail('-h', '--help', 'Print this help message') do
@@ -35,44 +39,118 @@ if ARGV.count < 1
 end
 
 # Process the command line parameters.
-doi_list = ARGV
+arg_list = ARGV
 
-require 'serrano'
+require 'nokogiri'
+require_relative File.join(root_dir, 'lib', 'services')
+require_relative File.join(root_dir, 'lib', 'xml')
 
-Serrano.configuration do |config|
-  config.base_url = "https://api.crossref.org"
-  config.mailto = "mpub.xref@gmail.com"
+def process_value(parent_node, val)
+  case val.class.name.downcase
+  when "array"
+    case
+    when (parent_node.name == "date-parts" and val[0].is_a?(Integer))
+      parent_node['year'] = val[0]
+      parent_node['month'] = val[1]
+      parent_node['day'] = val[2]
+    else
+      val.each {|v| process_value(parent_node, v) }
+    end
+  when "hash"
+    case parent_node.name
+    when "isbn-type"
+      parent_node.add_child("<isbn type=\"#{val['type']}\">#{val['value']}</>")
+    else
+      val.each do |k,v|
+        new_node = parent_node.add_child("<#{k}></#{k}>").first
+        process_value(new_node, v)
+      end
+    end
+  when "string"
+    unless val.strip.empty?
+      parent_node.content = parent_node.content.empty? ? val : parent_node.content + ",#{val}"
+    end
+  else
+    parent_node.content = parent_node.content.empty? ? val : parent_node.content + ",#{val.to_s}"
+  end
 end
 
-response_list = []
-
-case options.message_type
-when :funders
-  response_list = Serrano.funders(ids: doi_list)
-when :works
-  response_list = Serrano.works(ids: doi_list)
-else
-  script_logger.error("message type #{options.message_type} not supported.")
-  exit(1)
+def process_work(parent_node, work)
+  work_node = parent_node.add_child("<work></>").first
+  return process_value(work_node, work)
 end
 
-response_list.each do |response|
-  unless response["status"].downcase == "ok"
-    script_logger.error("#{options.message_type} request failed,#{response}")
+# Create the serivce for retrieving the NOID manifest.
+service = UMPTG::Services::Crossref.new()
+
+xml_doc = Nokogiri::XML("<?xml version=\"1.0\" encoding=\"utf-8\"?><#{File.basename(__FILE__)}></>")
+parent_node = xml_doc.document.root
+
+arg_list.each do |arg|
+  script_logger.info("*** processing #{arg} ***")
+
+  doi_file = File.expand_path(arg)
+
+  case
+  when File.file?(doi_file)
+    doi_list = File.readlines(doi_file, chomp: true)
+  when arg.class.name.downcase == "string"
+    doi_list = [arg]
+    doi_file = nil
+  else
+    script_logger.error("unknown parameter type #{a.class}")
     next
   end
-  script_logger.info("*** message-type:#{response['message-type']}, version:#{response['message-version']} ***")
 
-  response.each do |key,val|
-    case key
-    when "message"
-      script_logger.info("#{key}")
-      val.each do |k,v|
-        script_logger.info("#{k}:#{v}")
+  case options.message_type
+  when :funders
+  when :prefixes
+    begin
+      response_list = service.prefixes(prefix_list: doi_list)
+    rescue StandardError => e
+      script_logger.error(e.message)
+      next
+    end
+  when :works
+    begin
+      response_list = service.works(doi_list: doi_list)
+    rescue StandardError => e
+      script_logger.error(e.message)
+      next
+    end
+  else
+    script_logger.error("message type #{options.message_type} not supported.")
+    next
+  end
+
+  response_list.each do |response|
+    next if response.nil?
+
+    unless response.status == 200
+      script_logger.error("#{options.message_type} request failed,#{response.status}")
+      next
+    end
+    script_logger.info("*** message-type:#{response.body['message-type']}, version:#{response.body['message-version']} ***")
+
+    case response.body['message-type']
+    when "prefix"
+      #script_logger.info("#{response.body['message']['prefix']}:#{response.body['message']['name']}")
+      #script_logger.info(response.body['message'])
+    when "work"
+      work = response.body['message']
+      script_logger.info("#{work['URL']}")
+      process_work(parent_node, work)
+    when "work-list"
+      response.body['message']['items'].each do |work|
+        script_logger.info("#{work['URL']}")
+        process_work(parent_node, work)
       end
-    when "message-type", "message-version", "status"
     else
-      script_logger.info("#{key}:#{val}")
+      script_logger.warn("type #{response.body['message-type']} not supported.")
     end
   end
 end
+
+xml_file = File.expand_path(File.basename(__FILE__) + ".xml")
+UMPTG::XML.save(xml_doc, xml_file)
+script_logger.info("saved file #{xml_file}")

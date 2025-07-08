@@ -1,0 +1,190 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Script performs a Crossref DOI query.
+
+require 'optparse'
+require 'ostruct'
+require 'os'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+# Process the script parameters.
+options = OpenStruct.new
+options.message_type = :works
+options.fields = []
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-t funders|works] [-f field] [doi|doi_file] ..."
+  opts.on('-f', '--field field', 'Field name [resource|link]') do |f|
+    options.fields << f
+  end
+  opts.on('-t', '--type [funders|works]', 'Message type [funders|works]') do |type|
+    options.message_type = type.to_sym
+  end
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    script_logger.info(opts)
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  script_logger.info(option_parser.help)
+  return
+end
+
+# Process the command line parameters.
+arg_list = ARGV
+
+require 'serrano'
+require 'csv'
+
+def process_value(val)
+  new_val = []
+  case val.class.name.downcase
+  when "array"
+    new_val = val.collect {|v| process_value(v) }
+  when "hash"
+    case
+    when val.include?("date-parts")
+      if val.include?("date-time")
+        new_val << val["date-time"]
+      else
+        new_val = process_value(val["date-parts"])
+      end
+    when val.include?("family")
+      new_val << "#{val['family']}, #{val['given']}"
+    when val.include?("type")
+      new_val << "#{val['value']} (#{val['type']})" \
+            unless val['value'].strip.empty? or val['type'].strip.empty?
+    else
+      val.each do |k,v|
+        new_v = process_value(v).join(',')
+        new_val << "#{new_v} (#{k})" unless new_v.strip.empty?
+        #new_val << "#{new_v} (#{k})" unless new_v.strip.empty?
+      end
+    end
+  when "string"
+    new_val << val unless val.strip.empty?
+  else
+    new_val << val
+  end
+  return new_val
+end
+
+Serrano.configuration do |config|
+  config.base_url = "https://api.crossref.org"
+  config.mailto = "mpub.xref@gmail.com"
+end
+
+arg_list.each do |arg|
+  script_logger.info("*** processing #{arg} ***")
+
+  doi_file = File.expand_path(arg)
+
+  case
+  when File.file?(doi_file)
+    doi_list = File.readlines(doi_file, chomp: true)
+  when arg.class.name.downcase == "string"
+    doi_list = [arg]
+    doi_file = nil
+  else
+    script_logger.error("unknown parameter type #{a.class}")
+    next
+  end
+
+  begin
+    response = connection.get("noids?#{type}=#{idd}")
+  rescue StandardError => e
+    e.message
+  end
+
+  case options.message_type
+  when :funders
+    begin
+      response_list = Serrano.funders(ids: doi_list)
+    rescue StandardError => e
+      script_logger.error(e.message)
+      next
+    end
+  when :works
+    begin
+      response_list = Serrano.works(ids: doi_list)
+    rescue StandardError => e
+      script_logger.error(e.message)
+      next
+    end
+  else
+    script_logger.error("message type #{options.message_type} not supported.")
+    next
+  end
+
+  response_value_list = []
+  response_list.each do |response|
+    unless response["status"].downcase == "ok"
+      script_logger.error("#{options.message_type} request failed,#{response}")
+      next
+    end
+    script_logger.info("*** message-type:#{response['message-type']}, version:#{response['message-version']} ***")
+
+    response_value = {}
+    response.each do |key,val|
+      case key
+      when "message"
+        script_logger.info("#{key} DOI:#{val['DOI']}")
+        val.each do |k,v|
+          next unless (options.fields.empty? or options.fields.include?(k))
+
+          k_value = process_value(v).join(';')
+          response_value[k] = k_value
+        end
+      when "message-type", "message-version", "status"
+      else
+        script_logger.info("#{key}:#{val}")
+      end
+    end
+    response_value_list << response_value
+  end
+
+  if doi_file.nil?
+    response_value_list.each do |response_value|
+      response_value.each {|k,v| script_logger.info("#{k}:#{v}") }
+    end
+  else
+    csv_headers = []
+    csv_rows = []
+    response_value_list.each do |response_value|
+      row = {}
+      response_value.each do |key,val|
+        csv_headers << key unless csv_headers.include?(key)
+        row[key] = val
+      end
+      csv_rows << row
+    end
+
+    doi_csv_file = File.join(
+                File.dirname(doi_file),
+                File.basename(doi_file, ".*") + "_" + File.basename(__FILE__) + ".csv"
+            )
+    CSV.open(
+            doi_csv_file,
+            "w",
+            write_headers: true,
+            headers: csv_headers
+          ) do |csv|
+      csv_rows.each do |r|
+        row = {}
+        csv_headers.each do |h|
+          row[h] = r.key?(h) ? r[h] : ""
+        end
+        csv << row
+      end
+    end
+    script_logger.info("saved CSV file #{doi_csv_file}")
+  end
+end
