@@ -83,9 +83,6 @@ end
 # Create the serivce for retrieving the NOID manifest.
 service = UMPTG::Services::Crossref.new()
 
-xml_doc = Nokogiri::XML("<?xml version=\"1.0\" encoding=\"utf-8\"?><#{File.basename(__FILE__)}></>")
-parent_node = xml_doc.document.root
-
 arg_list.each do |arg|
   script_logger.info("*** processing #{arg} ***")
 
@@ -123,6 +120,9 @@ arg_list.each do |arg|
     next
   end
 
+  xml_doc = Nokogiri::XML("<?xml version=\"1.0\" encoding=\"utf-8\"?><#{File.basename(__FILE__)}></>")
+  parent_node = xml_doc.document.root
+
   response_list.each do |response|
     next if response.nil?
 
@@ -149,8 +149,15 @@ arg_list.each do |arg|
       script_logger.warn("type #{response.body['message-type']} not supported.")
     end
   end
-end
 
-xml_file = File.expand_path(File.basename(__FILE__) + ".xml")
-UMPTG::XML.save(xml_doc, xml_file)
-script_logger.info("saved file #{xml_file}")
+  if doi_file.nil?
+    script_logger.info(xml_doc.to_s)
+  else
+    xml_file = File.join(
+                File.dirname(doi_file),
+                File.basename(doi_file, ".*") + "_" + File.basename(__FILE__) + ".xml"
+            )
+    UMPTG::XML.save(xml_doc, xml_file)
+    script_logger.info("saved XML file #{xml_file}")
+  end
+end
