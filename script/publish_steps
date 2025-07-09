@@ -72,12 +72,13 @@ service = UMPTG::Services::Heliotrope.new()
 
 # Class for holding monograph shared directory info.
 class MonographInfo
-  attr_accessor :monograph_dir, :isbn, \
+  attr_accessor :monograph_dir, :monograph_system_dir, :isbn, \
       :monograph_noid, :epub_noid, :pdf_noid
 
   def initialize(args = {})
     @monograph_noid = args[:monograph_noid]
     @monograph_dir = args[:monograph_dir]
+    @monograph_system_dir = args[:monograph_system_dir]
     @isbn = args[:isbn]
     @epub_noid = args[:epub_noid]
     @pdf_noid = args[:pdf_noid]
@@ -208,8 +209,11 @@ monograph_id_list.each do |monograph_id|
       epub_noid = epub_row.nil? ? "" : epub_row['noid']
       pdf_row = manifest.representative_row(kind: "pdf_ebook")
       pdf_noid = pdf_row.nil? ? "" : pdf_row['noid']
+      monograph_system_dir = File.join("#{File::SEPARATOR}#{monograph_dir.monograph_dir[0]}", monograph_dir.monograph_dir[2..-1].gsub(' ', '\ '))
+
       monograph_info[monograph_id] = MonographInfo.new(
               monograph_dir: monograph_dir,
+              monograph_system_dir: monograph_system_dir,
               isbn: isbn,
               monograph_noid: manifest.noid,
               epub_noid: epub_noid,
@@ -246,28 +250,29 @@ File.open(cmds_file, "w") do |fp|
   fp.puts
 
   fp.puts "# Migrate FMSLs"
-  monograph_info.each do |monograph_id,minfo|
+  monograph_info.values.each do |minfo|
     next if minfo.monograph_dir.nil? or minfo.monograph_dir.fmsl_file.nil?
     f = File.join("/#{minfo.monograph_dir.fmsl_file[0]}", minfo.monograph_dir.fmsl_file[2..-1].gsub(' ', '\ '))
     fp.puts "bundle exec ruby script#{File::SEPARATOR}migrate_fmsl -c #{f}"
   end
   fp.puts
   fp.puts "# Process resources"
-  monograph_info.each do |monograph_id,minfo|
+  monograph_info.values.each do |minfo|
     unless minfo.monograph_dir.nil?
       prefix = minfo.monograph_dir.fmsl_file.nil? ? "#" : ""
 
-      f = File.join("#{File::SEPARATOR}#{minfo.monograph_dir.monograph_dir[0]}", minfo.monograph_dir.monograph_dir[2..-1].gsub(' ', '\ '))
-      fp.puts "#{prefix}bundle exec ruby script#{File::SEPARATOR}monograph_resource_metadata #{f}"
+      fp.puts "#{prefix}bundle exec ruby script#{File::SEPARATOR}monograph_resource_metadata #{minfo.monograph_system_dir}"
     end
   end
+  isbn_list = monograph_info.values.collect {|v| v.isbn.gsub(/-/,'') unless v.isbn.nil? }
   fp.puts
   fp.puts "# Review monographs"
-  isbn_list = monograph_info.values.collect {|v| v.isbn.gsub(/-/,'') unless v.isbn.nil? }
-  fp.puts "bundle exec ruby script#{File::SEPARATOR}review_monograph -n -u #{isbn_list.join(' ')}"
+  monograph_info.values.each do |v|
+    fp.puts "bundle exec ruby script#{File::SEPARATOR}review_monograph -n -u #{v.monograph_system_dir}"
+  end
   fp.puts
   fp.puts "# Import resources"
-  monograph_info.each do |monograph_id,minfo|
+  monograph_info.values.each do |minfo|
     prefix = ""
     unless minfo.monograph_dir.nil?
       application_monograph_dir = File.join(
@@ -354,6 +359,9 @@ File.open(cmds_file, "w") do |fp|
   fp.puts "%w[#{pdf_noid_list.join(' ')}].each do |noid|"
   fp.puts "\tUnpackJob.perform_now(noid,'pdf_ebook')"
   fp.puts "end;0"
+  fp.puts
+  fp.puts "# Create resource derivatives (missing thumbnails)"
+  fp.puts "CreateDerivativesJob.perform_later(FileSet.find('fileset_noid'), FileSet.find('fileset_noid').original_file.id, nil)"
   fp.puts
   fp.puts "# Create monographs"
   fp.puts "find /mnt/umptmm/<monograph_dir>/ -maxdepth 1 -mindepth 1 -type d -print0 | sort -zn | xargs -0 -I '{}' echo bundle exec script/import -d '{}' -p <heb|michigan|um-pccn> -v private -q"
