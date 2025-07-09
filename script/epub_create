@@ -1,31 +1,34 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
-# HELIO-3510, generate basic HTML instance from an EPUB,
-# either reflowable or fixed layout.
+# Script generates an EPUB from the
+# list directory paths.
 
 require 'optparse'
 require 'ostruct'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
 
 # Process the script parameters.
 options = OpenStruct.new
 option_parser = OptionParser.new do |opts|
   opts.banner = "Usage: #{File.basename(__FILE__)} dirpath [dirpath...]"
   opts.on_tail('-h', '--help', 'Print this help message') do
-    puts opts
+    script_logger.info(opts)
     exit 0
   end
 end
 option_parser.parse!(ARGV)
 if ARGV.count < 1
-  puts option_parser.help
+  script_logger.info(option_parser.help)
   return
 end
-
-# Determine the root directory of the code base.
-script_dir = File.expand_path(File.dirname(__FILE__))
-#root_dir = File.dirname(script_dir)
-root_dir = File.expand_path(File.join(script_dir, ".."))
 
 dirpath_list = ARGV
 
@@ -34,13 +37,13 @@ require_relative File.join(root_dir, "lib", "epub")
 dirpath_list.each do |dirpath|
   dirpath = File.expand_path(dirpath)
   unless File.directory?(dirpath)
-    puts "Error: invalid directory path #{dirpath}."
+    script_logger.error("invalid directory path #{dirpath}.")
     next
   end
-  puts "Directory: #{dirpath + File::SEPARATOR}"
+  script_logger.info("Directory: #{dirpath + File::SEPARATOR}")
 
   epub_file = File.join(File.dirname(dirpath), File.basename(dirpath) + "_created.epub")
-  puts "Creating EPUB #{File.basename(epub_file)}"
+  script_logger.info("Creating EPUB #{File.basename(epub_file)}")
   UMPTG::EPUB::Util.create(
         directory: dirpath,
         epub_file: epub_file

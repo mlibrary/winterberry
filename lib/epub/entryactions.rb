@@ -1,5 +1,5 @@
 module UMPTG::EPUB
-  require_relative(File.join("..", "object"))
+  #require_relative(File.join("..", "object"))
 
   class EntryActions < UMPTG::Object
     attr_accessor :action_result, :entry
