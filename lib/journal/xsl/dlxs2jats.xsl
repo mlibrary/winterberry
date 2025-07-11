@@ -583,9 +583,16 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
             </xsl:when>
             -->
             <xsl:when test="@TYPE='notes'">
-                <xsl:element name="notes">
-                    <xsl:apply-templates select="./*[local-name()!='HEAD']"/>
-                </xsl:element>
+                <xsl:choose>
+                    <xsl:when test="./ancestor::*[local-name()='BACK']">
+                        <xsl:apply-templates select="./*[local-name()!='HEAD']"/>
+                    </xsl:when>
+                    <xsl:otherwise>
+                        <xsl:element name="notes">
+                            <xsl:apply-templates select="./*[local-name()!='HEAD']"/>
+                        </xsl:element>
+                    </xsl:otherwise>
+                </xsl:choose>
             </xsl:when>
             <xsl:when test="exists(./LISTBIBL)">
                 <xsl:apply-templates select="./*[local-name()!='HEAD']"/>
@@ -1506,25 +1513,32 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
         <xsl:variable name="bodyList" select="$divNode/*[local-name()!='HEAD' and not(@TYPE='prelim' or @TYPE='author')]"/>
         <xsl:choose>
             <xsl:when test="count($headingList) > 0 or count($bodyList) > 0">
-                <xsl:element name="sec">
-                    <xsl:apply-templates select="$divNode/@*"/>
-                    <xsl:choose>
-                        <xsl:when test="count($headingList) > 1">
-                            <xsl:element name="label">
-                                <xsl:apply-templates select="$divNode/@*"/>
-                                <xsl:apply-templates select="$headingList[1]/node()"/>
-                            </xsl:element>
-                            <xsl:apply-templates select="$headingList[position() > 1]"/>
-                        </xsl:when>
-                        <xsl:when test="count($headingList) = 1">
-                            <xsl:apply-templates select="$headingList"/>
-                        </xsl:when>
-                        <xsl:otherwise>
-                            <xsl:element name="title"/>
-                        </xsl:otherwise>
-                    </xsl:choose>
-                    <xsl:apply-templates select="$bodyList"/>
-                </xsl:element>
+                <xsl:choose>
+                    <xsl:when test="$divNode/ancestor::*[local-name()='BACK']">
+                        <xsl:apply-templates select="$bodyList"/>
+                    </xsl:when>
+                    <xsl:otherwise>
+                        <xsl:element name="sec">
+                            <xsl:apply-templates select="$divNode/@*"/>
+                            <xsl:choose>
+                                <xsl:when test="count($headingList) > 1">
+                                    <xsl:element name="label">
+                                        <xsl:apply-templates select="$divNode/@*"/>
+                                        <xsl:apply-templates select="$headingList[1]/node()"/>
+                                    </xsl:element>
+                                    <xsl:apply-templates select="$headingList[position() > 1]"/>
+                                </xsl:when>
+                                <xsl:when test="count($headingList) = 1">
+                                    <xsl:apply-templates select="$headingList"/>
+                                </xsl:when>
+                                <xsl:otherwise>
+                                    <xsl:element name="title"/>
+                                </xsl:otherwise>
+                            </xsl:choose>
+                            <xsl:apply-templates select="$bodyList"/>
+                        </xsl:element>
+                    </xsl:otherwise>
+                </xsl:choose>
             </xsl:when>
         </xsl:choose>
     </xsl:template>
@@ -1533,56 +1547,58 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
         <xsl:param name="node"/>
         <xsl:param name="style"/>
 
+        <xsl:variable name="style_lc" select="lower-case($style)"/>
+
         <xsl:choose>
-            <xsl:when test="$style='isub'">
+            <xsl:when test="$style_lc='isub'">
                 <xsl:element name="sub">
                     <xsl:element name="italic">
                         <xsl:apply-templates select="$node/@*[name()!='REND' and name()!='TYPE']|node()"/>
                     </xsl:element>
                 </xsl:element>
             </xsl:when>
-            <xsl:when test="$style='isup'">
+            <xsl:when test="$style_lc='isup'">
                 <xsl:element name="sup">
                     <xsl:element name="italic">
                         <xsl:apply-templates select="$node/@*[name()!='REND' and name()!='TYPE']|node()"/>
                     </xsl:element>
                 </xsl:element>
             </xsl:when>
-            <xsl:when test="$style='scital'">
+            <xsl:when test="$style_lc='scital'">
                 <xsl:element name="sc">
                     <xsl:element name="italic">
                         <xsl:apply-templates select="$node/@*[name()!='REND' and name()!='TYPE']|node()"/>
                     </xsl:element>
                 </xsl:element>
             </xsl:when>
-            <xsl:when test="$style='bolditalic' or $style='bi'">
+            <xsl:when test="$style_lc='bolditalic' or $style_lc='bi'">
                 <xsl:element name="bold">
                     <xsl:element name="italic">
                         <xsl:apply-templates select="$node/@*[name()!='REND' and name()!='TYPE']|node()"/>
                     </xsl:element>
                 </xsl:element>
             </xsl:when>
-            <xsl:when test="$style='b' or $style='bold'">
+            <xsl:when test="$style_lc='b' or $style_lc='bold'">
                 <xsl:element name="bold">
                     <xsl:apply-templates select="$node/@*[name()!='REND' and name()!='TYPE']|node()"/>
                 </xsl:element>
             </xsl:when>
-            <xsl:when test="$style='i' or $style='italic' or $style='math'">
+            <xsl:when test="$style_lc='i' or $style_lc='italic' or $style_lc='math'">
                 <xsl:element name="italic">
                     <xsl:apply-templates select="$node/@*[name()!='REND' and name()!='TYPE']|node()"/>
                 </xsl:element>
             </xsl:when>
-            <xsl:when test="$style='u' or $style='underline' or $style='underlined'">
+            <xsl:when test="$style_lc='u' or $style_lc='underline' or $style_lc='underlined'">
                 <xsl:element name="underline">
                     <xsl:apply-templates select="$node/@*[name()!='REND' and name()!='TYPE']|node()"/>
                 </xsl:element>
             </xsl:when>
-            <xsl:when test="$style='smcap'">
+            <xsl:when test="$style_lc='smcap'">
                 <xsl:element name="sc">
                     <xsl:apply-templates select="$node/@*[name()!='REND' and name()!='TYPE']|node()"/>
                 </xsl:element>
             </xsl:when>
-            <xsl:when test="$style='code'">
+            <xsl:when test="$style_lc='code'">
                 <xsl:element name="code">
                     <xsl:apply-templates select="$node/@*[name()!='REND' and name()!='TYPE']|node()"/>
                 </xsl:element>
@@ -1597,8 +1613,18 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
             </xsl:when>
             -->
             <xsl:otherwise>
+                <xsl:variable name="style_css">
+                    <xsl:choose>
+                        <xsl:when test="$style_lc='center'">
+                            <xsl:value-of select="'text-align: center; display: block;'"/>
+                        </xsl:when>
+                        <xsl:when test="$style_lc='right' or $style_lc='alignright'">
+                            <xsl:value-of select="'text-align: right; display: block;'"/>
+                        </xsl:when>
+                    </xsl:choose>
+                </xsl:variable>
                 <xsl:element name="styled-content">
-                    <xsl:attribute name="style" select="@REND"/>
+                    <xsl:attribute name="style" select="$style_css"/>
                     <xsl:apply-templates select="$node/@*[name()!='REND']|node()"/>
                 </xsl:element>
             </xsl:otherwise>

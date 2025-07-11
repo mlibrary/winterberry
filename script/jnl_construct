@@ -64,7 +64,7 @@ if journal_name_list.empty?
 end
 
 require_relative File.join(root_dir, 'lib', 'xslt')
-require_relative File.join(root_dir, "lib", "fulcrum")
+require_relative File.join(root_dir, "lib", "fulcrum", "manifest")
 require_relative File.join(root_dir, "lib", "services")
 
 # Create the serivce for retrieving the manifest.
@@ -278,7 +278,6 @@ journal_name_list.each do |journal_name|
           parameters: params
           )
   FileUtils.rm(rfile)
-
   if rc and options.generate_xhtml
     html_file = File.join(File.dirname(jats_file), File.basename(jats_file, ".*") + ".html")
     UMPTG::XSLT.transform(
