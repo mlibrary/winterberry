@@ -1387,9 +1387,9 @@
     <xs:complexType name="type_string_date">
         <xs:simpleContent>
             <xs:restriction base="type_string">
-                <xs:pattern value="(14|15|16|17|18|19|20)\d\d"/>
-                <xs:pattern value="(14|15|16|17|18|19|20)\d\d[-/.](0[1-9]|1[012])"/>
-                <xs:pattern value="(14|15|16|17|18|19|20)\d\d[-/.](0[1-9]|1[012])[-/.](0[1-9]|[12][0-9]|3[01])"/>
+                <xs:pattern value="(10|11|12|13|14|15|16|17|18|19|20)\d\d"/>
+                <xs:pattern value="(10|11|12|13|14|15|16|17|18|19|20)\d\d[-/.](0[1-9]|1[012])"/>
+                <xs:pattern value="(10|11|12|13|14|15|16|17|18|19|20)\d\d[-/.](0[1-9]|1[012])[-/.](0[1-9]|[12][0-9]|3[01])"/>
             </xs:restriction>
         </xs:simpleContent>
     </xs:complexType>
