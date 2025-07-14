@@ -209,7 +209,8 @@ monograph_id_list.each do |monograph_id|
       epub_noid = epub_row.nil? ? "" : epub_row['noid']
       pdf_row = manifest.representative_row(kind: "pdf_ebook")
       pdf_noid = pdf_row.nil? ? "" : pdf_row['noid']
-      monograph_system_dir = File.join("#{File::SEPARATOR}#{monograph_dir.monograph_dir[0]}", monograph_dir.monograph_dir[2..-1].gsub(' ', '\ '))
+      monograph_system_dir = File.join("#{File::SEPARATOR}#{monograph_dir.monograph_dir[0]}", monograph_dir.monograph_dir[2..-1].gsub(' ', '\ ')) \
+            unless monograph_dir.nil?
 
       monograph_info[monograph_id] = MonographInfo.new(
               monograph_dir: monograph_dir,
@@ -268,7 +269,8 @@ File.open(cmds_file, "w") do |fp|
   fp.puts
   fp.puts "# Review monographs"
   monograph_info.values.each do |v|
-    fp.puts "bundle exec ruby script#{File::SEPARATOR}review_monograph -n -u #{v.monograph_system_dir}"
+    fp.puts "bundle exec ruby script#{File::SEPARATOR}review_monograph -n -u #{v.monograph_system_dir}" \
+        unless v.monograph_system_dir.nil?
   end
   fp.puts
   fp.puts "# Import resources"
