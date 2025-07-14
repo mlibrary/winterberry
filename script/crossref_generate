@@ -77,7 +77,8 @@ end
 require 'nokogiri'
 require 'csv'
 
-require_relative File.join(root_dir, "lib", "fulcrum")
+require_relative File.join(root_dir, "lib", "fulcrum", "manifest")
+require_relative File.join(root_dir, 'lib', 'services')
 require_relative File.join(root_dir, 'lib', 'xslt')
 
 XML_PI = "<?xml version=\"1.0\" encoding=\"#{enc.name}\"?>"
