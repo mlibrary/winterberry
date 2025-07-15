@@ -1,0 +1,141 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Script input a list of TTS audio files (.zip)
+# and uses its basename (ISBN) to attempt to locate
+# a UMP shared folder to copy file into.
+
+require 'optparse'
+require 'ostruct'
+require 'os'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+# Process the script parameters.
+options = OpenStruct.new
+options.test = true
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} audio_file [audio_file...]"
+  opts.on('-', '--test', 'Test') do |tst|
+    options.test = tst
+  end
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    script_logger.info(opts)
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  script_logger.info(option_parser.help)
+  return
+end
+
+# Process the command line parameters.
+audio_file_list = ARGV
+
+require 'fileutils'
+
+require_relative File.join(root_dir, "lib", "services")
+require_relative File.join(root_dir, "lib", "fulcrum", "manifest")
+
+ump_shared_dirs = [ "s:/Information\ Management/Fulcrum/Fulcrum_Synced/UMP" ] +
+        Dir.glob("s:/Information\ Management/Fulcrum/Archive_UMP/202*") +
+        Dir.glob("s:/Information\ Management/Fulcrum/Archive_UMP/2019") +
+        Dir.glob("s:/Information\ Management/Fulcrum/Archive_UMP/201[0-8]") +
+        Dir.glob("s:/Information\ Management/Fulcrum/Archive_UMP/200*")
+
+script_logger.info("shared:#{ump_shared_dirs.count}")
+
+# Create the serivce for retrieving the NOID manifest.
+service = UMPTG::Services::Heliotrope.new()
+
+found_cnt = create_cnt = skip_cnt = update_cnt = 0
+audio_file_list.each do |audio_file|
+  audio_file = File.expand_path(audio_file)
+  unless File.file?(audio_file)
+    script_logger.error("invalid audio file #{audio_file}")
+    skip_cnt += 1
+    next
+  end
+  script_logger.info("*** processing audio file #{File.basename(audio_file)} ***")
+
+  audio_isbn = File.basename(audio_file, ".*")
+  manifest_response = service.monograph_export(identifier: audio_isbn)
+
+  manifest = nil
+  manifest_response.values.each do |manifest_body_list|
+    if manifest_body_list.empty?
+      script_logger.warn("monograph manifest not found for ISBN #{audio_isbn}")
+      skip_cnt += 1
+      next
+    end
+    manifest_body_list.each do |manifest_body|
+      # From the manifest CSV, create a Fulcrum manifest object.
+      m = UMPTG::Fulcrum::Manifest::Document.new(
+                    csv_body: manifest_body
+                  )
+
+      # Retrieve the monograph row entry.
+      if m.monograph_row.nil?
+        script_logger.error("monograph row not found for ISBN #{audio_isbn}")
+        skip_cnt += 1
+        next
+      end
+
+      manifest = m
+      script_logger.info("monograph row found for ISBN #{audio_isbn}")
+      break
+    end
+  end
+  next if manifest.nil?
+
+  ump_dir = nil
+  manifest.isbn.values.each do |isbn|
+    ump_shared_dirs.each do |ud|
+      d = File.join(ud, isbn.gsub(/\-/, '') + "*")
+      flist = Dir.glob(d)
+      unless flist.empty?
+        ump_dir = flist.first
+        break
+      end
+    end
+  end
+
+  if ump_dir.nil?
+    script_logger.warn("directory not found for ISBN #{audio_isbn}")
+    eisbn = manifest.isbn['open access'] || manifest.isbn['ebook'] || manifest.isbn['audio download']
+    if eisbn.nil?
+      script_logger.warn("no eISBN for ISBN #{audio_isbn}. Skipping.")
+      skip_cnt += 1
+      next
+    end
+    edir = File.join(ump_shared_dirs.first, eisbn.gsub(/\-/,''))
+    #FileUtils.mkdir(edir) unless options.test
+    script_logger.info("directory #{edir} created")
+    create_cnt += 1
+  else
+    script_logger.info("directory #{ump_dir} found")
+    found_cnt += 1
+
+    f = File.join(ump_dir, File.basename(audio_file))
+    if File.exist?(f)
+      script_logger.warn("audio file #{File.basename(audio_file)} exists. Skipping.")
+      skip_cnt += 1
+    else
+      script_logger.info("audio file #{File.basename(audio_file)} updated")
+      update_cnt += 1
+      #FileUtils.cp(audio_file, f) unless options.test
+    end
+  end
+  STDOUT.flush
+end
+script_logger.info("found   #{found_cnt}/#{audio_file_list.count}")
+script_logger.info("created #{create_cnt}/#{audio_file_list.count}")
+script_logger.info("updated #{update_cnt}/#{audio_file_list.count}")
+script_logger.info("skipped #{skip_cnt}/#{audio_file_list.count}")
