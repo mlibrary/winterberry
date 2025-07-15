@@ -77,18 +77,20 @@ module UMPTG::Fulcrum
 
     def fmsl_file()
       if @fmsl_file.nil?
-        f = File.join(resources_dir(), "manifest.csv")
-        unless File.file?(f)
-          f_list = Dir.glob(File.join(@resources_dir, "#{@monograph_id}*.{xlsx,csv}"))
-          f_list = Dir.glob(File.join(@resources_dir, "*.{xlsx,csv}")) if f_list.empty?
-          unless f_list.empty?
-            @logger.warn("multiple resource spreadsheets found for monograph directory #{@monograph_dir}.") \
-                  if f_list.count > 1
-            f = f_list.select {|p| File.extname(p).downcase == ".csv" }.first || f_list.first
+        unless resources_dir().nil?
+          f = File.join(resources_dir(), "manifest.csv")
+          unless File.file?(f)
+            f_list = Dir.glob(File.join(@resources_dir, "#{@monograph_id}*.{xlsx,csv}"))
+            f_list = Dir.glob(File.join(@resources_dir, "*.{xlsx,csv}")) if f_list.empty?
+            unless f_list.empty?
+              @logger.warn("multiple resource spreadsheets found for monograph directory #{@monograph_dir}.") \
+                    if f_list.count > 1
+              f = f_list.select {|p| File.extname(p).downcase == ".csv" }.first || f_list.first
+            end
           end
+          @fmsl_file = f
+          @logger.info("using CSV #{File.basename(@fmsl_file)}")
         end
-        @fmsl_file = f
-        @logger.info("using CSV #{File.basename(@fmsl_file)}")
       end
       return @fmsl_file
     end
