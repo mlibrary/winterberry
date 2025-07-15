@@ -6,7 +6,8 @@ INFO: directory s:/Information Management/Fulcrum/Fulcrum_Synced/UMP/97804729010
 INFO: *** processing audio file 9780472003877.zip ***
 INFO: monograph row found for ISBN 9780472003877
 INFO: directory s:/Information Management/Fulcrum/Fulcrum_Synced/UMP/9780472900442_Schur found
-WARN: audio file 9780472003877.zip exists. Skipping.
+s:/Information Management/Fulcrum/Fulcrum_Synced/UMP/9780472900442_Schur/9780472003877*.zip
+WARN: audio file 9780472003877.zip possibly exists. Skipping.
 INFO: *** processing audio file 9780472004027.zip ***
 INFO: monograph row found for ISBN 9780472004027
 WARN: directory not found for ISBN 9780472004027
@@ -18,6 +19,7 @@ INFO: directory s:/Information Management/Fulcrum/Fulcrum_Synced/UMP/97804720260
 INFO: *** processing audio file 9780472004317.zip ***
 INFO: monograph row found for ISBN 9780472004317
 INFO: directory s:/Information Management/Fulcrum/Archive_UMP/2019/9780472126156_Roach found
+s:/Information Management/Fulcrum/Archive_UMP/2019/9780472126156_Roach/9780472004317*.zip
 INFO: audio file 9780472004317.zip updated
 INFO: *** processing audio file 9780472004324.zip ***
 INFO: monograph row found for ISBN 9780472004324
@@ -30,6 +32,7 @@ INFO: directory s:/Information Management/Fulcrum/Fulcrum_Synced/UMP/97804720243
 INFO: *** processing audio file 9780472004348.zip ***
 INFO: monograph row found for ISBN 9780472004348
 INFO: directory s:/Information Management/Fulcrum/Archive_UMP/2020/9780472126477_Lokaneeta found
+s:/Information Management/Fulcrum/Archive_UMP/2020/9780472126477_Lokaneeta/9780472004348*.zip
 INFO: audio file 9780472004348.zip updated
 INFO: *** processing audio file 9780472004355.zip ***
 INFO: monograph row found for ISBN 9780472004355
@@ -42,6 +45,7 @@ INFO: directory s:/Information Management/Fulcrum/Fulcrum_Synced/UMP/97804720229
 INFO: *** processing audio file 9780472004379.zip ***
 INFO: monograph row found for ISBN 9780472004379
 INFO: directory s:/Information Management/Fulcrum/Archive_UMP/2019/9780472126217_Laguerre found
+s:/Information Management/Fulcrum/Archive_UMP/2019/9780472126217_Laguerre/9780472004379*.zip
 INFO: audio file 9780472004379.zip updated
 INFO: *** processing audio file 9780472004386.zip ***
 INFO: monograph row found for ISBN 9780472004386
@@ -54,6 +58,7 @@ INFO: directory s:/Information Management/Fulcrum/Fulcrum_Synced/UMP/97804729011
 INFO: *** processing audio file 9780472004409.zip ***
 INFO: monograph row found for ISBN 9780472004409
 INFO: directory s:/Information Management/Fulcrum/Archive_UMP/2020/9780472126712_Voorhees found
+s:/Information Management/Fulcrum/Archive_UMP/2020/9780472126712_Voorhees/9780472004409*.zip
 INFO: audio file 9780472004409.zip updated
 INFO: *** processing audio file 9780472004416.zip ***
 INFO: monograph row found for ISBN 9780472004416
@@ -90,6 +95,7 @@ INFO: directory s:/Information Management/Fulcrum/Fulcrum_Synced/UMP/97804721219
 INFO: *** processing audio file 9780472004645.zip ***
 INFO: monograph row found for ISBN 9780472004645
 INFO: directory s:/Information Management/Fulcrum/Archive_UMP/2020/9780472126859_Magelssen found
+s:/Information Management/Fulcrum/Archive_UMP/2020/9780472126859_Magelssen/9780472004645*.zip
 INFO: audio file 9780472004645.zip updated
 INFO: *** processing audio file 9780472004652.zip ***
 INFO: monograph row found for ISBN 9780472004652
@@ -122,6 +128,7 @@ INFO: directory s:/Information Management/Fulcrum/Fulcrum_Synced/UMP/97804721233
 INFO: *** processing audio file 9780472004720.zip ***
 INFO: monograph row found for ISBN 9780472004720
 INFO: directory s:/Information Management/Fulcrum/Archive_UMP/2020/9780472127146_Herron found
+s:/Information Management/Fulcrum/Archive_UMP/2020/9780472127146_Herron/9780472004720*.zip
 INFO: audio file 9780472004720.zip updated
 INFO: *** processing audio file 9780472004737.zip ***
 INFO: monograph row found for ISBN 9780472004737
@@ -130,14 +137,17 @@ INFO: directory s:/Information Management/Fulcrum/Fulcrum_Synced/UMP/97804720047
 INFO: *** processing audio file 9780472004744.zip ***
 INFO: monograph row found for ISBN 9780472004744
 INFO: directory s:/Information Management/Fulcrum/Fulcrum_Synced/UMP/9780472902644_Yellin found
+s:/Information Management/Fulcrum/Fulcrum_Synced/UMP/9780472902644_Yellin/9780472004744*.zip
 INFO: audio file 9780472004744.zip updated
 INFO: *** processing audio file 9780472004751.zip ***
 INFO: monograph row found for ISBN 9780472004751
 INFO: directory s:/Information Management/Fulcrum/Archive_UMP/2011/9780472900350_Ketabgian found
+s:/Information Management/Fulcrum/Archive_UMP/2011/9780472900350_Ketabgian/9780472004751*.zip
 INFO: audio file 9780472004751.zip updated
 INFO: *** processing audio file 9780472004768.zip ***
 INFO: monograph row found for ISBN 9780472004768
 INFO: directory s:/Information Management/Fulcrum/Archive_UMP/2020/9780472126446_Youatt found
+s:/Information Management/Fulcrum/Archive_UMP/2020/9780472126446_Youatt/9780472004768*.zip
 INFO: audio file 9780472004768.zip updated
 INFO: *** processing audio file 9780472004782.zip ***
 INFO: monograph row found for ISBN 9780472004782
@@ -178,6 +188,7 @@ INFO: directory s:/Information Management/Fulcrum/Fulcrum_Synced/UMP/97804720228
 INFO: *** processing audio file 9780472004874.zip ***
 INFO: monograph row found for ISBN 9780472004874
 INFO: directory s:/Information Management/Fulcrum/Archive_UMP/2020/9780472127313_Stengel found
+s:/Information Management/Fulcrum/Archive_UMP/2020/9780472127313_Stengel/9780472004874*.zip
 INFO: audio file 9780472004874.zip updated
 INFO: *** processing audio file 9780472004881.zip ***
 INFO: monograph row found for ISBN 9780472004881
@@ -198,6 +209,7 @@ INFO: directory s:/Information Management/Fulcrum/Fulcrum_Synced/UMP/97804720233
 INFO: *** processing audio file 9780472004928.zip ***
 INFO: monograph row found for ISBN 9780472004928
 INFO: directory s:/Information Management/Fulcrum/Archive_UMP/2020/9780472126491_Craig found
+s:/Information Management/Fulcrum/Archive_UMP/2020/9780472126491_Craig/9780472004928*.zip
 INFO: audio file 9780472004928.zip updated
 INFO: *** processing audio file 9780472004935.zip ***
 INFO: monograph row found for ISBN 9780472004935
@@ -210,6 +222,7 @@ INFO: directory s:/Information Management/Fulcrum/Fulcrum_Synced/UMP/97804721219
 INFO: *** processing audio file 9780472004959.zip ***
 INFO: monograph row found for ISBN 9780472004959
 INFO: directory s:/Information Management/Fulcrum/Archive_UMP/2020/9780472128082_Barrow found
+s:/Information Management/Fulcrum/Archive_UMP/2020/9780472128082_Barrow/9780472004959*.zip
 INFO: audio file 9780472004959.zip updated
 INFO: *** processing audio file 9780472004966.zip ***
 INFO: monograph row found for ISBN 9780472004966
@@ -218,10 +231,12 @@ INFO: directory s:/Information Management/Fulcrum/Fulcrum_Synced/UMP/97804720247
 INFO: *** processing audio file 9780472004973.zip ***
 INFO: monograph row found for ISBN 9780472004973
 INFO: directory s:/Information Management/Fulcrum/Archive_UMP/2019/9780472124619_Graham found
+s:/Information Management/Fulcrum/Archive_UMP/2019/9780472124619_Graham/9780472004973*.zip
 INFO: audio file 9780472004973.zip updated
 INFO: *** processing audio file 9780472004980.zip ***
 INFO: monograph row found for ISBN 9780472004980
 INFO: directory s:/Information Management/Fulcrum/Archive_UMP/2019/9780472125173_Lantis found
+s:/Information Management/Fulcrum/Archive_UMP/2019/9780472125173_Lantis/9780472004980*.zip
 INFO: audio file 9780472004980.zip updated
 INFO: *** processing audio file 9780472004997.zip ***
 INFO: monograph row found for ISBN 9780472004997
@@ -246,6 +261,7 @@ INFO: directory s:/Information Management/Fulcrum/Fulcrum_Synced/UMP/97804720230
 INFO: *** processing audio file 9780472005048.zip ***
 INFO: monograph row found for ISBN 9780472005048
 INFO: directory s:/Information Management/Fulcrum/Fulcrum_Synced/UMP/9780472128556_Laracey found
+s:/Information Management/Fulcrum/Fulcrum_Synced/UMP/9780472128556_Laracey/9780472005048*.zip
 INFO: audio file 9780472005048.zip updated
 INFO: *** processing audio file 9780472005055.zip ***
 INFO: monograph row found for ISBN 9780472005055
@@ -258,6 +274,7 @@ INFO: directory s:/Information Management/Fulcrum/Fulcrum_Synced/UMP/97804729021
 INFO: *** processing audio file 9780472005079.zip ***
 INFO: monograph row found for ISBN 9780472005079
 INFO: directory s:/Information Management/Fulcrum/Archive_UMP/2020/9780472126507_Pang found
+s:/Information Management/Fulcrum/Archive_UMP/2020/9780472126507_Pang/9780472005079*.zip
 INFO: audio file 9780472005079.zip updated
 INFO: *** processing audio file 9780472005086.zip ***
 INFO: monograph row found for ISBN 9780472005086
@@ -270,6 +287,7 @@ INFO: directory s:/Information Management/Fulcrum/Fulcrum_Synced/UMP/97804720292
 INFO: *** processing audio file 9780472005109.zip ***
 INFO: monograph row found for ISBN 9780472005109
 INFO: directory s:/Information Management/Fulcrum/Fulcrum_Synced/UMP/9780472128501_Fife found
+s:/Information Management/Fulcrum/Fulcrum_Synced/UMP/9780472128501_Fife/9780472005109*.zip
 INFO: audio file 9780472005109.zip updated
 INFO: *** processing audio file 9780472005116.zip ***
 INFO: monograph row found for ISBN 9780472005116
@@ -312,10 +330,12 @@ INFO: directory s:/Information Management/Fulcrum/Fulcrum_Synced/UMP/97804721233
 INFO: *** processing audio file 9780472005215.zip ***
 INFO: monograph row found for ISBN 9780472005215
 INFO: directory s:/Information Management/Fulcrum/Archive_UMP/2019/9780472125821_Balkin found
+s:/Information Management/Fulcrum/Archive_UMP/2019/9780472125821_Balkin/9780472005215*.zip
 INFO: audio file 9780472005215.zip updated
 INFO: *** processing audio file 9780472005222.zip ***
 INFO: monograph row found for ISBN 9780472005222
 INFO: directory s:/Information Management/Fulcrum/Archive_UMP/2019/9780472126088_Hammer found
+s:/Information Management/Fulcrum/Archive_UMP/2019/9780472126088_Hammer/9780472005222*.zip
 INFO: audio file 9780472005222.zip updated
 INFO: *** processing audio file 9780472005239.zip ***
 INFO: monograph row found for ISBN 9780472005239
@@ -328,6 +348,7 @@ INFO: directory s:/Information Management/Fulcrum/Fulcrum_Synced/UMP/97804729006
 INFO: *** processing audio file 9780472005253.zip ***
 INFO: monograph row found for ISBN 9780472005253
 INFO: directory s:/Information Management/Fulcrum/Archive_UMP/2019/9780472124374_Mielke found
+s:/Information Management/Fulcrum/Archive_UMP/2019/9780472124374_Mielke/9780472005253*.zip
 INFO: audio file 9780472005253.zip updated
 INFO: *** processing audio file 9780472005260.zip ***
 INFO: monograph row found for ISBN 9780472005260
@@ -344,6 +365,7 @@ INFO: directory s:/Information Management/Fulcrum/Fulcrum_Synced/UMP/97804721240
 INFO: *** processing audio file 9780472005291.zip ***
 INFO: monograph row found for ISBN 9780472005291
 INFO: directory s:/Information Management/Fulcrum/Fulcrum_Synced/UMP/9780472904044_Wilson found
+s:/Information Management/Fulcrum/Fulcrum_Synced/UMP/9780472904044_Wilson/9780472005291*.zip
 INFO: audio file 9780472005291.zip updated
 INFO: *** processing audio file 9780472005307.zip ***
 INFO: monograph row found for ISBN 9780472005307
@@ -396,6 +418,7 @@ INFO: directory s:/Information Management/Fulcrum/Fulcrum_Synced/UMP/97804720262
 INFO: *** processing audio file 9780472005420.zip ***
 INFO: monograph row found for ISBN 9780472005420
 INFO: directory s:/Information Management/Fulcrum/Archive_UMP/2019/9780472125074_Mattis found
+s:/Information Management/Fulcrum/Archive_UMP/2019/9780472125074_Mattis/9780472005420*.zip
 INFO: audio file 9780472005420.zip updated
 INFO: *** processing audio file 9780472005437.zip ***
 INFO: monograph row found for ISBN 9780472005437
@@ -408,6 +431,7 @@ INFO: directory s:/Information Management/Fulcrum/Fulcrum_Synced/UMP/97804729009
 INFO: *** processing audio file 9780472005451.zip ***
 INFO: monograph row found for ISBN 9780472005451
 INFO: directory s:/Information Management/Fulcrum/Archive_UMP/2019/9780472125081_Lewis found
+s:/Information Management/Fulcrum/Archive_UMP/2019/9780472125081_Lewis/9780472005451*.zip
 INFO: audio file 9780472005451.zip updated
 INFO: *** processing audio file 9780472005468.zip ***
 INFO: monograph row found for ISBN 9780472005468
@@ -420,6 +444,7 @@ INFO: directory s:/Information Management/Fulcrum/Fulcrum_Synced/UMP/97804729004
 INFO: *** processing audio file 9780472005482.zip ***
 INFO: monograph row found for ISBN 9780472005482
 INFO: directory s:/Information Management/Fulcrum/Archive_UMP/2019/9780472126132_Johnson found
+s:/Information Management/Fulcrum/Archive_UMP/2019/9780472126132_Johnson/9780472005482*.zip
 INFO: audio file 9780472005482.zip updated
 INFO: *** processing audio file 9780472005499.zip ***
 INFO: monograph row found for ISBN 9780472005499
@@ -428,6 +453,7 @@ INFO: directory s:/Information Management/Fulcrum/Fulcrum_Synced/UMP/97804729047
 INFO: *** processing audio file 9780472005505.zip ***
 INFO: monograph row found for ISBN 9780472005505
 INFO: directory s:/Information Management/Fulcrum/Archive_UMP/2020/9780472126736_Millar found
+s:/Information Management/Fulcrum/Archive_UMP/2020/9780472126736_Millar/9780472005505*.zip
 INFO: audio file 9780472005505.zip updated
 INFO: *** processing audio file 9780472005512.zip ***
 INFO: monograph row found for ISBN 9780472005512
@@ -480,6 +506,7 @@ INFO: directory s:/Information Management/Fulcrum/Fulcrum_Synced/UMP/97804720286
 INFO: *** processing audio file 9780472005635.zip ***
 INFO: monograph row found for ISBN 9780472005635
 INFO: directory s:/Information Management/Fulcrum/Archive_UMP/2020/9780472901227_McCourt found
+s:/Information Management/Fulcrum/Archive_UMP/2020/9780472901227_McCourt/9780472005635*.zip
 INFO: audio file 9780472005635.zip updated
 INFO: *** processing audio file 9780472005642.zip ***
 INFO: monograph row found for ISBN 9780472005642
@@ -492,6 +519,7 @@ INFO: directory s:/Information Management/Fulcrum/Fulcrum_Synced/UMP/97804720228
 INFO: *** processing audio file 9780472005666.zip ***
 INFO: monograph row found for ISBN 9780472005666
 INFO: directory s:/Information Management/Fulcrum/Fulcrum_Synced/UMP/9780472902538_Cross found
+s:/Information Management/Fulcrum/Fulcrum_Synced/UMP/9780472902538_Cross/9780472005666*.zip
 INFO: audio file 9780472005666.zip updated
 INFO: *** processing audio file 9780472005673.zip ***
 WARN: monograph manifest not found for ISBN 9780472005673
@@ -514,10 +542,12 @@ INFO: directory s:/Information Management/Fulcrum/Fulcrum_Synced/UMP/97804720218
 INFO: *** processing audio file 9780472005727.zip ***
 INFO: monograph row found for ISBN 9780472005727
 INFO: directory s:/Information Management/Fulcrum/Archive_UMP/2019/9780472124626_Cianetti found
+s:/Information Management/Fulcrum/Archive_UMP/2019/9780472124626_Cianetti/9780472005727*.zip
 INFO: audio file 9780472005727.zip updated
 INFO: *** processing audio file 9780472005734.zip ***
 INFO: monograph row found for ISBN 9780472005734
 INFO: directory s:/Information Management/Fulcrum/Archive_UMP/2020/9780472127191_Zucker found
+s:/Information Management/Fulcrum/Archive_UMP/2020/9780472127191_Zucker/9780472005734*.zip
 INFO: audio file 9780472005734.zip updated
 INFO: *** processing audio file 9780472005772.zip ***
 INFO: monograph row found for ISBN 9780472005772
@@ -534,10 +564,12 @@ INFO: directory s:/Information Management/Fulcrum/Fulcrum_Synced/UMP/97804721232
 INFO: *** processing audio file 9780472005802.zip ***
 INFO: monograph row found for ISBN 9780472005802
 INFO: directory s:/Information Management/Fulcrum/Archive_UMP/2020/9780472127337_Gramlich_Oka found
+s:/Information Management/Fulcrum/Archive_UMP/2020/9780472127337_Gramlich_Oka/9780472005802*.zip
 INFO: audio file 9780472005802.zip updated
 INFO: *** processing audio file 9780472005819.zip ***
 INFO: monograph row found for ISBN 9780472005819
 INFO: directory s:/Information Management/Fulcrum/Archive_UMP/2019/9780472125593_Bullock found
+s:/Information Management/Fulcrum/Archive_UMP/2019/9780472125593_Bullock/9780472005819*.zip
 INFO: audio file 9780472005819.zip updated
 INFO: *** processing audio file 9780472005826.zip ***
 INFO: monograph row found for ISBN 9780472005826
@@ -590,6 +622,7 @@ INFO: directory s:/Information Management/Fulcrum/Fulcrum_Synced/UMP/97804729025
 INFO: *** processing audio file 9780472005949.zip ***
 INFO: monograph row found for ISBN 9780472005949
 INFO: directory s:/Information Management/Fulcrum/Fulcrum_Synced/UMP/9780472904464_Yang found
+s:/Information Management/Fulcrum/Fulcrum_Synced/UMP/9780472904464_Yang/9780472005949*.zip
 INFO: audio file 9780472005949.zip updated
 INFO: *** processing audio file 9780472005956.zip ***
 INFO: monograph row found for ISBN 9780472005956
@@ -598,6 +631,7 @@ INFO: directory s:/Information Management/Fulcrum/Fulcrum_Synced/UMP/97804720293
 INFO: *** processing audio file 9780472005963.zip ***
 INFO: monograph row found for ISBN 9780472005963
 INFO: directory s:/Information Management/Fulcrum/Archive_UMP/2020/9780472127061_Martinez found
+s:/Information Management/Fulcrum/Archive_UMP/2020/9780472127061_Martinez/9780472005963*.zip
 INFO: audio file 9780472005963.zip updated
 INFO: *** processing audio file 9780472005970.zip ***
 INFO: monograph row found for ISBN 9780472005970
@@ -606,10 +640,12 @@ INFO: directory s:/Information Management/Fulcrum/Fulcrum_Synced/UMP/97804721240
 INFO: *** processing audio file 9780472005987.zip ***
 INFO: monograph row found for ISBN 9780472005987
 INFO: directory s:/Information Management/Fulcrum/Archive_UMP/2019/9780472124794_McClary found
+s:/Information Management/Fulcrum/Archive_UMP/2019/9780472124794_McClary/9780472005987*.zip
 INFO: audio file 9780472005987.zip updated
 INFO: *** processing audio file 9780472005994.zip ***
 INFO: monograph row found for ISBN 9780472005994
 INFO: directory s:/Information Management/Fulcrum/Fulcrum_Synced/UMP/9780472123681_Caplan found
+s:/Information Management/Fulcrum/Fulcrum_Synced/UMP/9780472123681_Caplan/9780472005994*.zip
 INFO: audio file 9780472005994.zip updated
 INFO: *** processing audio file 9780472006007.zip ***
 INFO: monograph row found for ISBN 9780472006007
@@ -642,6 +678,7 @@ INFO: directory s:/Information Management/Fulcrum/Fulcrum_Synced/UMP/97804721202
 INFO: *** processing audio file 9780472006076.zip ***
 INFO: monograph row found for ISBN 9780472006076
 INFO: directory s:/Information Management/Fulcrum/Archive_UMP/2020/9780472126989_Sizemore found
+s:/Information Management/Fulcrum/Archive_UMP/2020/9780472126989_Sizemore/9780472006076*.zip
 INFO: audio file 9780472006076.zip updated
 INFO: *** processing audio file 9780472006083.zip ***
 INFO: monograph row found for ISBN 9780472006083
@@ -670,6 +707,7 @@ INFO: directory s:/Information Management/Fulcrum/Fulcrum_Synced/UMP/97804721213
 INFO: *** processing audio file 9780472006151.zip ***
 INFO: monograph row found for ISBN 9780472006151
 INFO: directory s:/Information Management/Fulcrum/Archive_UMP/2019/9780472125760_Holtcamp found
+s:/Information Management/Fulcrum/Archive_UMP/2019/9780472125760_Holtcamp/9780472006151*.zip
 INFO: audio file 9780472006151.zip updated
 INFO: *** processing audio file 9780472006168.zip ***
 INFO: monograph row found for ISBN 9780472006168
@@ -682,6 +720,7 @@ INFO: directory s:/Information Management/Fulcrum/Fulcrum_Synced/UMP/97804720255
 INFO: *** processing audio file 9780472006182.zip ***
 INFO: monograph row found for ISBN 9780472006182
 INFO: directory s:/Information Management/Fulcrum/Archive_UMP/2020/9780472126767_Herrera found
+s:/Information Management/Fulcrum/Archive_UMP/2020/9780472126767_Herrera/9780472006182*.zip
 INFO: audio file 9780472006182.zip updated
 INFO: *** processing audio file 9780472006199.zip ***
 INFO: monograph row found for ISBN 9780472006199
@@ -714,6 +753,7 @@ INFO: directory s:/Information Management/Fulcrum/Fulcrum_Synced/UMP/97804720283
 INFO: *** processing audio file 9780472006267.zip ***
 INFO: monograph row found for ISBN 9780472006267
 INFO: directory s:/Information Management/Fulcrum/Archive_UMP/2020/9780472126644_Ando found
+s:/Information Management/Fulcrum/Archive_UMP/2020/9780472126644_Ando/9780472006267*.zip
 INFO: audio file 9780472006267.zip updated
 INFO: *** processing audio file 9780472006274.zip ***
 INFO: monograph row found for ISBN 9780472006274
@@ -722,6 +762,7 @@ INFO: directory s:/Information Management/Fulcrum/Fulcrum_Synced/UMP/97804720252
 INFO: *** processing audio file 9780472006281.zip ***
 INFO: monograph row found for ISBN 9780472006281
 INFO: directory s:/Information Management/Fulcrum/Archive_UMP/2020/9780472126354_Barr found
+s:/Information Management/Fulcrum/Archive_UMP/2020/9780472126354_Barr/9780472006281*.zip
 INFO: audio file 9780472006281.zip updated
 INFO: *** processing audio file 9780472006298.zip ***
 INFO: monograph row found for ISBN 9780472006298
@@ -734,6 +775,7 @@ INFO: directory s:/Information Management/Fulcrum/Fulcrum_Synced/UMP/97804721204
 INFO: *** processing audio file 9780472006311.zip ***
 INFO: monograph row found for ISBN 9780472006311
 INFO: directory s:/Information Management/Fulcrum/Fulcrum_Synced/UMP/9780472128464_Austin found
+s:/Information Management/Fulcrum/Fulcrum_Synced/UMP/9780472128464_Austin/9780472006311*.zip
 INFO: audio file 9780472006311.zip updated
 INFO: *** processing audio file 9780472006328.zip ***
 INFO: monograph row found for ISBN 9780472006328
@@ -770,6 +812,7 @@ INFO: directory s:/Information Management/Fulcrum/Fulcrum_Synced/UMP/97804729012
 INFO: *** processing audio file 9780472006410.zip ***
 INFO: monograph row found for ISBN 9780472006410
 INFO: directory s:/Information Management/Fulcrum/Fulcrum_Synced/UMP/9780472128525_Smith_Jacob found
+s:/Information Management/Fulcrum/Fulcrum_Synced/UMP/9780472128525_Smith_Jacob/9780472006410*.zip
 INFO: audio file 9780472006410.zip updated
 INFO: *** processing audio file 9780472006427.zip ***
 INFO: monograph row found for ISBN 9780472006427
@@ -778,6 +821,7 @@ INFO: directory s:/Information Management/Fulcrum/Fulcrum_Synced/UMP/97804720234
 INFO: *** processing audio file 9780472006434.zip ***
 INFO: monograph row found for ISBN 9780472006434
 INFO: directory s:/Information Management/Fulcrum/Archive_UMP/2020/9780472126248_Merry found
+s:/Information Management/Fulcrum/Archive_UMP/2020/9780472126248_Merry/9780472006434*.zip
 INFO: audio file 9780472006434.zip updated
 INFO: *** processing audio file 9780472006441.zip ***
 INFO: monograph row found for ISBN 9780472006441
@@ -786,6 +830,7 @@ INFO: directory s:/Information Management/Fulcrum/Fulcrum_Synced/UMP/97804721213
 INFO: *** processing audio file 9780472006458.zip ***
 INFO: monograph row found for ISBN 9780472006458
 INFO: directory s:/Information Management/Fulcrum/Fulcrum_Synced/UMP/9780472902675_Sinpeng found
+s:/Information Management/Fulcrum/Fulcrum_Synced/UMP/9780472902675_Sinpeng/9780472006458*.zip
 INFO: audio file 9780472006458.zip updated
 INFO: *** processing audio file 9780472006465.zip ***
 INFO: monograph row found for ISBN 9780472006465
@@ -794,6 +839,7 @@ INFO: directory s:/Information Management/Fulcrum/Fulcrum_Synced/UMP/97804720235
 INFO: *** processing audio file 9780472006472.zip ***
 INFO: monograph row found for ISBN 9780472006472
 INFO: directory s:/Information Management/Fulcrum/Fulcrum_Synced/UMP/9780472129980_MaynardMoody found
+s:/Information Management/Fulcrum/Fulcrum_Synced/UMP/9780472129980_MaynardMoody/9780472006472*.zip
 INFO: audio file 9780472006472.zip updated
 INFO: *** processing audio file 9780472006489.zip ***
 INFO: monograph row found for ISBN 9780472006489
@@ -806,6 +852,7 @@ INFO: directory s:/Information Management/Fulcrum/Fulcrum_Synced/UMP/97804720251
 INFO: *** processing audio file 9780472006502.zip ***
 INFO: monograph row found for ISBN 9780472006502
 INFO: directory s:/Information Management/Fulcrum/Fulcrum_Synced/UMP/9780472904211_Novkov found
+s:/Information Management/Fulcrum/Fulcrum_Synced/UMP/9780472904211_Novkov/9780472006502*.zip
 INFO: audio file 9780472006502.zip updated
 INFO: *** processing audio file 9780472006519.zip ***
 INFO: monograph row found for ISBN 9780472006519
@@ -822,6 +869,7 @@ INFO: directory s:/Information Management/Fulcrum/Fulcrum_Synced/UMP/97804720250
 INFO: *** processing audio file 9780472006540.zip ***
 INFO: monograph row found for ISBN 9780472006540
 INFO: directory s:/Information Management/Fulcrum/Archive_UMP/2019/9780472125227_Hitt found
+s:/Information Management/Fulcrum/Archive_UMP/2019/9780472125227_Hitt/9780472006540*.zip
 INFO: audio file 9780472006540.zip updated
 INFO: *** processing audio file 9780472006557.zip ***
 INFO: monograph row found for ISBN 9780472006557
@@ -830,10 +878,12 @@ INFO: directory s:/Information Management/Fulcrum/Fulcrum_Synced/UMP/97804721231
 INFO: *** processing audio file 9780472006564.zip ***
 INFO: monograph row found for ISBN 9780472006564
 INFO: directory s:/Information Management/Fulcrum/Archive_UMP/2020/9780472902392_Kroger found
+s:/Information Management/Fulcrum/Archive_UMP/2020/9780472902392_Kroger/9780472006564*.zip
 INFO: audio file 9780472006564.zip updated
 INFO: *** processing audio file 9780472006571.zip ***
 INFO: monograph row found for ISBN 9780472006571
 INFO: directory s:/Information Management/Fulcrum/Archive_UMP/2019/9780472126255_Wrenn found
+s:/Information Management/Fulcrum/Archive_UMP/2019/9780472126255_Wrenn/9780472006571*.zip
 INFO: audio file 9780472006571.zip updated
 INFO: *** processing audio file 9780472006588.zip ***
 INFO: monograph row found for ISBN 9780472006588
@@ -850,6 +900,7 @@ INFO: directory s:/Information Management/Fulcrum/Fulcrum_Synced/UMP/97804720285
 INFO: *** processing audio file 9780472006618.zip ***
 INFO: monograph row found for ISBN 9780472006618
 INFO: directory s:/Information Management/Fulcrum/Fulcrum_Synced/UMP/9780472128457_Lovett found
+s:/Information Management/Fulcrum/Fulcrum_Synced/UMP/9780472128457_Lovett/9780472006618*.zip
 INFO: audio file 9780472006618.zip updated
 INFO: *** processing audio file 9780472006625.zip ***
 INFO: monograph row found for ISBN 9780472006625
@@ -862,6 +913,7 @@ INFO: directory s:/Information Management/Fulcrum/Fulcrum_Synced/UMP/97804721221
 INFO: *** processing audio file 9780472006649.zip ***
 INFO: monograph row found for ISBN 9780472006649
 INFO: directory s:/Information Management/Fulcrum/Archive_UMP/2020/9780472126545_Hale found
+s:/Information Management/Fulcrum/Archive_UMP/2020/9780472126545_Hale/9780472006649*.zip
 INFO: audio file 9780472006649.zip updated
 INFO: *** processing audio file 9780472006656.zip ***
 INFO: monograph row found for ISBN 9780472006656
@@ -874,6 +926,7 @@ INFO: directory s:/Information Management/Fulcrum/Fulcrum_Synced/UMP/97804720284
 INFO: *** processing audio file 9780472006670.zip ***
 INFO: monograph row found for ISBN 9780472006670
 INFO: directory s:/Information Management/Fulcrum/Fulcrum_Synced/UMP/9780472128471_Squire found
+s:/Information Management/Fulcrum/Fulcrum_Synced/UMP/9780472128471_Squire/9780472006670*.zip
 INFO: audio file 9780472006670.zip updated
 INFO: *** processing audio file 9780472006694.zip ***
 INFO: monograph row found for ISBN 9780472006694

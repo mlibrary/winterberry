@@ -123,14 +123,16 @@ audio_file_list.each do |audio_file|
     script_logger.info("directory #{ump_dir} found")
     found_cnt += 1
 
-    f = File.join(ump_dir, File.basename(audio_file))
-    if File.exist?(f)
-      script_logger.warn("audio file #{File.basename(audio_file)} exists. Skipping.")
-      skip_cnt += 1
-    else
+    pat = File.join(ump_dir, File.basename(audio_file, ".*") + "*" + File.extname(audio_file))
+    puts pat
+    flist = Dir.glob(pat)
+    if flist.empty?
       script_logger.info("audio file #{File.basename(audio_file)} updated")
       update_cnt += 1
       #FileUtils.cp(audio_file, f) unless options.test
+    else
+      script_logger.warn("audio file #{File.basename(audio_file)} possibly exists. Skipping.")
+      skip_cnt += 1
     end
   end
   STDOUT.flush
