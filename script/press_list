@@ -32,8 +32,8 @@ end
 
 press_list = ARGV
 
-#require_relative File.join(root_dir, 'lib', 'services')
-require_relative File.join(root_dir, 'lib', 'fulcrum')
+require_relative File.join(root_dir, 'lib', 'services')
+require_relative File.join(root_dir, 'lib', 'fulcrum', 'manifest')
 
 # Create the serivce for retrieving the NOID.
 service = UMPTG::Services::Heliotrope.new(
@@ -47,22 +47,13 @@ monographs_list.each do |monograph|
   manifest = UMPTG::Fulcrum::Manifest::Document.new(
                 monograph_id: noid
               )
-  isbn = manifest.isbn['open access'] if manifest.isbn.key?('open access')
-  isbn = manifest.isbn['ebook'] if isbn.nil?
-  isbn = manifest.isbn['oa ebook'] if isbn.nil?
-  isbn = manifest.isbn['epub'] if isbn.nil?
-  isbn = manifest.isbn['pdf'] if isbn.nil?
-  if isbn.nil?
-    script_logger.error("no ISBN for #{noid}")
+  if manifest.monograph_row.nil?
+    script_logger.error("no monograph row for #{noid}")
     next
   end
+  isbn = manifest.monograph_row['isbn(s)'] || ""
+  doi = manifest.monograph_row['doi'] || ""
 
-  doi = manifest.monograph_row['doi']
-  if doi.nil?
-    script_logger.error("no DOI for #{noid}")
-    doi = ""
-    #next
-  end
   ee = "#{noid},#{isbn},#{doi.strip.delete_prefix("https://doi.org/")},#{manifest.monograph_row['link'][12..-3]}"
   noid_list << ee
   script_logger.info(manifest.monograph_row['link'][12..-3])
