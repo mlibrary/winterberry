@@ -19,11 +19,11 @@ script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
 
 # Process the script parameters.
 options = OpenStruct.new
-options.test = true
+options.mode = :test
 option_parser = OptionParser.new do |opts|
-  opts.banner = "Usage: #{File.basename(__FILE__)} audio_file [audio_file...]"
-  opts.on('-', '--test', 'Test') do |tst|
-    options.test = tst
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-m exec|test] audio_file [audio_file...]"
+  opts.on('-m', '--mode exec|test', 'Mode exec|test') do |mode|
+    options.mode = mode.to_sym
   end
   opts.on_tail('-h', '--help', 'Print this help message') do
     script_logger.info(opts)
@@ -39,21 +39,31 @@ end
 # Process the command line parameters.
 audio_file_list = ARGV
 
+unless [:exec, :test].include?(options.mode)
+  script_logger.error("invalid mode #{options.mode}")
+  exit(1)
+end
+
 require 'fileutils'
 
 require_relative File.join(root_dir, "lib", "services")
 require_relative File.join(root_dir, "lib", "fulcrum", "manifest")
 
+ump_shared_dirs = [ "s:/Information\ Management/Fulcrum/Fulcrum_Synced/UMP" ]
+=begin
 ump_shared_dirs = [ "s:/Information\ Management/Fulcrum/Fulcrum_Synced/UMP" ] +
         Dir.glob("s:/Information\ Management/Fulcrum/Archive_UMP/202*") +
         Dir.glob("s:/Information\ Management/Fulcrum/Archive_UMP/2019") +
         Dir.glob("s:/Information\ Management/Fulcrum/Archive_UMP/201[0-8]") +
         Dir.glob("s:/Information\ Management/Fulcrum/Archive_UMP/200*")
+=end
 
 script_logger.info("shared:#{ump_shared_dirs.count}")
 
 # Create the serivce for retrieving the NOID manifest.
 service = UMPTG::Services::Heliotrope.new()
+
+script_logger.info("Mode: #{options.mode}")
 
 found_cnt = create_cnt = skip_cnt = update_cnt = 0
 audio_file_list.each do |audio_file|
@@ -64,6 +74,7 @@ audio_file_list.each do |audio_file|
     next
   end
   script_logger.info("*** processing audio file #{File.basename(audio_file)} ***")
+  STDOUT.flush
 
   audio_isbn = File.basename(audio_file, ".*")
   manifest_response = service.monograph_export(identifier: audio_isbn)
@@ -116,28 +127,35 @@ audio_file_list.each do |audio_file|
       next
     end
     edir = File.join(ump_shared_dirs.first, eisbn.gsub(/\-/,''))
-    #FileUtils.mkdir(edir) unless options.test
-    script_logger.info("directory #{edir} created")
-    create_cnt += 1
+    if options.mode == :exec
+      FileUtils.mkdir(edir)
+      script_logger.info("directory #{edir} created")
+      create_cnt += 1
+      ump_dir = edir
+    end
   else
     script_logger.info("directory #{ump_dir} found")
     found_cnt += 1
+  end
+  STDOUT.flush
 
+  unless ump_dir.nil?
     pat = File.join(ump_dir, File.basename(audio_file, ".*") + "*" + File.extname(audio_file))
-    puts pat
     flist = Dir.glob(pat)
     if flist.empty?
-      script_logger.info("audio file #{File.basename(audio_file)} updated")
-      update_cnt += 1
-      #FileUtils.cp(audio_file, f) unless options.test
+      if options.mode == :exec
+        FileUtils.cp(audio_file, File.join(ump_dir, File.basename(audio_file)))
+        script_logger.info("audio file #{File.basename(audio_file)} updated")
+        update_cnt += 1
+      end
     else
       script_logger.warn("audio file #{File.basename(audio_file)} possibly exists. Skipping.")
       skip_cnt += 1
     end
   end
-  STDOUT.flush
 end
 script_logger.info("found   #{found_cnt}/#{audio_file_list.count}")
 script_logger.info("created #{create_cnt}/#{audio_file_list.count}")
 script_logger.info("updated #{update_cnt}/#{audio_file_list.count}")
 script_logger.info("skipped #{skip_cnt}/#{audio_file_list.count}")
+script_logger.info("update complete.")

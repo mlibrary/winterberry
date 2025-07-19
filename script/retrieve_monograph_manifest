@@ -15,7 +15,7 @@ options = OpenStruct.new
 options.directory_path = nil
 options.fulcrum_host = nil
 option_parser = OptionParser.new do |opts|
-  opts.banner = "Usage: #{File.basename(__FILE__)} [-f production|preview|staging]  [--output_dir <output_dir>] <monograph_id> [<monograph_id>..]"
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-f production|preview|staging]  [-o <output_dir>] <monograph_id> [<monograph_id>..]"
   opts.on('-f', '--fulcrum_host [production|preview|staging]', 'Fulcrum environment') do |fulcrum_host|
     options.fulcrum_host = fulcrum_host
   end
