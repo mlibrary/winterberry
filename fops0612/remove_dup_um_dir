@@ -1,0 +1,83 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Script input a list of ISBNs and scans
+# the UMP shared folder for a directory with each ISBN.
+# If found, the directory is removed.
+
+require 'optparse'
+require 'ostruct'
+require 'os'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+# Process the script parameters.
+options = OpenStruct.new
+options.mode = :test
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-m exec|test] isbn [isbn...]"
+  opts.on('-m', '--mode exec|test', 'Mode exec|test') do |mode|
+    options.mode = mode.to_sym
+  end
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    script_logger.info(opts)
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  script_logger.info(option_parser.help)
+  return
+end
+
+# Process the command line parameters.
+isbn_list = ARGV
+
+unless [:exec, :test].include?(options.mode)
+  script_logger.error("invalid mode #{options.mode}")
+  exit(1)
+end
+
+require 'fileutils'
+
+require_relative File.join(root_dir, "lib", "services")
+require_relative File.join(root_dir, "lib", "fulcrum", "manifest")
+
+ump_shared_dirs = [ "s:/Information\ Management/Fulcrum/Fulcrum_Synced/UMP" ]
+=begin
+ump_shared_dirs = [ "s:/Information\ Management/Fulcrum/Fulcrum_Synced/UMP" ] +
+        Dir.glob("s:/Information\ Management/Fulcrum/Archive_UMP/202*") +
+        Dir.glob("s:/Information\ Management/Fulcrum/Archive_UMP/2019") +
+        Dir.glob("s:/Information\ Management/Fulcrum/Archive_UMP/201[0-8]") +
+        Dir.glob("s:/Information\ Management/Fulcrum/Archive_UMP/200*")
+=end
+
+script_logger.info("shared:#{ump_shared_dirs.count}")
+
+script_logger.info("Mode: #{options.mode}")
+
+isbn_list.each do |isbn|
+  script_logger.info("*** processing ISBN #{isbn} ***")
+  STDOUT.flush
+
+  ump_dir = File.join(ump_shared_dirs.first, isbn)
+  unless File.directory?(ump_dir)
+    script_logger.warn("directory for ISBN #{isbn} not found.")
+    next
+  end
+  script_logger.info("directory for ISBN #{isbn} found.")
+
+  flist = Dir.glob(File.join(ump_dir, "*"))
+  zip_files = flist.select {|f| File.extname(f) == '.zip' }
+  script_logger.info("found #{zip_files.count}/#{flist.count} ZIP files")
+  if options.mode == :exec and flist.count == 1 and zip_files.count == 1
+    script_logger.info("removing directory #{ump_dir}")
+    FileUtils.rm_rf(ump_dir)
+  end
+end
