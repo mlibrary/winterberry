@@ -31,8 +31,9 @@ options.output_csv = false
 options.output_xml = false
 options.skip_resources_check = false
 options.include_notes = false
+options.vtt_replace = false
 option_parser = OptionParser.new do |opts|
-  opts.banner = "Usage: #{File.basename(__FILE__)} [-c] [-f] [-n] [-r] [-x] fmsl_file [fmsl_file...]"
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-c] [-f] [-n] [-r] [-v] [-x] fmsl_file [fmsl_file...]"
   opts.on('-c', '--csv', 'Save CSV file') do |output_csv|
     options.output_csv = true
   end
@@ -44,6 +45,9 @@ option_parser = OptionParser.new do |opts|
   end
   opts.on('-r', '--resources', '') do |skip_resources_check|
     options.skip_resources_check = true
+  end
+  opts.on('-v', '--vtt', 'Add VTT contents') do |output_xml|
+    options.vtt_replace = true
   end
   opts.on('-x', '--xml', 'Save XML instance file') do |output_xml|
     options.output_xml = true
@@ -148,6 +152,42 @@ fmsl_file_list.each do |fmsl_file|
       end
     end
     script_logger.info("No resources errors found.") if error_count == 0
+  end
+
+  if options.vtt_replace
+    # Replace each VTT file name with the contents of the file.
+    manifest_csv.each do |row|
+      next unless row['External Resource URL'].nil? or row['External Resource URL'].strip.empty?
+
+      resource_name = row['File Name']
+      next if resource_name.nil? or resource_name.strip.empty?
+      next if resource_name.strip == UMPTG::Fulcrum::Manifest.MONOGRAPH_FILE_NAME
+      next if UMPTG::Fulcrum::Manifest.blank_row_name?(resource_name)
+
+      vtt_name = row['Transcript']
+      next if vtt_name.nil? or vtt_name.strip.empty?
+
+      # Determine if the vtt file exists.
+      vtt_name = vtt_name.strip.gsub(' ','_')
+      vtt_file = File.expand_path(File.join(File.dirname(fmsl_file), "vtt", vtt_name))
+      unless File.file?(vtt_file)
+        script_logger.warn("VTT file #{vtt_file} not found.")
+        next
+      end
+      script_logger.info("VTT file #{vtt_name} found.")
+
+      content = File.read(vtt_file)
+      row['Transcript'] = File.read(vtt_file)
+=begin
+      File.open(vtt_file, "rb") do |file|
+        content = file.read
+
+        # Convert to Unix line endings
+        unix_content = content.encode(content.encoding, universal_newline: true)
+        row['Transcript'] = unix_content
+      end
+=end
+    end
   end
 
   # Validate the XML representation to determine any metadata field issues.
