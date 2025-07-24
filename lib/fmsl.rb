@@ -45,6 +45,7 @@ module UMPTG
       # Normalize the FMSL into Fulcrum metadata.
       # Remove line that have either an empty "File Name"
       # or "File Name" == 0
+      #fmsl_body_list = fmsl_body_list[1..-1]
       fmsl_body = fmsl_body_list.delete_if { |line|
       #fmsl_body = File.open(fmsl_file).readlines.delete_if { |line|
         line.strip.empty? \
