@@ -152,8 +152,8 @@ module UMPTG::Fulcrum::Resources::XHTML::Pipeline::Filter
           block_list = caption_node.xpath(".//*[local-name()='p' or local-name()='div']")
 
           # FOPS-487
-          link_descr = "View resource"
-          #link_descr = manifest.fileset_link(resource_name_list.first)
+          #link_descr = "View resource"
+          link_descr = manifest.fileset_link(resource_name_list.first)
           link_markup = manifest.fileset_link_markup(
                   resource_name_list.first,
                   {
