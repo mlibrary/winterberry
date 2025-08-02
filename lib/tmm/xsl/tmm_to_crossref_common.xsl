@@ -7,6 +7,9 @@
     <xsl:param name="BATCH_ID"/>
     <xsl:param name="TIMESTAMP"/>
     <xsl:param name="BISAC_LIST" select="'temporarily out of stock;on demand;active;not yet published'"/>
+    <xsl:param name="BISAC_ACTIVE_LIST" select="'temporarily out of stock;on demand;active'"/>
+    <xsl:param name="FORMAT_PRINT_LIST" select="'Hardcover;Paper;Paper w/ CD'"/>
+    <xsl:param name="FORMAT_ELECTRONIC_LIST" select="'All Ebooks;All Ebooks (OA);Online Resource (OA)'"/>
     <xsl:param name="EXCLUDE_ISBN" select="''"/>
     <xsl:param name="ENCODING_NAME" select="'utf-8'"/>
     <xsl:param name="ELOQUENCE_VERIFICATION" select="'false'"/>
@@ -22,5 +25,8 @@
 
     <xsl:variable name="EXCLUDE_ISBN_LIST" select="concat(';',translate($EXCLUDE_ISBN,' ',''),';')"/>
     <xsl:variable name="FORMAT_BISAC_LIST" select="concat(';',$BISAC_LIST,';')"/>
+    <xsl:variable name="FORMAT_BISAC_ACTIVE_LIST" select="concat(';',$BISAC_ACTIVE_LIST,';')"/>
+    <xsl:variable name="FORMAT_FORMAT_PRINT_LIST" select="concat(';',$FORMAT_PRINT_LIST,';')"/>
+    <xsl:variable name="FORMAT_FORMAT_ELECTRONIC_LIST" select="concat(';',$FORMAT_ELECTRONIC_LIST,';')"/>
 
 </xsl:stylesheet>

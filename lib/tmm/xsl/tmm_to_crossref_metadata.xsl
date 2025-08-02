@@ -72,6 +72,8 @@
     </xsl:template>
 
     <xsl:template match="book">
+        <xsl:variable name="book_node" select="."/>
+
         <xsl:variable name="doi">
             <xsl:choose>
                 <xsl:when test="normalize-space(./doi) != ''">
@@ -132,71 +134,50 @@
 
                     <xsl:variable name="isbn_list" select="./*[starts-with(local-name(),'ISBN')]"/>
                     <xsl:variable name="bisac_list" select="./*[starts-with(local-name(),'BISAC')]"/>
+                    <xsl:variable name="format_list" select="./*[starts-with(local-name(),'format')]"/>
 
-                    <xsl:variable name="format_base_ndx" select="count(./*[local-name()='format1']/preceding-sibling::*)"/>
-                    <xsl:variable name="format_hc_ndx" select="count(./*[starts-with(local-name(),'format') and text()='Hardcover']/preceding-sibling::*)"/>
-                    <xsl:variable name="format_paper_ndx" select="count(./*[starts-with(local-name(),'format') and text()='Paper']/preceding-sibling::*)"/>
-                    <xsl:variable name="format_pr_ndx" select="count(./*[starts-with(local-name(),'format') and (text()='Hardcover' or text()='Paper')][1]/preceding-sibling::*)"/>
-                    <xsl:variable name="format_oa_ndx" select="count(./*[starts-with(local-name(),'format') and text()='All Ebooks (OA)'][1]/preceding-sibling::*)"/>
-                    <xsl:variable name="format_ebook_ndx" select="count(./*[starts-with(local-name(),'format') and text()='All Ebooks'][1]/preceding-sibling::*)"/>
-
-                    <xsl:variable name="format_print_ndx">
-                        <xsl:choose>
-                            <xsl:when test="$format_pr_ndx > 0 and contains($FORMAT_BISAC_LIST,translate($bisac_list[$format_pr_ndx - $format_base_ndx + 1], 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'))">
-                                <xsl:value-of select="$format_pr_ndx"/>
-                            </xsl:when>
-                            <xsl:when test="$format_hc_ndx > 0 and contains($FORMAT_BISAC_LIST,translate($bisac_list[$format_hc_ndx - $format_base_ndx + 1], 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'))">
-                                <xsl:value-of select="$format_hc_ndx"/>
-                            </xsl:when>
-                            <xsl:when test="$format_paper_ndx > 0 and contains($FORMAT_BISAC_LIST,translate($bisac_list[$format_paper_ndx - $format_base_ndx + 1], 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'))">
-                                <xsl:value-of select="$format_paper_ndx"/>
-                            </xsl:when>
-                            <xsl:otherwise>
-                                <xsl:value-of select="'0'"/>
-                            </xsl:otherwise>
-                        </xsl:choose>
+                    <xsl:variable name="printISBNs">
+                        <xsl:for-each select="$bisac_list">
+                            <xsl:variable name="bisac_status" select="normalize-space(.)"/>
+                            <xsl:variable name="active_status" select="contains($FORMAT_BISAC_LIST,translate($bisac_status, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'))"/>
+                            <xsl:variable name="ndx" select="position()"/>
+                            <xsl:variable name="format" select="concat(';',$format_list[$ndx],';')"/>
+                            <xsl:if test="$bisac_status != '' and $active_status and contains($FORMAT_FORMAT_PRINT_LIST,$format)">
+                                <xsl:value-of select="concat($isbn_list[$ndx],',')"/>
+                            </xsl:if>
+                        </xsl:for-each>
                     </xsl:variable>
+                    <xsl:variable name="eISBNs">
+                        <xsl:for-each select="$bisac_list">
+                            <xsl:variable name="bisac_status" select="normalize-space(.)"/>
+                            <xsl:variable name="active_status" select="contains($FORMAT_BISAC_LIST,translate($bisac_status, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'))"/>
+                            <xsl:variable name="ndx" select="position()"/>
+                            <xsl:variable name="format" select="$format_list[$ndx]"/>
+                            <xsl:if test="$bisac_status != '' and $active_status and (starts-with($format,'All Ebooks') or $format='Online Resource (OA)')">
+                                <xsl:value-of select="concat($isbn_list[$ndx],',')"/>
+                            </xsl:if>
+                        </xsl:for-each>
+                    </xsl:variable>
+
                     <xsl:variable name="printISBN">
                         <xsl:choose>
-                            <xsl:when test="$format_print_ndx > 0">
-                                <xsl:value-of select="$isbn_list[$format_print_ndx - $format_base_ndx + 1]"/>
+                            <xsl:when test="$printISBNs='' and $eISBNs=''">
+                                <xsl:value-of select="./ISBN1"/>
                             </xsl:when>
                             <xsl:otherwise>
-                                <xsl:value-of select="./ISBN1"/>
+                                <xsl:value-of select="substring-before($printISBNs,',')"/>
                             </xsl:otherwise>
                         </xsl:choose>
                     </xsl:variable>
+                    <xsl:variable name="eISBN" select="substring-before($eISBNs,',')"/>
 
-                    <xsl:if test="$printISBN != ''">
+                    <xsl:if test="$printISBN !=''">
                         <xsl:call-template name="create_isbn">
                             <xsl:with-param name="isbn" select="$printISBN"/>
                             <xsl:with-param name="media_type" select="'print'"/>
                         </xsl:call-template>
                     </xsl:if>
-                    <xsl:variable name="format_electronic_ndx">
-                        <xsl:choose>
-                            <xsl:when test="$format_ebook_ndx > 0">
-                                <xsl:value-of select="$format_ebook_ndx"/>
-                            </xsl:when>
-                            <xsl:when test="$format_oa_ndx > 0">
-                                <xsl:value-of select="$format_oa_ndx"/>
-                            </xsl:when>
-                            <xsl:otherwise>
-                                <xsl:value-of select="'0'"/>
-                            </xsl:otherwise>
-                        </xsl:choose>
-                    </xsl:variable>
-                    <xsl:variable name="eISBN">
-                        <xsl:choose>
-                            <xsl:when test="$format_electronic_ndx > 0">
-                                <xsl:value-of select="$isbn_list[$format_electronic_ndx - $format_base_ndx + 1]"/>
-                            </xsl:when>
-                            <xsl:otherwise>
-                                <xsl:value-of select="''"/>
-                            </xsl:otherwise>
-                        </xsl:choose>
-                    </xsl:variable>
-                    <xsl:if test="$eISBN != ''">
+                    <xsl:if test="$eISBN !=''">
                         <xsl:call-template name="create_isbn">
                             <xsl:with-param name="isbn" select="$eISBN"/>
                             <xsl:with-param name="media_type" select="'electronic'"/>
@@ -215,10 +196,28 @@
                                 <xsl:otherwise><xsl:value-of select="$UMP_URL_PREFIX"/></xsl:otherwise>
                             </xsl:choose>
                         </xsl:variable>
+
+                        <xsl:variable name="fURL">
+                            <xsl:if test="$book_node/fulcrumURL">
+                                <xsl:for-each select="$bisac_list">
+                                    <xsl:variable name="bisac_status" select="normalize-space(.)"/>
+                                    <xsl:variable name="ndx" select="position()"/>
+                                    <xsl:variable name="format" select="$format_list[$ndx]"/>
+                                    <xsl:variable name="active_status" select="contains($FORMAT_BISAC_ACTIVE_LIST,translate($bisac_status, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'))"/>
+                                    <xsl:if test="$bisac_status != '' and $active_status and (starts-with($format,'All Ebooks') or $format='Online Resource (OA)')">
+                                        <xsl:value-of select="$book_node/fulcrumURL"/>
+                                    </xsl:if>
+                                </xsl:for-each>
+                            </xsl:if>
+                        </xsl:variable>
+
                         <xsl:variable name="resourceValue">
                             <xsl:choose>
                                 <xsl:when test="starts-with(./resource, 'https://www.fulcrum.org/')">
                                     <xsl:value-of select="./resource"/>
+                                </xsl:when>
+                                <xsl:when test="$fURL != '' and $book_node/fullTextOnFulcrum = 'Y' and (./ebookStatus='Published' or ./ebookStatus='' or ./currentOAStatus='Published' or ./currentOAStatus='')">
+                                    <xsl:value-of select="./fulcrumURL"/>
                                 </xsl:when>
                                 <xsl:when test="$printISBN !=''">
                                     <xsl:value-of select="concat($url_prefix, $printISBN)"/>
@@ -227,13 +226,11 @@
                                     <xsl:value-of select="concat($url_prefix, $eISBN)"/>
                                 </xsl:when>
                                 <xsl:otherwise>
-                                    <!--
-                                    <xsl:message>WARNING: bookkey <xsl:value-of select="./bookkey"/> no active ISBN found, using current resource.</xsl:message>
-                                    -->
                                     <xsl:value-of select="./resource"/>
                                 </xsl:otherwise>
                             </xsl:choose>
                         </xsl:variable>
+
                         <xsl:element name="resource" namespace="{$NAMESPACE_URL}">
                             <xsl:value-of select="$resourceValue"/>
                         </xsl:element>
@@ -320,7 +317,7 @@
 
     <xsl:template match="bookkey">
         <xsl:element name="edition_number" namespace="{$NAMESPACE_URL}">
-            <xsl:value-of select="text()"/>
+            <xsl:value-of select="concat(text(),',',../fullTextOnFulcrum)"/>
         </xsl:element>
     </xsl:template>
 
