@@ -315,11 +315,66 @@ doi_report_file_list.each do |doi_report_file|
       "ELOQUENCE_VERIFICATION" => "'#{options.eloquence_verification}'"
     }
 
-  UMPTG::XSLT.transform(
+  xform_result = UMPTG::XSLT.transform(
         xslpath: crossref_xsl_file,
         srcdoc: crossref_doc,
         srcpath: doi_report_edit_file,
         destpath: crossref_xml_file,
         parameters: parameters
         )
+  if true
+    script_logger.info("creating DOI Registration spreadsheet #{File.basename(crossref_xml_file)}")
+
+    crossref_doc = UMPTG::XML.parse(
+            xml_file: crossref_xml_file
+          )
+    script_logger.info("encoding:#{crossref_doc.encoding},errors:#{crossref_doc.errors.count}")
+
+    # Write CSV file.
+    doi_reg_headers = [
+            "ISBN", "Title", "DOI", "DOI Resolution",
+            "TMM Resource", "Text On Fulcrum", "Publisher",
+            "TMM Link",
+            #"Match", "Comments"
+          ]
+    doi_reg_file = File.join(File.dirname(crossref_xml_file), File.basename(crossref_xml_file, ".*") + ".csv")
+    CSV.open(
+            doi_reg_file,
+            "w",
+            force_quotes: false,
+            write_headers: false,
+            headers: doi_reg_headers
+          ) do |csv|
+      crossref_doc.xpath("//*[local-name()='book_metadata']").each do |node|
+        row = {}
+        n = node.xpath(".//*[local-name()='doi']").first
+        row["DOI"] = n.nil? ? "" : "https://doi.org/" + n.text
+        n = node.xpath(".//*[local-name()='resource']").first
+        row["TMM Resource"] = n.nil? ? "" : n.text
+        n = node.xpath(".//*[local-name()='isbn']").first
+        row["ISBN"] = n.nil? ? "" : n.text
+        n = node.xpath(".//*[local-name()='publisher_name']").first
+        #row["Publisher"] = n.nil? ? "" : '"' + n.text + '"'
+        row["Publisher"] = n.nil? ? "" : n.text
+
+        n = node.xpath(".//*[local-name()='title']").first
+        t = n.nil? ? "" : n.text
+        n = node.xpath(".//*[local-name()='subtitle']").first
+        st = n.nil? ? "" : n.text
+        tt = st.empty? ? t : t + ": " + st
+        tt = tt.gsub('"', '')
+        row["Title"] = tt
+
+        n = node.xpath(".//*[local-name()='edition_number']").first
+        s = n.nil? ? "" : n.text
+        unless s.empty?
+          sl = s.split(',')
+          row["TMM Link"] = "=HYPERLINK(\"https://hosted.firebrandtech.com/UMP/TmmWeb/ProductSummary/#{sl[0]}/1\",\"#{sl[0]}\")"
+          row["Text On Fulcrum"] = sl[1]
+        end
+        csv << row
+      end
+    end
+    script_logger.info("saved CSV file #{doi_reg_file}")
+  end
 end

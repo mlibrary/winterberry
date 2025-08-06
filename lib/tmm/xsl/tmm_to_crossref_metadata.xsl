@@ -60,10 +60,10 @@
                     <!-- Strip out titles that have not passed Eloquence verification. -->
                     <xsl:choose>
                         <xsl:when test="$ELOQUENCE_VERIFICATION='true'">
-                            <xsl:apply-templates select="book[starts-with(eloquenceVerificationStatus,'Passed') and not(contains($EXCLUDE_ISBN_LIST,ISBN1))]"/>
+                            <xsl:apply-templates select="book[starts-with(eloquenceVerificationStatus,'Passed') and not((ISBN1 !='' and contains($EXCLUDE_ISBN_LIST,ISBN1)) or (ISBN2 !='' and contains($EXCLUDE_ISBN_LIST,ISBN2)) or (ISBN3 !='' and contains($EXCLUDE_ISBN_LIST,ISBN3)) or (ISBN4 !='' and contains($EXCLUDE_ISBN_LIST,ISBN4)) or (ISBN5 !='' and contains($EXCLUDE_ISBN_LIST,ISBN5)))]"/>
                         </xsl:when>
                         <xsl:otherwise>
-                            <xsl:apply-templates select="book[not(contains($EXCLUDE_ISBN_LIST,ISBN1)) and (starts-with(resource,'https://www.fulcrum.org/') or starts-with(eloquenceVerificationStatus,'Passed'))]"/>
+                            <xsl:apply-templates select="book[not((ISBN1 !='' and contains($EXCLUDE_ISBN_LIST,ISBN1)) or (ISBN2 !='' and contains($EXCLUDE_ISBN_LIST,ISBN2)) or (ISBN3 !='' and contains($EXCLUDE_ISBN_LIST,ISBN3)) or (ISBN4 !='' and contains($EXCLUDE_ISBN_LIST,ISBN4)) or (ISBN5 !='' and contains($EXCLUDE_ISBN_LIST,ISBN5))) and (starts-with(resource,'https://www.fulcrum.org/') or starts-with(eloquenceVerificationStatus,'Passed'))]"/>
                         </xsl:otherwise>
                     </xsl:choose>
                 </xsl:element>
