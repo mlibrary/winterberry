@@ -1,7 +1,7 @@
 module UMPTG::EPUB::Archive
 
   class Node < UMPTG::Object
-    attr_reader :xpath_children
+    attr_reader :xpath_children, :rendition
 
     def initialize(args = {})
       super(args)

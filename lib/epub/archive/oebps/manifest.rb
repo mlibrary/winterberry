@@ -57,7 +57,15 @@ module UMPTG::EPUB::Archive::OEBPS
     end
 
     def navigation(args = {})
-      return find(entry_properties: "nav").first
+      case rendition.version[0]
+      when '3'
+        return find(entry_properties: "nav").first
+      when '2'
+        return find(entry_mediatype: "application/x-dtbncx+xml").first
+      else
+        # Shouldn't happen
+        return nil
+      end
     end
 
     def entries(args = {})

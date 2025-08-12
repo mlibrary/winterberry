@@ -104,14 +104,10 @@ epub_file_list.each do |epub_file|
             File.basename(epub_file, ".*") + "_" + File.basename(__FILE__) + ".log"
             )
   epub_processor.logger = UMPTG::Logger.create(logger_file: logger_file)
-  epub_processor.logger.info("processing EPUB file #{File.basename(epub_file)}")
-
-  new_epub_file = File.join(
-          File.dirname(epub_file),
-          File.basename(epub_file, ".*") + "_" + File.basename(__FILE__) + File.extname(epub_file)
-          )
 
   epub = UMPTG::EPUB(epub_path: epub_file)
+  epub_processor.logger.info("processing EPUB file #{File.basename(epub_file)}")
+  epub_processor.logger.info("version #{epub.rendition.version}")
 
   entry_actions = epub_processor.run(
             epub,
@@ -119,11 +115,17 @@ epub_file_list.each do |epub_file|
                 normalize: options.normalize
             }
          )
-  modified = epub.modified
-  epub.save(epub_file: new_epub_file) if options.normalize and modified
+
+  if options.normalize and epub.modified
+    new_epub_file = File.join(
+          File.dirname(epub_file),
+          File.basename(epub_file, ".*") + "_" + File.basename(__FILE__) + File.extname(epub_file)
+          )
+    epub.save(epub_file: new_epub_file)
+    script_logger.info("Saved File #{new_epub_file}.")
+  end
 
   epub_processor.process_entry_action_results(
           entry_actions: entry_actions
         )
-  script_logger.info("Saved File #{new_epub_file}.") if options.normalize and modified
 end
