@@ -12,6 +12,7 @@
     <xsl:include href="tmm_to_crossref_common.xsl"/>
 
     <xsl:param name="MPS_SERVICES_IMPRINTS" select="'a2ru intervals;against the grain, llc;american pancreatic association;amherst college press;bridwell press;disobedience press;faculty reprints;health sciences publishing services;lever press;maize books;michigan publishing services;no imprint;open humanities press;school for environment sustainability;society for cinema and media studies;university of westminster press;'"/>
+    <xsl:param name="INCLUDE_BOOKKEY" select="'false'"/>
 
     <xsl:variable name="FORMAT_MPS_SERVICES_IMPRINTS" select="concat(';',$MPS_SERVICES_IMPRINTS,';')"/>
     <xsl:variable name="NAMESPACE_URL" select="'http://www.crossref.org/schema/5.4.0'"/>
@@ -83,10 +84,10 @@
                     <xsl:value-of select="normalize-space(./OAURL)"/>
                 </xsl:when>
                 <xsl:otherwise>
-                    <!--
                     <xsl:value-of select="''"/>
-                    -->
+                    <!--
                     <xsl:value-of select="concat('https://doi.org/10.3998/mpub.',./bookkey)"/>
+                    -->
                 </xsl:otherwise>
             </xsl:choose>
         </xsl:variable>
@@ -127,9 +128,10 @@
                             <xsl:apply-templates select="./*[local-name()='titleprefixandtitle' or local-name()='subtitle']"/>
                         </xsl:element>
                     </xsl:if>
-                    <!--
-                    <xsl:apply-templates select="./bookkey"/>
-                    -->
+
+                    <xsl:if test="$INCLUDE_BOOKKEY='true'">
+                        <xsl:apply-templates select="./bookkey"/>
+                    </xsl:if>
                     <xsl:apply-templates select="./pubyear"/>
 
                     <xsl:variable name="isbn_list" select="./*[starts-with(local-name(),'ISBN')]"/>
