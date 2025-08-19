@@ -1,0 +1,166 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Script interaces with Ace command line.
+
+require 'optparse'
+require 'ostruct'
+require 'os'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+# Process the script parameters.
+options = OpenStruct.new
+options.output_file = nil
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-o output_file] ace_json_file [ace_json_file...]"
+  opts.on('-o', '--output_file output_file', 'File to output CSV') do |output_file|
+    options.output_file = output_file
+  end
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    script_logger.info(opts)
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  script_logger.info(option_parser.help)
+  return
+end
+
+# Process the command line parameters.
+ace_json_file_list = ARGV
+
+require 'json'
+require 'csv'
+
+CSV_HEADERS = [
+      "ISBN","Title","Publisher","Pub Year","Format",
+      "Language","Remediation Plan",
+      "WCAG 2.0 violations","WCAG 2.1 violations",
+      "WCAG 2.2 violations","EPUB violations",
+      "Best practice violations","conformsTo","accessMode",
+      "accessModeSufficient","accessibilityFeature",
+      "accessibilitySummary","accessibilityHazard","certifiedBy",
+      "certifierCredential","ACE Report location"
+    ]
+
+MAP_VIOLATIONS = {
+        "EPUB" => "EPUB violations",
+        "wcag2a" => "WCAG 2.0 violations",
+        "wcag21a" => "WCAG 2.1 violations",
+        "wcag22a" => "WCAG 2.2 violations",
+        "best-practice" => "Best practice violations"
+    }
+
+MAP_METADATA = {
+      "dc:identifier" => "ISBN",
+      "dc:title" => "Title",
+      "dc:publisher" => "Publisher",
+      "dc:date" => "Pub Year",
+      "dc:language" => "Language"
+}
+
+rows = []
+headers = []
+ace_json_file_list.each do |ace_json_file|
+  script_logger.info("*" * 10 + " #{ace_json_file} " + "*" * 10)
+  ace_json_file = File.expand_path(ace_json_file)
+  unless File.exist?(ace_json_file)
+    script_logger.error("invalid EPUB file path #{ace_json_file}.")
+    next
+  end
+  script_logger.info("Reviewing #{File.basename(ace_json_file)}")
+  STDOUT.flush
+
+  #ace_json = JSON.parse(File.read(ace_json_file), {symbolize_names: true})
+  ace_json = JSON.parse(File.read(ace_json_file))
+
+  row = {}
+  epub_file = ace_json['earl:testSubject']['url']
+  result = ace_json['earl:result']['earl:outcome']
+  script_logger.info("#{File.basename(epub_file)} result:#{result}")
+
+  tag_cnt = {}
+  ace_json.each do |key,val|
+    case key
+    when "earl:testSubject"
+      val["metadata"].each do |k,v|
+        new_k = MAP_METADATA[k]
+        unless new_k.nil?
+          v = v.downcase.delete_prefix("urn:isbn:") if new_k == "ISBN"
+          row[new_k] = v
+          next
+        end
+        headers << k unless headers.include?(k)
+        row[k] = v
+      end
+    when "assertions"
+      violations_cnt = {}
+      MAP_VIOLATIONS.keys.each {|k| violations_cnt[k] = 0; }
+      MAP_VIOLATIONS.values.each {|k| row[k] = 0; }
+      val.each do |assert|
+        assert_result = assert['earl:result']['earl:outcome']
+        #script_logger.info("assert result:#{assert_result}")
+        if assert_result == "fail"
+          assert["assertions"].each do |a|
+            a["earl:test"]["rulesetTags"].each do |rt|
+              violations_cnt[rt] = 0 unless violations_cnt.include?(rt)
+              violations_cnt[rt] += 1
+            end
+          end
+        end
+      end
+      violations_cnt.each do |k,v|
+        case
+        when k.start_with?("EPUB")
+          row["EPUB violations"] += v
+        when k.start_with?("wcag22")
+          row["WCAG 2.2 violations"] += v
+        when k.start_with?("wcag21")
+          row["WCAG 2.1 violations"] += v
+        when k.start_with?("wcag2")
+          row["WCAG 2.0 violations"] += v
+        when k.start_with?("best-practice")
+          row["Best practice violations"] += v
+        else
+          headers << k unless headers.include?(k)
+          row[k] = 0 unless row.key?(k)
+          row[k] += v
+        end
+      end
+    when "a11y-metadata"
+      val.each do |k1,v1|
+        v1.each do |k2|
+          new_k2 = k2.split(':')[1]
+          headers << new_k2 unless CSV_HEADERS.include?(new_k2) or headers.include?(new_k2)
+          row[new_k2] = k1
+        end
+      end
+    end
+  end
+  rows << row
+end
+
+# Output the CSV file.
+csv_file = options.output_file.nil? ? \
+        File.join(File.basename(__FILE__) + ".csv") : \
+        options.output_file
+CSV.open(
+        csv_file,
+        "w",
+        force_quotes: true,
+        write_headers: true,
+        headers: CSV_HEADERS + headers
+      ) do |csv|
+  rows.each do |r|
+    csv << r
+  end
+end
+script_logger.info("saved CSV file #{csv_file}")
