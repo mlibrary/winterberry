@@ -48,7 +48,7 @@ CSV_HEADERS = [
       "Best practice violations","conformsTo","accessMode",
       "accessModeSufficient","accessibilityFeature",
       "accessibilitySummary","accessibilityHazard","certifiedBy",
-      "certifierCredential","ACE Report location"
+      "certifierCredential","Alt Text","ACE Report location"
     ]
 
 MAP_VIOLATIONS = {
@@ -101,6 +101,22 @@ ace_json_file_list.each do |ace_json_file|
         headers << k unless headers.include?(k)
         row[k] = v
       end
+    when "data"
+      total_present = 0
+      total_valid = 0
+      val["images"].each do |m|
+        src = m["src"] || ""
+        role = m["role"] || ""
+        alt = m["alt"] || ""
+        is_present = role.downcase == "presentation"
+        if is_present
+          total_present +=1
+        else
+          is_suspect = ["cover","image","images","","alt",File.basename(src),File.basename(src,".*")].include?(alt.strip.downcase)
+          total_valid += 1 unless is_suspect
+        end
+      end
+      row["Alt Text"] = "presentation:#{total_present}\nvalid:#{total_valid}\ntotal:#{val['images'].count}"
     when "assertions"
       violations_cnt = {}
       MAP_VIOLATIONS.keys.each {|k| violations_cnt[k] = 0; }
