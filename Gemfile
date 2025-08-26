@@ -78,13 +78,13 @@ gem "rubyzip", ">= 1.3.0"
 
 # Adds support for heliotrope REST interface.
 gem 'faraday'
-gem 'turnsole', :git => 'https://github.com/mlibrary/turnsole'
+#gem 'turnsole', :git => 'https://github.com/mlibrary/turnsole'
 
 gem "image_size", "~> 2.0"
 gem "yaml_db"
 gem 'json'
 #gem 'hexapdf'
-gem 'rmagick'
+#gem 'rmagick'
 gem 'ruby-rtf'
 gem 'parslet'
 #gem 'tesseract-ocr'

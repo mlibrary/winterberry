@@ -1,7 +1,7 @@
 # Module that contains classes for accessing REST services.
 module UMPTG::Services
   require 'faraday'
-  require 'faraday_middleware'
+  require 'faraday/middleware'
   require 'json'
 
   # Class for accessing Fulcrum services on either
