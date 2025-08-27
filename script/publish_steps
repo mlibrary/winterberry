@@ -134,6 +134,11 @@ monograph_id_list.each do |monograph_id|
       products = []
       case monograph_press
       when "barpublishing"
+        if series_id.nil?
+          script_logger.warn("no series ID assigned. Skipping.")
+          next
+        end
+
         s = series_id.downcase.start_with?('b') ? 'brit' : 'int'
         p = pub_date.year > 2020 ? "bar_#{pub_date.year}" : "bar_pre"
         products += [p, "#{p}_#{s}"]
