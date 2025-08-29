@@ -70,4 +70,4 @@ monographs_list.each do |monograph|
   #puts noid
   #STDOUT.flush
 end
-File.write("xref_list.tsv", noid_list.join("\n"))
+File.write("xref_list.csv", noid_list.join("\n"))

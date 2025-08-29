@@ -42,7 +42,7 @@ require 'csv'
 
 CSV_HEADERS = [
       "ISBN","Title","Publisher","Pub Year","Format",
-      "Language","Remediation Plan",
+      "Version","Language","Remediation Plan",
       "WCAG 2.0 violations","WCAG 2.1 violations",
       "WCAG 2.2 violations","EPUB violations",
       "Best practice violations","conformsTo","accessMode",
@@ -91,11 +91,25 @@ ace_json_file_list.each do |ace_json_file|
   ace_json.each do |key,val|
     case key
     when "earl:testSubject"
+      row["Version"] = val["epubVersion"].to_s
+
       val["metadata"].each do |k,v|
         new_k = MAP_METADATA[k]
         unless new_k.nil?
-          v = v.downcase.delete_prefix("urn:isbn:") if new_k == "ISBN"
-          row[new_k] = v
+          case new_k
+          when "ISBN"
+            case
+            when v.is_a?(Array)
+              new_v = v[2]
+            when v.is_a?(String)
+              new_v = v.downcase.delete_prefix("urn:isbn:")
+            else
+              new_v = v
+            end
+          else
+            new_v = v
+          end
+          row[new_k] = new_v
           next
         end
         headers << k unless headers.include?(k)
