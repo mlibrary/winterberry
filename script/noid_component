@@ -45,10 +45,10 @@ c_list = products.collect {|c| c['identifier'] }
 noid_list.each do |noid|
   response = service.connection.get("component", noid: noid).body
   if response.nil?
-    script_logger.info("#{noid}:nil")
+    script_logger.info("#{noid},,,")
   else
     component = service.connection.get("components/#{response['id']}/products").body
     c_list = component.collect {|c| c['identifier'] }
-    script_logger.info("#{noid},#{response['id']},=HYPERLINK(\"https://www.fulcrum.org/greensub/components/#{response['id']}\",\"#{response['id']}\"):#{c_list.join(',')}")
+    script_logger.info("#{noid},#{response['id']},\"=HYPERLINK(\"\"https://www.fulcrum.org/greensub/components/#{response['id']}\"\",\"\"#{response['id']}\"\")\",#{c_list.join(';')}")
   end
 end

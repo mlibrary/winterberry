@@ -157,8 +157,14 @@ monograph_id_list.each do |monograph_id|
     else
       field_values = []
       manifest_headers.each do |h|
-        if h == "Monograph ID"
+        case h
+        when "Monograph ID"
           field_values << monograph_id
+          next
+        when "Title/Link"
+          #fv = manifest.monograph_row['link'][0..-2] + ",\"\"" +  + "\"\")"
+          fv = manifest.monograph_row['link'][0..-2] + ",\"#{manifest.monograph_row['title']}\")"
+          field_values << fv
           next
         end
 
