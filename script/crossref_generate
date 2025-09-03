@@ -29,7 +29,7 @@ options.eloquence_verification = false
 options.include_bookkey = false
 options.registration_csv = false
 option_parser = OptionParser.new do |opts|
-  opts.banner = "Usage: #{File.basename(__FILE__)} [-n UTF-8|Windows-1252] [-e isbn_list_file] [-i isbn_list_file] [-l default|fulcrum|ump] [-r] [-s] [-v] doi_report_file"
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-n UTF-8|Windows-1252] [-e isbn_list_file] [-i isbn_list_file] [-l default|fulcrum|ump] [-b] [-r] [-s] [-v] doi_report_file"
   opts.on('-b', '--bookkey', 'Include TMM bookkey') do |da|
     options.include_bookkey = true
   end
