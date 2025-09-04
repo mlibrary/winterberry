@@ -55,6 +55,18 @@ module UMPTG::Services
         # Initialize each identifier result to an empty array.
         id2noid_list[id] = []
 
+        # Determine if identifier is a NOID
+        begin
+          response = connection.get("monographs/#{id}")
+        rescue StandardError => e
+          e.message
+          next
+        end
+        if response.success?
+          id2noid_list[id] << id
+          next
+        end
+
         # Try each type until success
         #["isbn", "identifier", "doi"].each do |t|
         ["isbn", "doi", "identifier"].each do |type|

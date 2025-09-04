@@ -22,11 +22,10 @@ script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
 options = OpenStruct.new
 options.fulcrum_column_list = []
 options.fulcrum_host = nil
-options.press = :ebc
 options.output_file = File.join(Dir.pwd, "monograph_manifest.csv")
 options.include_representatives = false
 option_parser = OptionParser.new do |opts|
-  opts.banner = "Usage: #{File.basename(__FILE__)} [-c <column_header>] [-f production|preview|staging] [-o <output_file>] [-p bar|ebc|heb] [-r] <monograph_id> [<monograph_id>..]"
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-c <column_header>] [-f production|preview|staging] [-o <output_file>] [-p bar|ebc|heb] [-r] <monograph_id|press> [<monograph_id|press>..]"
   opts.on('-c', '--manifest_column <column_header>', 'Fulcrum manifest metadata field') do |col|
     options.fulcrum_column_list << col
   end
@@ -35,9 +34,6 @@ option_parser = OptionParser.new do |opts|
   end
   opts.on('-o', '--output_file <output_file>', 'Output file path') do |output_file|
     options.output_file = output_file
-  end
-  opts.on('-p', '--press [bar|ebc|heb]', 'Fulcrum environment') do |press|
-    options.press = press.to_sym
   end
   opts.on('-r', '--representatives', 'Include all representatives') do |flag|
     options.include_representatives = true
@@ -54,6 +50,7 @@ if ARGV.count < 1
 end
 
 require_relative File.join(root_dir, 'lib', 'fulcrum', 'manifest')
+require_relative File.join(root_dir, 'lib', 'press')
 require_relative File.join(root_dir, 'lib', 'services')
 
 # Rest of the parameters is a list of monograph identifiers.
@@ -69,47 +66,30 @@ end
 # Create the serivce for retrieving the NOID manifest.
 service = UMPTG::Services::Heliotrope.new()
 
-monograph_manifest_rows = []
-manifest_headers = options.fulcrum_column_list
-manifest_headers << "Representative" if options.include_representatives
+monograph_id_noid = {}
 
 monograph_id_list.each do |monograph_id|
   script_logger.info("*** #{monograph_id} **")
   STDOUT.flush
 
-  # Attempt to download the monograph manifest.
-  case options.press
-  when :bar
-    identifier = "bar_number:#{monograph_id}"
-  when :heb
-    identifier = "heb_id:#{monograph_id}"
+  if UMPTG::Press.valid(monograph_id)
+    monographs_list = service.monographs(press_list: [monograph_id])
+    puts monographs_list.first
+    noid_list = monographs_list.collect {|m| m['id'] }
+    monograph_id_noid[monograph_id] = noid_list
   else
-    identifier = monograph_id
+    noid_list = service.monograph_noid(identifier: monograph_id)
+    monograph_id_noid[monograph_id] = noid_list[monograph_id]
   end
-=begin
-  manifest = UMPTG::Fulcrum::Manifest::Document.new(
-                monograph_id: identifier
-              )
-  if manifest.csv.nil?
-    script_logger.error("no manifest found for identifier #{identifier}")
-#=begin
-    field_values = []
-    manifest_headers.each do |h|
-      if h == "Monograph ID"
-        field_values << identifier
-        next
-      end
-      field_values << ""
-    end
-    monograph_manifest_rows << field_values
-#=end
-    next
-  end
-=end
-  manifest_body_list = service.monograph_export(identifier: identifier)
-  manifest_body = manifest_body_list[identifier].first
-  if manifest_body.nil?
-    script_logger.warn("no manifest found for identifier #{identifier}")
+end
+
+monograph_manifest_rows = []
+manifest_headers = options.fulcrum_column_list
+manifest_headers << "Representative" if options.include_representatives
+
+monograph_id_noid.each do |identifier,noid_list|
+  if noid_list.empty?
+    script_logger.warn("no manifest(s) found for identifier #{identifier}")
     field_values = []
     manifest_headers.each do |h|
       if h == "Monograph ID"
@@ -121,26 +101,81 @@ monograph_id_list.each do |monograph_id|
     monograph_manifest_rows << field_values
     next
   end
-  script_logger.warn("#{identifier}:#{manifest_body_list[identifier].count} manifests found.") \
-      if manifest_body_list[identifier].count > 1
-  manifest_body_list[identifier].each do |manifest_body|
-    manifest = UMPTG::Fulcrum::Manifest::Document.new(
-                  csv_body: manifest_body
-                )
 
-    manifest_headers = manifest.headers if manifest_headers.empty?
+  script_logger.info("#{identifier}:#{noid_list.count} manifest(s) found.")
 
-    if options.include_representatives
-      manifest.representatives().each do |kind,rep_row|
-        #next unless ["epub","pdf","pdf_ebook"].include?(kind)
-        next unless ["epub"].include?(kind)
+  noid_list.each do |noid|
+    script_logger.info("manifest for NOID #{noid}")
+    STDOUT.flush
 
+    manifest_body_list = service.monograph_export(identifier: noid)
+    manifest_body_list[noid].each do |manifest_body|
+      manifest = UMPTG::Fulcrum::Manifest::Document.new(
+                    csv_body: manifest_body
+                  )
+
+      manifest_headers = manifest.headers if manifest_headers.empty?
+
+      if options.include_representatives
+        manifest.representatives().each do |kind,rep_row|
+          #next unless ["epub","pdf","pdf_ebook"].include?(kind)
+          next unless ["epub"].include?(kind)
+
+          field_values = []
+          manifest_headers.each do |h|
+            next if h == "Representative"
+            if h == "Monograph ID"
+              #field_values << rep_row['file_name']
+              field_values << identifier
+              next
+            end
+
+            new_h = h.strip.downcase.gsub(' ', '_')
+            unless manifest.monograph_row.key?(new_h)
+              script_logger.error("invalid metadata field \"#{h}\".")
+              next
+            end
+            field_values << manifest.monograph_row[new_h]
+          end
+          field_values << rep_row['file_name']
+          monograph_manifest_rows << field_values
+        end
+      else
+        component = nil
         field_values = []
         manifest_headers.each do |h|
-          next if h == "Representative"
-          if h == "Monograph ID"
-            #field_values << rep_row['file_name']
+          case h
+          when "Monograph ID"
             field_values << identifier
+            next
+          when "Title/Link"
+            #fv = manifest.monograph_row['link'][0..-2] + ",\"\"" +  + "\"\")"
+            fv = manifest.monograph_row['link'][0..-2] + ",\"#{manifest.monograph_row['title']}\")"
+            field_values << fv
+            next
+          when "NOID/Link"
+            fv = manifest.monograph_row['link'][0..-2] + ",\"#{manifest.monograph_row['noid']}\")"
+            field_values << fv
+            next
+          when "Component"
+            component = service.connection.get("component", noid: noid).body if component.nil?
+            if component.nil?
+              fv = ""
+            else
+              fv = "=HYPERLINK(\"https://www.fulcrum.org/greensub/components/#{component['id']}\",\"#{component['id']}\")"
+            end
+            field_values << fv
+            next
+          when "Products"
+            component = service.connection.get("component", noid: noid).body if component.nil?
+            if component.nil?
+              fv = ""
+            else
+              products = service.connection.get("components/#{component['id']}/products").body
+              p_list = products.collect {|p| p['identifier'] }
+              fv = p_list.join(';')
+            end
+            field_values << fv
             next
           end
 
@@ -151,31 +186,8 @@ monograph_id_list.each do |monograph_id|
           end
           field_values << manifest.monograph_row[new_h]
         end
-        field_values << rep_row['file_name']
         monograph_manifest_rows << field_values
       end
-    else
-      field_values = []
-      manifest_headers.each do |h|
-        case h
-        when "Monograph ID"
-          field_values << monograph_id
-          next
-        when "Title/Link"
-          #fv = manifest.monograph_row['link'][0..-2] + ",\"\"" +  + "\"\")"
-          fv = manifest.monograph_row['link'][0..-2] + ",\"#{manifest.monograph_row['title']}\")"
-          field_values << fv
-          next
-        end
-
-        new_h = h.strip.downcase.gsub(' ', '_')
-        unless manifest.monograph_row.key?(new_h)
-          script_logger.error("invalid metadata field \"#{h}\".")
-          next
-        end
-        field_values << manifest.monograph_row[new_h]
-      end
-      monograph_manifest_rows << field_values
     end
   end
 end
