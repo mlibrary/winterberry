@@ -121,8 +121,9 @@ monograph_id_list.each do |monograph_id|
       if published
         script_logger.info("Fulcrum monograph is published.")
       else
-        script_logger.warn("Fulcrum monograph not published. Skipping.")
-        next
+        script_logger.warn("Fulcrum monograph not published. Proceeding.")
+        #script_logger.warn("Fulcrum monograph not published. Skipping.")
+        #next
       end
 
       # Determine the press, Publication Date
@@ -151,6 +152,8 @@ monograph_id_list.each do |monograph_id|
         s = series_id.downcase.start_with?('b') ? 'brit' : 'int'
         p = pub_date.year > 2020 ? "bar_#{pub_date.year}" : "bar_pre"
         products += [p, "#{p}_#{s}"]
+      when "livedplaces"
+        products += [ monograph_press, "#{monograph_press}_#{pub_date.year}" ]
       when "michigan"
         p = pub_date.year > 2011 ? "ebc_#{pub_date.year}" : "ebc_2011pre"
         products += [p, "ebc_complete"]
