@@ -39,8 +39,14 @@ module UMPTG::Fulcrum::Resources::XHTML::Pipeline::Filter
                    reference_node: reference_node,
                    attribute_name: "href",
                    attribute_value: fileset["doi"],
-                   warning_message: \
+                   info_message: \
                      "#{reference_node.name}: found Fulcrum fileset #{href}"
+               )
+          action_list << UMPTG::XML::Pipeline::Actions::MarkupAction.new(
+                   name: name,
+                   reference_node: reference_node,
+                   action: :replace_content,
+                   markup: fileset["doi"]
                )
         end
       else
