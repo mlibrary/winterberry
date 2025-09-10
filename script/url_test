@@ -71,6 +71,7 @@ url_list.each do |url|
 =end
       node = body_doc.xpath("//*[local-name()='a']").first
       url_dest = node.nil? ? "(unknown)" : node["href"]
+      url_dest = '' if url_dest == 'https://www.doi.org'
     end
     out_logger.info("#{url_path},#{url_dest}")
   end

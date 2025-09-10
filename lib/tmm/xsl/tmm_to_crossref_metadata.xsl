@@ -206,6 +206,9 @@
                                     <xsl:variable name="ndx" select="position()"/>
                                     <xsl:variable name="format" select="$format_list[$ndx]"/>
                                     <xsl:variable name="active_status" select="contains($FORMAT_BISAC_ACTIVE_LIST,translate($bisac_status, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'))"/>
+                                    <!--
+                                    <xsl:if test="$bisac_status != '' and $active_status">
+                                    -->
                                     <xsl:if test="$bisac_status != '' and $active_status and (starts-with($format,'All Ebooks') or $format='Online Resource (OA)')">
                                         <xsl:value-of select="$book_node/fulcrumURL"/>
                                     </xsl:if>
@@ -218,6 +221,9 @@
                                 <xsl:when test="starts-with(./resource, 'https://www.fulcrum.org/')">
                                     <xsl:value-of select="./resource"/>
                                 </xsl:when>
+                                <!--
+                                <xsl:when test="$fURL != '' and $book_node/fullTextOnFulcrum = 'Y' and ((not($book_node/ebookStatus) and not($book_node/currentOAStatus)) or $book_node/ebookStatus='Published' or $book_node/currentOAStatus='Published')">
+                                -->
                                 <xsl:when test="$fURL != '' and $book_node/fullTextOnFulcrum = 'Y' and (./ebookStatus='Published' or ./ebookStatus='' or ./currentOAStatus='Published' or ./currentOAStatus='')">
                                     <xsl:value-of select="./fulcrumURL"/>
                                 </xsl:when>
