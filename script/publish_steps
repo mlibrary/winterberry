@@ -380,10 +380,14 @@ File.open(cmds_file, "w") do |fp|
   fp.puts "end;0"
   fp.puts
   fp.puts "# Create resource derivatives (missing thumbnails)"
-  fp.puts "CreateDerivativesJob.perform_later(FileSet.find('fileset_noid'), FileSet.find('fileset_noid').original_file.id, nil)"
+  fp.puts "%w[].each do |noid|"
+  fp.puts "\tCreateDerivativesJob.perform_later(FileSet.find(noid), FileSet.find(noid).original_file.id, nil)"
+  fp.puts "end;0"
   fp.puts
   fp.puts "# Reindex fileset (missing thumbnails)"
-  fp.puts "FileSet.find('fileset_noid').update_index"
+  fp.puts "%w[].each do |noid|"
+  fp.puts "\tFileSet.find(noid).update_index"
+  fp.puts "end;0"
   fp.puts
   fp.puts "# Create monographs"
   fp.puts "find /mnt/umptmm/<monograph_dir>/ -maxdepth 1 -mindepth 1 -type d -print0 | sort -zn | xargs -0 -I '{}' echo bundle exec script/import -d '{}' -p <heb|michigan|um-pccn> -v private -q"
