@@ -226,7 +226,14 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
                 <xsl:element name="title-group">
                     <xsl:choose>
                         <xsl:when test="exists(/DLPSTEXTCLASS/TEXT/FRONT//P[@TYPE='title'])">
+                            <!--
                             <xsl:apply-templates select="/DLPSTEXTCLASS/TEXT/FRONT//P[@TYPE='title']" mode="header"/>
+                            -->
+                            <xsl:element name="article-title">
+                                <xsl:for-each select="/DLPSTEXTCLASS/TEXT/FRONT//P[@TYPE='title']">
+                                    <xsl:apply-templates select="./text()|node()"/>
+                                </xsl:for-each>
+                            </xsl:element>
                         </xsl:when>
                         <xsl:otherwise>
                             <xsl:apply-templates select="FILEDESC/TITLESTMT/TITLE[@TYPE='main' or not(exists(@TYPE))]"/>
@@ -1293,6 +1300,7 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
                     </xsl:call-template>
                 </xsl:when>
                 <xsl:otherwise>
+                    <xsl:attribute name="style" select="'display:block;font-style:italic;font-family:serif'"/>
                     <xsl:apply-templates select="@*[name()!='TYPE'and name()!='REND']|node()"/>
                 </xsl:otherwise>
             </xsl:choose>
