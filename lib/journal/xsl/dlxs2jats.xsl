@@ -1300,7 +1300,7 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
                     </xsl:call-template>
                 </xsl:when>
                 <xsl:otherwise>
-                    <xsl:attribute name="style" select="'display:block;font-style:italic;font-family:serif'"/>
+                    <xsl:attribute name="style" select="'display:block;'"/>
                     <xsl:apply-templates select="@*[name()!='TYPE'and name()!='REND']|node()"/>
                 </xsl:otherwise>
             </xsl:choose>
