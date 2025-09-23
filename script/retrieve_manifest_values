@@ -102,7 +102,8 @@ monograph_id_noid.each do |identifier,noid_list|
     next
   end
 
-  noid_list2 = noid_list.select {|n| n != identifier}
+  #noid_list2 = noid_list.select {|n| n != identifier}
+  noid_list2 = noid_list
   script_logger.info("#{identifier}:#{noid_list2.count} manifest(s) found.")
 
   noid_list2.each do |noid|
