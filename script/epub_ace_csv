@@ -41,7 +41,7 @@ require 'json'
 require 'csv'
 
 CSV_HEADERS = [
-      "ISBN","Title","Publisher","Pub Year","Format",
+      "File Name","Title","Identifier","Publisher","Pub Year","Format",
       "Version","Language","Remediation Plan",
       "WCAG 2.0 violations","WCAG 2.1 violations",
       "WCAG 2.2 violations","EPUB violations",
@@ -60,7 +60,7 @@ MAP_VIOLATIONS = {
     }
 
 MAP_METADATA = {
-      "dc:identifier" => "ISBN",
+      "dc:identifier" => "Identifier",
       "dc:title" => "Title",
       "dc:publisher" => "Publisher",
       "dc:date" => "Pub Year",
@@ -82,10 +82,13 @@ ace_json_file_list.each do |ace_json_file|
   #ace_json = JSON.parse(File.read(ace_json_file), {symbolize_names: true})
   ace_json = JSON.parse(File.read(ace_json_file))
 
-  row = {}
   epub_file = ace_json['earl:testSubject']['url']
   result = ace_json['earl:result']['earl:outcome']
   script_logger.info("#{File.basename(epub_file)} result:#{result}")
+
+  row = {
+        "File Name" => File.basename(epub_file, ".*")
+      }
 
   tag_cnt = {}
   ace_json.each do |key,val|
