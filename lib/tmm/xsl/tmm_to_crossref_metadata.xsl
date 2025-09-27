@@ -259,44 +259,82 @@
         <xsl:if test="$role='author' or $role='contributor' or $role='translator' or contains($role, 'editor')">
         -->
         <xsl:if test="$role='author' or $role='editor' or $role='contributor' or $role='translator' or contains($role, 'editor')">
-            <xsl:element name="person_name" namespace="{$NAMESPACE_URL}">
-                <xsl:attribute name="sequence">
-                    <xsl:choose>
-                        <xsl:when test="$primary='Y'">
-                            <xsl:value-of select="'first'"/>
-                        </xsl:when>
-                        <xsl:otherwise>
-                            <xsl:value-of select="'additional'"/>
-                        </xsl:otherwise>
-                    </xsl:choose>
-                </xsl:attribute>
-                <xsl:attribute name="contributor_role">
-                    <xsl:choose>
-                        <xsl:when test="$role='author' or $role='contributor'">
-                            <xsl:value-of select="'author'"/>
-                        </xsl:when>
-                        <xsl:when test="$role='editor' or contains($role, 'editor')">
-                            <xsl:value-of select="'editor'"/>
-                        </xsl:when>
-                        <xsl:when test="$role='translator'">
-                            <xsl:value-of select="$role"/>
-                        </xsl:when>
-                        <xsl:otherwise>
-                            <!--<xsl:value-of select="text()"/>-->
-                        </xsl:otherwise>
-                    </xsl:choose>
-                </xsl:attribute>
-                <xsl:if test="preceding-sibling::*[starts-with(local-name(),concat('authorfirstname',$ordinal)) and text()]">
-                    <xsl:element name="given_name" namespace="{$NAMESPACE_URL}">
-                        <xsl:value-of select="normalize-space(preceding-sibling::*[starts-with(local-name(),concat('authorfirstname',$ordinal))][1])"/>
+            <xsl:variable name="group_name" select="normalize-space(preceding-sibling::*[starts-with(local-name(),concat('group',$ordinal))][1])"/>
+            <xsl:choose>
+                <xsl:when test="$group_name != ''">
+                    <xsl:element name="organization" namespace="{$NAMESPACE_URL}">
+                        <xsl:attribute name="sequence">
+                            <xsl:choose>
+                                <xsl:when test="$primary='Y'">
+                                    <xsl:value-of select="'first'"/>
+                                </xsl:when>
+                                <xsl:otherwise>
+                                    <xsl:value-of select="'additional'"/>
+                                </xsl:otherwise>
+                            </xsl:choose>
+                        </xsl:attribute>
+                        <xsl:attribute name="contributor_role">
+                            <xsl:choose>
+                                <xsl:when test="$role='author' or $role='contributor'">
+                                    <xsl:value-of select="'author'"/>
+                                </xsl:when>
+                                <xsl:when test="$role='editor' or contains($role, 'editor')">
+                                    <xsl:value-of select="'editor'"/>
+                                </xsl:when>
+                                <xsl:when test="$role='translator'">
+                                    <xsl:value-of select="$role"/>
+                                </xsl:when>
+                                <xsl:otherwise>
+                                    <!--<xsl:value-of select="text()"/>-->
+                                </xsl:otherwise>
+                            </xsl:choose>
+                        </xsl:attribute>
+                        <xsl:value-of select="$group_name"/>
                     </xsl:element>
-                </xsl:if>
-                <xsl:if test="preceding-sibling::*[starts-with(local-name(),concat('authorlastname',$ordinal)) and text()]">
-                    <xsl:element name="surname" namespace="{$NAMESPACE_URL}">
-                        <xsl:value-of select="normalize-space(preceding-sibling::*[starts-with(local-name(),concat('authorlastname',$ordinal))][1])"/>
+                </xsl:when>
+                <xsl:otherwise>
+                    <xsl:element name="person_name" namespace="{$NAMESPACE_URL}">
+                        <xsl:attribute name="sequence">
+                            <xsl:choose>
+                                <xsl:when test="$primary='Y'">
+                                    <xsl:value-of select="'first'"/>
+                                </xsl:when>
+                                <xsl:otherwise>
+                                    <xsl:value-of select="'additional'"/>
+                                </xsl:otherwise>
+                            </xsl:choose>
+                        </xsl:attribute>
+                        <xsl:attribute name="contributor_role">
+                            <xsl:choose>
+                                <xsl:when test="$role='author' or $role='contributor'">
+                                    <xsl:value-of select="'author'"/>
+                                </xsl:when>
+                                <xsl:when test="$role='editor' or contains($role, 'editor')">
+                                    <xsl:value-of select="'editor'"/>
+                                </xsl:when>
+                                <xsl:when test="$role='translator'">
+                                    <xsl:value-of select="$role"/>
+                                </xsl:when>
+                                <xsl:otherwise>
+                                    <!--<xsl:value-of select="text()"/>-->
+                                </xsl:otherwise>
+                            </xsl:choose>
+                        </xsl:attribute>
+                        <xsl:variable name="first_name" select="normalize-space(preceding-sibling::*[starts-with(local-name(),concat('authorfirstname',$ordinal))][1])"/>
+                        <xsl:variable name="last_name" select="normalize-space(preceding-sibling::*[starts-with(local-name(),concat('authorlastname',$ordinal))][1])"/>
+                        <xsl:if test="$first_name != ''">
+                            <xsl:element name="given_name" namespace="{$NAMESPACE_URL}">
+                                <xsl:value-of select="$first_name"/>
+                            </xsl:element>
+                        </xsl:if>
+                        <xsl:if test="$last_name != ''">
+                            <xsl:element name="surname" namespace="{$NAMESPACE_URL}">
+                                <xsl:value-of select="$last_name"/>
+                            </xsl:element>
+                        </xsl:if>
                     </xsl:element>
-                </xsl:if>
-            </xsl:element>
+                </xsl:otherwise>
+            </xsl:choose>
         </xsl:if>
     </xsl:template>
 
