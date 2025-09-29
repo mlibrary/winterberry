@@ -244,7 +244,9 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
                               select="/DLPSTEXTCLASS/TEXT//DIV1/P[@TYPE='author']"/>
                 <xsl:variable name="authorIndList"
                               select="FILEDESC/SOURCEDESC/BIBL/AUTHORIND[normalize-space(string())!='']"/>
-                <xsl:if test="count($authorIndList) > 0">
+                <xsl:variable name="roleList"
+                              select="FILEDESC/SOURCEDESC/BIBL/*[local-name() != 'AUTHORIND' and local-name() != 'AUTHOR' and @ROLE]"/>
+                <xsl:if test="count($authorIndList) > 0 or count($roleList) > 0">
                     <xsl:element name="contrib-group">
                         <xsl:for-each select="$authorIndList">
                             <xsl:variable name="ndx" select="position()"/>
@@ -273,6 +275,12 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
                                         </xsl:element>
                                     </xsl:if>
                                 </xsl:if>
+                            </xsl:element>
+                        </xsl:for-each>
+                        <xsl:for-each select="$roleList">
+                            <xsl:element name="contrib">
+                                <xsl:attribute name="contrib-type" select="normalize-space(lower-case(@ROLE))"/>
+                                <xsl:apply-templates select="."/>
                             </xsl:element>
                         </xsl:for-each>
                     </xsl:element>
@@ -439,31 +447,38 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
         </xsl:element>
     </xsl:template>
 
-    <xsl:template match="FILEDESC/SOURCEDESC/BIBL/AUTHORIND">
-        <xsl:variable name="nameList" select="tokenize(., ',')"/>
-        <xsl:element name="name">
-            <xsl:choose>
-                <xsl:when test="count($nameList) > 1">
-                    <xsl:element name="surname">
-                        <xsl:value-of select="normalize-space($nameList[1])"/>
-                    </xsl:element>
-                    <xsl:element name="given-names">
-                        <xsl:value-of select="normalize-space($nameList[2])"/>
-                    </xsl:element>
-                </xsl:when>
-                <xsl:when test="count(tokenize(.,'[ ]+')) > 1">
-                    <xsl:element name="surname">
-                        <xsl:value-of select="normalize-space($nameList[2])"/>
-                    </xsl:element>
-                    <xsl:element name="given-names">
-                        <xsl:value-of select="normalize-space($nameList[1])"/>
-                    </xsl:element>
-                </xsl:when>
-                <xsl:otherwise>
-                    <xsl:value-of select="."/>
-                </xsl:otherwise>
-            </xsl:choose>
-        </xsl:element>
+    <xsl:template match="FILEDESC/SOURCEDESC/BIBL/*[local-name()='AUTHORIND' or local-name()='EDITOR']">
+        <xsl:variable name="nameList1" select="tokenize(., ',')"/>
+        <xsl:variable name="nameList2" select="tokenize(.,'[ ]+')"/>
+        <xsl:choose>
+            <xsl:when test="count($nameList1) > 1 or count($nameList2) > 1">
+                <xsl:element name="name">
+                    <xsl:choose>
+                        <xsl:when test="count($nameList1) > 1">
+                            <xsl:element name="surname">
+                                <xsl:value-of select="normalize-space($nameList1[1])"/>
+                            </xsl:element>
+                            <xsl:element name="given-names">
+                                <xsl:value-of select="string-join($nameList1[position() > 1],' ')"/>
+                            </xsl:element>
+                        </xsl:when>
+                        <xsl:otherwise>
+                            <xsl:element name="surname">
+                                <xsl:value-of select="normalize-space($nameList2[last()])"/>
+                            </xsl:element>
+                            <xsl:element name="given-names">
+                                <xsl:value-of select="string-join($nameList2[last() > position()],' ')"/>
+                            </xsl:element>
+                        </xsl:otherwise>
+                    </xsl:choose>
+                </xsl:element>
+            </xsl:when>
+            <xsl:otherwise>
+                <xsl:element name="string-name">
+                    <xsl:value-of select="normalize-space(.)"/>
+                </xsl:element>
+            </xsl:otherwise>
+        </xsl:choose>
     </xsl:template>
 
     <xsl:template match="FILEDESC_OLD/SOURCEDESC/BIBL/AUTHORIND">
@@ -622,7 +637,17 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
 
     <xsl:template match="HEAD">
         <xsl:element name="title">
-            <xsl:apply-templates select="@*|node()"/>
+            <xsl:choose>
+                <xsl:when test="exists(@REND) and not(empty(@REND))">
+                    <xsl:call-template name="add-inline-style">
+                        <xsl:with-param name="node" select="."/>
+                        <xsl:with-param name="style" select="@REND"/>
+                    </xsl:call-template>
+                </xsl:when>
+                <xsl:otherwise>
+                    <xsl:apply-templates select="@*[name()!='TYPE'and name()!='REND']|node()"/>
+                </xsl:otherwise>
+            </xsl:choose>
         </xsl:element>
     </xsl:template>
 
@@ -910,7 +935,7 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
         <xsl:text>&#x0a;</xsl:text>
     </xsl:template>
 
-    <xsl:template match="FIGURE[@TYPE='inline']">
+    <xsl:template match="*[local-name()!='CELL']/FIGURE[@TYPE='inline']">
         <xsl:element name="inline-graphic">
             <xsl:if test="exists(@ENTITY)">
                 <xsl:attribute name="xlink:href" select="mlibxsl:make-resource(@ENTITY)/@file_name"/>
@@ -919,7 +944,7 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
         </xsl:element>
     </xsl:template>
 
-    <xsl:template match="FIGURE[not(exists(@ENTITY) or exists(@REND) or exists(@REF))]">
+    <xsl:template match="*[local-name()!='CELL']/FIGURE[not(exists(@ENTITY) or exists(@REND) or exists(@REF))]">
         <xsl:element name="fig-group">
             <xsl:apply-templates select="@*"/>
 
@@ -987,7 +1012,7 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
         </xsl:element>
     </xsl:template>
 
-    <xsl:template match="FIGURE[(not(exists(@TYPE)) or @TYPE!='inline') and (exists(@ENTITY) or exists(@REND) or exists(@REF))]">
+    <xsl:template match="*[local-name()!='CELL']/FIGURE[(not(exists(@TYPE)) or @TYPE!='inline') and (exists(@ENTITY) or exists(@REND) or exists(@REF))]">
         <xsl:element name="fig">
             <xsl:apply-templates select="@*[name()!='ENTITY' and name()!='REND']"/>
 
@@ -1633,7 +1658,7 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
                 </xsl:variable>
                 <xsl:element name="styled-content">
                     <xsl:attribute name="style" select="$style_css"/>
-                    <xsl:apply-templates select="$node/@*[name()!='REND']|node()"/>
+                    <xsl:apply-templates select="$node/@*[name()!='REND' and name()!='TYPE']|node()"/>
                 </xsl:element>
             </xsl:otherwise>
         </xsl:choose>
