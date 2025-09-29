@@ -257,6 +257,10 @@ end
 # Write the commands file.
 cmds_file = File.join(task_dir, task_id + ".txt")
 File.open(cmds_file, "w") do |fp|
+  fp.puts "# Monograph IDs"
+  fp.puts monograph_id_list.join(' ')
+  fp.puts
+
   fp.puts "# Server information fulcrum-21{1,2}"
   fp.puts "[tbelc@tang:~]$ eval `ssh-agent -s`"
   fp.puts "[tbelc@tang:~]$ ssh-add ~/.ssh/heliotrope-deploy"
