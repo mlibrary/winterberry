@@ -183,6 +183,8 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
                   select="/DLPSTEXTCLASS/TEXT//*[@TYPE='prelim' and not(starts-with(lower-case(normalize-space(string())),'abstract')) and not(starts-with(lower-case(normalize-space(string())),'keywords'))]"/>
     <xsl:variable name="keywordDiv"
                   select="/DLPSTEXTCLASS/TEXT//*[@TYPE='prelim' and starts-with(lower-case(normalize-space(string())),'keywords:')]"/>
+    <xsl:variable name="keywordMeta"
+                  select="/DLPSTEXTCLASS/HEADER/PROFILEDESC//KEYWORDS/TERM"/>
 
     <xsl:template match="DLPSTEXTCLASS">
         <xsl:element name="article">
@@ -369,6 +371,16 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
                         </xsl:choose>
                     </xsl:element>
                 </xsl:for-each>
+                <xsl:for-each-group select="$keywordMeta" group-by="@TYPE">
+                    <xsl:for-each select="current-group()">
+                        <xsl:element name="kwd-group">
+                            <xsl:attribute name="kwd-group-type" select="current-grouping-key()"/>
+                            <xsl:element name="kwd">
+                                <xsl:value-of select="normalize-space(.)"/>
+                            </xsl:element>
+                        </xsl:element>
+                    </xsl:for-each>
+                </xsl:for-each-group>
             </xsl:element>
         </xsl:element>
     </xsl:template>
@@ -607,7 +619,12 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
             <xsl:when test="@TYPE='notes'">
                 <xsl:choose>
                     <xsl:when test="./ancestor::*[local-name()='BACK']">
+                        <!--
                         <xsl:apply-templates select="./*[local-name()!='HEAD']"/>
+                        -->
+                        <xsl:call-template name="add-section">
+                            <xsl:with-param name="divNode" select="."/>
+                        </xsl:call-template>
                     </xsl:when>
                     <xsl:otherwise>
                         <xsl:element name="notes">
@@ -623,6 +640,12 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
                 <xsl:element name="bio">
                     <xsl:apply-templates select="./*"/>
                 </xsl:element>
+            </xsl:when>
+
+            <xsl:when test="./ancestor::*[local-name()='BACK']">
+                <xsl:call-template name="add-section">
+                    <xsl:with-param name="divNode" select="."/>
+                </xsl:call-template>
             </xsl:when>
             <xsl:when test="not(exists(./HEAD)) and not(exists(./TABLE)) and not(local-name(preceding-sibling::*[1])=local-name(.))">
                 <xsl:apply-templates select="./*[not(@TYPE='prelim' or @TYPE='author')]"/>
@@ -1547,7 +1570,7 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
         <xsl:choose>
             <xsl:when test="count($headingList) > 0 or count($bodyList) > 0">
                 <xsl:choose>
-                    <xsl:when test="$divNode/ancestor::*[local-name()='BACK']">
+                    <xsl:when test="$divNode/ancestor::*[local-name()='BACK'] and not(exists($divNode/TABLE)) and not(exists($divNode/P)) and not(exists($divNode/HEAD))">
                         <xsl:apply-templates select="$bodyList"/>
                     </xsl:when>
                     <xsl:otherwise>
