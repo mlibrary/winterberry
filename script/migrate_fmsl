@@ -164,7 +164,7 @@ fmsl_file_list.each do |fmsl_file|
       next if resource_name.strip == UMPTG::Fulcrum::Manifest.MONOGRAPH_FILE_NAME
       next if UMPTG::Fulcrum::Manifest.blank_row_name?(resource_name)
 
-      vtt_name = row['Transcript']
+      vtt_name = row['Closed Captions']
       next if vtt_name.nil? or vtt_name.strip.empty?
 
       # Determine if the vtt file exists.
@@ -177,7 +177,7 @@ fmsl_file_list.each do |fmsl_file|
       script_logger.info("VTT file #{vtt_name} found.")
 
       content = File.read(vtt_file)
-      row['Transcript'] = File.read(vtt_file)
+      row['Closed Captions'] = File.read(vtt_file)
 =begin
       File.open(vtt_file, "rb") do |file|
         content = file.read

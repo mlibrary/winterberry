@@ -141,6 +141,10 @@
   :field_name: Creator Display
   :multivalued: :no
 - :object: :file_set
+  :metadata_name: closed_captions
+  :field_name: Closed Captions
+  :multivalued: :no
+- :object: :file_set
   :metadata_name: credit_line
   :field_name: Credit Line
   :multivalued: :no
