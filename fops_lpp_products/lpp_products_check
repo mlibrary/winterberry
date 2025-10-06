@@ -1,0 +1,81 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Script compares the current products for the
+# LPP titles with the specified spreadsheet(s)
+
+require 'optparse'
+require 'ostruct'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+# Process the script parameters.
+options = OpenStruct.new
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} fulcrum_product.csv lpp_product.csv"
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    script_logger.info(opts)
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  script_logger.info(option_parser.help)
+  return
+end
+
+fulcrum_product_file = ARGV[0]
+lpp_product_file = ARGV[1]
+
+require 'csv'
+
+fulcrum_product_file = File.expand_path(fulcrum_product_file)
+unless File.file?(fulcrum_product_file)
+  script_logger.error("invalid CSV path #{fulcrum_product_file}.")
+  exit(1)
+end
+lpp_product_file = File.expand_path(lpp_product_file)
+unless File.file?(lpp_product_file)
+  script_logger.error("invalid CSV path #{lpp_product_file}.")
+  exit(1)
+end
+
+fulcrum_product_csv = CSV.read(fulcrum_product_file, headers: true)
+lpp_product_csv = CSV.read(lpp_product_file, headers: true)
+
+fulcrum_product_csv.each do |frow|
+  products = (frow['Products'] || '').strip
+  if products.empty?
+    script_logger.warn("No products for monograph #{frow['NOID']}")
+    next
+  end
+
+  isbns = (frow['ISBN(s)'] || '').strip
+  if isbns.empty?
+    script_logger.warn("No ISBNs for monograph #{frow['NOID']}")
+    next
+  end
+
+  isbn_list = isbns.gsub(/\-/, '').split(';')
+  lpp_row = nil
+  isbn_list.each do |isbn|
+    n = isbn.strip[0..12]
+    lpp_row = lpp_product_csv.find {|r| (r['EPUB ISBN'] == n || r['ePDF ISBN'] == n || r['Print ISBN'] == n)  }
+    break unless lpp_row.nil?
+  end
+  if lpp_row.nil?
+    script_logger.warn("No LPP row for #{isbns}")
+  else
+    #script_logger.info("#{products},#{lpp_row['Collection Year']},#{isbns}")
+    cyear = "livedplaces_" + lpp_row['Collection Year'].strip
+    unless frow['Products'].include?(cyear)
+      script_logger.warn("#{products},#{lpp_row['Collection Year']} mismatch, #{isbns}")
+    end
+  end
+end
