@@ -163,15 +163,18 @@ module UMPTG::Fulcrum::Resources::XHTML::Pipeline::Filter
                 )
           last_block = block_list.last
           if last_block.nil?
-            last_block = caption_node.document.create_element("p")
+            caption_content = caption_node.content
+            ename = caption_content.strip.empty? ? "p" : "span"
+            last_block = caption_node.document.create_element(ename)
             link_container = last_block
             caption_node.add_child(last_block)
           else
+            caption_content = ""
             link_container = last_block.document.create_element("span")
             last_block.add_child(link_container)
           end
           link_container.add_class("default-media-display")
-          if last_block.content.strip.end_with?('.')
+          if caption_content.strip.end_with?('.') or caption_content.strip.end_with?('?')
             ll = " " + link_markup + "."
           else
             ll = ". " + link_markup + "."
