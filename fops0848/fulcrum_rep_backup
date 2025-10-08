@@ -1,0 +1,82 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# FOPS-848
+# Script inputs a list of file representatives
+# with each file found in a Fulcrum shared folder
+# and archives the previous version and sets
+# the specified as the current version.
+
+require 'optparse'
+require 'ostruct'
+require 'os'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+# Process the script parameters.
+options = OpenStruct.new
+options.execute = false
+options.extension = "_am"
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-e] rep_file [rep_file...]"
+  opts.on('-e', '--execute', 'Execute') do |exe|
+    options.execute = true
+  end
+  opts.on('-x', '--extension [EXT]', 'Extension (default is "_am")') do |ext|
+    options.extension = ext
+  end
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    script_logger.info(opts)
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  script_logger.info(option_parser.help)
+  return
+end
+
+# Process the command line parameters.
+rep_file_list = ARGV
+
+require "fileutils"
+
+rep_file_list.each do |rep_file|
+  rep_file = File.expand_path(rep_file)
+  unless File.file?(rep_file)
+    script_logger.error("invalid file path #{rep_file}.")
+    next
+  end
+  script_logger.info("*** processing #{File.basename(rep_file)} ***")
+  STDOUT.flush
+
+  fulcrum_folder = File.dirname(rep_file)
+  archive_folder = File.join(fulcrum_folder, "archive")
+  FileUtils.mkdir_p(archive_folder) if options.execute
+
+  cur_name = File.basename(rep_file, ".*").delete_suffix(options.extension)
+  ext = File.extname(rep_file)
+  cur_file_list = Dir.glob(File.join(fulcrum_folder, cur_name + "*" + ext))
+  cur_file = cur_file_list.select {|f| File.basename(f) != File.basename(rep_file) }.first
+
+  last_archive_file = Dir.glob(File.join(archive_folder, cur_name + "_version*" + ext)).last
+  if last_archive_file.nil?
+    last_archive_num = 0
+  else
+    mlist = File.basename(last_archive_file, ".*").match(/([0-9]+)$/)
+    last_archive_num = mlist[1].to_i
+  end
+  archive_file = File.join(archive_folder, File.basename(cur_file, ".*") + "_version#{last_archive_num+1}" + ext)
+  FileUtils.mv(cur_file, archive_file) if options.execute
+  script_logger.info("mv #{File.basename(cur_file)} #{archive_file}")
+
+  dest_file = File.join(fulcrum_folder, cur_name + ext)
+  FileUtils.mv(rep_file, dest_file) if options.execute
+  script_logger.info("mv #{rep_file} #{dest_file}")
+end
