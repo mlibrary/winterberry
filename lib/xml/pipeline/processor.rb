@@ -8,7 +8,9 @@ module UMPTG::XML::Pipeline
       a = args.clone
 
       @logger = a.key?(:logger) ? a[:logger] : UMPTG::Logger.create(logger_fp: STDOUT)
-      @options = a.key?(:options) ? a[:options] : {}
+
+      a[:options] = {} if a[:options].nil?
+      @options = a[:options]
 
       if a[:filters].nil?
         a[:filters] = FILTERS

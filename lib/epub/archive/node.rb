@@ -22,7 +22,7 @@ module UMPTG::EPUB::Archive
 
     def obj_node
       n = @files_entry.document.xpath(@xpath_node).first
-      raise "xpath failure: #{@xpath_node}" if n.nil?
+      #raise "xpath failure: #{@xpath_node}" if n.nil?
       return n
     end
 

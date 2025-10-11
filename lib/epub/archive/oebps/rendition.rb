@@ -1,14 +1,14 @@
 module UMPTG::EPUB::Archive::OEBPS
 
   class Rendition < UMPTG::Object
-    attr_reader :epub, :entry, :manifest, :metadata, \
-        :name, :navigation, :spine, :version
+    attr_reader :epub, :entry, :guide, :manifest, \
+        :metadata, :name, :navigation, :spine, :version
 
     DEFAULT_PATH = File.join("OEBPS", "content.opf")
 
     DEFAULT_XML_TEMPLATE = <<-PKG
 <?xml version="1.0" encoding="UTF-8"?>
-<package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="pub-id" dir="ltr" xml:lang="en">
+<package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="pub-id" xml:lang="en">
 <metadata xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:opf="http://www.idpf.org/2007/opf">
 <dc:identifier id="pub-id">pubid</dc:identifier>
 <dc:title>Ebook Title</dc:title>
@@ -36,13 +36,14 @@ module UMPTG::EPUB::Archive::OEBPS
       @manifest = Manifest.new(a)
       a[:manifest] = @manifest
       @spine = Spine.new(a)
+      @guide = Guide.new(a)
 
       manifest_nav_node = @manifest.navigation()
       nav_href = Manifest.MK_PATH(@entry, manifest_nav_node["href"])
       nav_entry = @entry.files.find(entry_name: nav_href).first
       a[:file_entry] = nav_entry
       @navigation = Navigation.new(a)
-    end
+     end
 
     def toc
       return @navigation.toc

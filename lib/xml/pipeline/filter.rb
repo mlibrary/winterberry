@@ -50,7 +50,7 @@ module UMPTG::XML::Pipeline
       cnt = 0
       actions.each {|a| a.messages.each {|m| cnt += 1 if a.normalize and a.status == UMPTG::Action.COMPLETED } }
 
-      logger.info("completed actions:#{cnt}")
+      logger.info("#{@name}: completed actions:#{cnt}")
     end
   end
 

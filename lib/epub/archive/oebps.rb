@@ -1,5 +1,6 @@
 module UMPTG::EPUB::Archive
 
+  require_relative File.join('oebps', 'guide')
   require_relative File.join('oebps', 'manifest')
   require_relative File.join('oebps', 'metadata')
   require_relative File.join('oebps', 'navigation')

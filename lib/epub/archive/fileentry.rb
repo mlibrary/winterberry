@@ -36,6 +36,11 @@ module UMPTG::EPUB::Archive
       @document = nil
     end
 
+    def rename(args = {})
+      entry_name = args[:entry_name] || ""
+      @name = entry_name unless entry_name.empty?
+    end
+
     def write(output_stream, args = {})
       raise "Error: missing output stream" if output_stream.nil?
 

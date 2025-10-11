@@ -4,7 +4,7 @@ module UMPTG::EPUB::Archive
   require 'find'
 
   class Files < UMPTG::Object
-    attr_reader :epub, :modified
+    attr_reader :epub, :modified, :entries
 
     def initialize(args = {})
       super(args)
@@ -126,6 +126,15 @@ module UMPTG::EPUB::Archive
         entry.replace(entry_content: args[:entry_content])
       end
       @modified = true
+      return entry
+    end
+
+    def remove(args = {})
+      entry = find(args).first
+      unless entry.nil?
+        @name2entry.delete(entry.name)
+        @entries.delete(entry)
+      end
       return entry
     end
 

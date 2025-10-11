@@ -46,13 +46,36 @@ module UMPTG::EPUB::Archive::OEBPS
       entry = @files_entry.files.add(args)
 
       entry_id = args[:entry_id]
-      entry_id = Archive.MK_ID(entry.name) if entry_id.nil? or entry_id.strip.empty?
+      entry_id = UMPTG::EPUB::Archive::Files.MK_ID(entry.name) if entry_id.nil? or entry_id.strip.empty?
       entry_properties = args[:entry_properties]
 
-      markup = sprintf(ITEM_XML, entry_id, Archive.MK_PATH(@files_entry, entry.name), entry.media_type.to_s)
+      markup = sprintf(ITEM_XML, entry_id, UMPTG::EPUB::Archive::Files.MK_PATH(@files_entry, entry.name), entry.media_type.to_s)
       item_node = obj_node.add_child(markup).first
 
       item_node['properties'] = entry_properties unless entry_properties.nil? or entry_properties.strip.empty?
+      return entry
+    end
+
+    def remove(args = {})
+      entry = @files_entry.files.remove(args)
+      unless entry.nil?
+        item_node = find(args)
+        item_node.remove unless item_node.nil?
+      end
+      return entry
+    end
+
+    def rename(args = {})
+      entry = @files_entry.files.find(args).first
+      unless entry.nil?
+        entry_new_name = args[:entry_new_name]
+        item_new_name = UMPTG::EPUB::Archive::Files.MK_PATH(@files_entry, entry_new_name)
+        item_node = find(args).first
+        unless item_node.nil?
+          item_node["href"] = item_new_name
+          entry.rename(entry_name: entry_new_name)
+        end
+      end
       return entry
     end
 

@@ -42,7 +42,7 @@ end
 # Process the command line parameters.
 epub_file_list = ARGV
 
-require_relative File.join(root_dir, "lib", "epub")
+require_relative File.join(root_dir, "lib", "epub_v1")
 
 unless options.previous
   migrator_processor = UMPTG::EPUB::Migrator(
@@ -67,8 +67,7 @@ epub_file_list.each do |epub_file|
 
   epub = UMPTG::EPUB(epub_file: epub_file)
 
-  epub_version = epub.version
-  epub_version = epub_version.nil? ? "" : epub_version
+  epub_version = epub.version || ""
   script_logger.info("version: #{epub_version}")
   if epub_version.start_with?("3.")
     script_logger.info("EPUB 3.x compliant. Skipping")

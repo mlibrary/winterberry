@@ -8,6 +8,8 @@ module UMPTG::EPUB::Pipeline
       a = args.clone
       a2 = args.clone
 
+      a2[:name] = a[:name] || "EPUBProcessor"
+
       a[:name] = "NCXProcessor"
       a2[:ncx_processor] = UMPTG::EPUB::NCX::Processor(a) \
                  if a2[:ncx_procesor].nil?
@@ -19,10 +21,6 @@ module UMPTG::EPUB::Pipeline
       a[:name] = "FulcrumXHTMLProcessor"
       a2[:xhtml_processor] = UMPTG::XHTML::Processor(a) \
                  if a2[:xhtml_processor].nil?
-=begin
-      a2[:xhtml_processor] = UMPTG::Fulcrum::Resources::XHTML::Processor(a) \
-                 if a2[:xhtml_processor].nil?
-=end
 
       a[:name] = "XMLProcessor"
       a2[:xml_processor] = UMPTG::XML::Processor(a) \
@@ -36,6 +34,7 @@ module UMPTG::EPUB::Pipeline
                 "application/x-dtbncx+xml" => @properties[:ncx_processor],
                 "application/oebps-package+xml" => @properties[:oebps_processor],
                 "application/xhtml+xml" => @properties[:xhtml_processor],
+                "text/html" => @properties[:xhtml_processor],
                 "text/xml" => @properties[:xml_processor]
             }
     end
