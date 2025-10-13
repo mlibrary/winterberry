@@ -12,6 +12,10 @@ module UMPTG::XHTML::Pipeline::Filter
     ] | //*[
     local-name()='svg'
     ] | //*[
+    local-name()='big'
+    ] | //*[
+    local-name()='li' and (@role='doc-endnote' or @role='doc-biblioentry')
+    ] | //*[
     local-name()='table'
     ] | //*[
     @href
@@ -34,6 +38,10 @@ module UMPTG::XHTML::Pipeline::Filter
         actions += process_root(reference_node, args)
       when "head"
         actions += process_heading(reference_node, args)
+      when "big"
+        actions += process_big(reference_node, args)
+      when "li"
+        actions += process_li(reference_node, args)
       when "img"
         actions += process_img(reference_node, args)
       when "svg"
@@ -124,6 +132,23 @@ module UMPTG::XHTML::Pipeline::Filter
       return actions
     end
 
+    def process_big(reference_node, args)
+      actions = []
+
+      content = reference_node.content || ""
+      unless content.empty?
+        markup = "<span style=\"font-size:larger\">" + content + "</span>"
+        actions << UMPTG::XML::Pipeline::Actions::MarkupAction.new(
+                  name: name,
+                  reference_node: reference_node,
+                  action: :replace_node,
+                  markup: markup,
+                  warning_message: "#{name}, invalid element #{reference_node.name}"
+                )
+      end
+      return actions
+    end
+
     def process_img(reference_node, args)
       actions = []
 
@@ -149,6 +174,18 @@ module UMPTG::XHTML::Pipeline::Filter
                   warning_message: "#{name}, invalid attribute #{reference_node.name}/@width"
                 )
       end
+      return actions
+    end
+
+    def process_li(reference_node, args)
+      actions = []
+
+      actions << UMPTG::XML::Pipeline::Actions::RemoveAttributeAction.new(
+                name: name,
+                reference_node: reference_node,
+                attribute_name: "role",
+                warning_message: "#{name}, invalid attribute #{reference_node.name}/@role"
+              )
       return actions
     end
 

@@ -43,7 +43,8 @@ module UMPTG::EPUB::OEBPS::Pipeline::Filter
         actions += process_package(reference_node, args)
       when "metadata"
         actions += process_metadata(reference_node, args)
-      when "manifest", "guide"
+      #when "manifest", "guide"
+      when "guide"
         actions += process_manifest(reference_node, args)
       when "spine"
         actions += process_spine(reference_node, args)
@@ -161,7 +162,6 @@ module UMPTG::EPUB::OEBPS::Pipeline::Filter
 
     def process_manifest(reference_node, args)
       actions = []
-=begin
       href_list = reference_node.xpath("./*[local-name()='item' or local-name()='reference']")
       href_list.each do |n|
         href = n['href']
@@ -176,7 +176,6 @@ module UMPTG::EPUB::OEBPS::Pipeline::Filter
                   )
         end
       end
-=end
 =begin
       ncx_item_node = reference_node.xpath("./*[local-name()='item' and @media-type='application/x-dtbncx+xml']").first
       unless ncx_item_node.nil?
