@@ -22,15 +22,19 @@ script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
 options = OpenStruct.new
 options.fulcrum_column_list = []
 options.fulcrum_host = nil
+options.noids_only = false
 options.output_file = File.join(Dir.pwd, "monograph_manifest.csv")
 options.include_representatives = false
 option_parser = OptionParser.new do |opts|
-  opts.banner = "Usage: #{File.basename(__FILE__)} [-c <column_header>] [-f production|preview|staging] [-o <output_file>] [-p bar|ebc|heb] [-r] <monograph_id|press> [<monograph_id|press>..]"
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-c <column_header>] [-f production|preview|staging] [-n] [-o <output_file>] [-p bar|ebc|heb] [-r] <monograph_id|press> [<monograph_id|press>..]"
   opts.on('-c', '--manifest_column <column_header>', 'Fulcrum manifest metadata field') do |col|
     options.fulcrum_column_list << col
   end
   opts.on('-f', '--fulcrum_host [production|preview|staging]', 'Fulcrum environment') do |fulcrum_host|
     options.fulcrum_host = fulcrum_host
+  end
+  opts.on('-n', '--noids', 'Return NOIDs only') do |flg|
+    options.noids_only = true
   end
   opts.on('-o', '--output_file <output_file>', 'Output file path') do |output_file|
     options.output_file = output_file
@@ -74,7 +78,6 @@ monograph_id_list.each do |monograph_id|
 
   if UMPTG::Press.valid(monograph_id)
     monographs_list = service.monographs(press_list: [monograph_id])
-    puts monographs_list.first
     noid_list = monographs_list.collect {|m| m['id'] }
     monograph_id_noid[monograph_id] = noid_list
   else
@@ -84,51 +87,110 @@ monograph_id_list.each do |monograph_id|
 end
 
 monograph_manifest_rows = []
-manifest_headers = options.fulcrum_column_list
-manifest_headers << "Representative" if options.include_representatives
-
-monograph_id_noid.each do |identifier,noid_list|
-  if noid_list.empty?
-    script_logger.warn("no manifest(s) found for identifier #{identifier}")
-    field_values = []
-    manifest_headers.each do |h|
-      if h == "Monograph ID"
-        field_values << identifier
-        next
-      end
-      field_values << ""
+if options.noids_only
+  manifest_headers = [ "Monograph ID", "NOID" ]
+  monograph_id_noid.each do |identifier, noid_list|
+    noid_list.each do |n|
+      monograph_manifest_rows << [
+                identifier, n
+            ]
     end
-    monograph_manifest_rows << field_values
-    next
   end
+else
+  manifest_headers = options.fulcrum_column_list
+  manifest_headers << "Representative" if options.include_representatives
 
-  #noid_list2 = noid_list.select {|n| n != identifier}
-  noid_list2 = noid_list
-  script_logger.info("#{identifier}:#{noid_list2.count} manifest(s) found.")
+  monograph_id_noid.each do |identifier,noid_list|
+    if noid_list.empty?
+      script_logger.warn("no manifest(s) found for identifier #{identifier}")
+      field_values = []
+      manifest_headers.each do |h|
+        if h == "Monograph ID"
+          field_values << identifier
+          next
+        end
+        field_values << ""
+      end
+      monograph_manifest_rows << field_values
+      next
+    end
 
-  noid_list2.each do |noid|
-    script_logger.info("manifest for NOID #{noid}")
-    STDOUT.flush
+    #noid_list2 = noid_list.select {|n| n != identifier}
+    noid_list2 = noid_list
+    script_logger.info("#{identifier}:#{noid_list2.count} manifest(s) found.")
 
-    manifest_body_list = service.monograph_export(identifier: noid)
-    manifest_body_list[noid].each do |manifest_body|
-      manifest = UMPTG::Fulcrum::Manifest::Document.new(
-                    csv_body: manifest_body
-                  )
+    noid_list2.each do |noid|
+      script_logger.info("manifest for NOID #{noid}")
+      STDOUT.flush
 
-      manifest_headers = manifest.headers if manifest_headers.empty?
+      manifest_body_list = service.monograph_export(identifier: noid)
+      manifest_body_list[noid].each do |manifest_body|
+        manifest = UMPTG::Fulcrum::Manifest::Document.new(
+                      csv_body: manifest_body
+                    )
 
-      if options.include_representatives
-        manifest.representatives().each do |kind,rep_row|
-          #next unless ["epub","pdf","pdf_ebook"].include?(kind)
-          next unless ["epub"].include?(kind)
+        manifest_headers = manifest.headers if manifest_headers.empty?
 
+        if options.include_representatives
+          manifest.representatives().each do |kind,rep_row|
+            #next unless ["epub","pdf","pdf_ebook"].include?(kind)
+            next unless ["epub"].include?(kind)
+
+            field_values = []
+            manifest_headers.each do |h|
+              next if h == "Representative"
+              if h == "Monograph ID"
+                #field_values << rep_row['file_name']
+                field_values << identifier
+                next
+              end
+
+              new_h = h.strip.downcase.gsub(' ', '_')
+              unless manifest.monograph_row.key?(new_h)
+                script_logger.error("invalid metadata field \"#{h}\".")
+                next
+              end
+              field_values << manifest.monograph_row[new_h]
+            end
+            field_values << rep_row['file_name']
+            monograph_manifest_rows << field_values
+          end
+        else
+          component = nil
           field_values = []
           manifest_headers.each do |h|
-            next if h == "Representative"
-            if h == "Monograph ID"
-              #field_values << rep_row['file_name']
+            case h
+            when "Monograph ID"
               field_values << identifier
+              next
+            when "Title/Link"
+              #fv = manifest.monograph_row['link'][0..-2] + ",\"\"" +  + "\"\")"
+              fv = manifest.monograph_row['link'][0..-2] + ",\"#{manifest.monograph_row['title']}\")"
+              field_values << fv
+              next
+            when "NOID/Link"
+              fv = manifest.monograph_row['link'][0..-2] + ",\"#{manifest.monograph_row['noid']}\")"
+              field_values << fv
+              next
+            when "Component"
+              component = service.connection.get("component", noid: noid).body if component.nil?
+              if component.nil?
+                fv = ""
+              else
+                fv = "=HYPERLINK(\"https://www.fulcrum.org/greensub/components/#{component['id']}\",\"#{component['id']}\")"
+              end
+              field_values << fv
+              next
+            when "Products"
+              component = service.connection.get("component", noid: noid).body if component.nil?
+              if component.nil?
+                fv = ""
+              else
+                products = service.connection.get("components/#{component['id']}/products").body
+                p_list = products.collect {|p| p['identifier'] }
+                fv = p_list.join(';')
+              end
+              field_values << fv
               next
             end
 
@@ -139,56 +201,8 @@ monograph_id_noid.each do |identifier,noid_list|
             end
             field_values << manifest.monograph_row[new_h]
           end
-          field_values << rep_row['file_name']
           monograph_manifest_rows << field_values
         end
-      else
-        component = nil
-        field_values = []
-        manifest_headers.each do |h|
-          case h
-          when "Monograph ID"
-            field_values << identifier
-            next
-          when "Title/Link"
-            #fv = manifest.monograph_row['link'][0..-2] + ",\"\"" +  + "\"\")"
-            fv = manifest.monograph_row['link'][0..-2] + ",\"#{manifest.monograph_row['title']}\")"
-            field_values << fv
-            next
-          when "NOID/Link"
-            fv = manifest.monograph_row['link'][0..-2] + ",\"#{manifest.monograph_row['noid']}\")"
-            field_values << fv
-            next
-          when "Component"
-            component = service.connection.get("component", noid: noid).body if component.nil?
-            if component.nil?
-              fv = ""
-            else
-              fv = "=HYPERLINK(\"https://www.fulcrum.org/greensub/components/#{component['id']}\",\"#{component['id']}\")"
-            end
-            field_values << fv
-            next
-          when "Products"
-            component = service.connection.get("component", noid: noid).body if component.nil?
-            if component.nil?
-              fv = ""
-            else
-              products = service.connection.get("components/#{component['id']}/products").body
-              p_list = products.collect {|p| p['identifier'] }
-              fv = p_list.join(';')
-            end
-            field_values << fv
-            next
-          end
-
-          new_h = h.strip.downcase.gsub(' ', '_')
-          unless manifest.monograph_row.key?(new_h)
-            script_logger.error("invalid metadata field \"#{h}\".")
-            next
-          end
-          field_values << manifest.monograph_row[new_h]
-        end
-        monograph_manifest_rows << field_values
       end
     end
   end
