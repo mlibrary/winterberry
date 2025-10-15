@@ -109,6 +109,19 @@ ace_json_file_list.each do |ace_json_file|
             else
               new_v = v
             end
+          when "Identifier"
+            case
+            when v.is_a?(Array)
+              new_v = ""
+              v.each do |v2|
+                new_v += v.delete_prefix("urn:isbn:").gsub(/-/, '') if v.start_with?("urn:isbn:")
+                new_v += v.delete_prefix("urn:uuid:") if v.start_with?("urn:uuid:")
+              end
+            when v.is_a?(String)
+              new_v = v
+            else
+              new_v = v
+            end
           else
             new_v = v
           end

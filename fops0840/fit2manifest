@@ -69,7 +69,9 @@ fit_file_list.each do |fit_file|
               converters: :strip_field,
               return_headers: false)
   rescue Exception => e
-    raise e.message
+    #raise e.message
+    script_logger.warn(e.message)
+    next
   end
   STDOUT.flush
 end
