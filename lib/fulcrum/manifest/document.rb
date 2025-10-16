@@ -518,9 +518,9 @@ module UMPTG::Fulcrum::Manifest
       unless isbns_property.nil? or isbns_property.empty?
         isbns_list = isbns_property.split(';').each do |isbn|
           list = isbn.strip.downcase.match('([0-9\-]+)[ ]+\(([^\)]+)\)')
-          unless list.nil?
-            isbn_format[list[2]] = list[1]
-          end
+          isbn_format[list[2]] = list[1] unless list.nil?
+          # Use this if duplicate formats are used.
+          #isbn_format[list[2]] = list[1] unless list.nil? or isbn_format.key?(list[2])
         end
       end
       return isbn_format

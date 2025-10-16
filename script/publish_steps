@@ -347,6 +347,9 @@ File.open(cmds_file, "w") do |fp|
   fp.puts "\tresponse = Crossref::Register.new(doc.to_xml).post"
   fp.puts "end;0"
   fp.puts
+  fp.puts "# Extract monographs (fulcrum-211)"
+  fp.puts "bundle exec ruby script#{File::SEPARATOR}extract -d #{application_task_dir} #{monograph_noid_list.join(' ')}"
+  fp.puts
   fp.puts "# Resource processing ticket comment"
   fp.puts "[~jilliand] [~mhylton] [~mbakeryo]"
   fp.puts "Resource processed the following titles:"
