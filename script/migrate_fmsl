@@ -170,6 +170,8 @@ fmsl_file_list.each do |fmsl_file|
       # Determine if the vtt file exists.
       vtt_name = vtt_name.strip.gsub(' ','_')
       vtt_file = File.expand_path(File.join(File.dirname(fmsl_file), "vtt", vtt_name))
+      vtt_file = File.expand_path(File.join(File.dirname(fmsl_file), vtt_name)) \
+            unless File.file?(vtt_file)
       unless File.file?(vtt_file)
         script_logger.warn("VTT file #{vtt_file} not found.")
         next
