@@ -1,0 +1,110 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# FOPS-904
+# Script inputs a spreadsheet containing a mapping of
+# bar codes to isbn and for the selected PDF,
+# copies the file the Fulcrum_ready directory and
+# renames the file from its bar code to isbn.
+#
+
+require 'optparse'
+require 'ostruct'
+require 'os'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+# Process the script parameters.
+options = OpenStruct.new
+options.output_dir = "s:/Information\ Management/Fulcrum/UMP_backlist/Round_4_2025/Fulcrum_ready"
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-o output_dir] metadata_file pdf_file [pdf_file...]"
+  opts.on('-o', '--output_dir [DIRECTORY]', 'Output directory') do |output_dir|
+    options.output_dir = output_dir
+  end
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    script_logger.info(opts)
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  script_logger.info(option_parser.help)
+  return
+end
+
+# Process the command line parameters.
+metadata_file = ARGV[0]
+pdf_file_list = ARGV[1..-1]
+
+require "fileutils"
+
+require_relative File.join(root_dir, "lib", "csvfile")
+
+output_dir = File.expand_path(options.output_dir)
+unless File.directory?(output_dir)
+  script_logger.error("invalid metadata file path #{output_dir}.")
+  exit(1)
+end
+script_logger.info("*** using #{File.basename(output_dir)} ***")
+
+metadata_file = File.expand_path(metadata_file)
+unless File.file?(metadata_file)
+  script_logger.error("invalid metadata file path #{metadata_file}.")
+  exit(1)
+end
+script_logger.info("*** using #{File.basename(metadata_file)} ***")
+STDOUT.flush
+
+metadata_csv = UMPTG::CSVFile.read(csv_path: metadata_file)
+
+copied_cnt = 0
+pdf_file_list.each do |pdf_file|
+  pdf_file = File.expand_path(pdf_file)
+  unless File.file?(pdf_file)
+    script_logger.error("invalid PDF file path #{pdf_file}.")
+    next
+  end
+  script_logger.info("*** processing #{File.basename(pdf_file)} ***")
+  STDOUT.flush
+
+  bar_code = File.basename(pdf_file, ".*")[0..13]
+  metadata_row = metadata_csv.find {|r| r['OCLC'] == bar_code }
+  if metadata_row.nil?
+    script_logger.warn("#{bar_code}: found 0 rows")
+  else
+    isbn = metadata_row['ISBN']
+    if isbn.nil? or isbn.empty?
+      script_logger.warn("#{bar_code}: found 0 ISBNs")
+    else
+      if isbn.strip.downcase.include?("(use)")
+        script_logger.warn("#{bar_code}: skipping #{isbn}")
+        next
+      end
+
+      dest_dir = File.join(output_dir, isbn.strip)
+      unless File.directory?(dest_dir)
+        script_logger.warn("#{bar_code}: destination directory #{dest_dir} does not exist.")
+        next
+      end
+
+      isbn_file = File.join(dest_dir, isbn.strip + ".pdf")
+      if File.file?(isbn_file)
+        script_logger.warn("#{bar_code}: destination directory #{isbn_file} exists.")
+        next
+      end
+
+      FileUtils.cp(pdf_file, isbn_file)
+      copied_cnt += 1
+      script_logger.info("copied #{File.basename(pdf_file)} to #{File.basename(isbn_file)}")
+    end
+  end
+  STDOUT.flush
+end
+script_logger.info("copied #{copied_cnt} PDFs")
