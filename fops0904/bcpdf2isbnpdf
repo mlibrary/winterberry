@@ -22,7 +22,7 @@ script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
 
 # Process the script parameters.
 options = OpenStruct.new
-options.output_dir = "s:/Information\ Management/Fulcrum/UMP_backlist/Round_3_2025/Fulcrum_ready"
+options.output_dir = "s:/Information\ Management/Fulcrum/UMP_backlist/Round_4_2025/#{File.basename(__FILE__)}"
 option_parser = OptionParser.new do |opts|
   opts.banner = "Usage: #{File.basename(__FILE__)} [-o output_dir] metadata_file pdf_file [pdf_file...]"
   opts.on('-o', '--output_dir [DIRECTORY]', 'Output directory') do |output_dir|
@@ -89,12 +89,13 @@ pdf_file_list.each do |pdf_file|
       end
 
       dest_dir = File.join(output_dir, isbn.strip)
+      #dest_dir = File.dirname(pdf_file)
       unless File.directory?(dest_dir)
         script_logger.warn("#{bar_code}: destination directory #{dest_dir} does not exist.")
         next
       end
 
-      isbn_file = File.join(dest_dir, isbn.strip + ".pdf")
+      isbn_file = File.join(dest_dir, isbn.strip + File.extname(pdf_file))
       if File.file?(isbn_file)
         script_logger.warn("#{bar_code}: destination directory #{isbn_file} exists.")
         next

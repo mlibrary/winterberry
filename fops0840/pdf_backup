@@ -64,11 +64,11 @@ pdf_file_list.each do |pdf_file|
     FileUtils.mkdir_p(archive_dir) unless options.mode == :test
   end
 
-  archived_pdf_list = Dir.glob(File.join(archive_dir, File.basename(pdf_file, ".*") + "*"))
-  script_logger.info("archived:#{archived_pdf_list.count}")
-
   pbase = File.basename(pdf_file, ".*")[0..12]
   ext = File.extname(pdf_file)
+
+  archived_pdf_list = Dir.glob(File.join(archive_dir, pbase + "*"))
+  script_logger.info("archived:#{archived_pdf_list.count}")
 
   pfile = File.join(pdir, pbase + ext)
   archived_pfile = File.join(archive_dir, pbase + "_version#{archived_pdf_list.count + 1}" + ext)
