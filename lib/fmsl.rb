@@ -37,7 +37,7 @@ module UMPTG
         sheet.each do |row|
           next if row.compact.empty?
           fmsl_body_list << CSV.generate_line(row)
-          fmsl_body_list << CSV.generate_line(row, row_sep: "\r\n")
+          #fmsl_body_list << CSV.generate_line(row, row_sep: "\r\n")
         end
 =begin
         fmsl_body_list.delete_at(3)

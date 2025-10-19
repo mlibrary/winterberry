@@ -169,7 +169,7 @@ module UMPTG::Fulcrum::Resources::XHTML::Pipeline::Filter
             link_container = last_block
             caption_node.add_child(last_block)
           else
-            caption_content = ""
+            caption_content = last_block.content
             link_container = last_block.document.create_element("span")
             last_block.add_child(link_container)
           end
