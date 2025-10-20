@@ -168,7 +168,7 @@ fmsl_file_list.each do |fmsl_file|
       next if vtt_name.nil? or vtt_name.strip.empty?
 
       # Determine if the vtt file exists.
-      vtt_name = vtt_name.strip.gsub(' ','_')
+      #vtt_name = vtt_name.strip.gsub(' ','_')
       vtt_file = File.expand_path(File.join(File.dirname(fmsl_file), "vtt", vtt_name))
       vtt_file = File.expand_path(File.join(File.dirname(fmsl_file), vtt_name)) \
             unless File.file?(vtt_file)
@@ -178,7 +178,6 @@ fmsl_file_list.each do |fmsl_file|
       end
       script_logger.info("VTT file #{vtt_name} found.")
 
-      content = File.read(vtt_file)
       row['Closed Captions'] = File.read(vtt_file)
 =begin
       File.open(vtt_file, "rb") do |file|
