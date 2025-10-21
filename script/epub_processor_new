@@ -56,12 +56,27 @@ require_relative File.join(root_dir, "lib", "epub")
 require_relative File.join(root_dir, "newlib", "lib", "fulcrum")
 require_relative File.join(root_dir, "lib", "fulcrum", "manifest")
 
-# Verify process
-unless [ :migrator, :resource_processor, :reviewer].include?(options.process)
-  script_logger.error("invalid process, #{options.process}")
-  exit(1)
+# Verify process and filter arguments
+if options.filter_list.empty?
+  if options.process == :none
+    script_logger.error("must specify either -p process or -f filter.")
+    exit(1)
+  end
+  unless [ :migrator, :resource_processor, :reviewer].include?(options.process)
+    script_logger.error("invalid process, #{options.process}")
+    exit(1)
+  end
+else
+  unless options.process == :none
+    script_logger.error("must not specify both -p process or -f filter.")
+    exit(1)
+  end
 end
 
+# Collect EPUB Processor arguments
+epub_args = {}
+
+# Determine if a Fulcrum resource manifest is to be used.
 manifest = nil
 unless options.manifest_file.nil?
   manifest_file = File.expand_path(options.manifest_file)
@@ -72,66 +87,47 @@ unless options.manifest_file.nil?
   manifest = UMPTG::Fulcrum::Manifest::Document.new(
         csv_file: manifest_file
       )
+  epub_args[:manifest] = manifest
 end
 
+# Configure the EPUB Processor
 case options.process
 when :migrator
-  epub_processor = UMPTG::EPUB::Migrator()
+  # EPUB Migration
+  epub_processor = UMPTG::EPUB::Migrator(
+                    epub_args
+          )
 when :resource_processor
+  # EPUB Resource processing
   epub_processor = UMPTG::Fulcrum::ResourceProcessor(
-                          manifest: manifest
+                          epub_args
                       )
 when :reviewer
-  epub_processor = UMPTG::EPUB::Reviewer()
-=begin
-  ops = {
-          xhtml_img_alttext: true,
-          xhtml_extdescr: true
-        }
-  xhtml_processor = UMPTG::XHTML::Processor(
-            name: "XHTMLProcessor",
-            options: ops
-      )
-=end
+  # EPUB Review
+  epub_processor = UMPTG::EPUB::Reviewer(
+                          epub_args
+                      )
 else
-  # No processor specified. Just filters specified
+  # EPUB customized processing. Use the specified filters
   ops = {}
-  filter_list.each {|f| ops[f] = true }
+  options.filter_list.each {|f| ops[f] = true }
+
+  # Use the manifest if specified.
+  xhtml_processor = manifest.nil? ? nil : \
+        UMPTG::Fulcrum::Resources::XHTML::Processor(
+              name: "FulcrumResourceProcessor",
+              manifest: manifest,
+              options: ops
+            )
+
+  # No processor specified. Just filters specified
   epub_processor = UMPTG::EPUB::Processor(
+            xhtml_processor: xhtml_processor,
             options: ops
       )
 end
 
-=begin
-#filter_list = options.filter_list.empty? ? [ :xhtml_embed_link ] : options.filter_list
-#=begin
-filter_list = options.filter_list.empty? ? \
-      [ :epub_oebps_accessmode, :epub_oebps_accessfeature, :xhtml_img_alttext, :xhtml_extdescr ] : \
-      options.filter_list
-#=end
-
-ops = {}
-filter_list.each {|f| ops[f] = true }
-
-xhtml_processor = UMPTG::Fulcrum::Resources::XHTML::Processor(
-          name: "FulcrumResourceProcessor",
-          manifest: manifest,
-          options: ops
-    )
-epub_processor = UMPTG::EPUB::Processor(
-          name: "EPUBProcessor",
-          xhtml_processor: xhtml_processor,
-          options: {
-              epub_oebps_accessible: false,
-              epub_oebps_accessmode: true,
-              epub_oebps_accessfeature: true,
-              xhtml_img_alttext: true,
-              xhtml_update_href: false,
-              xhtml_extdescr: true
-          }
-    )
-=end
-
+# Process each EPUB
 epub_file_list.each do |epub_file|
   unless File.file?(epub_file)
     script_logger.error("invalid EPUB file #{epub_file}")

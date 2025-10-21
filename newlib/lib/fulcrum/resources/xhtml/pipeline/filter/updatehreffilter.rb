@@ -23,7 +23,15 @@ module UMPTG::Fulcrum::Resources::XHTML::Pipeline::Filter
       action_list = []
 
       href = reference_node["href"]
-      if href.start_with?('https://www.fulcrum.org/concern/file_sets/')
+      case
+      when href.nil?
+        action_list << UMPTG::XML::Pipeline::Action.new(
+                 name: name,
+                 reference_node: reference_node,
+                 warning_message: \
+                   "#{reference_node.name}: found link with no @href value"
+             )
+      when href.start_with?('https://www.fulcrum.org/concern/file_sets/')
         fileset_noid = href.delete_prefix('https://www.fulcrum.org/concern/file_sets/')
         fileset = manifest.fileset_from_noid(fileset_noid)
         if fileset["noid"].empty?
@@ -50,12 +58,12 @@ module UMPTG::Fulcrum::Resources::XHTML::Pipeline::Filter
                )
         end
       else
-          action_list << UMPTG::XML::Pipeline::Action.new(
-                   name: name,
-                   reference_node: reference_node,
-                   info_message: \
-                     "#{reference_node.name}: found link #{href}"
-               )
+        action_list << UMPTG::XML::Pipeline::Action.new(
+                 name: name,
+                 reference_node: reference_node,
+                 info_message: \
+                   "#{reference_node.name}: found link #{href}"
+             )
       end
 
       return action_list
