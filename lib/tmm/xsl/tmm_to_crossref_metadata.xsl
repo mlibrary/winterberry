@@ -322,6 +322,8 @@
                         </xsl:attribute>
                         <xsl:variable name="first_name" select="normalize-space(preceding-sibling::*[starts-with(local-name(),concat('authorfirstname',$ordinal))][1])"/>
                         <xsl:variable name="last_name" select="normalize-space(preceding-sibling::*[starts-with(local-name(),concat('authorlastname',$ordinal))][1])"/>
+                        <xsl:variable name="ror" select="normalize-space(preceding-sibling::*[starts-with(local-name(),concat('authorror',$ordinal))][1])"/>
+                        <xsl:variable name="orcid" select="normalize-space(preceding-sibling::*[starts-with(local-name(),concat('authororcid',$ordinal))][1])"/>
                         <xsl:if test="$first_name != ''">
                             <xsl:element name="given_name" namespace="{$NAMESPACE_URL}">
                                 <xsl:value-of select="$first_name"/>
@@ -332,6 +334,24 @@
                                 <xsl:value-of select="$last_name"/>
                             </xsl:element>
                         </xsl:if>
+                        <!--
+                        <xsl:if test="$ror != ''">
+                            <xsl:element name="affiliations" namespace="{$NAMESPACE_URL}">
+                                <xsl:element name="institution" namespace="{$NAMESPACE_URL}">
+                                    <xsl:element name="institution_id" namespace="{$NAMESPACE_URL}">
+                                        <xsl:attribute name="type"><xsl:value-of select="'ror'"/></xsl:attribute>
+                                        <xsl:value-of select="$ror"/>
+                                    </xsl:element>
+                                </xsl:element>
+                            </xsl:element>
+                        </xsl:if>
+                        <xsl:if test="$orcid != ''">
+                            <xsl:element name="ORCID" namespace="{$NAMESPACE_URL}">
+                                <xsl:attribute name="authenticated"><xsl:value-of select="'true'"/></xsl:attribute>
+                                <xsl:value-of select="$orcid"/>
+                            </xsl:element>
+                        </xsl:if>
+                        -->
                     </xsl:element>
                 </xsl:otherwise>
             </xsl:choose>
