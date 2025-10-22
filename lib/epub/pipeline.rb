@@ -2,6 +2,7 @@ module UMPTG::EPUB
 
   require_relative File.join('pipeline', 'processor')
   require_relative 'migrator'
+  require_relative 'reviewer'
 
   def self.Processor(args = {})
     return Pipeline::Processor.new(args)
@@ -14,12 +15,6 @@ module UMPTG::EPUB
 
   def self.Reviewer(args = {})
     a = args.clone
-    a[:options] = {
-            epub_oebps_accessmode: true,
-            epub_oebps_accessfeature: true,
-            xhtml_img_alttext: true,
-            xhtml_extdescr: true
-          }
-    return Processor(a)
+    return Reviewer.new(a)
   end
 end

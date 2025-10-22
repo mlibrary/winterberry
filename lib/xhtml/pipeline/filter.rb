@@ -2,11 +2,13 @@ module UMPTG::XHTML::Pipeline
   require_relative(File.join("filter", "imgalttextfilter"))
   require_relative(File.join("filter", "extdescrfilter"))
   require_relative(File.join("filter", "migrationfilter"))
+  require_relative(File.join("filter", "tablefilter"))
 
   FILTERS = {
         xhtml_img_alttext: UMPTG::XHTML::Pipeline::Filter::ImgAltTextFilter,
         xhtml_extdescr: UMPTG::XHTML::Pipeline::Filter::ExtDescrFilter,
-        xhtml_migration: UMPTG::XHTML::Pipeline::Filter::MigrationFilter
+        xhtml_migration: UMPTG::XHTML::Pipeline::Filter::MigrationFilter,
+        xhtml_table: UMPTG::XHTML::Pipeline::Filter::TableFilter
       }
 
   def self.ImgAltTextFilter(args = {})
@@ -19,6 +21,10 @@ module UMPTG::XHTML::Pipeline
 
   def self.MigrationFilter(args = {})
     return FILTERS[:xhtml_migration].new(args)
+  end
+
+  def self.TableFilter(args = {})
+    return FILTERS[:xhtml_table].new(args)
   end
 
   def self.FILTERS
