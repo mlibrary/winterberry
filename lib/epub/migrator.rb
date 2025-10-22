@@ -6,6 +6,7 @@ module UMPTG::EPUB
   class Migrator < Pipeline::Processor
     def initialize(args = {})
       a = args.clone
+      a[:name] = "EPUBMigrateProcessor"
       a[:options] = {
             epub_ncx_content: true,
             epub_ncx_navigation: true,

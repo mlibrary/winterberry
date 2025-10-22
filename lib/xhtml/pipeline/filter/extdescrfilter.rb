@@ -58,16 +58,7 @@ module UMPTG::XHTML::Pipeline::Filter
           end
         end
       end
-
       return action_list
-    end
-
-    def process_action_results(args = {})
-      action_results = args[:action_results]
-      actions = args[:actions]
-      logger = args[:logger]
-
-      logger.info("extended description references:#{actions.count}")
     end
   end
 end

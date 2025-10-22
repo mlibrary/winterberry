@@ -1,7 +1,7 @@
 module UMPTG::EPUB::Pipeline
 
   class Processor < UMPTG::Object
-    attr_reader :processors
+    attr_reader :name, :processors
     attr_accessor :logger
 
     def initialize(args = {})
@@ -18,7 +18,7 @@ module UMPTG::EPUB::Pipeline
       a2[:oebps_processor] = UMPTG::EPUB::OEBPS::Processor(a) \
                  if a2[:oebps_processor].nil?
 
-      a[:name] = "FulcrumXHTMLProcessor"
+      a[:name] = "XHTMLProcessor"
       a2[:xhtml_processor] = UMPTG::XHTML::Processor(a) \
                  if a2[:xhtml_processor].nil?
 
@@ -28,13 +28,14 @@ module UMPTG::EPUB::Pipeline
 
       super(a2)
 
+      @name = @properties[:name]
       @logger = @properties.key?(:logger) ? @properties[:logger] : UMPTG::Logger.create(logger_fp: STDOUT)
 
       @processors = {
                 "application/x-dtbncx+xml" => @properties[:ncx_processor],
                 "application/oebps-package+xml" => @properties[:oebps_processor],
                 "application/xhtml+xml" => @properties[:xhtml_processor],
-                "text/html" => @properties[:xhtml_processor],
+                #"text/html" => @properties[:xhtml_processor],
                 "text/xml" => @properties[:xml_processor]
             }
     end

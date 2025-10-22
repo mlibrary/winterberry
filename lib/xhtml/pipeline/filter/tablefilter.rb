@@ -22,6 +22,8 @@ module UMPTG::XHTML::Pipeline::Filter
       action_list = []
 
       if reference_node.name == 'table'
+        id = reference_node['id']
+
         tbody_node = reference_node.xpath("./*[local-name()='tbody']").first
         if tbody_node.nil?
           action_list << UMPTG::XML::Pipeline::Actions::TableMarkupAction.new(
@@ -29,14 +31,14 @@ module UMPTG::XHTML::Pipeline::Filter
                    reference_node: reference_node,
                    action: :add_tbody,
                    warning_message: \
-                     "#{name}, #{reference_node.name} tbody element not found"
+                     "#{name}, #{reference_node.name} @id=\"#{id}\" tbody element not found"
                )
         else
           action_list << UMPTG::XML::Pipeline::Action.new(
                    name: name,
                    reference_node: reference_node,
                    info_message: \
-                     "#{name}, #{reference_node.name} tbody element found"
+                     "#{name}, #{reference_node.name} @id=\"#{id}\" tbody element found"
                )
         end
       end
@@ -44,16 +46,19 @@ module UMPTG::XHTML::Pipeline::Filter
     end
 
     def process_action_results(args = {})
+      super(args)
+
       action_results = args[:action_results]
-      actions = args[:actions]
       logger = args[:logger]
 
       cnt = 0
       actions.each {|a| a.messages.each {|m| cnt += 1 if m.level == UMPTG::Message.WARNING } }
 
-      act_text_msg = "tables with missing tbody:#{cnt}"
-      logger.info(act_text_msg) if cnt == 0
-      logger.warn(act_text_msg) unless cnt == 0
+      unless actions.count == 0
+        act_text_msg = "#{name}, tables with missing tbody=#{cnt}"
+        logger.info(act_text_msg) if cnt == 0
+        logger.warn(act_text_msg) unless cnt == 0
+      end
     end
   end
 end

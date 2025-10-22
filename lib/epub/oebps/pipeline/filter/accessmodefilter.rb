@@ -40,8 +40,9 @@ module UMPTG::EPUB::OEBPS::Pipeline::Filter
     end
 
     def process_action_results(args = {})
+      super(args)
+
       action_results = args[:action_results]
-      actions = args[:actions]
       logger = args[:logger]
 
       # <meta property="schema:accessModeSufficient">textual</meta>
@@ -57,9 +58,9 @@ module UMPTG::EPUB::OEBPS::Pipeline::Filter
       end
 
       if textual_found
-        logger.info("accessModeSufficient=textual found")
+        logger.info("#{name} accessModeSufficient=textual found")
       else
-        logger.warn("accessModeSufficient=textual not found")
+        logger.warn("#{name}, accessModeSufficient=textual not found")
       end
     end
   end

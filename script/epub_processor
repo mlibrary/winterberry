@@ -143,6 +143,7 @@ epub_file_list.each do |epub_file|
 
   epub = UMPTG::EPUB(epub_path: epub_file)
   epub_processor.logger.info("processing EPUB file #{File.basename(epub_file)}")
+  epub_processor.logger.info("Time: #{Time.now}")
   epub_processor.logger.info("version #{epub.rendition.version}")
   identifiers = epub.rendition.metadata.dc.elements.identifier.collect {|d| d.text}
   epub_processor.logger.info("identifiers: #{identifiers.join(',')}")

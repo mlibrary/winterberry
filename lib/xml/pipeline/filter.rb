@@ -3,7 +3,7 @@ module UMPTG::XML::Pipeline
 
   class Filter < UMPTG::Object
 
-    attr_reader :name, :xpath, :selector
+    attr_reader :actions, :name, :xpath, :selector
 
     def initialize(args = {})
       a = args.clone
@@ -20,20 +20,21 @@ module UMPTG::XML::Pipeline
       @name = @properties[:name]
       @selector = @properties[:selector]
       @xpath = @selector.xpath
+      @actions = []
     end
 
+=begin
     def run(xml_doc, args = {})
       a = args.clone()
       a[:name] = @name
 
-      actions = []
       @selector.references(xml_doc).each do |n|
         a[:reference_node] = n
-        act_list = create_actions(a)
-        actions += act_list
+        actions += create_actions(a)
       end
       return actions
     end
+=end
 
     def create_actions(args = {})
       a = args.clone
@@ -44,13 +45,14 @@ module UMPTG::XML::Pipeline
 
     def process_action_results(args = {})
       action_results = args[:action_results]
-      actions = args[:actions]
+      @actions = args[:actions]
       logger = args[:logger]
 
       cnt = 0
-      actions.each {|a| a.messages.each {|m| cnt += 1 if a.normalize and a.status == UMPTG::Action.COMPLETED } }
+      @actions.each {|a| a.messages.each {|m| cnt += 1 if a.normalize and a.status == UMPTG::Action.COMPLETED } }
 
-      logger.info("#{@name}: completed actions:#{cnt}")
+      logger.info("#{@name}, actions=#{@actions.count}")
+      logger.info("#{@name}, completed actions=#{cnt}")
     end
   end
 

@@ -68,10 +68,10 @@ module UMPTG::EPUB::Archive
 
     def self.media_type(args = {})
       entry_name = args[:entry_name]
-      return if entry_name.nil?
+      return nil if entry_name.nil?
 
       mt_list = MIME::Types.type_for(File.extname(entry_name.strip))
-      return  mt_list.empty? ? nil : mt_list.first
+      return mt_list.empty? ? nil : mt_list.first
     end
 
     def self.OPF_MEDIA_TYPE

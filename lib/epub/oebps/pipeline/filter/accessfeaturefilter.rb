@@ -37,8 +37,9 @@ module UMPTG::EPUB::OEBPS::Pipeline::Filter
     end
 
     def process_action_results(args = {})
+      super(args)
+
       action_results = args[:action_results]
-      actions = args[:actions]
       logger = args[:logger]
 
       # <meta property="schema:accessibilityFeature">alternativeText</meta>
@@ -58,9 +59,9 @@ module UMPTG::EPUB::OEBPS::Pipeline::Filter
 
       features.each do |k,v|
         if v
-          logger.info("<meta property=\"schema:accessibilityFeature\">#{k}</meta> found")
+          logger.info("#{name}, <meta property=\"schema:accessibilityFeature\">#{k}</meta> found")
         else
-          logger.warn("<meta property=\"schema:accessibilityFeature\">#{k}</meta> not found")
+          logger.warn("#{name}, <meta property=\"schema:accessibilityFeature\">#{k}</meta> not found")
         end
       end
     end
