@@ -114,8 +114,8 @@ ace_json_file_list.each do |ace_json_file|
             when v.is_a?(Array)
               new_v = ""
               v.each do |v2|
-                new_v += v.delete_prefix("urn:isbn:").gsub(/-/, '') if v.start_with?("urn:isbn:")
-                new_v += v.delete_prefix("urn:uuid:") if v.start_with?("urn:uuid:")
+                new_v += v2.delete_prefix("urn:isbn:").gsub(/-/, '') if v2.start_with?("urn:isbn:")
+                new_v += v2.delete_prefix("urn:uuid:") if v2.start_with?("urn:uuid:")
               end
             when v.is_a?(String)
               new_v = v
