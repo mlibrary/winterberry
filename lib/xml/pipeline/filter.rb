@@ -48,11 +48,14 @@ module UMPTG::XML::Pipeline
       @actions = args[:actions]
       logger = args[:logger]
 
-      cnt = 0
-      @actions.each {|a| a.messages.each {|m| cnt += 1 if a.normalize and a.status == UMPTG::Action.COMPLETED } }
+      completed_cnt = warning_cnt = error_cnt = 0
+      @actions.each do |a|
+        completed_cnt += 1 if a.normalize and a.status == UMPTG::Action.COMPLETED
+        a.messages.each {|m| warning_cnt += 1 if m.level == UMPTG::Message.WARNING }
+        a.messages.each {|m| error_cnt += 1 if m.level == UMPTG::Message.ERROR }
+      end
 
-      logger.info("#{@name}, actions=#{@actions.count}")
-      logger.info("#{@name}, completed actions=#{cnt}")
+      logger.info("#{@name}, actions=#{@actions.count}, completed=#{completed_cnt}, warnings=#{warning_cnt}, errors=#{error_cnt}")
     end
   end
 

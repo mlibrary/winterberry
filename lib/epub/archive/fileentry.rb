@@ -70,8 +70,10 @@ module UMPTG::EPUB::Archive
       entry_name = args[:entry_name]
       return nil if entry_name.nil?
 
-      mt_list = MIME::Types.type_for(File.extname(entry_name.strip))
-      return mt_list.empty? ? nil : mt_list.first
+      mt = MIME::Types.type_for(File.extname(entry_name.strip)).first
+      # Hopefully short term hack for 2.0 EPUBs.
+      mt = "application/xhtml+xml" if mt == "text/html"
+      return mt
     end
 
     def self.OPF_MEDIA_TYPE

@@ -12,6 +12,7 @@ module UMPTG::EPUB
             epub_oebps_accessfeature: true,
             xhtml_extdescr: true,
             xhtml_figure: true,
+            xhtml_header_title: true,
             xhtml_img_alttext: true,
             xhtml_link: true,
             xhtml_table: true

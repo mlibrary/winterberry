@@ -2,6 +2,7 @@ module UMPTG::XHTML::Pipeline
   require_relative(File.join("filter", "imgalttextfilter"))
   require_relative(File.join("filter", "extdescrfilter"))
   require_relative(File.join("filter", "figurefilter"))
+  require_relative(File.join("filter", "headertitlefilter"))
   require_relative(File.join("filter", "linkfilter"))
   require_relative(File.join("filter", "migrationfilter"))
   require_relative(File.join("filter", "tablefilter"))
@@ -10,6 +11,7 @@ module UMPTG::XHTML::Pipeline
         xhtml_img_alttext: UMPTG::XHTML::Pipeline::Filter::ImgAltTextFilter,
         xhtml_extdescr: UMPTG::XHTML::Pipeline::Filter::ExtDescrFilter,
         xhtml_figure: UMPTG::XHTML::Pipeline::Filter::FigureFilter,
+        xhtml_header_title: UMPTG::XHTML::Pipeline::Filter::HeaderTitleFilter,
         xhtml_link: UMPTG::XHTML::Pipeline::Filter::LinkFilter,
         xhtml_migration: UMPTG::XHTML::Pipeline::Filter::MigrationFilter,
         xhtml_table: UMPTG::XHTML::Pipeline::Filter::TableFilter
@@ -21,6 +23,10 @@ module UMPTG::XHTML::Pipeline
 
   def self.ExtDescrFilter(args = {})
     return FILTERS[:xhtml_extdescr].new(args)
+  end
+
+  def self.HeaderTitleFilter(args = {})
+    return FILTERS[:xhtml_figure].new(args)
   end
 
   def self.FigureFilter(args = {})
