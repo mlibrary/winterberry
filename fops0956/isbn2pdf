@@ -1,0 +1,77 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Script reads a CSV file with title eISBN and printISBN
+# and determines the printISBN PDF for the eISBN monograph.
+
+require 'optparse'
+require 'ostruct'
+require 'os'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+# Process the script parameters.
+options = OpenStruct.new
+options.mode = :test
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} -m [:exec|:test] csv_file [csv_file..]"
+  opts.on_tail('-m', '--mode exec|test', 'Execution mode exec|test') do |m|
+    options.mode = m.to_sym
+  end
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    script_logger.info(opts)
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  script_logger.info(option_parser.help)
+  return
+end
+
+csv_file_list = ARGV
+
+unless [:exec,:test].include?(options.mode)
+  script_logger.error("invalid mode #{options.mode}")
+  exit(1)
+end
+script_logger.info("Execution mode:#{options.mode}")
+
+require 'csv'
+require 'fileutils'
+
+BB_FILES_DIR = "S:/Information\ Management/Fulcrum/Fulcrum_Unsynced/boydellandbrewer/Files\ for\ Fulcrum"
+BB_FULCRUM_DIR = "S:/Information\ Management/Fulcrum/Fulcrum_Unsynced/boydellandbrewer/Fulcrum_prep1"
+
+csv_file_list.each do |csv_file|
+  unless File.file?(csv_file)
+    script_logger.error("invalid CSV file #{csv_file}")
+    exit 1
+  end
+  script_logger.info("processing CSV file #{File.basename(csv_file)}")
+
+  csv_data = CSV.parse(
+            File.read(csv_file),
+            headers: true,
+            return_headers: false
+          )
+
+  csv_data.each do |row|
+    eisbn = row['eISBN']
+    pisbn = row['printISBN']
+    pdf_file = Dir.glob(File.join(BB_FILES_DIR, "*", "PDF", pisbn + ".pdf")).first
+    if pdf_file.nil?
+      script_logger.warn("#{eisbn}:no PDF found")
+      next
+    end
+    new_pdf_file = File.join(BB_FULCRUM_DIR, eisbn, File.basename(pdf_file))
+    FileUtils.cp(pdf_file, new_pdf_file) if options.mode == :exec
+    script_logger.info("#{eisbn}: copied #{pdf_file} to #{new_pdf_file}")
+  end
+end

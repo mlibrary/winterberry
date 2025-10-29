@@ -10,9 +10,13 @@ module UMPTG::EPUB::Pipeline
 
       a2[:name] = a[:name] || "EPUBProcessor"
 
+      a[:name] = "CSSProcessor"
+      a2[:css_processor] = UMPTG::CSS::Processor(a) \
+                 if a2[:css_processor].nil?
+
       a[:name] = "NCXProcessor"
       a2[:ncx_processor] = UMPTG::EPUB::NCX::Processor(a) \
-                 if a2[:ncx_procesor].nil?
+                 if a2[:ncx_processor].nil?
 
       a[:name] = "OEBPSProcessor"
       a2[:oebps_processor] = UMPTG::EPUB::OEBPS::Processor(a) \
@@ -32,6 +36,7 @@ module UMPTG::EPUB::Pipeline
       @logger = @properties.key?(:logger) ? @properties[:logger] : UMPTG::Logger.create(logger_fp: STDOUT)
 
       @processors = {
+                "text/css" => @properties[:css_processor],
                 "application/x-dtbncx+xml" => @properties[:ncx_processor],
                 "application/oebps-package+xml" => @properties[:oebps_processor],
                 "application/xhtml+xml" => @properties[:xhtml_processor],
@@ -41,6 +46,8 @@ module UMPTG::EPUB::Pipeline
     end
 
     def run(epub, args = {})
+      @logger.info("Force save:#{args[:save_forced]}")
+
       # Indicate the options selected for this run.
       @processors.values.each do |processor|
         processor.logger = @logger
@@ -51,16 +58,23 @@ module UMPTG::EPUB::Pipeline
       entry_actions = []
 
       ([epub.rendition.entry] + epub.rendition.manifest.entries).each do |entry|
-        processor = @processors[entry.media_type.to_s]
+        media_type = entry.media_type.to_s
+        processor = @processors[media_type]
         if processor.nil?
-          @logger.warn("#{entry.name}, no processor for media type #{entry.media_type}")
+          @logger.warn("#{entry.name}, no processor for media type #{media_type}")
           next
         end
 
-        xml_doc = UMPTG::XML.parse(xml_content: entry.content)
-        @logger.error("#{entry.name}: #{xml_doc.errors.count} parse errors") unless xml_doc.errors.empty?
+        case media_type
+        when "text/css"
+          result = processor.run(entry.content, args)
+        #when "application/xhtml+xml", "application/x-dtbncx+xml", "application/oebps-package+xml"
+        else
+          xml_doc = UMPTG::XML.parse(xml_content: entry.content)
+          @logger.error("#{entry.name}: #{xml_doc.errors.count} parse errors") unless xml_doc.errors.empty?
 
-        result = processor.run(xml_doc, args)
+          result = processor.run(xml_doc, args)
+        end
 
         entry_actions << UMPTG::EPUB::EntryActions.new(
                   entry: entry,
@@ -81,14 +95,26 @@ module UMPTG::EPUB::Pipeline
               )
         #ea.action_result.actions.each {|a| @logger.info(a) }
 
-        if ea.action_result.modified
+        if ea.action_result.modified or args[:save_forced]
           @logger.info("Updating entry #{ea.entry.name}")
-          entry_xml_doc = ea.action_result.actions.first.reference_node.document
-          #epub.add(entry_name: ea.entry.name, entry_content: UMPTG::XML.doc_to_xml(entry_xml_doc))
-          epub.files.add(
-                entry_name: ea.entry.name,
-                entry_content: UMPTG::XML.doc_to_xml(entry_xml_doc)
-              )
+
+          media_type = ea.entry.media_type.to_s
+          #unless media_type == "text/css"
+            case media_type
+            when "text/css"
+              content = ea.action_result.actions.first.content
+            else
+              fact = ea.action_result.actions.first
+              entry_xml_doc = fact.nil? ? \
+                    UMPTG::XML.parse(xml_content: ea.entry.content) : \
+                    fact.reference_node.document
+              content = UMPTG::XML.doc_to_xml(entry_xml_doc)
+            end
+            epub.files.add(
+                  entry_name: ea.entry.name,
+                  entry_content: content
+                )
+          #end
         end
       end
 

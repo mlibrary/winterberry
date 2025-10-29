@@ -26,6 +26,15 @@ module UMPTG::EPUB::OEBPS::Pipeline::Filter
     ]
     ORX
 
+    OPF_DCEMPTY_XPATH = <<-ORX
+    ./*[
+    namespace-uri()='http://purl.org/dc/elements/1.1/'
+    and (
+    normalize-space(text()) = ''
+    )
+    ]
+    ORX
+
     def initialize(args = {})
       a = args.clone
       a[:name] = :epub_oebps_opf
@@ -157,6 +166,17 @@ module UMPTG::EPUB::OEBPS::Pipeline::Filter
                   warning_message: "#{name}, invalid attribute #{n.name}"
                 )
       end
+
+      # Remove empty dc:* elements.
+      reference_node.xpath(OPF_DCEMPTY_XPATH).each do |n|
+        actions << UMPTG::XML::Pipeline::Actions::RemoveElementAction.new(
+                 name: name,
+                 reference_node: n,
+                 action_node: n,
+                 warning_message: "#{name}, found empty element #{n.namespace.prefix}:#{n.name}"
+               )
+      end
+
       return actions
     end
 

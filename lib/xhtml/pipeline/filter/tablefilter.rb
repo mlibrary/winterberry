@@ -41,6 +41,17 @@ module UMPTG::XHTML::Pipeline::Filter
                      "#{name}, #{reference_node.name} @id=\"#{id}\" tbody element found"
                )
         end
+
+        if reference_node.key?('fromhtml')
+          # Invalid attribute. Remove.
+          action_list << UMPTG::XML::Pipeline::Actions::RemoveAttributeAction.new(
+                   name: name,
+                   reference_node: reference_node,
+                   attribute_name: "fromhtml",
+                   warning_message: \
+                     "#{name}, #{reference_node.name} found invalid attribute @fromhtml"
+               )
+        end
       end
       return action_list
     end

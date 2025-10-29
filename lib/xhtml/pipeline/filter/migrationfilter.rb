@@ -315,6 +315,15 @@ module UMPTG::XHTML::Pipeline::Filter
                 )
       end
 
+      reference_node.xpath("./*[local-name()='col']").each do |n|
+        actions << UMPTG::XML::Pipeline::Actions::RemoveElementAction.new(
+                 name: name,
+                 reference_node: n,
+                 action_node: n,
+                 warning_message: "#{name}, found empty element #{n.name}"
+               )
+        end
+
       return actions
     end
 

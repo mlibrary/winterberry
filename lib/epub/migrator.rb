@@ -11,7 +11,8 @@ module UMPTG::EPUB
             epub_ncx_content: true,
             epub_ncx_navigation: true,
             epub_oebps_opf: true,
-            xhtml_migration: true
+            xhtml_migration: true,
+            xhtml_entity: false
           }
       super(a)
     end
