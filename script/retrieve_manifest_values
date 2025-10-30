@@ -164,8 +164,9 @@ else
               field_values << identifier
               next
             when "Title/Link"
+              t = manifest.monograph_row['title'].gsub(/"/,'""')
               #fv = manifest.monograph_row['link'][0..-2] + ",\"\"" +  + "\"\")"
-              fv = manifest.monograph_row['link'][0..-2] + ",\"#{manifest.monograph_row['title']}\")"
+              fv = manifest.monograph_row['link'][0..-2] + ",\"#{t}\")"
               field_values << fv
               next
             when "NOID/Link"
