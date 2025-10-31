@@ -1,13 +1,6 @@
 module UMPTG::XHTML::Pipeline
-  require_relative(File.join("filter", "imgalttextfilter"))
-  require_relative(File.join("filter", "extdescrfilter"))
-  require_relative(File.join("filter", "figurefilter"))
-  require_relative(File.join("filter", "headertitlefilter"))
-  require_relative(File.join("filter", "linkfilter"))
-  require_relative(File.join("filter", "listitemfilter"))
-  require_relative(File.join("filter", "migrationfilter"))
-  require_relative(File.join("filter", "entityfilter"))
-  require_relative(File.join("filter", "tablefilter"))
+  rq_path = File.join(File.expand_path(File.dirname(__FILE__)), "filter", "*")
+  Dir.glob(rq_path).each {|f| require_relative(f) }
 
   FILTERS = {
         xhtml_img_alttext: UMPTG::XHTML::Pipeline::Filter::ImgAltTextFilter,
@@ -20,42 +13,6 @@ module UMPTG::XHTML::Pipeline
         xhtml_entity: UMPTG::XHTML::Pipeline::Filter::EntityFilter,
         xhtml_table: UMPTG::XHTML::Pipeline::Filter::TableFilter
       }
-
-  def self.ImgAltTextFilter(args = {})
-    return FILTERS[:xhtml_img_alttext].new(args)
-  end
-
-  def self.ExtDescrFilter(args = {})
-    return FILTERS[:xhtml_extdescr].new(args)
-  end
-
-  def self.HeaderTitleFilter(args = {})
-    return FILTERS[:xhtml_figure].new(args)
-  end
-
-  def self.FigureFilter(args = {})
-    return FILTERS[:xhtml_figure].new(args)
-  end
-
-  def self.LinkFilter(args = {})
-    return FILTERS[:xhtml_link].new(args)
-  end
-
-  def self.ListItemFilter(args = {})
-    return FILTERS[:xhtml_list_item].new(args)
-  end
-
-  def self.MigrationFilter(args = {})
-    return FILTERS[:xhtml_migration].new(args)
-  end
-
-  def self.EntityFilter(args = {})
-    return FILTERS[:xhtml_entity].new(args)
-  end
-
-  def self.TableFilter(args = {})
-    return FILTERS[:xhtml_table].new(args)
-  end
 
   def self.FILTERS
     return FILTERS

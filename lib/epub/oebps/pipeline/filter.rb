@@ -1,8 +1,6 @@
 module UMPTG::EPUB::OEBPS::Pipeline
-  require_relative(File.join("filter", "accessiblefilter"))
-  require_relative(File.join("filter", "accessmodefilter"))
-  require_relative(File.join("filter", "accessfeaturefilter"))
-  require_relative(File.join("filter", "opffilter"))
+  rq_path = File.join(File.expand_path(File.dirname(__FILE__)), "filter", "*")
+  Dir.glob(rq_path).each {|f| require_relative(f) }
 
   FILTERS = {
         epub_oebps_accessible: UMPTG::EPUB::OEBPS::Pipeline::Filter::AccessibleFilter,
@@ -10,22 +8,6 @@ module UMPTG::EPUB::OEBPS::Pipeline
         epub_oebps_accessfeature: UMPTG::EPUB::OEBPS::Pipeline::Filter::AccessFeatureFilter,
         epub_oebps_opf: UMPTG::EPUB::OEBPS::Pipeline::Filter::OPFFilter
       }
-
-  def self.AccessibleFilter(args = {})
-    return FILTERS[:epub_oebps_accessible].new(args)
-  end
-
-  def self.AccessModeFilter(args = {})
-    return FILTERS[:epub_oebps_accessmode].new(args)
-  end
-
-  def self.AccessFeatureFilter(args = {})
-    return FILTERS[:epub_oebps_accessfeature].new(args)
-  end
-
-  def self.OPFFilter(args = {})
-    return FILTERS[:epub_oebps_opf].new(args)
-  end
 
   def self.FILTERS
     return FILTERS
