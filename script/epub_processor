@@ -53,8 +53,10 @@ require 'nokogiri'
 require 'mime/types'
 
 require_relative File.join(root_dir, "lib", "epub")
-require_relative File.join(root_dir, "newlib", "lib", "fulcrum")
 require_relative File.join(root_dir, "lib", "fulcrum", "manifest")
+require_relative File.join(root_dir, "lib", "fulcrum", "filter")
+require_relative File.join(root_dir, "lib", "fulcrum", "metadata")
+require_relative File.join(root_dir, "lib", "fulcrum", "resources")
 
 # Verify process and filter arguments
 if options.filter_list.empty?

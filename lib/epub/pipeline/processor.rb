@@ -46,7 +46,8 @@ module UMPTG::EPUB::Pipeline
     end
 
     def run(epub, args = {})
-      @logger.info("Force save:#{args[:save_forced]}")
+      save_forced = args[:save_forced]
+      @logger.info("Force save:#{save_forced}") unless save_forced.nil?
 
       # Indicate the options selected for this run.
       @processors.values.each do |processor|

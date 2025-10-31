@@ -35,7 +35,7 @@ monograph_dir_list = ARGV
 
 require_relative File.join(root_dir, "lib", "epub")
 require_relative File.join(root_dir, "lib", "fulcrum", "monographdir")
-require_relative File.join(root_dir, "newlib", "lib", "fulcrum", "metadata")
+require_relative File.join(root_dir, "lib", "fulcrum", "metadata")
 
 xhtml_processor = UMPTG::Fulcrum::Metadata::XHTML::Processor(
           name: "FulcrumResourceMetadataProcessor",
