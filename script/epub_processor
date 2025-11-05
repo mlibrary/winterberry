@@ -32,7 +32,7 @@ option_parser = OptionParser.new do |opts|
   opts.on('-n', '--normalize', 'Use which link as resource') do |flag|
     options.normalize = true
   end
-  opts.on('-p', '--process migrator|none|resource_processor|reviewer', 'EPUB Processor (default is reviewer)') do |flag|
+  opts.on('-p', '--process migrator|none|resource_processor|reviewer|timesfont_processor', 'EPUB Processor (default is reviewer)') do |flag|
     options.process = flag.to_sym
   end
   opts.on_tail('-h', '--help', 'Print this help message') do
@@ -64,7 +64,7 @@ if options.filter_list.empty?
     script_logger.error("must specify either -p process or -f filter.")
     exit(1)
   end
-  unless [ :migrator, :resource_processor, :reviewer].include?(options.process)
+  unless [ :migrator, :resource_processor, :reviewer, :timesfont_processor].include?(options.process)
     script_logger.error("invalid process, #{options.process}")
     exit(1)
   end
@@ -107,6 +107,11 @@ when :resource_processor
 when :reviewer
   # EPUB Review
   epub_processor = UMPTG::EPUB::Reviewer(
+                          epub_args
+                      )
+when :timesfont_processor
+  # EPUB TimesFont
+  epub_processor = UMPTG::EPUB::TimesFontProcessor(
                           epub_args
                       )
 else

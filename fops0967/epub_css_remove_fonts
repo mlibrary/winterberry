@@ -1,0 +1,102 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Script for EPUB font removal from CSS file(s) FOPS-967
+
+require 'optparse'
+require 'ostruct'
+require 'os'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+# Process the script parameters.
+options = OpenStruct.new
+options.manifest_file = nil
+options.normalize = false
+options.filter_list = []
+options.process = :none
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} css_file [css_file...]"
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    script_logger.info(opts)
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  script_logger.info(option_parser.help)
+  return
+end
+
+# Process the command line parameters.
+css_file_list = ARGV
+
+# Process each EPUB
+css_file_list.each do |css_file|
+  unless File.file?(css_file)
+    script_logger.error("invalid CSS file #{css_file}")
+    next
+  end
+  script_logger.info("processing CSS file #{File.basename(css_file)}")
+
+  content = File.open(css_file, "rb") {|f| f.read }
+  content_lines = content.lines
+
+  new_lines = []
+  font_faces = []
+  in_font_face = false
+  content_lines.each do |n|
+    next if n.match(/\/\*[ \-]+Fonts[ \-]+\*\//)
+
+    case
+    when in_font_face
+      n.match(/src[ ]*:[^"]+"([^"]+)"/) {|md| font_faces << md[1] }
+
+      in_font_face = false if n.match(/\}/)
+    when n.match(/\@font-face[ ]+\{/)
+      in_font_face = true
+    else
+      new_lines << n
+    end
+=begin
+    if in_font_face
+      in_font_face = false if n.match(/\}/)
+    elsif n.match(/\@font-face[ ]+\{/)
+      in_font_face = true
+    else
+      new_lines << n
+    end
+    if !in_font_face and
+      in_font_face = true
+      next
+    end
+    new_lines << n unless in_font_face
+    in_font_face = false if in_font_face and n.match(/\}/)
+=end
+  end
+  font_faces.uniq!
+  puts font_faces
+
+  new_lines.delete_if {|n| n.match(/font-family:[ ]*"Times New Roman"/) }
+  new_lines.insert(1, "body {\n\tfont-family: TimesNewRoman,Times New Roman,Times,Baskerville,Georgia,serif;\n}\n\n")
+=begin
+  ndx = new_lines.index {|n| n.match(/body[ ]*[,\{]/) }
+  if ndx.nil?
+    script_logger.warn("no body class found")
+  else
+    script_logger.info("updated body class")
+    new_lines.insert(ndx+1, "font-family: TimesNewRoman,Times New Roman,Times,Baskerville,Georgia,serif;\n")
+  end
+=end
+  if new_lines.count != content_lines.count
+    new_css_file = File.join(File.dirname(css_file), File.basename(css_file, ".*") + "_update" + File.extname(css_file))
+    File.open(new_css_file, "wb") {|f| f.write(new_lines.join) }
+    script_logger.info("saved updated CSS file #{css_file}")
+  end
+end

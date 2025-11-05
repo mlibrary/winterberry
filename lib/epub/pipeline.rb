@@ -3,6 +3,7 @@ module UMPTG::EPUB
   require_relative File.join('pipeline', 'processor')
   require_relative 'migrator'
   require_relative 'reviewer'
+  require_relative 'timesfontprocessor'
 
   def self.Processor(args = {})
     return Pipeline::Processor.new(args)
@@ -16,5 +17,10 @@ module UMPTG::EPUB
   def self.Reviewer(args = {})
     a = args.clone
     return Reviewer.new(a)
+  end
+
+  def self.TimesFontProcessor(args = {})
+    a = args.clone
+    return TimesFontProcessor.new(a)
   end
 end

@@ -12,17 +12,16 @@ module UMPTG::CSS::Pipeline
       a = args.clone
       actions = []
 
-      actions << UMPTG::CSS::Pipeline::Action.new(
+      actions << UMPTG::CSS::Pipeline::FontFaceAction.new(
                 name: a[:name],
-                content: css_parser
+                content: css_parser,
+                info_msg: "#{a[:name]} action"
             )
       return actions
     end
 
     def create_actions(args = {})
       name = args[:name]
-      css_class = args[:css_class]
-      puts css_class.class
       return super(args)
     end
   end

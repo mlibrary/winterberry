@@ -2,10 +2,12 @@ module UMPTG::CSS
   require_relative(File.join("pipeline", "actions"))
   require_relative(File.join("pipeline", "filter"))
   require_relative(File.join("pipeline", "filter", "fontfacefilter"))
+  require_relative(File.join("pipeline", "filter", "timesfontfilter"))
   require_relative(File.join("pipeline", "processor"))
 
   FILTERS = {
-            css_font_face: UMPTG::CSS::Pipeline::FontFaceFilter
+            css_font_face: UMPTG::CSS::Pipeline::FontFaceFilter,
+            css_times_font: UMPTG::CSS::Pipeline::TimesFontFilter
       }
 
   def self.Processor(args = {})

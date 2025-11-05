@@ -60,6 +60,13 @@ module UMPTG::EPUB::Archive::OEBPS
       return cover_entry
     end
 
+    def css
+      css_item = epub.rendition.manifest.find(entry_mediatype: "text/css").first
+      css_entry = epub.rendition.manifest.entries(entry_id: css_item['id']).first \
+          unless css_item.nil?
+      return css_entry
+    end
+
     def self.DEFAULT_PATH
       return DEFAULT_PATH
     end
