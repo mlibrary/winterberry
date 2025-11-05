@@ -340,7 +340,7 @@ doi_report_file_list.each do |doi_report_file|
           )
     script_logger.info("encoding:#{crossref_doc.encoding},errors:#{crossref_doc.errors.count}")
 
-    # Write CSV file.
+    # Write the registration CSV file.
     doi_reg_headers = [
             "ISBN", "Title", "DOI", "DOI Resolution",
             "TMM Resource", "Text On Fulcrum", "Publisher",
@@ -386,5 +386,24 @@ doi_report_file_list.each do |doi_report_file|
       end
     end
     script_logger.info("saved CSV file #{doi_reg_file}")
+
+    # Write the DOIs list CSV file.
+    doi_list_headers = [ "DOI" ]
+    doi_list_file = File.join(File.dirname(crossref_xml_file), "DOIs_list.csv")
+    CSV.open(
+            doi_list_file,
+            "w",
+            force_quotes: false,
+            write_headers: true,
+            headers: doi_list_headers
+          ) do |csv|
+      crossref_doc.xpath("//*[local-name()='book_metadata']").each do |node|
+        row = {}
+        n = node.xpath(".//*[local-name()='doi']").first
+        row["DOI"] = n.nil? ? "" : "https://doi.org/" + n.text
+        csv << row
+      end
+    end
+    script_logger.info("saved CSV file #{doi_list_file}")
   end
 end

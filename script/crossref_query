@@ -42,6 +42,7 @@ end
 arg_list = ARGV
 
 require 'nokogiri'
+require 'csv'
 require_relative File.join(root_dir, 'lib', 'services')
 require_relative File.join(root_dir, 'lib', 'xml')
 
@@ -159,5 +160,26 @@ arg_list.each do |arg|
             )
     UMPTG::XML.save(xml_doc, xml_file)
     script_logger.info("saved XML file #{xml_file}")
+
+    doi_list_headers = [ "DOI Resolution" ]
+    doi_list_file = File.join(
+                File.dirname(doi_file),
+                File.basename(doi_file, ".*") + "_" + File.basename(__FILE__) + ".csv"
+            )
+    xpath = "//*[local-name()='resource']//*[local-name()='URL' and (starts-with(text(),'https://www.fulcrum.org/') or starts-with(text(),'https://services.publishing.umich.edu/') or starts-with(text(),'https://press.umich.edu/'))]"
+    CSV.open(
+            doi_list_file,
+            "w",
+            force_quotes: false,
+            write_headers: false,
+            headers: doi_list_headers
+          ) do |csv|
+      xml_doc.xpath(xpath).each do |n|
+        row = {}
+        row["DOI Resolution"] = n.nil? ? "" : n.text
+        csv << row
+      end
+    end
+    script_logger.info("saved CSV file #{doi_list_file}")
   end
 end
