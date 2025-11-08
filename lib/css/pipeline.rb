@@ -2,11 +2,15 @@ module UMPTG::CSS
   require_relative(File.join("pipeline", "actions"))
   require_relative(File.join("pipeline", "filter"))
   require_relative(File.join("pipeline", "filter", "fontfacefilter"))
+  require_relative(File.join("pipeline", "filter", "fontfamilyfilter"))
+  require_relative(File.join("pipeline", "filter", "fontfixfilter"))
   require_relative(File.join("pipeline", "filter", "timesfontfilter"))
   require_relative(File.join("pipeline", "processor"))
 
   FILTERS = {
             css_font_face: UMPTG::CSS::Pipeline::FontFaceFilter,
+            css_font_family: UMPTG::CSS::Pipeline::FontFamilyFilter,
+            css_font_fix: UMPTG::CSS::Pipeline::FontFixFilter,
             css_times_font: UMPTG::CSS::Pipeline::TimesFontFilter
       }
 

@@ -20,17 +20,20 @@ module UMPTG::XHTML::Pipeline::Filter
     def create_actions(args = {})
       name = args[:name]
       reference_node = args[:reference_node]  # <title> element
+      entry = args[:entry]
+      epub = entry.files.epub
 
       action_list = []
 
       if reference_node.name == 'title'
         content = (reference_node.text || "").strip
-        if content.empty?
+        if content.empty? or content == "Header Title"
+          m = epub.rendition.metadata.dc.elements.title.first.text
           action_list << UMPTG::XML::Pipeline::Actions::MarkupAction.new(
                     name: name,
                     reference_node: reference_node,
                     action: :replace_content,
-                    markup: "Header Title",
+                    markup: m,
                     warning_message: "#{name}, #{reference_node.name} no content"
                   )
         end

@@ -56,8 +56,10 @@ module UMPTG::EPUB::Pipeline
         processor.logger = nil
       end
 
+      epub_title =
       entry_actions = []
 
+      run_args = args.clone
       ([epub.rendition.entry] + epub.rendition.manifest.entries).each do |entry|
         media_type = entry.media_type.to_s
         processor = @processors[media_type]
@@ -74,7 +76,8 @@ module UMPTG::EPUB::Pipeline
           xml_doc = UMPTG::XML.parse(xml_content: entry.content)
           @logger.error("#{entry.name}: #{xml_doc.errors.count} parse errors") unless xml_doc.errors.empty?
 
-          result = processor.run(xml_doc, args)
+          run_args[:entry] = entry
+          result = processor.run(xml_doc, run_args)
         end
 
         entry_actions << UMPTG::EPUB::EntryActions.new(
