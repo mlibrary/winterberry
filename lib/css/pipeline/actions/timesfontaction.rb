@@ -41,7 +41,7 @@ module UMPTG::CSS::Pipeline
       new_lines.delete_if {|n| n.match(/font-family:[ ]*"Times New Roman"/) }
 
       # Insert body/font-family value
-      new_lines.insert(1, "body {\n\tfont-family: TimesNewRoman,Times New Roman,Times,Baskerville,Georgia,serif;\n}\n\n")
+      new_lines.insert(1, "body, div, p {\n\tfont-family: TimesNewRoman,Times New Roman,Times,Baskerville,Georgia,serif;\n}\n\n")
 
       if new_lines.count != @content.lines.count
         # Content changed, update and report.
