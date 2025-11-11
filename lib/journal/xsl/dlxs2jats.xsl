@@ -24,7 +24,7 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
 
     <xsl:param name="image_list" required="no"/>
     <xsl:param name="language" select="'en'"/>
-    <xsl:param name="article_type" select="'research-article'"/>
+    <xsl:param name="article_type_param" select="''"/>
 
     <xsl:variable name="TABLE_BORDER_THICK" select="'2'"/>
     <xsl:variable name="TABLE_BORDER_STYLE" select="concat($TABLE_BORDER_THICK,'px solid;')"/>
@@ -175,6 +175,20 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
         </xsl:element>
     </xsl:variable>
 
+    <xsl:variable name="genre" select="/DLPSTEXTCLASS/HEADER/PROFILEDESC//KEYWORDS/TERM[@TYPE='genre']"/>
+    <xsl:variable name="article_type">
+        <xsl:choose>
+            <xsl:when test="$article_type_param != ''">
+                <xsl:value-of select="$article_type_param"/>
+            </xsl:when>
+            <xsl:when test="$genre != ''">
+                <xsl:value-of select="$genre"/>
+            </xsl:when>
+            <xsl:otherwise>
+                <xsl:value-of select="'research-article'"/>
+            </xsl:otherwise>
+        </xsl:choose>
+    </xsl:variable>
     <!--
     <xsl:variable name="abstractDiv"
                   select="/DLPSTEXTCLASS/TEXT//*[@TYPE='prelim']"/>
@@ -184,7 +198,7 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
     <xsl:variable name="keywordDiv"
                   select="/DLPSTEXTCLASS/TEXT//*[@TYPE='prelim' and starts-with(lower-case(normalize-space(string())),'keywords:')]"/>
     <xsl:variable name="keywordMeta"
-                  select="/DLPSTEXTCLASS/HEADER/PROFILEDESC//KEYWORDS/TERM"/>
+                  select="/DLPSTEXTCLASS/HEADER/PROFILEDESC//KEYWORDS/TERM[@TYPE!='genre']"/>
 
     <xsl:template match="DLPSTEXTCLASS">
         <xsl:element name="article">
@@ -354,7 +368,7 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
                 <xsl:for-each select="$keywordDiv">
                     <xsl:element name="kwd-group">
                         <xsl:attribute name="kwd-group-type" select="'author'"/>
-                        <xsl:variable name="kwdList" select="tokenize(substring(normalize-space(.),10),',')"/>
+                        <xsl:variable name="kwdList" select="tokenize(substring(normalize-space(.),10),'[;,:]')"/>
                         <xsl:choose>
                             <xsl:when test="count($kwdList)>0">
                                 <xsl:for-each select="$kwdList">
@@ -471,7 +485,7 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
                                 <xsl:value-of select="normalize-space($nameList1[1])"/>
                             </xsl:element>
                             <xsl:element name="given-names">
-                                <xsl:value-of select="string-join($nameList1[position() > 1],' ')"/>
+                                <xsl:value-of select="normalize-space(string-join($nameList1[position() > 1],' '))"/>
                             </xsl:element>
                         </xsl:when>
                         <xsl:otherwise>
@@ -479,7 +493,7 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
                                 <xsl:value-of select="normalize-space($nameList2[last()])"/>
                             </xsl:element>
                             <xsl:element name="given-names">
-                                <xsl:value-of select="string-join($nameList2[last() > position()],' ')"/>
+                                <xsl:value-of select="normalize-space(string-join($nameList2[last() > position()],' '))"/>
                             </xsl:element>
                         </xsl:otherwise>
                     </xsl:choose>
@@ -954,7 +968,7 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
         </xsl:element>
     </xsl:template>
 
-    <xsl:template match="*[(local-name()='Q1' or local-name()='P') and @REND='code']//LB">
+    <xsl:template match="*[(local-name()='Q1' or local-name()='P') and (@REND='code' or @TYPE='prelim')]//LB">
         <xsl:text>&#x0a;</xsl:text>
     </xsl:template>
 
