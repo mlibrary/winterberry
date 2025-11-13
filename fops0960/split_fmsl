@@ -1,0 +1,97 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Script splits a FMSL, generating a new CSV for
+# each row.
+
+require 'optparse'
+require 'ostruct'
+require 'os'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+# Process the script parameters.
+options = OpenStruct.new
+options.output_file = nil
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} csv_file [csv_file...]"
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    script_logger.info(opts)
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  script_logger.info(option_parser.help)
+  return
+end
+
+# Process the command line parameters.
+csv_file_list = ARGV
+
+require 'csv'
+require_relative File.join(root_dir, 'lib', 'fulcrum', 'manifest')
+require_relative File.join(root_dir, 'lib', 'services')
+
+service = UMPTG::Services::Heliotrope.new()
+
+csv_file_list.each do |csv_file|
+  script_logger.info("*" * 10 + " #{csv_file} " + "*" * 10)
+  csv_file = File.expand_path(csv_file)
+  unless File.exist?(csv_file)
+    script_logger.error("invalid CSV file path #{csv_file}.")
+    next
+  end
+  script_logger.info("processing #{File.basename(csv_file)}")
+  STDOUT.flush
+
+  csv_body = File.read(csv_file)
+  csv = CSV.parse(
+        csv_body,
+        :headers => true,
+        :return_headers => false
+      )
+
+  csv.each do |row|
+    file_name = (row['File Name'] || "").strip
+    doi = (row['DOI'] || "").strip
+    if doi.empty? or file_name.empty?
+      script_logger.warn("no DOI found #{file_name}")
+      next
+    end
+    script_logger.info("processing #{file_name},#{doi}")
+
+    row['File Name'] += '.pdf' unless row['File Name'].end_with?('.pdf')
+    isbn = doi.delete_prefix('https://doi.org/10.30861/')[0..12]
+
+    manifest_body_list = service.monograph_export(identifier: isbn)
+    script_logger.info("found monograph for ISBN #{isbn}") \
+          unless manifest_body_list[isbn].count > 1
+    script_logger.warn("multiple monographs for ISBN #{isbn}") \
+          if manifest_body_list[isbn].count > 1
+    manifest = UMPTG::Fulcrum::Manifest::Document.new(
+                  csv_body: manifest_body_list[isbn].first
+                )
+    ebook_isbn = (manifest.isbn['ebook'] || "").strip
+    script_logger.info("using ebook ISBN #{ebook_isbn}")
+
+    # Output the CSV file.
+    new_csv_file = File.join(File.dirname(csv_file), ebook_isbn + ".csv")
+    CSV.open(
+            new_csv_file,
+            "w",
+            force_quotes: true,
+            write_headers: true,
+            headers: csv.headers
+          ) do |c|
+      c << row
+    end
+    script_logger.info("saved CSV file #{new_csv_file}")
+  end
+end
