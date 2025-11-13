@@ -29,6 +29,17 @@ module UMPTG::XHTML::Pipeline::Filter
                  info_message: \
                    "#{name}, #{reference_node.name} found @id=\"#{id}\""
              )
+=begin
+        if reference_node['style'] == 'display:none'
+          action_list << UMPTG::XML::Pipeline::Actions::RemoveAttributeAction.new(
+                   name: name,
+                   reference_node: reference_node,
+                   attribute_name: "style",
+                   info_message: \
+                     "#{name}, #{reference_node.name} found @style=\"#{reference_node['style']}\""
+               )
+=end
+        end
       end
       return action_list
     end

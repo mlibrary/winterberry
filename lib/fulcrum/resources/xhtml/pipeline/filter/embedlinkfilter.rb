@@ -336,6 +336,7 @@ module UMPTG::Fulcrum::Resources::XHTML::Pipeline::Filter
         content = manifest.fileset_title(resource_name)
       else
         content = node.inner_html
+        #content = manifest.fileset_link(resource_name)
       end
 
       if link == "true"
