@@ -157,7 +157,7 @@ doi_report_file_list.each do |doi_report_file|
     id_list_csv[:include].each do |row|
       id_header = id_list_csv[:include].headers[0]
 
-      monograph_id = row[id_header]
+      monograph_id = (row[id_header] || "").strip
       script_logger.info("*" * 10 + " including #{monograph_id} " + "*" * 10)
       STDOUT.flush
 
