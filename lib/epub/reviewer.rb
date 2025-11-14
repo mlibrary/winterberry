@@ -8,17 +8,17 @@ module UMPTG::EPUB
       a = args.clone
       a[:name] = "EPUBReviewProcessor"
       a[:options] = {
-            css_font_face: true,
-            epub_oebps_accessmode: false,
-            epub_oebps_accessfeature: false,
+            css_font_face: false,
+            epub_oebps_accessmode: true,
+            epub_oebps_accessfeature: true,
             xhtml_entity: false,
-            xhtml_extdescr: false,
-            xhtml_figure: false,
-            xhtml_header_title: true,
-            xhtml_img_alttext: false,
-            xhtml_link: false,
+            xhtml_extdescr: true,
+            xhtml_figure: true,
+            xhtml_header_title: false,
+            xhtml_img_alttext: true,
+            xhtml_link: true,
             xhtml_table: true,
-            xhtml_list_item: true
+            xhtml_list_item: false
           }
       super(a)
     end

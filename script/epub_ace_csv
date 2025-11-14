@@ -129,7 +129,11 @@ ace_json_file_list.each do |ace_json_file|
           next
         end
         headers << k unless headers.include?(k)
-        row[k] = v
+        if v.is_a?(Array)
+          row[k] = v.join(';')
+        else
+          row[k] = v
+        end
       end
     when "data"
       total_present = 0

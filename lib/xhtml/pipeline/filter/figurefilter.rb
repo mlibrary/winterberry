@@ -38,8 +38,8 @@ module UMPTG::XHTML::Pipeline::Filter
                    info_message: \
                      "#{name}, #{reference_node.name} found @style=\"#{reference_node['style']}\""
                )
-=end
         end
+=end
       end
       return action_list
     end
