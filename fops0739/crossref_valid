@@ -1,0 +1,95 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Script inputs a Crossref submission xml file and
+# validates it against the Crossref schema.
+
+require 'optparse'
+require 'ostruct'
+require 'os'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+# Process the script parameters.
+options = OpenStruct.new
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} crossref_file [crossref_file...]"
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    script_logger.info(opts)
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  script_logger.info(option_parser.help)
+  return
+end
+
+# Process the command line parameters.
+crossref_file_list = ARGV
+
+require 'nokogiri'
+
+require_relative File.join(root_dir, 'lib', 'xml')
+
+CROSSREF_SCHEMA = 'c:/Users/tbelc/Documents/arbortext/custom/doctypes/crossref/crossref.xsd'
+
+sv_dir = Dir.pwd
+Dir.chdir(File.dirname(CROSSREF_SCHEMA))
+schema = Nokogiri::XML::Schema.new(File.read(CROSSREF_SCHEMA))
+Dir.chdir(sv_dir)
+
+orcids = []
+rors = []
+crossref_file_list.each do |crossref_file|
+  crossref_file = File.expand_path(crossref_file)
+  unless File.file?(crossref_file)
+    script_logger.error("invalid Crossref file #{crossref_file}")
+    exit 1
+  end
+  script_logger.info("processing Crossref file #{File.basename(crossref_file)}")
+
+  crossref_doc = UMPTG::XML.parse(
+          xml_file: crossref_file
+        )
+  script_logger.info("encoding:#{crossref_doc.encoding},errors:#{crossref_doc.errors.count}")
+  crossref_doc.errors.each do |e|
+    script_logger.error(e)
+  end
+
+  errors = schema.validate(crossref_doc) # Array<SyntaxError>
+  errors.each do |e|
+    md = e.to_s.match(/^[^\}]+\}([^']+)': \[facet 'pattern'\] The value '([^']+)'.*/)
+    if md.nil?
+      script_logger.error(e)
+    else
+      #script_logger.error("#{md[1]} #{md[2]}")
+      case md[1]
+      when 'institution_id'
+        rors << md[2]
+        xpath = "//*[local-name()='institution_id' and @type='ror' and text()='#{md[2]}']"
+      when 'ORCID'
+        orcids << md[2]
+        xpath = "//*[local-name()='ORCID' and text()='#{md[2]}']"
+      else
+        next
+      end
+
+      crossref_doc.xpath(xpath).each do |node|
+        isbn = node.xpath("./ancestor::*[local-name()='book_metadata'][1]/*[local-name()='isbn']").first
+        publisher = node.xpath("./ancestor::*[local-name()='book_metadata'][1]//*[local-name()='publisher_name']").first
+        script_logger.error("#{isbn.text},#{publisher.text},#{md[1]},#{node.text}")
+      end
+    end
+  end
+end
+script_logger.info("RORs,#{rors.uniq.count}")
+rors.uniq.each {|r| script_logger.error(r) }
+script_logger.info("ORCIDs,#{orcids.uniq.count}")
+orcids.uniq.each {|i| script_logger.error(i) }
