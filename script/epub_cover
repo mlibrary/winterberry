@@ -52,6 +52,7 @@ epub_file_list.each do |epub_file|
     script_logger.warn("no cover entry found.")
   else
     cover_file = File.join(File.dirname(epub_file), File.basename(epub_file, ".*") + "_" + File.basename(cover_entry.name))
+    #cover_file = File.join(File.dirname(epub_file), File.basename(epub_file, ".*") + File.extname(cover_entry.name))
     File.binwrite(cover_file, cover_entry.content)
     script_logger.info("Saved cover #{cover_file}")
   end
