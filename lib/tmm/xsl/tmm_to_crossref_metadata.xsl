@@ -221,10 +221,10 @@
                                 <xsl:when test="starts-with(./resource, 'https://www.fulcrum.org/')">
                                     <xsl:value-of select="./resource"/>
                                 </xsl:when>
-                                <!--
                                 <xsl:when test="$fURL != '' and $book_node/fullTextOnFulcrum = 'Y' and ((not($book_node/ebookStatus) and not($book_node/currentOAStatus)) or $book_node/ebookStatus='Published' or $book_node/currentOAStatus='Published')">
+                                <!--
+                                <xsl:when test="$fURL != '' and $book_node/fullTextOnFulcrum = 'Y' and ($book_node/ebookStatus='Published' or $book_node/ebookStatus='' or $book_node/currentOAStatus='Published' or $book_node/currentOAStatus='')">
                                 -->
-                                <xsl:when test="$fURL != '' and $book_node/fullTextOnFulcrum = 'Y' and (./ebookStatus='Published' or ./ebookStatus='' or ./currentOAStatus='Published' or ./currentOAStatus='')">
                                     <xsl:value-of select="./fulcrumURL"/>
                                 </xsl:when>
                                 <xsl:when test="$printISBN !=''">
