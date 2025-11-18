@@ -50,37 +50,38 @@ url_list.each do |url|
     out_logger = UMPTG::Logger.create(logger_fp: STDOUT)
   end
   url_path_list.each do |url_path|
-    if url_path[0] == '#'
-      script_logger.info("#{url_path} skipping")
-      out_logger.info("#{url_path[1..-1]},skipped")
-      next
-    end
     script_logger.info(url_path)
     STDOUT.flush
 
-    uri = URI(url_path)
-    #uri = URI.parse(URI.encode_uri_component(url_path.strip))
-    #uri = URI.parse(url_path.strip)
-    begin
-      body = Net::HTTP.get(uri)
-    #rescue StandardError => e
-    rescue => e
-      script_logger.error("#{url_path}: #{e.message}")
-      out_logger.info("#{url_path},failed")
-      next
+    unless url_path[0] == '#'
+      uri = URI(url_path)
+      #uri = URI.parse(URI.encode_uri_component(url_path.strip))
+      #uri = URI.parse(url_path.strip)
+      begin
+        body = Net::HTTP.get(uri)
+      #rescue StandardError => e
+      rescue => e
+        script_logger.error("#{url_path}: #{e.message}")
+        out_logger.info("#{url_path},failed")
+        #next
+      end
     end
 
     url_dest = ''
     unless body.nil? or body.empty?
       body_doc = Nokogiri::XML(body)
+      #puts body_doc
 =begin
       node = body_doc.xpath("//*[local-name()='META' and @HTTP-EQUIV='Location']").first
       url_dest = node['Content'] unless node.nil?
 =end
-      node = body_doc.xpath("//*[local-name()='a']").first
-      url_dest = node.nil? ? "(unknown)" : node["href"]
-      url_dest = '' if url_dest == 'https://www.doi.org'
+      node = body_doc.xpath("//*[local-name()='body']//*[@class='error-code']").first
+      if node.nil?
+        node = body_doc.xpath("//*[local-name()='body']//*[local-name()='a']").first
+        url_dest = node.nil? ? "(unknown)" : node["href"]
+        url_dest = '' if url_dest == 'https://www.doi.org'
+      end
     end
-    out_logger.info("#{url_path},#{url_dest}")
+    out_logger.info("\"#{url_path}\",\"#{url_dest}\"")
   end
 end
