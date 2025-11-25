@@ -1,0 +1,52 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Script for testing new UMPTG::Pipeline.
+
+require 'optparse'
+require 'ostruct'
+require 'os'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+# Process the script parameters.
+options = OpenStruct.new
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)}"
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    script_logger.info(opts)
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 0
+  script_logger.info(option_parser.help)
+  exit(0)
+end
+
+# Process the command line parameters.
+
+require_relative File.join(root_dir, "lib", "pipeline")
+
+processor = UMPTG::Pipeline::Processor.new(
+            name: "Test1Processor",
+            options: {
+                    pipeline_string_length: true,
+                    pipeline_dup_string: true,
+                  },
+            logger: script_logger
+         )
+processor.display_options()
+results = processor.run(
+      "12345",
+      options: {
+          normalize: true,
+          process_results: true
+        }
+    )
