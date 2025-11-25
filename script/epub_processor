@@ -64,7 +64,7 @@ if options.filter_list.empty?
     script_logger.error("must specify either -p process or -f filter.")
     exit(1)
   end
-  unless [ :migrator, :resource_processor, :reviewer, :timesfont_processor].include?(options.process)
+  unless [ :cover_extractor, :migrator, :resource_processor, :reviewer, :timesfont_processor].include?(options.process)
     script_logger.error("invalid process, #{options.process}")
     exit(1)
   end
@@ -114,6 +114,8 @@ when :timesfont_processor
   epub_processor = UMPTG::EPUB::TimesFontProcessor(
                           epub_args
                       )
+when :cover_extractor
+  # No processor needed.
 else
   # EPUB customized processing. Use the specified filters
   ops = {}
@@ -142,13 +144,27 @@ epub_file_list.each do |epub_file|
   end
   script_logger.info("processing EPUB file #{File.basename(epub_file)}")
 
+  epub = UMPTG::EPUB(epub_path: epub_file)
+
+  if options.process == :cover_extractor
+    cover_entry = epub.rendition.cover
+    if cover_entry.nil?
+      script_logger.warn("no cover entry found.")
+    else
+      #cover_file = File.join(File.dirname(epub_file), File.basename(epub_file, ".*") + "_" + File.basename(cover_entry.name))
+      cover_file = File.join(File.dirname(epub_file), File.basename(epub_file, ".*") + File.extname(cover_entry.name))
+      File.binwrite(cover_file, cover_entry.content)
+      script_logger.info("Saved cover #{cover_file}")
+    end
+    next
+  end
+
   logger_file =  File.join(
             File.dirname(epub_file),
             File.basename(epub_file, ".*") + "_" + File.basename(__FILE__) + ".log"
             )
   epub_processor.logger = UMPTG::Logger.create(logger_file: logger_file)
 
-  epub = UMPTG::EPUB(epub_path: epub_file)
   epub_processor.logger.info("processing EPUB file #{File.basename(epub_file)}")
   epub_processor.logger.info("Time: #{Time.now}")
   epub_processor.logger.info("version #{epub.rendition.version}")
