@@ -2,22 +2,30 @@ module UMPTG
   class Press
     # Press symbols and folder names
     @@PRESS_DIR = {
+            a2ru: "a2ru",
             aberdeenunipress: "aberdeenunipress",
             amherst: "amherst",
             atg: "ATG",
+            belin: "belin",
             bridwell: "bridwell",
             bar:   "barpublishing",
             cjs:   "CJS",
             csas:   "CSAS",
             cseas: "CSEAS",
+            dialogue: "dialogue",
             ebc:   "UMP",
+            ee:    "ee",
+            fia:    "fia",
             heb:   "HEB",
+            icmc:  "icmc",
             leverpress: "leverpress",
             livedplaces: "livedplaces",
             lrccs: "LRCCS",
             maizebooks: "maizebooks",
             ummaa: "UMMAA",
             michigan: "UMP",
+            seas: "seas",
+            umpccn:  "um-pccn",
             vermont: "vermont",
             westminster: "westminster"
             }

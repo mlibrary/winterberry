@@ -138,7 +138,8 @@ ace_json_file_list.each do |ace_json_file|
     when "data"
       total_present = 0
       total_valid = 0
-      val["images"].each do |m|
+      val_images = val["images"] || []
+      val_images.each do |m|
         src = m["src"] || ""
         role = m["role"] || ""
         alt = m["alt"] || ""
@@ -150,8 +151,8 @@ ace_json_file_list.each do |ace_json_file|
           total_valid += 1 unless is_suspect
         end
       end
-      row["Alt Text"] = ((total_present + total_valid) == val['images'].count) ? "" : "warnings:true\n"
-      row["Alt Text"] += "presentation:#{total_present}\nvalid:#{total_valid}\ntotal:#{val['images'].count}"
+      row["Alt Text"] = ((total_present + total_valid) == val_images.count) ? "" : "warnings:true\n"
+      row["Alt Text"] += "presentation:#{total_present}\nvalid:#{total_valid}\ntotal:#{val_images.count}"
     when "assertions"
       violations_cnt = {}
       MAP_VIOLATIONS.keys.each {|k| violations_cnt[k] = 0; }
