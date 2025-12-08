@@ -9,6 +9,7 @@ module UMPTG
             belin: "belin",
             bridwell: "bridwell",
             bar:   "barpublishing",
+            boydellandbrewer: "boydellandbrewer",
             cjs:   "CJS",
             csas:   "CSAS",
             cseas: "CSEAS",
