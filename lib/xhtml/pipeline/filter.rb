@@ -12,6 +12,7 @@ module UMPTG::XHTML::Pipeline
         xhtml_list_item: UMPTG::XHTML::Pipeline::Filter::ListItemFilter,
         xhtml_migration: UMPTG::XHTML::Pipeline::Filter::MigrationFilter,
         xhtml_page_translation: UMPTG::XHTML::Pipeline::Filter::PageTranslationFilter,
+        xhtml_spine_item: UMPTG::XHTML::Pipeline::Filter::SpineItemFilter,
         xhtml_table: UMPTG::XHTML::Pipeline::Filter::TableFilter
       }
 
