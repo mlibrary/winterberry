@@ -7,9 +7,9 @@ module UMPTG::XML::Pipeline::Actions
       reference_node = @properties[:reference_node]
       action_node = @properties[:action_node]
 
-      action_node_name = action_node.name
+      action_node_markup = action_node.to_s
       action_node.remove()
-      add_info_msg("removed element #{action_node_name}")
+      add_info_msg("removed element #{action_node_markup}")
 
       @status = UMPTG::Action.COMPLETED
     end

@@ -29,7 +29,7 @@ module UMPTG::XML::Pipeline::Actions
         reference_node[attribute_name] = attribute_value
         @status = UMPTG::Action.COMPLETED
       end
-      add_info_msg("set attribute \"#{attribute_name}\" to value \"#{reference_node[attribute_name]}\" for element #{reference_node.name}") \
+      add_info_msg("set attribute \"#{attribute_name}\" to value \"#{reference_node[attribute_name]}\" for element #{reference_node}") \
           if @status == UMPTG::Action.COMPLETED
     end
   end

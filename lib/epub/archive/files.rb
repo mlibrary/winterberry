@@ -106,11 +106,11 @@ module UMPTG::EPUB::Archive
     def find(args = {})
       e_list = []
 
-      entry_name = args[:entry_name]
-      e_list << @name2entry[entry_name] unless entry_name.nil? or entry_name.strip.empty?
-
-      media_type = args[:media_type]
-      e_list += @entries.select {|e| e.media_type == media_type }
+      entry_name = (args[:entry_name] || "").strip
+      e_list << @name2entry[entry_name] unless entry_name.empty?
+      media_type = (args[:media_type] || "").strip
+      e_list += @entries.select {|e| e.media_type == media_type } \
+              unless media_type.empty?
       return e_list
     end
 
