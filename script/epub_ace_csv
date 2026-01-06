@@ -40,16 +40,19 @@ ace_json_file_list = ARGV
 require 'json'
 require 'csv'
 
+METADATA_HEADERS = [
+      "conformsTo","accessMode","accessModeSufficient",
+      "accessibilityFeature","accessibilitySummary",
+      "accessibilityHazard","certifiedBy","certifierCredential"
+    ]
+
 CSV_HEADERS = [
       "File Name","Title","Identifier","Publisher","Pub Year","Format",
       "Version","Language","Remediation Plan",
       "WCAG 2.0 violations","WCAG 2.1 violations",
       "WCAG 2.2 violations","EPUB violations",
-      "Best practice violations","conformsTo","accessMode",
-      "accessModeSufficient","accessibilityFeature",
-      "accessibilitySummary","accessibilityHazard","certifiedBy",
-      "certifierCredential","Alt Text","ACE Report location"
-    ]
+      "Best practice violations" ] + METADATA_HEADERS +
+      [ "Alt Text","ACE Report location" ]
 
 MAP_VIOLATIONS = {
         "EPUB" => "EPUB violations",
@@ -198,6 +201,14 @@ ace_json_file_list.each do |ace_json_file|
     end
   end
   rows << row
+end
+
+# Determine if remediation is necessary.
+rows.each do |r|
+  missing_metadata = METADATA_HEADERS.select {|h| r[h].downcase == 'missing' }
+  violations = MAP_VIOLATIONS.values.select {|v| r[v] > 0 }
+  alt_text_violations = r["Alt Text"].start_with?("warnings:true")
+  r["Remediation Plan"] = (alt_text_violations or missing_metadata.count > 0 or violations.count > 0) ? "true" : "false"
 end
 
 # Output the CSV file.
