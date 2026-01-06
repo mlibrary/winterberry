@@ -1,0 +1,123 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Script for XML Pipeline class
+
+require 'optparse'
+require 'ostruct'
+require 'os'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+# Process the script parameters.
+options = OpenStruct.new
+options.manifest_file = nil
+options.normalize = false
+options.filter_list = []
+options.process = :none
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} xml_file [xml_file...]"
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    script_logger.info(opts)
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  script_logger.info(option_parser.help)
+  return
+end
+
+# Process the command line parameters.
+xml_file_list = ARGV
+
+require 'nokogiri'
+require 'csv'
+
+require_relative File.join(root_dir, "lib", "xml")
+require_relative File.join(root_dir, "lib", "logger")
+
+# Process the schema
+xsd_file = "c:/Users/tbelc/Documents/arbortext/custom/doctypes/crossref/crossref.xsd"
+xsd = nil
+Dir.chdir(File.dirname(xsd_file)) do
+  xsd = Nokogiri::XML::Schema(File.read(xsd_file))
+end
+
+# Process each XML file
+xml_file_list.each do |xml_file|
+  unless File.file?(xml_file)
+    script_logger.error("invalid XML file #{xml_file}")
+    exit 1
+  end
+  script_logger.info("processing XML file #{File.basename(xml_file)}")
+
+  logger_file =  File.join(
+            File.dirname(xml_file),
+            File.basename(xml_file, ".*") + "_" + File.basename(__FILE__) + ".log"
+            )
+  puts logger_file
+  logger = UMPTG::Logger.create(logger_file: logger_file)
+  logger.info("processing XML file #{File.basename(xml_file)}")
+  logger.info("Time: #{Time.now}")
+  logger.info()
+
+  xml_doc = UMPTG::XML.parse(xml_content: File.read(xml_file))
+  errors = xsd.validate(xml_doc)
+  #errors = xsd.validate(xml_file)
+  #logger.error("#{xml_doc.errors.count} parse errors") unless xml_doc.errors.empty?
+  logger.error("#{errors.count} parse errors")
+
+
+  orcids = {}
+  errors.each do |error|
+    logger.error(error.message)
+    logger.info("str1:#{error.str1}")
+    logger.info("str2:#{error.str2}")
+    logger.info("str3:#{error.str3}")
+    logger.info("code:#{error.code}")
+    logger.info("int1:#{error.int1}")
+    logger.info("level:#{error.level}")
+    logger.info("path:#{error.path}")
+
+    unless orcids.key?(error.str1)
+      xpath = error.path || ""
+      unless xpath.empty?
+        node = xml_doc.xpath(xpath).first
+        unless node.nil?
+          en_node = node.xpath("./ancestor::*[local-name()='book_metadata']/*[local-name()='edition_number']").first
+          unless en_node.nil? or en_node.text.empty?
+            book_key = en_node.text.split(',')[0]
+            logger.info("book_key:#{book_key}")
+            orcids[error.str1] = book_key
+          end
+        end
+      end
+    end
+  end
+
+  csv_file = File.join(
+            File.dirname(xml_file),
+            File.basename(xml_file, ".*") + "_" + File.basename(__FILE__) + ".csv"
+            )
+  CSV.open(
+          csv_file,
+          "w",
+          force_quotes: true,
+          write_headers: true,
+          headers: [ "ORCID", "TMM Link" ]
+        ) do |csv|
+    orcids.each do |k,v|
+      row = { "ORCID" => k, "TMM Link" => v }
+      csv << row
+    end
+  end
+  script_logger.info("saved CSV file #{csv_file}")
+end
+
