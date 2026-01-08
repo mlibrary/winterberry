@@ -28,8 +28,9 @@ options.secondary = false
 options.eloquence_verification = false
 options.include_bookkey = false
 options.registration_csv = false
+options.multiple_resolution_remove = false
 option_parser = OptionParser.new do |opts|
-  opts.banner = "Usage: #{File.basename(__FILE__)} [-n UTF-8|Windows-1252] [-e isbn_list_file] [-i isbn_list_file] [-l default|fulcrum|ump] [-b] [-r] [-s] [-v] doi_report_file"
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-n UTF-8|Windows-1252] [-e isbn_list_file] [-i isbn_list_file] [-l default|fulcrum|ump] [-b] [-m] [-r] [-s] [-v] doi_report_file"
   opts.on('-b', '--bookkey', 'Include TMM bookkey') do |da|
     options.include_bookkey = true
   end
@@ -42,11 +43,15 @@ option_parser = OptionParser.new do |opts|
   opts.on('-l', '--link default|fulcrum|ump', 'Use which link as resource') do |link|
     options.monograph_link = link.to_sym
   end
+  opts.on('-m', '--multiple_resolution_remove', 'Remove multiple resolution') do |da|
+    options.multiple_resolution_remove = true
+  end
   opts.on('-n', '--encoding encoding_name', 'Encoding UTF-8|Windows-1252') do |enc|
     options.encoding = enc
   end
   opts.on('-r', '--registration', 'Generate registration CSV') do |da|
     options.registration_csv = true
+    options.include_bookkey = true
   end
   opts.on('-s', '--secondary', 'Register secondary URLs') do |da|
     options.secondary = true
@@ -168,7 +173,7 @@ doi_report_file_list.each do |doi_report_file|
       when "ISBN"
         bnode_list = doi_report_doc.xpath("//*[(local-name()='ISBN1' or local-name()='ISBN2' or local-name()='ISBN3' or local-name()='ISBN4' or local-name()='ISBN5') and string()='#{monograph_id}']/ancestor::*[local-name()='book'][1]")
       when "DOI"
-        doi_value = "https://doi.org/" + monograph_id
+        doi_value = "https://doi.org/" + monograph_id unless monograph_id.start_with?("https://doi.org/")
         bnode_list = doi_report_doc.xpath("//*[(local-name()='doi') and string()='#{doi_value}']/ancestor::*[local-name()='book'][1]")
       when "NOID"
         bnode_list = doi_report_doc.xpath("//*[local-name()='resource' and contains(string(),'#{monograph_id}')]/ancestor::*[local-name()='book'][1]")
@@ -321,7 +326,8 @@ doi_report_file_list.each do |doi_report_file|
       "EXCLUDE_ISBN" => "'#{exclude_list.join(';')}'",
       "ENCODING_NAME" => "'#{enc.name}'",
       "ELOQUENCE_VERIFICATION" => "'#{options.eloquence_verification}'",
-      "INCLUDE_BOOKKEY" => "'#{options.include_bookkey}'"
+      "INCLUDE_BOOKKEY" => "'#{options.include_bookkey}'",
+      "REMOVE_RESOLUTION" => "'#{options.multiple_resolution_remove}'"
     }
 
   xform_result = UMPTG::XSLT.transform(

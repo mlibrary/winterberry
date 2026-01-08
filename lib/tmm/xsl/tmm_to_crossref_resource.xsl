@@ -7,6 +7,7 @@
     <xsl:include href="tmm_to_crossref_common.xsl"/>
 
     <xsl:param name="IMPRINTS" select="'lived places publishing;'"/>
+    <xsl:param name="REMOVE_RESOLUTION" select="'true'"/>
 
     <xsl:variable name="FORMAT_IMPRINTS" select="concat(';',$IMPRINTS,';')"/>
     <xsl:variable name="NAMESPACE_URL" select="'http://www.crossref.org/doi_resources_schema/5.4.0'"/>
@@ -58,14 +59,21 @@
             </xsl:element>
             <xsl:element name="collection" namespace="{$NAMESPACE_URL}">
                 <xsl:attribute name="property"><xsl:value-of select="'list-based'"/></xsl:attribute>
-                <xsl:for-each select="./resource">
-                    <xsl:element name="item" namespace="{$NAMESPACE_URL}">
-                        <xsl:attribute name="label"><xsl:value-of select="concat('UMPRE_Fulcrum_',position())"/></xsl:attribute>
-                        <xsl:element name="resource" namespace="{$NAMESPACE_URL}">
-                            <xsl:value-of select="."/>
-                        </xsl:element>
-                    </xsl:element>
-                </xsl:for-each>
+                <xsl:choose>
+                    <xsl:when test="$REMOVE_RESOLUTION='true'">
+                        <xsl:attribute name="multi-resolution"><xsl:value-of select="'lock'"/></xsl:attribute>
+                    </xsl:when>
+                    <xsl:otherwise>
+                        <xsl:for-each select="./resource">
+                            <xsl:element name="item" namespace="{$NAMESPACE_URL}">
+                                <xsl:attribute name="label"><xsl:value-of select="concat('UMPRE_Fulcrum_',position())"/></xsl:attribute>
+                                <xsl:element name="resource" namespace="{$NAMESPACE_URL}">
+                                    <xsl:value-of select="."/>
+                                </xsl:element>
+                            </xsl:element>
+                        </xsl:for-each>
+                    </xsl:otherwise>
+                </xsl:choose>
             </xsl:element>
         </xsl:element>
     </xsl:template>
