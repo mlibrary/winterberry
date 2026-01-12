@@ -85,6 +85,8 @@ class MonographInfo
   end
 end
 
+fulcrum_products = service.products.collect {|p| p['identifier'] }
+
 # For each monograph_id:
 #   retrieve the monograph
 #   determine/collect the monograph products
@@ -152,6 +154,19 @@ monograph_id_list.each do |monograph_id|
         s = series_id.downcase.start_with?('b') ? 'brit' : 'int'
         p = pub_date.year > 2020 ? "bar_#{pub_date.year}" : "bar_pre"
         products += [p, "#{p}_#{s}"]
+      when "boydellandbrewer"
+        collection = (manifest.monograph_row['collection'] || "").strip
+        if collection.empty?
+          script_logger.warn("#{monograph_press}: no series ID assigned. Skipping.")
+          next
+        end
+        cl = collection.split(':')[0]
+        cl = monograph_press + "_" + cl.downcase.gsub(/[ ]+/,'_')
+        unless fulcrum_products.include?(cl)
+          script_logger.warn("#{monograph_press}: invalid series ID #{cl}. Skipping.")
+          next
+        end
+        products = [ cl ]
       when "livedplaces"
         products += [ monograph_press, "#{monograph_press}_#{pub_date.year}" ]
       when "michigan"
