@@ -33,9 +33,12 @@ end
 # Process the command line parameters.
 
 require_relative File.join(root_dir, "lib", "pipeline")
+require_relative File.join(script_dir, "test1_pipeline", "actions")
+require_relative File.join(script_dir, "test1_pipeline", "filter")
 
 processor = UMPTG::Pipeline::Processor.new(
             name: "Test1Processor",
+            filters: Test1Pipeline.FILTERS,
             options: {
                     pipeline_string_length: true,
                     pipeline_dup_string: true,

@@ -1,5 +1,12 @@
 module UMPTG::Pipeline
 
+  FILTERS = {
+      }
+
+  def self.FILTERS
+    return FILTERS
+  end
+
   class Filter < UMPTG::Object
 
     attr_reader :name
@@ -36,23 +43,13 @@ module UMPTG::Pipeline
         issue.actions.each do |a|
           actions_cnt += 1
           completed_cnt += 1 if a.normalize and a.status == UMPTG::Action.COMPLETED
-          a.messages.each {|m| warning_cnt += 1 if m.level == UMPTG::Message.WARNING }
-          a.messages.each {|m| error_cnt += 1 if m.level == UMPTG::Message.ERROR }
+          a.messages.each do |m|
+            warning_cnt += 1 if m.level == UMPTG::Message.WARNING
+            error_cnt += 1 if m.level == UMPTG::Message.ERROR
+          end
         end
       end
       logger.info("#{@name}, actions=#{actions_cnt}, completed=#{completed_cnt}, warnings=#{warning_cnt}, errors=#{error_cnt}")
     end
-  end
-
-  rq_path = File.join(File.expand_path(File.dirname(__FILE__)), "filter", "*")
-  Dir.glob(rq_path).each {|f| require_relative(f) }
-
-  FILTERS = {
-        pipeline_string_length: UMPTG::Pipeline::StringLengthFilter,
-        pipeline_dup_string: UMPTG::Pipeline::DupStringFilter
-      }
-
-  def self.FILTERS
-    return FILTERS
   end
 end

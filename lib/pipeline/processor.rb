@@ -51,7 +51,7 @@ module UMPTG::Pipeline
               logger: logger.nil? ? @logger : logger,
               options: options
             )
-      presults = options.key?(:process_results) ? options[:process_results] : true
+      presults = options[:process_results] || true
       process_results(results, options: options, logger: @logger) if presults
       return results
     end

@@ -1,4 +1,4 @@
-module UMPTG::Pipeline
+module Test1Pipeline
 
   class StringLengthFilter < UMPTG::Pipeline::Filter
 

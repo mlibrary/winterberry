@@ -1,4 +1,4 @@
-module UMPTG::Pipeline
+module Test1Pipeline
 
   class DupStringFilter < UMPTG::Pipeline::Filter
 
@@ -20,18 +20,12 @@ module UMPTG::Pipeline
     def review(issue, options: nil)
       return unless issue.name == name
 
-      act = UMPTG::Pipeline::DupStringAction.new(
+      act = DupStringAction.new(
                   issue,
                   options: options
                 )
       act.add_info_msg("#{@name}, found issue #{issue.name}")
       issue.actions << act
-    end
-
-    def process_results(issues, logger:, options: nil)
-      super(issues, options: options, logger: logger)
-
-      issues.each {|i| logger.info("#{i.name}, new content=\"#{i.content}\"")}
     end
   end
 end
