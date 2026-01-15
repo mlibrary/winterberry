@@ -347,6 +347,10 @@ File.open(cmds_file, "w") do |fp|
   fp.puts "bundle exec ruby script#{File::SEPARATOR}crossref_generate -l fulcrum -i #{includes_file.gsub(' ', '\ ')} #{dest_tocrossref_file.gsub(' ', '\ ')}"
   FileUtils.copy(src_tocrossref_file, dest_tocrossref_file)
   fp.puts
+  fp.puts "# Verify monograph products"
+  products_file = File.join(task_dir, "products.csv")
+  fp.puts "bundle exec ruby script/retrieve_manifest_values -o #{products_file.gsub(' ', '\ ')} -c 'Title/Link' -c 'Published?' -c Component -c Products #{monograph_id_list.join(' ')}"
+  fp.puts
   fp.puts "# Rails console"
   monograph_noid_list = monograph_info.values.collect {|v| v.monograph_noid}
   fp.puts "bundle exec rails console"
@@ -384,7 +388,7 @@ File.open(cmds_file, "w") do |fp|
   fp.puts
   fp.puts "# Publishing ticket comment"
   fp.puts "[~mbakeryo]"
-  fp.puts "Created the components *#{product_component_list.keys.join('*, *')}* and marked the monographs public. Also, the DOIs were successfully submitted to Crossref for deposit. The results can be found in the attached zip files:"
+  fp.puts "Assigned the products *#{product_component_list.keys.join('*, *')}* and marked the monographs public. Also, the DOIs were successfully submitted to Crossref for deposit. The results can be found in the attached zip files:"
   fp.puts "#{task_id}.zip"
   fp.puts
   fp.puts "Reassigning to [~mbakeryo]."
