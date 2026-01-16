@@ -8,9 +8,10 @@ module UMPTG
     attr_accessor :actions, :content
 
     def initialize(name:, content: nil)
+      content = content || ""
       super(
             name: name,
-            content: (content || "")
+            content: content
           )
 
       @name = name

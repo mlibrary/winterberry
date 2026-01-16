@@ -2,7 +2,7 @@ module UMPTG::Pipeline
 
   class ActionResult < UMPTG::Object
 
-    attr_reader :issues, :modified
+    attr_accessor :issues, :modified
 
     def initialize(m_issues, modified: false)
       super(issues: issues, modified: modified)

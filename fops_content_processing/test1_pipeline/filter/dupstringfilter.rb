@@ -4,7 +4,7 @@ module Test1Pipeline
 
     def initialize(options: nil)
       super(
-            name: :pipeline_dup_string,
+            name: :test1_dup_string,
             options: options
           )
     end

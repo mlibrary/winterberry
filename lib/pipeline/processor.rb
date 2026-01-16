@@ -37,13 +37,29 @@ module UMPTG::Pipeline
       @options = @properties[:options]
     end
 
-    def run(content, options: {}, logger: nil)
+    def select(content, options: {})
       issues = []
-      @filters.each {|f| issues += f.select(content, options: options) }
+      @filters.collect {|f| issues += f.select(content, options: options) }
+      return issues
+    end
 
+    def resolve(issues, options: {})
       issues.each do |issue|
         @filters.each {|f| f.review(issue, options: options) }
       end
+    end
+
+    def process_results(results, options: {}, logger: nil)
+      logger = @logger if logger.nil?
+      @filters.each do |f|
+        issues = results.issues.select {|i| i.name == f.name }
+        f.process_results(issues, options: options, logger: logger)
+      end
+    end
+
+    def run(content, options: {}, logger: nil)
+      issues = select(content, options: options)
+      resolve(issues, options: options)
 
       # Return XML::ActionResult
       results = UMPTG::Pipeline::Action.process_issues(
@@ -54,14 +70,6 @@ module UMPTG::Pipeline
       presults = options[:process_results] || true
       process_results(results, options: options, logger: @logger) if presults
       return results
-    end
-
-    def process_results(results, options: {}, logger: nil)
-      logger = @logger if logger.nil?
-      @filters.each do |f|
-        issues = results.issues.select {|i| i.name == f.name }
-        f.process_results(issues, options: options, logger: logger)
-      end
     end
 
     def filter(filter_name)
