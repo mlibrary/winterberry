@@ -16,17 +16,6 @@ module UMPTG::Pipeline
       @name = name
     end
 
-=begin
-    def run(content:, options:)
-      a = options.clone()
-      a[:name] = @name
-
-      issues = select(content, options: options)
-      issues.each {|i| review(i, options: options) }
-      return issues
-    end
-=end
-
     def select(content, options: {})
       return []
     end

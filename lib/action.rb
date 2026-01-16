@@ -8,14 +8,13 @@ module UMPTG
     @@FAILED = "Failed"
     @@NO_ACTION = "No action"
 
-    attr_reader :status, :message, :messages
+    attr_reader :status, :messages
 
     def initialize(args = {})
       super(args)
 
       @status = Action.PENDING
       @messages = []
-      @message = ""
 
       add_info_msg(@properties[:info_message]) if @properties.key?(:info_message)
       add_warning_msg(@properties[:warning_message]) if @properties.key?(:warning_message)

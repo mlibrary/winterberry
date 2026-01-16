@@ -8,7 +8,7 @@ module UMPTG::Pipeline
       super(issues: issues, modified: modified)
 
       raise "issues must be specified" if m_issues.nil?
-      raise "invalid parameter m_issues" unless m_issues.is_a?(Array)
+      raise "invalid parameter m_issues #{m_issues.class}" unless m_issues.is_a?(Array)
 
       @issues = m_issues
       @modified = modified

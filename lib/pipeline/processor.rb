@@ -43,7 +43,7 @@ module UMPTG::Pipeline
       return issues
     end
 
-    def resolve(issues, options: {})
+    def review(issues, options: {})
       issues.each do |issue|
         @filters.each {|f| f.review(issue, options: options) }
       end
@@ -59,7 +59,7 @@ module UMPTG::Pipeline
 
     def run(content, options: {}, logger: nil)
       issues = select(content, options: options)
-      resolve(issues, options: options)
+      review(issues, options: options)
 
       # Return XML::ActionResult
       results = UMPTG::Pipeline::Action.process_issues(

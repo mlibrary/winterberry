@@ -1,61 +1,21 @@
 module UMPTG::XML::Pipeline
   require_relative("elementselector")
 
-  class Filter < UMPTG::Object
+  class Filter < UMPTG::Pipeline::Filter
 
-    attr_reader :actions, :name, :xpath, :selector
+    attr_reader :xpath, :selector
 
-    def initialize(args = {})
-      a = args.clone
-      unless a.key?(:selector)
-        a[:xpath] = "//*" if a[:xpath].nil?
+    def initialize(name:, xpath:, options: nil)
+      super(name: name, options: options)
 
-        a[:selector] = ElementSelector.new(
-                selection_xpath: a[:xpath]
-              )
-      end
-
-      super(a)
-
-      @name = @properties[:name]
-      @selector = @properties[:selector]
+      @selector = ElementSelector.new(
+                    selection_xpath: xpath
+                  )
       @xpath = @selector.xpath
-      @actions = []
     end
 
-=begin
-    def run(xml_doc, args = {})
-      a = args.clone()
-      a[:name] = @name
-
-      @selector.references(xml_doc).each do |n|
-        a[:reference_node] = n
-        actions += create_actions(a)
-      end
-      return actions
-    end
-=end
-
-    def create_actions(args = {})
-      a = args.clone
-      act = UMPTG::XML::Pipeline::Action.new(a)
-      act.add_info_msg("#{name}, found #{a[:reference_node]}")
-      return [ act ]
-    end
-
-    def process_action_results(args = {})
-      action_results = args[:action_results]
-      @actions = args[:actions]
-      logger = args[:logger]
-
-      completed_cnt = warning_cnt = error_cnt = 0
-      @actions.each do |a|
-        completed_cnt += 1 if a.normalize and a.status == UMPTG::Action.COMPLETED
-        a.messages.each {|m| warning_cnt += 1 if m.level == UMPTG::Message.WARNING }
-        a.messages.each {|m| error_cnt += 1 if m.level == UMPTG::Message.ERROR }
-      end
-
-      logger.info("#{@name}, actions=#{@actions.count}, completed=#{completed_cnt}, warnings=#{warning_cnt}, errors=#{error_cnt}")
+    def select(xml_doc, options: {})
+      return xml_doc.xpath(@xpath)
     end
   end
 

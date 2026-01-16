@@ -32,17 +32,14 @@ end
 
 # Process the command line parameters.
 
-require_relative File.join(root_dir, "lib", "pipeline")
-require_relative File.join(script_dir, "test1_pipeline", "actions")
-require_relative File.join(script_dir, "test1_pipeline", "filter")
+require_relative File.join(script_dir, "test1_pipeline")
 
 class Test1Processor < UMPTG::Pipeline::Processor
   def process_results(results, options: {}, logger: nil)
     dup_str_issues = results.issues.select {|i| i.name == :test1_dup_string }
     new_issues = dup_str_issues.collect {|i| UMPTG::Issue.new(name: :test1_string_length, content: i.content) }
 
-    sl_filter = filter(:test1_string_length)
-    new_issues.each {|i| sl_filter.review(i, options: options) }
+    review(new_issues, options: options)
     new_results = UMPTG::Pipeline::Action.process_issues(
             new_issues,
             logger: logger,
@@ -53,6 +50,7 @@ class Test1Processor < UMPTG::Pipeline::Processor
     super(results, options: options, logger: logger)
   end
 end
+
 processor = Test1Processor.new(
             name: "Test1Processor",
             filters: Test1Pipeline.FILTERS,
