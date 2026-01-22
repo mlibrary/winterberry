@@ -1,0 +1,131 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Script for EPUB Pipeline class using Fulcrum processors
+
+require 'optparse'
+require 'ostruct'
+require 'os'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+# Process the script parameters.
+options = OpenStruct.new
+options.execute = false
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} fit_spreadsheet_file [fit_spreadsheet_file...]"
+  opts.on('-e', '--execute', 'Execute') do |exec|
+    options.execute = true
+  end
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    script_logger.info(opts)
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  script_logger.info(option_parser.help)
+  return
+end
+
+# Process the command line parameters.
+fit_spreadsheet_file_list = ARGV
+
+require 'csv'
+
+require_relative File.join(root_dir, "lib", "services")
+require_relative File.join(root_dir, 'lib', 'fulcrum', 'manifest')
+
+# Create the serivce for retrieving the NOID manifest.
+service = UMPTG::Services::Heliotrope.new()
+
+# Process each spreadsheet
+fit_spreadsheet_file_list.each do |fit_spreadsheet_file|
+  fit_spreadsheet_file = File.expand_path(fit_spreadsheet_file)
+  unless File.file?(fit_spreadsheet_file)
+    script_logger.error("invalid EPUB file #{fit_spreadsheet_file}")
+    exit 1
+  end
+  script_logger.info("processing EPUB file #{File.basename(fit_spreadsheet_file)}")
+
+  fit_spreadsheet_csv = CSV.parse(
+            File.read(fit_spreadsheet_file),
+            :headers => true,
+            :return_headers => false
+          )
+    fulcrum_file = File.join(
+              File.dirname(fit_spreadsheet_file),
+              File.basename(fit_spreadsheet_file, ".*") + "_fulcrum.csv"
+            )
+    fulcrum_headers = [
+          "Source",
+          "NOID",
+          "Description",
+          "Rightsholder",
+          "Publisher",
+          "Pub Year",
+          "Pub Location",
+          "Keywords",
+          "Subject",
+        ]
+    CSV.open(
+            fulcrum_file,
+            "w",
+            :write_headers=> true,
+            :force_quotes => true,
+            :headers => fulcrum_headers
+          ) do |csv|
+      fit_spreadsheet_csv.each do |row|
+        heb_current_isbn = row['AUP Ebook ISBN(s)']
+        script_logger.info("processing ISBN #{heb_current_isbn}.")
+        STDOUT.flush
+
+        #service.monograph_noid(identifier: heb_current_isbn).each do |id,noid_list|
+        #  noid_list.each do |noid|
+        service.monograph_export(identifier: heb_current_isbn).each do |id,manifest_body_list|
+          manifest_body_list.each do |manifest_body|
+            manifest = UMPTG::Fulcrum::Manifest::Document.new(
+                          csv_body: manifest_body
+                        )
+            puts "manifest:#{manifest.monograph_row['noid']}"
+            noid = manifest.monograph_row["noid"]
+
+            row2 = {
+                  "Source" => "Fulcrum",
+                  "NOID" => noid,
+                  "Description" => manifest.monograph_row["description"],
+                  "Rightsholder" => manifest.monograph_row["rightsholder"],
+                  "Publisher" => manifest.monograph_row["publisher"],
+                  "Pub Location" => manifest.monograph_row["pub_location"],
+                  "Pub Year" => manifest.monograph_row["pub_year"],
+                  "Keywords" => manifest.monograph_row["keywords"],
+                  "Subject" => manifest.monograph_row["subject"]
+                }
+            csv << row2
+
+            subjects = row["T&F BISAC Code(s)"] + ";" + row["T&F Thema Code(s)"]
+            pub_year = Date.strptime(row["T&F Pub Date"], '%Y%m%d').year
+            row2 = {
+                  "Source" => "T&F",
+                  "NOID" => noid,
+                  "Description" => row["Description"],
+                  "Rightsholder" => row["T& F Imprint"],
+                  "Publisher" => row["T & F Publisher"],
+                  "Pub Location" => row["T&F Pub Location"],
+                  "Pub Year" => pub_year,
+                  "Keywords" => row["T&F Keywords"],
+                  "Subject" => subjects
+                }
+            csv << row2
+          end
+        end
+      end
+    end
+    script_logger.info("saved CSV file #{fulcrum_file}.")
+end
