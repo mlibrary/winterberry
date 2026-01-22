@@ -35,19 +35,22 @@ end
 require_relative File.join(script_dir, "test1_pipeline")
 
 class Test1Processor < UMPTG::Pipeline::Processor
-  def process_results(results, options: {}, logger: nil)
-    dup_str_issues = results.issues.select {|i| i.name == :test1_dup_string }
+  def resolve_all(result, options: {}, logger: nil)
+    dup_str_issues = result.issues.select {|i| i.name == :test1_dup_string }
     new_issues = dup_str_issues.collect {|i| UMPTG::Issue.new(name: :test1_string_length, content: i.content) }
 
-    review(new_issues, options: options)
-    new_results = UMPTG::Pipeline::Action.process_issues(
+    resolve(new_issues, options: options)
+    new_result = process(new_issues, options: options, logger: logger)
+=begin
+    new_result = UMPTG::Pipeline::Action.process_issues(
             new_issues,
             logger: logger,
             options: options
           )
-    results.issues += new_issues
-    results.modified = new_results.modified unless results.modified
-    super(results, options: options, logger: logger)
+=end
+    result.issues += new_issues
+    result.modified = new_result.modified unless result.modified
+    super(result, options: options, logger: logger)
   end
 end
 

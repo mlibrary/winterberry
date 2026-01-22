@@ -17,7 +17,7 @@ module Test1Pipeline
       return [ issue ]
     end
 
-    def review(issue, options: nil)
+    def resolve(issue, options: nil)
       return unless issue.name == name
 
       act = DupStringAction.new(

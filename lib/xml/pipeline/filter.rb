@@ -1,17 +1,12 @@
 module UMPTG::XML::Pipeline
-  require_relative("elementselector")
 
   class Filter < UMPTG::Pipeline::Filter
 
-    attr_reader :xpath, :selector
+    attr_reader :xpath
 
     def initialize(name:, xpath:, options: nil)
       super(name: name, options: options)
-
-      @selector = ElementSelector.new(
-                    selection_xpath: xpath
-                  )
-      @xpath = @selector.xpath
+      @xpath = xpath
     end
 
     def select(xml_doc, options: {})

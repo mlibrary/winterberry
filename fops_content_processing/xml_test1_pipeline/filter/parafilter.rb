@@ -10,7 +10,7 @@ module XMLTest1Pipeline
           )
     end
 
-    def review(issue, options: nil)
+    def resolve(issue, options: nil)
       return unless issue.name == name
 
       super(

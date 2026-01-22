@@ -20,13 +20,13 @@ module UMPTG::Pipeline
       return []
     end
 
-    def review(issue, options: {})
+    def resolve(issue, options: {})
       act = UMPTG::Pipeline::Action.new(issue, options: options)
       act.add_info_msg("#{@name}, found issue #{issue.name}")
       issue.actions << act
     end
 
-    def process_results(issues, logger:, options: {})
+    def report(issues, logger:, options: {})
       actions_cnt = completed_cnt = warning_cnt = error_cnt = 0
       issues.each do |issue|
         issue.actions.each do |a|

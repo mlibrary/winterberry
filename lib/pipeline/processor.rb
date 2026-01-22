@@ -43,33 +43,48 @@ module UMPTG::Pipeline
       return issues
     end
 
-    def review(issues, options: {})
+    def resolve(issues, options: {})
       issues.each do |issue|
-        @filters.each {|f| f.review(issue, options: options) }
+        @filters.each {|f| f.resolve(issue, options: options) }
       end
     end
 
-    def process_results(results, options: {}, logger: nil)
+    def process(issues, options: {}, logger: nil)
+      logger = @logger if logger.nil?
+
+      # Return XML::ActionResult
+      return UMPTG::Pipeline::Action.process_issues(
+              issues,
+              logger: logger,
+              options: options
+            )
+    end
+
+    def resolve_all(result, options: {}, logger: nil)
+      return result
+    end
+
+    def report(results, options: {}, logger: nil)
       logger = @logger if logger.nil?
       @filters.each do |f|
         issues = results.issues.select {|i| i.name == f.name }
-        f.process_results(issues, options: options, logger: logger)
+        f.report(issues, options: options, logger: logger)
       end
     end
 
     def run(content, options: {}, logger: nil)
-      issues = select(content, options: options)
-      review(issues, options: options)
+      logger = @logger if logger.nil?
 
-      # Return XML::ActionResult
-      results = UMPTG::Pipeline::Action.process_issues(
-              issues,
-              logger: logger.nil? ? @logger : logger,
-              options: options
-            )
-      presults = options[:process_results] || true
-      process_results(results, options: options, logger: @logger) if presults
-      return results
+      issues = select(content, options: options)
+      resolve(issues, options: options)
+
+      result = process(issues, options: options, logger: logger)
+
+      resolve_all(result, options: options, logger: logger)
+
+      # Report the issue resolutions
+      report(result, options: options, logger: logger) if (options[:process_results] || true)
+      return result
     end
 
     def filter(filter_name)
