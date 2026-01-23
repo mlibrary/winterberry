@@ -64,15 +64,16 @@ fit_spreadsheet_file_list.each do |fit_spreadsheet_file|
               File.basename(fit_spreadsheet_file, ".*") + "_fulcrum.csv"
             )
     fulcrum_headers = [
-          "Source",
+          #"Source",
           "NOID",
-          "Description",
+          #"Description",
           "Rightsholder",
-          "Publisher",
-          "Pub Year",
-          "Pub Location",
-          "Keywords",
-          "Subject",
+          #"Publisher",
+          #"Pub Year",
+          #"Pub Location",
+          "ISBN(s)",
+          #"Keywords",
+          #"Subject",
         ]
     CSV.open(
             fulcrum_file,
@@ -86,14 +87,14 @@ fit_spreadsheet_file_list.each do |fit_spreadsheet_file|
         script_logger.info("processing ISBN #{heb_current_isbn}.")
         STDOUT.flush
 
-        #service.monograph_noid(identifier: heb_current_isbn).each do |id,noid_list|
-        #  noid_list.each do |noid|
+        service.monograph_noid(identifier: heb_current_isbn).each do |id,noid_list|
+          noid_list.each do |noid|
+=begin
         service.monograph_export(identifier: heb_current_isbn).each do |id,manifest_body_list|
           manifest_body_list.each do |manifest_body|
             manifest = UMPTG::Fulcrum::Manifest::Document.new(
                           csv_body: manifest_body
                         )
-            puts "manifest:#{manifest.monograph_row['noid']}"
             noid = manifest.monograph_row["noid"]
 
             row2 = {
@@ -104,23 +105,28 @@ fit_spreadsheet_file_list.each do |fit_spreadsheet_file|
                   "Publisher" => manifest.monograph_row["publisher"],
                   "Pub Location" => manifest.monograph_row["pub_location"],
                   "Pub Year" => manifest.monograph_row["pub_year"],
+                  "ISBN(s)" => manifest.monograph_row["isbn(s)"],
                   "Keywords" => manifest.monograph_row["keywords"],
                   "Subject" => manifest.monograph_row["subject"]
                 }
             csv << row2
-
+=end
             subjects = row["T&F BISAC Code(s)"] + ";" + row["T&F Thema Code(s)"]
             pub_year = Date.strptime(row["T&F Pub Date"], '%Y%m%d').year
+
+            isbns = ["T&F Master EISBN","T&F PDF ISBN","T&F EPUB ISBN"].collect {|n| row[n] + " (ebook)"}
             row2 = {
-                  "Source" => "T&F",
+                  #"Source" => "T&F",
                   "NOID" => noid,
-                  "Description" => row["Description"],
-                  "Rightsholder" => row["T& F Imprint"],
-                  "Publisher" => row["T & F Publisher"],
-                  "Pub Location" => row["T&F Pub Location"],
-                  "Pub Year" => pub_year,
-                  "Keywords" => row["T&F Keywords"],
-                  "Subject" => subjects
+                  #"Description" => row["Description"],
+                  #"Rightsholder" => row["T& F Imprint"],
+                  "Rightsholder" => row["T & F Publisher"],
+                  #"Publisher" => row["T & F Publisher"],
+                  #"Pub Location" => row["T&F Pub Location"],
+                  #"Pub Year" => pub_year,
+                  "ISBN(s)" => isbns.join(';'),
+                  #"Keywords" => row["T&F Keywords"],
+                  #"Subject" => subjects
                 }
             csv << row2
           end
