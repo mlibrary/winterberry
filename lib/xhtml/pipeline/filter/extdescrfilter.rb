@@ -8,18 +8,24 @@ module UMPTG::XHTML::Pipeline::Filter
     ]
     SXPATH
 
-    def initialize(args = {})
-      a = args.clone
-      a[:name] = :xhtml_extdescr
-      a[:xpath] = XPATH
-      super(a)
+    def initialize(options: nil)
+      super(
+              name: :xhtml_extdescr,
+              xpath: XPATH,
+              options: options
+            )
     end
 
-    def create_actions(args = {})
-      name = args[:name]
-      reference_node = args[:reference_node]  # <img> element
+    def resolve(issue, options: {})
+      return unless issue.name == name
 
-      action_list = []
+      super(
+              issue,
+              options: options
+           )
+
+      name = issue.name
+      reference_node = issue.content  # <figure> element
 
       if reference_node.name == 'img'
         aria_details = (reference_node["aria-details"] || "").strip
@@ -29,7 +35,7 @@ module UMPTG::XHTML::Pipeline::Filter
                    reference_node: reference_node,
                    info_message: "#{name}, #{reference_node.name} found aria-details=\"#{aria_details}\""
                )
-          action_list << action
+          issue.actions << action
 
           ext_descr_node = reference_node.document.at_css("[id='#{aria_details}']")
           if ext_descr_node.nil?
@@ -42,13 +48,13 @@ module UMPTG::XHTML::Pipeline::Filter
             unless first_elem.nil? or first_elem.name != 'a'
               first_elem_id = first_elem['id'] || ""
               if first_elem_id.empty?
-                action_list << UMPTG::XML::Pipeline::Actions::SetAttributeValueAction.new(
+                issue.actions << UMPTG::XML::Pipeline::Actions::SetAttributeValueAction.new(
                          name: name,
                          reference_node: first_elem,
                          attribute_name: "id",
                          attribute_value: aria_details
                      )
-                action_list << UMPTG::XML::Pipeline::Actions::RemoveAttributeAction.new(
+                issue.actions << UMPTG::XML::Pipeline::Actions::RemoveAttributeAction.new(
                          name: name,
                          reference_node: ext_descr_node,
                          attribute_name: "id"
@@ -58,7 +64,6 @@ module UMPTG::XHTML::Pipeline::Filter
           end
         end
       end
-      return action_list
     end
   end
 end

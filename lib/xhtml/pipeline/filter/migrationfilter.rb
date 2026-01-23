@@ -22,51 +22,58 @@ module UMPTG::XHTML::Pipeline::Filter
     ]
     PCKXPATH
 
-    def initialize(args = {})
-      a = args.clone
-      a[:name] = :xhtml_migration
-      a[:xpath] = XPATH
-      super(a)
+    def initialize(options: nil)
+      super(
+              name: :xhtml_migration,
+              xpath: XPATH,
+              options: options
+            )
     end
 
-    def create_actions(args = {})
-      reference_node = args[:reference_node]
+    def resolve(issue, options: {})
+      return unless issue.name == name
 
-      actions = []
+      super(
+              issue,
+              options: options
+           )
+
+      name = issue.name
+      reference_node = issue.content
+
       case reference_node.name
       when "html"
-        actions += process_root(reference_node, args)
+        issue.actions += process_root(reference_node, options)
       when "head"
-        actions += process_heading(reference_node, args)
+        issue.actions += process_heading(reference_node, options)
       when "big"
-        actions += process_big(reference_node, args)
+        issue.actions += process_big(reference_node, options)
       when "li"
-        actions += process_li(reference_node, args)
+        issue.actions += process_li(reference_node, options)
       when "img"
-        actions += process_img(reference_node, args)
+        issue.actions += process_img(reference_node, options)
       when "svg"
-        actions += process_svg(reference_node, args)
+        issue.actions += process_svg(reference_node, options)
       when "table"
-        actions += process_table(reference_node, args)
+        issue.actions += process_table(reference_node, options)
       else
         if reference_node.has_attribute?("href")
-          actions += process_href(reference_node, args)
+          issue.actions += process_href(reference_node, options)
         else
-          actions << UMPTG::XML::Pipeline::Action.new(
+          issue.actions << UMPTG::XML::Pipeline::Action.new(
                           name: name,
                           reference_node: reference_node,
                           info_message: "#{name}, #{reference_node.name}"
                       )
         end
       end
-      return actions
     end
 
     private
 
     XSI_NS = "http://www.w3.org/2001/XMLSchema-instance"
 
-    def process_root(reference_node, args)
+    def process_root(reference_node, options)
       actions = []
 
       xsi_ns = reference_node.document.root.namespace_definitions.select {|ns| ns.href == XSI_NS }
@@ -89,7 +96,7 @@ module UMPTG::XHTML::Pipeline::Filter
       return actions
     end
 
-    def process_heading(reference_node, args)
+    def process_heading(reference_node, options)
       actions = []
 
 
@@ -132,7 +139,7 @@ module UMPTG::XHTML::Pipeline::Filter
       return actions
     end
 
-    def process_big(reference_node, args)
+    def process_big(reference_node, options)
       actions = []
 
       content = reference_node.content || ""
@@ -149,7 +156,7 @@ module UMPTG::XHTML::Pipeline::Filter
       return actions
     end
 
-    def process_img(reference_node, args)
+    def process_img(reference_node, options)
       actions = []
 
       ["height","width"].each do |attr|
@@ -177,7 +184,7 @@ module UMPTG::XHTML::Pipeline::Filter
       return actions
     end
 
-    def process_li(reference_node, args)
+    def process_li(reference_node, options)
       actions = []
 
       actions << UMPTG::XML::Pipeline::Actions::RemoveAttributeAction.new(
@@ -189,7 +196,7 @@ module UMPTG::XHTML::Pipeline::Filter
       return actions
     end
 
-    def process_svg(reference_node, args)
+    def process_svg(reference_node, options)
       actions = []
 
       div_node = reference_node.document.create_element("div")
@@ -217,7 +224,7 @@ module UMPTG::XHTML::Pipeline::Filter
       return actions
     end
 
-    def process_table(reference_node, args)
+    def process_table(reference_node, options)
       actions = []
 
       # Remove @[cellspacing|width]
@@ -327,7 +334,7 @@ module UMPTG::XHTML::Pipeline::Filter
       return actions
     end
 
-    def process_href(reference_node, args)
+    def process_href(reference_node, options)
       actions = []
 
       href = reference_node['href']

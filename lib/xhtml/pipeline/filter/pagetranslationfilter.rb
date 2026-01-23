@@ -8,18 +8,24 @@ module UMPTG::XHTML::Pipeline::Filter
     ]
     SXPATH
 
-    def initialize(args = {})
-      a = args.clone
-      a[:name] = :xhtml_page_translation
-      a[:xpath] = XPATH
-      super(a)
+    def initialize(options: nil)
+      super(
+              name: :xhtml_page_translation,
+              xpath: XPATH,
+              options: options
+            )
     end
 
-    def create_actions(args = {})
-      name = args[:name]
-      reference_node = args[:reference_node]  # <? class="facing-page-grid-container"> element
+    def resolve(issue, options: {})
+      return unless issue.name == name
 
-      action_list = []
+      super(
+              issue,
+              options: options
+           )
+
+      name = issue.name
+      reference_node = issue.content  # <? class="facing-page-grid-container"> element
 
       cl = (reference_node["class"] || "").strip
       if cl == 'facing-page-grid-container'
@@ -41,9 +47,8 @@ module UMPTG::XHTML::Pipeline::Filter
           action.add_info_msg(msg)
         end
 
-        action_list << action
+        issue.actions << action
       end
-      return action_list
     end
   end
 end
