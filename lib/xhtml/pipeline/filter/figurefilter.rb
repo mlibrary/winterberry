@@ -8,22 +8,28 @@ module UMPTG::XHTML::Pipeline::Filter
     ]
     SXPATH
 
-    def initialize(args = {})
-      a = args.clone
-      a[:name] = :xhtml_figure
-      a[:xpath] = XPATH
-      super(a)
+    def initialize(options: nil)
+      super(
+              name: :xhtml_figure,
+              xpath: XPATH,
+              options: options
+            )
     end
 
-    def create_actions(args = {})
-      name = args[:name]
-      reference_node = args[:reference_node]  # <figure> element
+    def resolve(issue, options: {})
+      return unless issue.name == name
 
-      action_list = []
+      super(
+              issue,
+              options: options
+           )
+
+      name = issue.name
+      reference_node = issue.content  # <figure> element
 
       if reference_node.name == 'figure'
         id = reference_node['id'] || ""
-        action_list << UMPTG::XML::Pipeline::Action.new(
+        issue.actions << UMPTG::XML::Pipeline::Action.new(
                  name: name,
                  reference_node: reference_node,
                  info_message: \
@@ -31,7 +37,7 @@ module UMPTG::XHTML::Pipeline::Filter
              )
 =begin
         if reference_node['style'] == 'display:none'
-          action_list << UMPTG::XML::Pipeline::Actions::RemoveAttributeAction.new(
+          issue.actions << UMPTG::XML::Pipeline::Actions::RemoveAttributeAction.new(
                    name: name,
                    reference_node: reference_node,
                    attribute_name: "style",
@@ -41,7 +47,6 @@ module UMPTG::XHTML::Pipeline::Filter
         end
 =end
       end
-      return action_list
     end
   end
 end

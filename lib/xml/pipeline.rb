@@ -11,7 +11,13 @@ module UMPTG::XML
   require_relative(File.join("pipeline", "filter"))
   require_relative(File.join("pipeline", "processor"))
 
-  def self.Processor(args = {})
-    return Pipeline::Processor.new(args)
+  def self.Processor(name:, filters: nil, options: {}, logger: nil)
+    return Pipeline::Processor.new(
+                name: name,
+               filters: filters,
+               options: options,
+               logger: logger
+           )
+
   end
 end

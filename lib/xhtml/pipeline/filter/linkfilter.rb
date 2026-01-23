@@ -8,18 +8,24 @@ module UMPTG::XHTML::Pipeline::Filter
     ]
     SXPATH
 
-    def initialize(args = {})
-      a = args.clone
-      a[:name] = :xhtml_link
-      a[:xpath] = XPATH
-      super(a)
+    def initialize(options: nil)
+      super(
+              name: :xhtml_link,
+              xpath: XPATH,
+              options: options
+            )
     end
 
-    def create_actions(args = {})
-      name = args[:name]
-      reference_node = args[:reference_node]  # <a> element
+    def resolve(issue, options: {})
+      return unless issue.name == name
 
-      action_list = []
+      super(
+              issue,
+              options: options
+           )
+
+      name = issue.name
+      reference_node = issue.content  # <a> element
 
       if reference_node.name == 'a'
         id = reference_node['id'] || ""
@@ -41,9 +47,8 @@ module UMPTG::XHTML::Pipeline::Filter
         else
           action.add_info_msg("#{name}, #{reference_node.name} found @id=\"#{id}\" @href=\"#{href}\"")
         end
-        action_list << action
+        issue.actions << action
       end
-      return action_list
     end
   end
 end
