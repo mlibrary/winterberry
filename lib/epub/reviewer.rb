@@ -5,9 +5,8 @@ module UMPTG::EPUB
 
   class Reviewer < Pipeline::Processor
     def initialize(args = {})
-      a = args.clone
-      a[:name] = "EPUBReviewProcessor"
-      a[:options] = {
+      name = args[:name] || "EPUBReviewProcessor"
+      options = {
             css_font_face: false,
             epub_oebps_accessmode: true,
             epub_oebps_accessfeature: true,
@@ -20,7 +19,11 @@ module UMPTG::EPUB
             xhtml_table: true,
             xhtml_list_item: false
           }
-      super(a)
+      super(
+              name: name,
+              options: options,
+              logger: args[:logger]
+            )
     end
 
     def process_entry_action_results(args = {})

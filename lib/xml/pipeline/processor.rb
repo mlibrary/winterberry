@@ -19,15 +19,17 @@ module UMPTG::XML::Pipeline
     end
 
     def select(xml_doc, options: {})
-      n_list = xml_doc.xpath(@xpath)
-
-      f_node_list = {}
-      @filters.each {|f| f_node_list[f.name] = f.select(xml_doc) }
-
       issues = []
-      n_list.each do |n|
-        f_node_list.each do |fn,fl|
-          issues << UMPTG::Issue.new(name: fn, content: n) if fl.include?(n)
+      unless @xpath.empty?
+        n_list = xml_doc.xpath(@xpath)
+
+        f_node_list = {}
+        @filters.each {|f| f_node_list[f.name] = f.select(xml_doc) }
+
+        n_list.each do |n|
+          f_node_list.each do |fn,fl|
+            issues << UMPTG::Issue.new(name: fn, content: n) if fl.include?(n)
+          end
         end
       end
       return issues

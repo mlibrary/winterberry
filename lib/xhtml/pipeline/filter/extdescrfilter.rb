@@ -25,7 +25,7 @@ module UMPTG::XHTML::Pipeline::Filter
            )
 
       name = issue.name
-      reference_node = issue.content  # <figure> element
+      reference_node = issue.content  # <img> element
 
       if reference_node.name == 'img'
         aria_details = (reference_node["aria-details"] || "").strip

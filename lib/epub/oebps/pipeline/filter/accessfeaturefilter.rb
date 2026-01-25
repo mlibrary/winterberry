@@ -12,35 +12,39 @@ module UMPTG::EPUB::OEBPS::Pipeline::Filter
     ]
     SXPATH
 
-    def initialize(args = {})
-      a = args.clone
-      a[:name] = :epub_oebps_accessfeature
-      a[:xpath] = XPATH
-      super(a)
+    def initialize(options: nil)
+      super(
+              name: :epub_oebps_accessfeature,
+              xpath: XPATH,
+              options: options
+            )
     end
 
-    def create_actions(args = {})
-      name = args[:name]
-      reference_node = args[:reference_node]  # <meta> element
+    def resolve(issue, options: {})
+      return unless issue.name == name
 
-      action_list = []
+      super(
+              issue,
+              options: options
+           )
+
+      name = issue.name
+      reference_node = issue.content  # <meta> element
 
       if reference_node['property'] == 'schema:accessibilityFeature'
-        action_list << UMPTG::XML::Pipeline::Action.new(
+        issue.actions << UMPTG::XML::Pipeline::Action.new(
                name: name,
                reference_node: reference_node,
                info_message: "#{name}, found #{reference_node}"
            )
       end
-
-      return action_list
     end
 
-    def process_action_results(args = {})
-      super(args)
+    def report(issues, logger:, options: {})
+      super(issues, logger: logger, options: options)
 
-      action_results = args[:action_results]
-      logger = args[:logger]
+      actions = []
+      issues.each {|i| actions += i.actions }
 
       # <meta property="schema:accessibilityFeature">alternativeText</meta>
       # <meta property="schema:accessibilityFeature">printPageNumbers</meta>
@@ -53,6 +57,8 @@ module UMPTG::EPUB::OEBPS::Pipeline::Filter
           }
       alt_text_found = print_page_numbers = false
       actions.each do |a|
+        next unless a.class == "UMPTG::XML::Pipeline::Action"
+
         content = (a.reference_node.content || "").strip
         features[content] = true if features.key?(content)
       end

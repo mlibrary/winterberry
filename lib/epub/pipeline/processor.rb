@@ -4,33 +4,27 @@ module UMPTG::EPUB::Pipeline
     attr_reader :name, :processors
     attr_accessor :logger
 
-    def initialize(args = {})
-      a = args.clone
-      a2 = args.clone
+    def initialize(name:, filters: nil, options: {}, logger: nil)
+      a = {
+              name: name || "EPUBProcessor",
+              filters: filters,
+              options: options,
+              logger: logger
+          }
 
-      a2[:name] = a[:name] || "EPUBProcessor"
 
-      a[:name] = "CSSProcessor"
-      a2[:css_processor] = UMPTG::CSS::Processor(a) \
-                 if a2[:css_processor].nil?
+      a[:css_processor] = UMPTG::CSS::Processor(name: "CSSProcessor", options: options, logger: logger) \
+                 if options[:css_processor].nil?
+      a[:ncx_processor] = UMPTG::EPUB::NCX::Processor(name: "NCXProcessor", options: options, logger: logger) \
+                 if options[:ncx_processor].nil?
+      a[:oebps_processor] = UMPTG::EPUB::OEBPS::Processor(name: "OEBPSProcessor", options: options, logger: logger) \
+                 if options[:oebps_processor].nil?
+      a[:xhtml_processor] = UMPTG::XHTML::Processor(name: "XHTMLProcessor", options: options, logger: logger) \
+                 if options[:xhtml_processor].nil?
+      a[:xml_processor] = UMPTG::XML::Processor(name: "XMLProcessor", options: options, logger: logger) \
+                 if options[:xml_processor].nil?
 
-      a[:name] = "NCXProcessor"
-      a2[:ncx_processor] = UMPTG::EPUB::NCX::Processor(a) \
-                 if a2[:ncx_processor].nil?
-
-      a[:name] = "OEBPSProcessor"
-      a2[:oebps_processor] = UMPTG::EPUB::OEBPS::Processor(a) \
-                 if a2[:oebps_processor].nil?
-
-      a[:name] = "XHTMLProcessor"
-      a2[:xhtml_processor] = UMPTG::XHTML::Processor(a) \
-                 if a2[:xhtml_processor].nil?
-
-      a[:name] = "XMLProcessor"
-      a2[:xml_processor] = UMPTG::XML::Processor(a) \
-                 if a2[:xml_processor].nil?
-
-      super(a2)
+      super(a)
 
       @name = @properties[:name]
       @logger = @properties.key?(:logger) ? @properties[:logger] : UMPTG::Logger.create(logger_fp: STDOUT)
@@ -70,14 +64,14 @@ module UMPTG::EPUB::Pipeline
 
         case media_type
         when "text/css"
-          result = processor.run(entry.content, args)
+          result = processor.run(entry.content, options: args)
         #when "application/xhtml+xml", "application/x-dtbncx+xml", "application/oebps-package+xml"
         else
           xml_doc = UMPTG::XML.parse(xml_content: entry.content)
           @logger.error("#{entry.name}: #{xml_doc.errors.count} parse errors") unless xml_doc.errors.empty?
 
           run_args[:entry] = entry
-          result = processor.run(xml_doc, run_args)
+          result = processor.run(xml_doc, options: run_args, logger: @logger)
         end
 
         entry_actions << UMPTG::EPUB::EntryActions.new(
@@ -91,8 +85,8 @@ module UMPTG::EPUB::Pipeline
         @logger.info("Entry: #{ea.entry.name}")
 
         # Report results
-        UMPTG::XML::Pipeline::Action.process_actions(
-              actions: ea.action_result.actions,
+        UMPTG::Pipeline::Action.process_issues(
+              actions: ea.action_result.issues,
               logger: @logger,
               normalize: false,
               display_msgs: false
@@ -106,9 +100,9 @@ module UMPTG::EPUB::Pipeline
           #unless media_type == "text/css"
             case media_type
             when "text/css"
-              content = ea.action_result.actions.first.content
+              content = ea.action_result.issues.first.content
             else
-              fact = ea.action_result.actions.first
+              fact = ea.action_result.issues.first
               entry_xml_doc = fact.nil? ? \
                     UMPTG::XML.parse(xml_content: ea.entry.content) : \
                     fact.reference_node.document
@@ -129,9 +123,11 @@ module UMPTG::EPUB::Pipeline
             UMPTG::Message.FATAL => 0
       }
       entry_actions.each do |ea|
-        ea.action_result.actions.each do |action|
-          action.messages.each do |msg|
-            type_cnt[msg.level] += 1
+        ea.action_result.issues.each do |issue|
+          issue.actions.each do |action|
+            action.messages.each do |msg|
+              type_cnt[msg.level] += 1
+            end
           end
         end
       end

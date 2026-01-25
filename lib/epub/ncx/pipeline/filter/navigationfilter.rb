@@ -8,24 +8,31 @@ module UMPTG::EPUB::NCX::Pipeline::Filter
     ]
     PCKXPATH
 
-    def initialize(args = {})
-      a = args.clone
-      a[:name] = :epub_ncx_navigation
-      a[:xpath] = XPATH
-      super(a)
+    def initialize(options: nil)
+      super(
+              name: :epub_ncx_navigation,
+              xpath: XPATH,
+              options: options
+            )
     end
 
-    def create_actions(args = {})
-      reference_node = args[:reference_node]
+    def resolve(issue, options: {})
+      return unless issue.name == name
 
-      actions = []
+      super(
+              issue,
+              options: options
+           )
+
+      name = issue.name
+      reference_node = issue.content  # <navPoint|pageTarget> element
 
       if reference_node.name == "navPoint" or reference_node.name == "pageTarget"
         id = reference_node["id"]
         id = id.nil? ? "" : id.strip
         if id.match?(/^[0-9]/)
           new_id = reference_node.name == "navPoint" ? "nav" + id : "page" + id
-          actions << UMPTG::XML::Pipeline::Actions::SetAttributeValueAction.new(
+          issue.actions << UMPTG::XML::Pipeline::Actions::SetAttributeValueAction.new(
                     name: name,
                     reference_node: reference_node,
                     attribute_name: "id",
@@ -34,7 +41,6 @@ module UMPTG::EPUB::NCX::Pipeline::Filter
                   )
         end
       end
-      return actions
     end
   end
 end

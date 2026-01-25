@@ -26,6 +26,10 @@ module UMPTG::Pipeline
       issue.actions << act
     end
 
+    def resolve_all(result, options: {}, logger: nil)
+      return result
+    end
+
     def report(issues, logger:, options: {})
       actions_cnt = completed_cnt = warning_cnt = error_cnt = 0
       issues.each do |issue|

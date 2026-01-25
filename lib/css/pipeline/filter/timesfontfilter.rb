@@ -1,22 +1,29 @@
 module UMPTG::CSS::Pipeline
 
-  class TimesFontFilter < UMPTG::CSS::Pipeline::Filter
+  class TimesFontFilter < UMPTG::Pipeline::Filter
 
-    def initialize(args = {})
-      a = args.clone
-      a[:name] = :css_times_font
-      super(a)
+    def initialize(options: nil)
+      super(
+              name: :css_times_font,
+              options: options
+            )
     end
 
-    def run(css_parser, args = {})
-      a = args.clone
-      actions = []
+    def resolve(issue, options: {})
+      return unless issue.name == name
 
-      actions << UMPTG::CSS::Pipeline::TimesFontAction.new(
+      super(
+              issue,
+              options: options
+           )
+
+      name = issue.name
+
+      issue.actions << UMPTG::CSS::Pipeline::TimesFontAction.new(
                 name: a[:name],
-                content: css_parser
+                content: issue.content
             )
-      return actions
+
     end
   end
 end

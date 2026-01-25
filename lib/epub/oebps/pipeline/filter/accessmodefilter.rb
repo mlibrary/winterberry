@@ -15,39 +15,46 @@ module UMPTG::EPUB::OEBPS::Pipeline::Filter
     ]
     SXPATH
 
-    def initialize(args = {})
-      a = args.clone
-      a[:name] = :epub_oebps_accessmode
-      a[:xpath] = XPATH
-      super(a)
+    def initialize(options: nil)
+      super(
+              name: :epub_oebps_accessmode,
+              xpath: XPATH,
+              options: options
+            )
     end
 
-    def create_actions(args = {})
-      name = args[:name]
-      reference_node = args[:reference_node]  # <meta> element
+    def resolve(issue, options: {})
+      return unless issue.name == name
 
-      action_list = []
+      super(
+              issue,
+              options: options
+           )
+
+      name = issue.name
+      reference_node = issue.content  # <meta> element
 
       case reference_node['property']
       when 'schema:accessMode', 'schema:accessModeSufficient'
-        action_list << UMPTG::XML::Pipeline::Action.new(
+        issue.actions << UMPTG::XML::Pipeline::Action.new(
                name: name,
                reference_node: reference_node,
                info_message: "#{name}, found #{reference_node}"
            )
       end
-      return action_list
     end
 
-    def process_action_results(args = {})
-      super(args)
+    def report(issues, logger:, options: {})
+      super(issues, logger: logger, options: options)
 
-      action_results = args[:action_results]
-      logger = args[:logger]
+      actions = []
+      issues.each {|i| actions += i.actions }
 
       # <meta property="schema:accessModeSufficient">textual</meta>
       textual_found = false
       actions.each do |a|
+        next unless a.class == "UMPTG::XML::Pipeline::Action"
+
         if ['schema:accessMode', 'schema:accessModeSufficient'].include?(a.reference_node['property'])
           content = (a.reference_node.content || "").strip
           if content.split(',').select {|s| s.strip.downcase == "textual"}.count > 0

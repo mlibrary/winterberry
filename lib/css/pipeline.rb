@@ -1,4 +1,5 @@
 module UMPTG::CSS
+  require_relative(File.join("..", "pipeline"))
   require_relative(File.join("pipeline", "actions"))
   require_relative(File.join("pipeline", "filter"))
   require_relative(File.join("pipeline", "filter", "fontfacefilter"))
@@ -14,12 +15,26 @@ module UMPTG::CSS
             css_times_font: UMPTG::CSS::Pipeline::TimesFontFilter
       }
 
+  def self.Processor(name:, filters: nil, options: {}, logger: nil)
+    m_filters = filters.nil? ? UMPTG::CSS.FILTERS : \
+                  filters.merge(UMPTG::CSS.FILTERS)
+
+    return UMPTG::Pipeline::Processor.new(
+            name: name,
+            filters: m_filters,
+            options: options,
+            logger: logger
+          )
+  end
+
+=begin
   def self.Processor(args = {})
     a = args.clone
     a[:filters] = a[:filters].nil? ? UMPTG::CSS.FILTERS : \
                   a[:filters].merge(UMPTG::CSS.FILTERS)
     return UMPTG::CSS::Pipeline::Processor.new(a)
   end
+=end
 
   def self.fulcrum_default
     return UMPTG::CSS.fulcrum_css("fulcrum_default.css")

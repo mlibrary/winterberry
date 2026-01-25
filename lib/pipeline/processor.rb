@@ -61,6 +61,8 @@ module UMPTG::Pipeline
     end
 
     def resolve_all(result, options: {}, logger: nil)
+      logger = @logger if logger.nil?
+      @filters.each {|f| f.resolve_all(result, options: options, logger: logger) }
       return result
     end
 
@@ -93,7 +95,14 @@ module UMPTG::Pipeline
     end
 
     def display_options()
-      @options.each {|o,v| @logger.info("#{o}:#{v}") if @properties[:filters].key?(o) }
+      c = 0
+      @options.each do |o,v|
+        if @properties[:filters].key?(o)
+          @logger.info("#{o}:#{v}")
+          c += 1 if v
+        end
+      end
+      @logger.warn("no filters active") if c == 0
     end
   end
 end
