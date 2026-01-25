@@ -120,7 +120,7 @@ fit_spreadsheet_file_list.each do |fit_spreadsheet_file|
                   "NOID" => noid,
                   #"Description" => row["Description"],
                   #"Rightsholder" => row["T& F Imprint"],
-                  "Rightsholder" => row["T & F Publisher"],
+                  "Rightsholder" => "Taylor & Francis Group",
                   #"Publisher" => row["T & F Publisher"],
                   #"Pub Location" => row["T&F Pub Location"],
                   #"Pub Year" => pub_year,
