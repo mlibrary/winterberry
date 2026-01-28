@@ -22,7 +22,7 @@ module UMPTG::Pipeline
 
     def resolve(issue, options: {})
       act = UMPTG::Pipeline::Action.new(issue, options: options)
-      act.add_info_msg("#{@name}, found issue #{issue.name}")
+      #act.add_info_msg("#{@name}, found issue #{issue.name}")
       issue.actions << act
     end
 
