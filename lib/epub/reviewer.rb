@@ -28,6 +28,7 @@ module UMPTG::EPUB
 
     def process_entry_action_results(args = {})
       super(args)
+      return
 
       entry_actions = args[:entry_actions]
       llogger = args[:logger] || @logger

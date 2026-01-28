@@ -54,6 +54,7 @@ module UMPTG::EPUB::Pipeline
       entry_actions = []
 
       run_args = args.clone
+      run_args[:process_results] = false
       ([epub.rendition.entry] + epub.rendition.manifest.entries).each do |entry|
         media_type = entry.media_type.to_s
         processor = @processors[media_type]
@@ -64,7 +65,9 @@ module UMPTG::EPUB::Pipeline
 
         case media_type
         when "text/css"
-          result = processor.run(entry.content, options: args)
+          r_args = args.clone
+          r_args[:process_results] = false
+          result = processor.run(entry.content, options: r_args)
         #when "application/xhtml+xml", "application/x-dtbncx+xml", "application/oebps-package+xml"
         else
           xml_doc = UMPTG::XML.parse(xml_content: entry.content)
@@ -90,7 +93,7 @@ module UMPTG::EPUB::Pipeline
               logger: @logger,
               options: {
                     normalize: false,
-                    display_msgs: false
+                    display_msgs: true
                   }
               )
         #ea.action_result.actions.each {|a| @logger.info(a) }
@@ -161,7 +164,8 @@ module UMPTG::EPUB::Pipeline
           next unless ea.entry.media_type == k
           p.report(
                 ea.action_result,
-                logger: llogger
+                logger: llogger,
+                options: {process_results: true}
               )
         end
 =begin

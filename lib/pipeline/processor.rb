@@ -67,10 +67,15 @@ module UMPTG::Pipeline
     end
 
     def report(results, options: {}, logger: nil)
-      logger = @logger if logger.nil?
-      @filters.each do |f|
-        issues = results.issues.select {|i| i.name == f.name }
-        f.report(issues, options: options, logger: logger)
+      process_results = options.key?(:process_results) ? options[:process_results] : false
+
+      if process_results
+        logger = @logger if logger.nil?
+
+        @filters.each do |f|
+          issues = results.issues.select {|i| i.name == f.name }
+          f.report(issues, options: options, logger: logger)
+        end
       end
     end
 
@@ -85,7 +90,7 @@ module UMPTG::Pipeline
       resolve_all(result, options: options, logger: logger)
 
       # Report the issue resolutions
-      report(result, options: options, logger: logger) if (options[:process_results] || true)
+      report(result, options: options, logger: logger)
       return result
     end
 
@@ -102,7 +107,7 @@ module UMPTG::Pipeline
           c += 1 if v
         end
       end
-      @logger.warn("no filters active") if c == 0
+      @logger.warn("#{name}, no filters active") if c == 0
     end
   end
 end

@@ -24,7 +24,7 @@ module UMPTG::Pipeline
 
     def self.process_issues(issues, logger:, options: {})
       normalize = options[:normalize] || false
-      display_msgs = options[:display_msgs] || true
+      display_msgs = options[:display_msgs] || false
 
       modified = false
       if normalize
