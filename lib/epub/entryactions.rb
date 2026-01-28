@@ -14,7 +14,12 @@ module UMPTG::EPUB
     def select_by_name(args = {})
       name = args[:name]
 
-      return action_result.actions.select {|a| a.name == name }
+      actions = []
+      action_result.issues.each do |issue|
+        next unless issue.name == name
+        actions += issue.actions
+      end
+      return actions
     end
   end
 end

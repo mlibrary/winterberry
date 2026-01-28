@@ -43,6 +43,8 @@ module UMPTG::EPUB
         linked_figures = []
         entry_actions.each do |ea|
           ea.select_by_name(name: :xhtml_figure).each do |ac|
+            next unless ac.class == "UMPTG::XML::Pipeline::Action"
+
             figure_id = ac.reference_node['id'] || ""
             unless figure_id.empty?
               href = File.basename(ea.entry.name) + "#" + figure_id

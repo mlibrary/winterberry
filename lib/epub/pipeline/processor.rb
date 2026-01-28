@@ -86,10 +86,12 @@ module UMPTG::EPUB::Pipeline
 
         # Report results
         UMPTG::Pipeline::Action.process_issues(
-              actions: ea.action_result.issues,
+              ea.action_result.issues,
               logger: @logger,
-              normalize: false,
-              display_msgs: false
+              options: {
+                    normalize: false,
+                    display_msgs: false
+                  }
               )
         #ea.action_result.actions.each {|a| @logger.info(a) }
 
@@ -155,13 +157,25 @@ module UMPTG::EPUB::Pipeline
       a[:logger] = llogger
 
       @processors.each do |k,p|
+        entry_actions.each do |ea|
+          next unless ea.entry.media_type == k
+          p.report(
+                ea.action_result,
+                logger: llogger
+              )
+        end
+=begin
         action_results = []
         entry_actions.each do |ea|
           action_results << ea.action_result if ea.entry.media_type == k
         end
 
         a[:action_results] = action_results
-        p.process_action_results(a)
+        p.report(
+              action_results,
+              logger: llogger
+            )
+=end
       end
     end
 
