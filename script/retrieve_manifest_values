@@ -26,7 +26,7 @@ options.noids_only = false
 options.output_file = File.join(Dir.pwd, "monograph_manifest.csv")
 options.include_representatives = false
 option_parser = OptionParser.new do |opts|
-  opts.banner = "Usage: #{File.basename(__FILE__)} [-c <column_header>] [-f production|preview|staging] [-n] [-o <output_file>] [-p bar|ebc|heb] [-r] <monograph_id|press> [<monograph_id|press>..]"
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-c <column_header>] [-f production|preview|staging] [-n] [-o <output_file>] [-r] <file|monograph_id|press> [<file|monograph_id|press>..]"
   opts.on('-c', '--manifest_column <column_header>', 'Fulcrum manifest metadata field') do |col|
     options.fulcrum_column_list << col
   end
@@ -76,10 +76,15 @@ monograph_id_list.each do |monograph_id|
   script_logger.info("*** #{monograph_id} **")
   STDOUT.flush
 
-  if UMPTG::Press.valid(monograph_id)
+  id_file = File.expand_path(monograph_id)
+
+  case
+  when UMPTG::Press.valid(monograph_id)
     monographs_list = service.monographs(press_list: [monograph_id])
     noid_list = monographs_list.collect {|m| m['id'] }
     monograph_id_noid[monograph_id] = noid_list
+  when File.file?(id_file)
+    monograph_id_noid[monograph_id] = File.readlines(id_file, chomp: true)
   else
     noid_list = service.monograph_noid(identifier: monograph_id)
     monograph_id_noid[monograph_id] = noid_list[monograph_id]
