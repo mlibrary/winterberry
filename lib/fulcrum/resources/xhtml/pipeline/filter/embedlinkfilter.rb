@@ -150,36 +150,49 @@ module UMPTG::Fulcrum::Resources::XHTML::Pipeline::Filter
             caption_added = true
           end
           block_list = caption_node.xpath(".//*[local-name()='p' or local-name()='div']")
-
-          # FOPS-487
-          #link_descr = "View resource"
-          link_descr = manifest.fileset_link(resource_name_list.first)
-          link_markup = manifest.fileset_link_markup(
-                  resource_name_list.first,
-                  {
-                      description: link_descr,
-                      #download: manifest.fileset_allow_download(resource_name_list.first)
-                  }
-                )
           last_block = block_list.last
-          if last_block.nil?
-            caption_content = caption_node.content
-            ename = caption_content.strip.empty? ? "p" : "span"
-            last_block = caption_node.document.create_element(ename)
-            link_container = last_block
-            caption_node.add_child(last_block)
-          else
-            caption_content = last_block.content
-            link_container = last_block.document.create_element("span")
-            last_block.add_child(link_container)
+
+          link_cnt = 0
+          resource_name_list.each do |resource_name|
+            link_cnt += 1
+
+            # FOPS-487
+            #link_descr = "View resource"
+            link_descr = manifest.fileset_link(resource_name)
+            link_markup = manifest.fileset_link_markup(
+                    resource_name,
+                    {
+                        description: link_descr,
+                        #download: manifest.fileset_allow_download(resource_name)
+                    }
+                  )
+            if last_block.nil?
+              caption_content = caption_node.content
+              ename = caption_content.strip.empty? ? "p" : "span"
+              last_block = caption_node.document.create_element(ename)
+              link_container = last_block
+              caption_node.add_child(last_block)
+            else
+              caption_content = last_block.content
+              link_container = last_block.document.create_element("span")
+              last_block.add_child(link_container)
+            end
+            link_container.add_class("default-media-display")
+
+            case link_cnt
+            when 1
+              ll = (caption_content.strip.end_with?('.') or \
+                      caption_content.strip.end_with?('?')) ? " " : ". "
+            else
+              ll = ", "
+            end
+            ll += link_markup
+
+            if link_cnt == resource_name_list.count
+              ll += "."
+            end
+            link_container.add_child(ll)
           end
-          link_container.add_class("default-media-display")
-          if caption_content.strip.end_with?('.') or caption_content.strip.end_with?('?')
-            ll = " " + link_markup + "."
-          else
-            ll = ". " + link_markup + "."
-          end
-          link_container.add_child(ll)
           fragment_node.remove_class("enhanced-media-display")
 
 =begin
