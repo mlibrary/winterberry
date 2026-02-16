@@ -8,7 +8,7 @@ module UMPTG::EPUB::OEBPS
     a[:filters] = a[:filters].nil? ? UMPTG::EPUB::OEBPS::Pipeline.FILTERS : \
                   a[:filters].merge(UMPTG::EPUB::OEBPS::Pipeline.FILTERS)
 
-    #return UMPTG::XML::Processor(a)
-    return UMPTG::EPUB::OEBPS::Pipeline::AccessModeProcessor.new(a)
+    return UMPTG::XML::Processor(a)
+    #return UMPTG::EPUB::OEBPS::Pipeline::AccessModeProcessor.new(a)
   end
 end

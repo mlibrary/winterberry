@@ -24,11 +24,17 @@ module UMPTG::EPUB::Archive::OEBPS::Metadata
       super(a)
 
       @dc = DC::DC.new(a)
+      @rendition = Rendition.new(a)
       @schema = Schema::Schema.new(a)
       @terms = Terms.new(a)
 
       @xpath_children = @terms.xpath_children + '|' + @dc.xpath_children \
-              + '|' + @schema.xpath_children
+              + '|' + @schema.xpath_children + '|' + @rendition.xpath_children
+    end
+
+    def layout()
+      n = @rendition.find(meta_property: "layout").first
+      return n.nil? ? "unknown" : n.content
     end
 
     def add(args = {})
@@ -36,7 +42,8 @@ module UMPTG::EPUB::Archive::OEBPS::Metadata
     end
 
     def select(node, args)
-      return (@terms.select(node, args) or @dc.select(node, args) or @schema.select(node, args))
+      return (@terms.select(node, args) or @dc.select(node, args) \
+              or @schema.select(node, args) or @rendition.select(node, args))
     end
 
     def self.namespace_prefix(onode, ns_attr_uri)
