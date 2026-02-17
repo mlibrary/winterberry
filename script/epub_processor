@@ -168,7 +168,9 @@ epub_file_list.each do |epub_file|
   epub_processor.logger.info("processing EPUB file #{File.basename(epub_file)}")
   epub_processor.logger.info("Time: #{Time.now}")
   epub_processor.logger.info("Version: #{epub.rendition.version}")
-  epub_processor.logger.info("Layout: #{epub.rendition.metadata.layout}")
+  layout = epub.rendition.metadata.layout
+  layout = "(not specified)" if layout.empty?
+  epub_processor.logger.info("Layout: #{layout}")
   identifiers = epub.rendition.metadata.dc.elements.identifier.collect {|d| d.text}
   epub_processor.logger.info("Identifiers: #{identifiers.join(',')}")
   epub_processor.logger.info()

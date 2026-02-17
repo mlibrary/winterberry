@@ -34,7 +34,7 @@ module UMPTG::EPUB::Archive::OEBPS::Metadata
 
     def layout()
       n = @rendition.find(meta_property: "layout").first
-      return n.nil? ? "unknown" : n.content
+      return n.nil? ? "" : (n.content || "").strip
     end
 
     def add(args = {})
