@@ -120,7 +120,6 @@ module UMPTG::EPUB::Pipeline
           #end
         end
       end
-
       type_cnt = {
             UMPTG::Message.INFO => 0,
             UMPTG::Message.WARNING => 0,
@@ -160,26 +159,16 @@ module UMPTG::EPUB::Pipeline
       a[:logger] = llogger
 
       @processors.each do |k,p|
+        issues = []
         entry_actions.each do |ea|
-          next unless ea.entry.media_type == k
-          p.report(
-                ea.action_result,
-                logger: llogger,
-                options: {process_results: true}
-              )
-        end
-=begin
-        action_results = []
-        entry_actions.each do |ea|
-          action_results << ea.action_result if ea.entry.media_type == k
+          issues += ea.action_result.issues if ea.entry.media_type == k
         end
 
-        a[:action_results] = action_results
-        p.report(
-              action_results,
-              logger: llogger
+        p.report_issues(
+              issues,
+              logger: llogger,
+              options: {process_results: true}
             )
-=end
       end
     end
 

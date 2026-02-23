@@ -21,8 +21,11 @@ module UMPTG::Pipeline
     end
 
     def resolve(issue, options: {})
+      # Currently, no base action.
+      return
+
       act = UMPTG::Pipeline::Action.new(issue, options: options)
-      #act.add_info_msg("#{@name}, found issue #{issue.name}")
+      act.add_info_msg("#{@name}, found issue #{issue.name}")
       issue.actions << act
     end
 

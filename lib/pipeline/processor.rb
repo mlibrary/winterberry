@@ -66,17 +66,21 @@ module UMPTG::Pipeline
       return result
     end
 
-    def report(results, options: {}, logger: nil)
+    def report_issues(issues, options: {}, logger: nil)
       process_results = options.key?(:process_results) ? options[:process_results] : false
 
       if process_results
         logger = @logger if logger.nil?
 
         @filters.each do |f|
-          issues = results.issues.select {|i| i.name == f.name }
-          f.report(issues, options: options, logger: logger)
+          ss = issues.select {|i| i.name == f.name }
+          f.report(ss, options: options, logger: logger)
         end
       end
+    end
+
+    def report(result, options: {}, logger: nil)
+      report_issues(result.issues, options: options, logger: logger)
     end
 
     def run(content, options: {}, logger: nil)

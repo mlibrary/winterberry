@@ -40,9 +40,7 @@ module UMPTG::EPUB::OEBPS::Pipeline::Filter
       end
     end
 
-    def report(issues, logger:, options: {})
-      super(issues, logger: logger, options: options)
-
+    def self.resolve(issues, options: {})
       actions = []
       issues.each {|i| actions += i.actions }
 
@@ -55,19 +53,24 @@ module UMPTG::EPUB::OEBPS::Pipeline::Filter
             "displayTransformability" => false,
             "readingOrder" => false
           }
-      alt_text_found = print_page_numbers = false
       actions.each do |a|
-        next unless a.class == "UMPTG::XML::Pipeline::Action"
+        next unless a.class.name == "UMPTG::XML::Pipeline::Action"
 
         content = (a.reference_node.content || "").strip
         features[content] = true if features.key?(content)
       end
 
       features.each do |k,v|
-        if v
-          logger.info("#{name}, <meta property=\"schema:accessibilityFeature\">#{k}</meta> found")
-        else
-          logger.warn("#{name}, <meta property=\"schema:accessibilityFeature\">#{k}</meta> not found")
+        unless v
+          issue = UMPTG::Issue.new(name: :epub_oebps_accessfeature, content: issues.first.content.parent)
+          issues << issue
+
+          act = UMPTG::Pipeline::Action.new(
+                  issue,
+                  options: options
+                  )
+          act.add_warning_msg("#{issue.name}, <meta property=\"schema:accessibilityFeature\">#{k}</meta> not found")
+          issue.actions << act
         end
       end
     end
