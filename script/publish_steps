@@ -415,6 +415,19 @@ File.open(cmds_file, "w") do |fp|
   fp.puts "\tFileSet.find(noid).update_index"
   fp.puts "end;0"
   fp.puts
+  fp.puts "# For each monograph NOID, create resource derivatives (missing thumbnails)"
+  fp.puts "%w[].each do |mid|"
+  fp.puts "\t# delete \"AND -hidden_representative_bsi:true\" if you want to (re)create the FeaturedRepresentative/cover..."
+  fp.puts "\t# derivatives too for whatever reason"
+  fp.puts "\tfile_set_docs = ActiveFedora::SolrService.query(\"+has_model_ssim:FileSet AND +monograph_id_ssim:\#{mid} AND -hidden_representative_bsi:true\", rows: 10000)"
+  fp.puts "\tfile_set_docs.map(&:id).each do |fid|"
+  fp.puts "\t\tf = FileSet.find(fid)"
+  fp.puts "\t\t# can't make derivatives for external resources (they are \"file-less\")"
+  fp.puts "\t\tnext if f.original_file.nil?"
+  fp.puts "\t\tCreateDerivativesJob.perform_later(f, f.original_file.id, nil)"
+  fp.puts "\tend"
+  fp.puts "end ;0"
+  fp.puts
   fp.puts "# Create monographs"
   fp.puts "find /mnt/umptmm/<monograph_dir>/ -maxdepth 1 -mindepth 1 -type d -print0 | sort -zn | xargs -0 -I '{}' echo bundle exec script/import -d '{}' -p <heb|michigan|um-pccn> -v private -q"
   fp.puts
