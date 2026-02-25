@@ -447,6 +447,7 @@
 
     <xs:element name="animated_gif" type="type_fileset_resource"/>
     <xs:element name="audio" type="type_fileset_resource"/>
+    <xs:element name="chapter" type="type_fileset_resource_allow_download_yes"/>
     <xs:element name="chart" type="type_fileset_resource_allow_download_yes"/>
     <xs:element name="code" type="type_fileset_resource_allow_download_yes"/>
     <xs:element name="dataset" type="type_fileset_resource_allow_download_yes"/>
@@ -1164,6 +1165,7 @@
         <xs:choice minOccurs="0" maxOccurs="unbounded">
             <xs:element ref="animated_gif"/>
             <xs:element ref="audio"/>
+            <xs:element ref="chapter"/>
             <xs:element ref="chart"/>
             <xs:element ref="code"/>
             <xs:element ref="dataset"/>
