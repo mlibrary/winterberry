@@ -1,0 +1,112 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Script
+
+require 'optparse'
+require 'ostruct'
+require 'os'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+# Process the script parameters.
+options = OpenStruct.new
+options.execute = false
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-e] spreadsheet_file"
+  opts.on('-e', '--execute', 'Execute') do |exec|
+    options.execute = true
+  end
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    script_logger.info(opts)
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  script_logger.info(option_parser.help)
+  return
+end
+
+# Process the command line parameters.
+spreadsheet_file = ARGV[0]
+
+spreadsheet_file = File.expand_path(spreadsheet_file)
+unless File.file?(spreadsheet_file)
+  script_logger.error("invalid spreadsheet file #{spreadsheet_file}")
+  exit 1
+end
+
+REP_DIR = "S:/Information\ Management/Fulcrum/PTG/tickets/FOPS-1046/extract/michigan"
+#REP_DIR = "S:/Information\ Management/Fulcrum/PTG/tickets/FOPS-1046/test1"
+B10_DIR = "S:/Information\ Management/Fulcrum/PTG/tickets/FOPS-1046/Fulcrum/bigten"
+
+require 'csv'
+require 'fileutils'
+
+spreadsheet_csv = CSV.parse(
+          File.read(spreadsheet_file),
+          headers: true,
+          return_headers: false
+        )
+script_logger.info("processing EPUB file #{File.basename(spreadsheet_file)}")
+
+# Process each monograph directory
+Dir.glob(File.join(REP_DIR, "*")).each do |path|
+  unless File.directory?(path)
+    script_logger.warn("Path not a directory #{path}")
+    next
+  end
+  script_logger.info("processing directory #{File.basename(path)}")
+  noid = File.basename(path)
+
+  # Find spreadsheet row
+  row = spreadsheet_csv.find {|r| r['NOID'] == noid }
+  if row.nil?
+    script_logger.warn("no row found for NOID #{noid}")
+    next
+  end
+  #script_logger.info("row found for NOID #{noid}")
+
+  oa_isbn = (row['OA ISBN13*'] || "").strip
+  if oa_isbn.empty?
+    script_logger.warn("no OA ISBN found for title #{row['Main Title*']}")
+    next
+  end
+  ebook_isbn = (row['EPUB ISBN13'] || "").strip
+  if ebook_isbn.empty?
+    script_logger.warn("no EBook ISBN found for title #{row['Main Title*']}")
+    next
+  end
+  script_logger.info("OA ISBN #{oa_isbn},EBook ISBN #{ebook_isbn} found for NOID #{noid}")
+
+  file_list = Dir.glob(File.join(path, "*"))
+  if file_list.empty?
+    script_logger.warn("no files found for ISBN #{oa_isbn}")
+    next
+  end
+  script_logger.info("#{file_list.count} representatives found for ISBN #{oa_isbn}")
+
+  mono_dir = File.join(B10_DIR, oa_isbn)
+  script_logger.info("creating directory #{mono_dir}")
+  FileUtils.mkdir_p(mono_dir) if options.execute
+
+  mono_resources_dir = File.join(mono_dir, "Resources")
+  file_list.each do |f|
+    if File.basename(f, ".*").start_with?(ebook_isbn)
+      ebook_file = File.join(mono_dir, oa_isbn + File.extname(f))
+      script_logger.info("coping file #{f} to directory #{mono_dir}")
+      FileUtils.cp(f, ebook_file) if options.execute
+    else
+      FileUtils.mkdir_p(mono_resources_dir) if options.execute
+      script_logger.info("coping file #{f} to directory #{mono_resources_dir}")
+      FileUtils.cp(f, mono_resources_dir) if options.execute
+    end
+  end
+end
