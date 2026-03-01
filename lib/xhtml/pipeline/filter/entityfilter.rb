@@ -25,10 +25,7 @@ module UMPTG::XHTML::Pipeline::Filter
               options: options
            )
 
-      name = issue.name
-      reference_node = issue.content
-
-      entity_list = reference_node.children.select {|n| n.type == 5 or n.type == 6 }
+      entity_list = issue.content.children.select {|n| n.type == 5 or n.type == 6 }
       @decoder = HTMLEntities.new if @decoder.nil? and entity_list.count > 0
 
       entity_list.each do |n|
@@ -36,10 +33,10 @@ module UMPTG::XHTML::Pipeline::Filter
 
         if content.empty?
           issue.actions << UMPTG::XML::Pipeline::Action.new(
-                  name: name,
+                  name: issue.name,
                   reference_node: n,
                   warning_message: \
-                    "#{name}, found entity #{n}, unable to map to character"
+                    "#{issue.name}, found entity #{n}, unable to map to character"
               )
         else
           issue.actions << UMPTG::XML::Pipeline::Actions::MarkupAction.new(

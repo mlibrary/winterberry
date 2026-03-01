@@ -37,11 +37,11 @@ module UMPTG::EPUB::OEBPS::Pipeline::Filter
 
       action_list = []
 
-      if reference_node.name == 'meta'
+      if issue.content.name == 'meta'
         action_list << UMPTG::XML::Pipeline::Action.new(
                name: issue.name,
                reference_node: issue.content,
-               info_message: "#{name}, found #{issue.content}"
+               info_message: "#{issue.name}, found #{issue.content}"
            )
       end
       return action_list

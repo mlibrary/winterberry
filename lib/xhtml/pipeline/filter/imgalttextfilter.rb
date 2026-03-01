@@ -24,19 +24,16 @@ module UMPTG::XHTML::Pipeline::Filter
               options: options
            )
 
-      name = issue.name
-      reference_node = issue.content  # <img> element
-
-      if reference_node.name == 'img'
-        role = (reference_node["role"] || "").strip.downcase
+      if issue.content.name == 'img'
+        role = (issue.content["role"] || "").strip.downcase
         unless role == "presentation"
-          alt = (reference_node["alt"] || "").strip
+          alt = (issue.content["alt"] || "").strip
           if alt.empty?
               issue.actions << UMPTG::XML::Pipeline::Action.new(
-                       name: name,
-                       reference_node: reference_node,
+                       name: issue.name,
+                       reference_node: issue.content,
                        warning_message: \
-                         "#{name}, #{reference_node.name} no alt text src=\"#{reference_node['src']}\" role=\"#{reference_node['role']}\""
+                         "#{issue.name}, #{issue.content.name} no alt text src=\"#{issue.content['src']}\" role=\"#{issue.content['role']}\""
                    )
 =begin
               issue.actions << UMPTG::XML::Pipeline::Actions::SetAttributeValueAction.new(
@@ -50,10 +47,10 @@ module UMPTG::XHTML::Pipeline::Filter
 =end
           else
             issue.actions << UMPTG::XML::Pipeline::Action.new(
-                     name: name,
-                     reference_node: reference_node,
+                     name: issue.name,
+                     reference_node: issue.content,
                      info_message: \
-                       "#{name}, found #{reference_node}"
+                       "#{issue.name}, found #{issue.content}"
                  )
           end
         end

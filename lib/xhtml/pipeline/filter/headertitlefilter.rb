@@ -26,19 +26,16 @@ module UMPTG::XHTML::Pipeline::Filter
               options: options
            )
 
-      name = issue.name
-      reference_node = issue.content  # <title> element
-
-      if reference_node.name == 'title'
-        content = (reference_node.text || "").strip
+      if issue.content.name == 'title'
+        content = (issue.content.text || "").strip
         if content.empty? or content == "Header Title"
           m = epub.rendition.metadata.dc.elements.title.first.text
           issue.actions << UMPTG::XML::Pipeline::Actions::MarkupAction.new(
-                    name: name,
-                    reference_node: reference_node,
+                    name: issue.name,
+                    reference_node: issue.content,
                     action: :replace_content,
                     markup: m,
-                    warning_message: "#{name}, #{reference_node.name} no content"
+                    warning_message: "#{issue.name}, #{issue.content.name} no content"
                   )
         end
       end

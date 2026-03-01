@@ -44,20 +44,18 @@ module UMPTG::EPUB::OEBPS::Pipeline::Filter
     end
 
     def review(issue, options: {})
-      reference_node = args[:reference_node]
-
       actions = []
 
-      case reference_node.name
+      case issue.content.name
       when "package"
-        actions += process_package(reference_node, args)
+        actions += process_package(issue.content)
       when "metadata"
-        actions += process_metadata(reference_node, args)
+        actions += process_metadata(issue.content)
       #when "manifest", "guide"
       when "guide"
-        actions += process_manifest(reference_node, args)
+        actions += process_manifest(issue.content)
       when "spine"
-        actions += process_spine(reference_node, args)
+        actions += process_spine(issue.content)
       else
       end
 
@@ -66,7 +64,7 @@ module UMPTG::EPUB::OEBPS::Pipeline::Filter
 
     private
 
-    def process_package(reference_node, args)
+    def process_package(reference_node)
       actions = []
 
       direction = reference_node["dir"]
@@ -110,7 +108,7 @@ module UMPTG::EPUB::OEBPS::Pipeline::Filter
       return actions
     end
 
-    def process_metadata(reference_node, args)
+    def process_metadata(reference_node)
       actions = []
 
       # Set[Y0001]-[M01]-[D01]T[H01]:[m01]:[s01]Z
@@ -181,7 +179,7 @@ module UMPTG::EPUB::OEBPS::Pipeline::Filter
       return actions
     end
 
-    def process_manifest(reference_node, args)
+    def process_manifest(reference_node)
       actions = []
       href_list = reference_node.xpath("./*[local-name()='item' or local-name()='reference']")
       href_list.each do |n|
@@ -216,7 +214,7 @@ module UMPTG::EPUB::OEBPS::Pipeline::Filter
       return actions
     end
 
-    def process_spine(reference_node, args)
+    def process_spine(reference_node)
       actions = []
 
       lin_list = reference_node.xpath("./*[local-name()='itemref' and @linear='no']")

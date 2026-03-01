@@ -25,37 +25,36 @@ module UMPTG::XHTML::Pipeline::Filter
            )
 
       name = issue.name
-      reference_node = issue.content  # <table> element
 
-      if reference_node.name == 'table'
-        id = reference_node['id']
+      if issue.content.name == 'table'
+        id = issue.content['id']
 
-        tbody_node = reference_node.xpath("./*[local-name()='tbody']").first
+        tbody_node = issue.content.xpath("./*[local-name()='tbody']").first
         if tbody_node.nil?
           issue.actions << UMPTG::XML::Pipeline::Actions::TableMarkupAction.new(
-                   name: name,
-                   reference_node: reference_node,
+                   name: issue.name,
+                   reference_node: issue.content,
                    action: :add_tbody,
                    warning_message: \
-                     "#{name}, #{reference_node.name} @id=\"#{id}\" tbody element not found"
+                     "#{issue.name}, #{issue.content.name} @id=\"#{id}\" tbody element not found"
                )
         else
           issue.actions << UMPTG::XML::Pipeline::Action.new(
-                   name: name,
-                   reference_node: reference_node,
+                   name: issue.name,
+                   reference_node: issue.content,
                    info_message: \
-                     "#{name}, #{reference_node.name} @id=\"#{id}\" tbody element found"
+                     "#{issue.name}, #{issue.content.name} @id=\"#{id}\" tbody element found"
                )
         end
 
-        if reference_node.key?('fromhtml')
+        if issue.content.key?('fromhtml')
           # Invalid attribute. Remove.
           issue.actions << UMPTG::XML::Pipeline::Actions::RemoveAttributeAction.new(
-                   name: name,
-                   reference_node: reference_node,
+                   name: issue.name,
+                   reference_node: issue.content,
                    attribute_name: "fromhtml",
                    warning_message: \
-                     "#{name}, #{reference_node.name} found invalid attribute @fromhtml"
+                     "#{issue.name}, #{issue.content.name} found invalid attribute @fromhtml"
                )
         end
       end

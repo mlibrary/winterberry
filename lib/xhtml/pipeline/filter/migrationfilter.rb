@@ -38,32 +38,29 @@ module UMPTG::XHTML::Pipeline::Filter
               options: options
            )
 
-      name = issue.name
-      reference_node = issue.content
-
-      case reference_node.name
+      case issue.content.name
       when "html"
-        issue.actions += process_root(reference_node, options)
+        issue.actions += process_root(issue.content, options)
       when "head"
-        issue.actions += process_heading(reference_node, options)
+        issue.actions += process_heading(issue.content, options)
       when "big"
-        issue.actions += process_big(reference_node, options)
+        issue.actions += process_big(issue.content, options)
       when "li"
-        issue.actions += process_li(reference_node, options)
+        issue.actions += process_li(issue.content, options)
       when "img"
-        issue.actions += process_img(reference_node, options)
+        issue.actions += process_img(issue.content, options)
       when "svg"
-        issue.actions += process_svg(reference_node, options)
+        issue.actions += process_svg(issue.content, options)
       when "table"
-        issue.actions += process_table(reference_node, options)
+        issue.actions += process_table(issue.content, options)
       else
-        if reference_node.has_attribute?("href")
-          issue.actions += process_href(reference_node, options)
+        if issue.content.has_attribute?("href")
+          issue.actions += process_href(issue.content, options)
         else
           issue.actions << UMPTG::XML::Pipeline::Action.new(
-                          name: name,
-                          reference_node: reference_node,
-                          info_message: "#{name}, #{reference_node.name}"
+                          name: issue.name,
+                          reference_node: issue.content,
+                          info_message: "#{issue.name}, #{issue.content.name}"
                       )
         end
       end

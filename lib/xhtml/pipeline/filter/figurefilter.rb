@@ -24,16 +24,13 @@ module UMPTG::XHTML::Pipeline::Filter
               options: options
            )
 
-      name = issue.name
-      reference_node = issue.content  # <figure> element
-
-      if reference_node.name == 'figure'
-        id = reference_node['id'] || ""
+      if issue.content.name == 'figure'
+        id = issue.content['id'] || ""
         issue.actions << UMPTG::XML::Pipeline::Action.new(
-                 name: name,
-                 reference_node: reference_node,
+                 name: issue.name,
+                 reference_node: issue.content,
                  info_message: \
-                   "#{name}, #{reference_node.name} found @id=\"#{id}\""
+                   "#{issue.name}, #{issue.content.name} found @id=\"#{id}\""
              )
 =begin
         if reference_node['style'] == 'display:none'

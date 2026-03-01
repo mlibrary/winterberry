@@ -32,14 +32,13 @@ module UMPTG::EPUB::OEBPS::Pipeline::Filter
            )
 
       name = issue.name
-      reference_node = issue.content  # <meta> element
 
-      case reference_node['property']
+      case issue.content['property']
       when 'schema:accessMode', 'schema:accessModeSufficient'
         issue.actions << UMPTG::XML::Pipeline::Action.new(
-               name: name,
-               reference_node: reference_node,
-               info_message: "#{name}, found #{reference_node}"
+               name: issue.name,
+               reference_node: issue.content,
+               info_message: "#{issue.name}, found #{issue.content}"
            )
       end
     end

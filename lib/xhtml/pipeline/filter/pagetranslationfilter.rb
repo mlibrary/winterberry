@@ -24,21 +24,18 @@ module UMPTG::XHTML::Pipeline::Filter
               options: options
            )
 
-      name = issue.name
-      reference_node = issue.content  # <? class="facing-page-grid-container"> element
-
-      cl = (reference_node["class"] || "").strip
+      cl = (issue.content["class"] || "").strip
       if cl == 'facing-page-grid-container'
-        id = reference_node['id'] || ""
+        id = issue.content['id'] || ""
         action = UMPTG::XML::Pipeline::Action.new(
-                 name: name,
-                 reference_node: reference_node,
+                 name: issue.name,
+                 reference_node: issue.content,
                  info_message: \
-                   "#{name}, #{reference_node.name} found @class=\"#{reference_node['class']}\" @id=\"#{id}\""
+                   "#{issue.name}, #{issue.content.name} found @class=\"#{issue.content['class']}\" @id=\"#{id}\""
              )
 
-        reference_node.xpath(".//*[@class='facing-page-grid-child']").each do |node|
-          msg = "#{name}, #{node.name} found"
+        issue.content.xpath(".//*[@class='facing-page-grid-child']").each do |node|
+          msg = "#{issue.name}, #{node.name} found"
           node.attribute_nodes.each do |a|
             px = a.namespace.nil? ? "" : a.namespace.prefix + ":"
             anme = px.empty? ? a.name : px + a.name

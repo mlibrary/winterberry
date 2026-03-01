@@ -24,20 +24,17 @@ module UMPTG::XHTML::Pipeline::Filter
               options: options
            )
 
-      name = issue.name
-      reference_node = issue.content  # <img> element
-
-      if reference_node.name == 'img'
-        aria_details = (reference_node["aria-details"] || "").strip
+      if issue.content.name == 'img'
+        aria_details = (issue.content["aria-details"] || "").strip
         unless aria_details.empty?
           action = UMPTG::XML::Pipeline::Action.new(
-                   name: name,
-                   reference_node: reference_node,
-                   info_message: "#{name}, #{reference_node.name} found aria-details=\"#{aria_details}\""
+                   name: issue.name,
+                   reference_node: issue.content,
+                   info_message: "#{issue.name}, #{issue.content.name} found aria-details=\"#{aria_details}\""
                )
           issue.actions << action
 
-          ext_descr_node = reference_node.document.at_css("[id='#{aria_details}']")
+          ext_descr_node = issue.content.document.at_css("[id='#{aria_details}']")
           if ext_descr_node.nil?
             action.add_error_msg("no extended description link found for ID #{aria_details}")
           elsif ext_descr_node.name == 'a'
@@ -49,13 +46,13 @@ module UMPTG::XHTML::Pipeline::Filter
               first_elem_id = first_elem['id'] || ""
               if first_elem_id.empty?
                 issue.actions << UMPTG::XML::Pipeline::Actions::SetAttributeValueAction.new(
-                         name: name,
+                         name: issue.name,
                          reference_node: first_elem,
                          attribute_name: "id",
                          attribute_value: aria_details
                      )
                 issue.actions << UMPTG::XML::Pipeline::Actions::RemoveAttributeAction.new(
-                         name: name,
+                         name: issue.name,
                          reference_node: ext_descr_node,
                          attribute_name: "id"
                      )

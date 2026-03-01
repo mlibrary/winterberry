@@ -24,28 +24,25 @@ module UMPTG::XHTML::Pipeline::Filter
               options: options
            )
 
-      name = issue.name
-      reference_node = issue.content  # <a> element
-
-      if reference_node.name == 'a'
-        id = reference_node['id'] || ""
-        href = (reference_node['href'] || "").strip
+      if issue.content.name == 'a'
+        id = issue.content['id'] || ""
+        href = (issue.content['href'] || "").strip
         action = UMPTG::XML::Pipeline::Action.new(
-                 name: name,
-                 reference_node: reference_node
+                 name: issue.name,
+                 reference_node: issue.content
               )
         if href.include?(' ') or href.include?('%20')
           href_new = href.gsub(/ /, '').gsub(/%20/, '')
           action = UMPTG::XML::Pipeline::Actions::SetAttributeValueAction.new(
-                  name: name,
-                  reference_node: reference_node,
+                  name: issue.name,
+                  reference_node: issue.content,
                   attribute_name: "href",
                   attribute_value: href_new,
                   warning_message: \
-                    "#{name}, #{reference_node.name} found @id=\"#{id}\" @href=\"#{href}\", @href contains spaces"
+                    "#{issue.name}, #{issue.content.name} found @id=\"#{id}\" @href=\"#{href}\", @href contains spaces"
               )
         else
-          action.add_info_msg("#{name}, #{reference_node.name} found @id=\"#{id}\" @href=\"#{href}\"")
+          action.add_info_msg("#{issue.name}, #{issue.content.name} found @id=\"#{id}\" @href=\"#{href}\"")
         end
         issue.actions << action
       end
