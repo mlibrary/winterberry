@@ -26,7 +26,7 @@ module UMPTG::EPUB
             )
     end
 
-    def process_entry_action_results(args = {})
+    def report(args = {})
       super(args)
       return
 

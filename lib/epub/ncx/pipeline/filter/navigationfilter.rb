@@ -16,7 +16,7 @@ module UMPTG::EPUB::NCX::Pipeline::Filter
             )
     end
 
-    def resolve(issue, options: {})
+    def review(issue, options: {})
       return unless issue.name == name
 
       super(

@@ -12,7 +12,7 @@ module UMPTG::XML::Pipeline::Actions
       @action = @properties[:action]
     end
 
-    def process(args = {})
+    def resolve(args = {})
       super(args)
 
       raise "invalid table element" unless reference_node.name == "table"

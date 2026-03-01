@@ -20,7 +20,7 @@ module UMPTG::EPUB::OEBPS::Pipeline::Filter
             )
     end
 
-    def resolve(issue, options: {})
+    def review(issue, options: {})
       return unless issue.name == name
 
       super(
@@ -28,19 +28,16 @@ module UMPTG::EPUB::OEBPS::Pipeline::Filter
               options: options
            )
 
-      name = issue.name
-      reference_node = issue.content  # <meta> element
-
-      if reference_node['property'] == 'schema:accessibilityFeature'
+      if issue.content['property'] == 'schema:accessibilityFeature'
         issue.actions << UMPTG::XML::Pipeline::Action.new(
-               name: name,
-               reference_node: reference_node,
-               info_message: "#{name}, found #{reference_node}"
+               name: issue.name,
+               reference_node: issue.content,
+               info_message: "#{name}, found #{issue.content}"
            )
       end
     end
 
-    def self.resolve(issues, options: {})
+    def self.review(issues, options: {})
       actions = []
       issues.each {|i| actions += i.actions }
 

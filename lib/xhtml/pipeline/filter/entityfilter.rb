@@ -17,7 +17,7 @@ module UMPTG::XHTML::Pipeline::Filter
       @decoder = nil
     end
 
-    def resolve(issue, options: {})
+    def review(issue, options: {})
       return unless issue.name == name
 
       super(

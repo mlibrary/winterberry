@@ -15,7 +15,7 @@ module UMPTG::XML::Pipeline::Actions
       raise "empty markup" if @markup.strip.empty?
     end
 
-    def process(args = {})
+    def resolve(args = {})
       super(args)
 
       fragment = reference_node.document.parse(markup)

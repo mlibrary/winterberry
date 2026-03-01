@@ -9,7 +9,7 @@ module UMPTG::XHTML::Pipeline::Actions
   SXPATH
 
     # Process an additional resource (Marker) action.
-    def process(args = {})
+    def resolve(args = {})
       # Marker node. If there is a comment,
       # then use it value. Otherwise use the
       # element content.

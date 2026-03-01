@@ -43,27 +43,21 @@ module UMPTG::Pipeline
       return issues
     end
 
-    def resolve(issues, options: {})
+    def review(issues, options: {})
       issues.each do |issue|
-        @filters.each {|f| f.resolve(issue, options: options) }
+        @filters.each {|f| f.review(issue, options: options) }
       end
     end
 
-    def process(issues, options: {}, logger: nil)
+    def resolve(issues, options: {}, logger: nil)
       logger = @logger if logger.nil?
 
       # Return XML::ActionResult
-      return UMPTG::Pipeline::Action.process_issues(
+      return UMPTG::Pipeline::Action.resolve_issues(
               issues,
               logger: logger,
               options: options
             )
-    end
-
-    def resolve_all(result, options: {}, logger: nil)
-      logger = @logger if logger.nil?
-      @filters.each {|f| f.resolve_all(result, options: options, logger: logger) }
-      return result
     end
 
     def report_issues(issues, options: {}, logger: nil)
@@ -87,11 +81,9 @@ module UMPTG::Pipeline
       logger = @logger if logger.nil?
 
       issues = select(content, options: options)
-      resolve(issues, options: options)
+      review(issues, options: options)
 
-      result = process(issues, options: options, logger: logger)
-
-      resolve_all(result, options: options, logger: logger)
+      result = resolve(issues, options: options, logger: logger)
 
       # Report the issue resolutions
       report(result, options: options, logger: logger)

@@ -88,7 +88,7 @@ module UMPTG::EPUB::Pipeline
         @logger.info("Entry: #{ea.entry.name}")
 
         # Report results
-        UMPTG::Pipeline::Action.process_issues(
+        UMPTG::Pipeline::Action.resolve_issues(
               ea.action_result.issues,
               logger: @logger,
               options: {
@@ -151,7 +151,7 @@ module UMPTG::EPUB::Pipeline
       return entry_actions
     end
 
-    def process_entry_action_results(args = {})
+    def report(args = {})
       entry_actions = args[:entry_actions]
       llogger = args[:logger] || @logger
 

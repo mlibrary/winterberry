@@ -35,14 +35,15 @@ module UMPTG::EPUB::OEBPS::Pipeline::Filter
     ]
     ORX
 
-    def initialize(args = {})
-      a = args.clone
-      a[:name] = :epub_oebps_opf
-      a[:xpath] = PACKAGE_XPATH
-      super(a)
+    def initialize(options: nil)
+      super(
+              name: :epub_oebps_opf,
+              xpath: PACKAGE_XPATH,
+              options: options
+            )
     end
 
-    def create_actions(args = {})
+    def review(issue, options: {})
       reference_node = args[:reference_node]
 
       actions = []

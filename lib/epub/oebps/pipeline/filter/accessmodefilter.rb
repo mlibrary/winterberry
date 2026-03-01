@@ -23,7 +23,7 @@ module UMPTG::EPUB::OEBPS::Pipeline::Filter
             )
     end
 
-    def resolve(issue, options: {})
+    def review(issue, options: {})
       return unless issue.name == name
 
       super(
@@ -44,7 +44,7 @@ module UMPTG::EPUB::OEBPS::Pipeline::Filter
       end
     end
 
-    def self.resolve(issues, options: {})
+    def self.review(issues, options: {})
       actions = []
       issues.each {|i| actions += i.actions }
 

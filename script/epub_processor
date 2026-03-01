@@ -163,7 +163,7 @@ epub_file_list.each do |epub_file|
             }
          )
 
-  epub_processor.process_entry_action_results(
+  epub_processor.report(
           epub: epub,
           entry_actions: entry_actions,
           normalize: options.normalize

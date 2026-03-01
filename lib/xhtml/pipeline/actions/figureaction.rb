@@ -21,7 +21,7 @@ module UMPTG::XHTML::Pipeline::Actions
     ]
     SXPATH
 
-    def process(args = {})
+    def resolve(args = {})
       olist = []
       case @node.name
       when 'img'

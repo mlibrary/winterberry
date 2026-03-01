@@ -14,7 +14,7 @@ module UMPTG::Pipeline
       @options = options
     end
 
-    def process(options: {})
+    def resolve(options: {})
       super(
           issue: @issue,
           options: options
@@ -22,7 +22,7 @@ module UMPTG::Pipeline
       @status = Action.PENDING
     end
 
-    def self.process_issues(issues, logger:, options: {})
+    def self.resolve_issues(issues, logger:, options: {})
       normalize = options[:normalize] || false
       display_msgs = options[:display_msgs] || false
 
@@ -30,7 +30,7 @@ module UMPTG::Pipeline
       if normalize
         issues.each do |issue|
           issue.actions.each do |a|
-            a.process(options: options)
+            a.resolve(options: options)
             modified = modified or (a.normalize and a.status == UMPTG::Action.COMPLETED)
           end
         end

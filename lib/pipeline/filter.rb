@@ -20,17 +20,13 @@ module UMPTG::Pipeline
       return []
     end
 
-    def resolve(issue, options: {})
+    def review(issue, options: {})
       # Currently, no base action.
       return
 
       act = UMPTG::Pipeline::Action.new(issue, options: options)
       act.add_info_msg("#{@name}, found issue #{issue.name}")
       issue.actions << act
-    end
-
-    def resolve_all(result, options: {}, logger: nil)
-      return result
     end
 
     def report(issues, logger:, options: {})
