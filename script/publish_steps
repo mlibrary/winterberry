@@ -416,7 +416,7 @@ File.open(cmds_file, "w") do |fp|
   fp.puts "end;0"
   fp.puts
   fp.puts "# For each monograph NOID, create resource derivatives (missing thumbnails)"
-  fp.puts "%w[].each do |mid|"
+  fp.puts "%w[#{monograph_noid_list.join(' ')}].each do |mid|"
   fp.puts "\t# delete \"AND -hidden_representative_bsi:true\" if you want to (re)create the FeaturedRepresentative/cover..."
   fp.puts "\t# derivatives too for whatever reason"
   fp.puts "\tfile_set_docs = ActiveFedora::SolrService.query(\"+has_model_ssim:FileSet AND +monograph_id_ssim:\#{mid} AND -hidden_representative_bsi:true\", rows: 10000)"
