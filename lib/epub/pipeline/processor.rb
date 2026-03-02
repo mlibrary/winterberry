@@ -12,15 +12,15 @@ module UMPTG::EPUB::Pipeline
               logger: logger
           }
 
-
       a[:css_processor] = UMPTG::CSS::Processor(name: "CSSProcessor", options: options, logger: logger) \
                  if options[:css_processor].nil?
       a[:ncx_processor] = UMPTG::EPUB::NCX::Processor(name: "NCXProcessor", options: options, logger: logger) \
                  if options[:ncx_processor].nil?
       a[:oebps_processor] = UMPTG::EPUB::OEBPS::Processor(name: "OEBPSProcessor", options: options, logger: logger) \
                  if options[:oebps_processor].nil?
-      a[:xhtml_processor] = UMPTG::XHTML::Processor(name: "XHTMLProcessor", options: options, logger: logger) \
-                 if options[:xhtml_processor].nil?
+      a[:xhtml_processor] = options[:xhtml_processor].nil? ? \
+                  UMPTG::XHTML::Processor(name: "XHTMLProcessor", options: options, logger: logger) : \
+                  options[:xhtml_processor]
       a[:xml_processor] = UMPTG::XML::Processor(name: "XMLProcessor", options: options, logger: logger) \
                  if options[:xml_processor].nil?
 

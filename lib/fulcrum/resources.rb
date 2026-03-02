@@ -7,15 +7,16 @@ module UMPTG::Fulcrum
     a = args.clone
 
     # Enable default filter if none specified.
-    a[:options] = { xhtml_embed_link: true } if a[:options].nil?
+    options = { xhtml_embed_link: true } if a[:options].nil?
 
     unless args[:manifest].nil?
-      a[:xhtml_processor] = UMPTG::Fulcrum::Resources::XHTML::Processor(
+      options[:manifest] = args[:manifest]
+      options[:xhtml_processor] = UMPTG::Fulcrum::Resources::XHTML::Processor(
                 name: "FulcrumResourceProcessor",
-                manifest: a[:manifest],
-                options: a[:options]
+                options: options
           )
     end
+    a[:options] = options
     return UMPTG::EPUB::Processor(a)
   end
 end

@@ -7,7 +7,12 @@ module UMPTG::EPUB
   require_relative('timesfontprocessor')
 
   def self.Processor(args = {})
-    return Pipeline::Processor.new(args)
+    return Pipeline::Processor.new(
+              name: args[:name],
+              filters: args[:filters],
+              options: args[:options],
+              logger: args[:logger]
+            )
   end
 
   def self.Migrator(args = {})

@@ -30,50 +30,26 @@ module UMPTG::Fulcrum::Resources::XHTML::Pipeline::Filter
     CFSTR
 
     def initialize(args = {})
-      args[:name] = :xhtml_embed_link
-
-      raise "manifest required" if args[:manifest].nil?
-
       process_figures = args[:process_figures]
       process_figures = true if process_figures.nil?
-      args[:xpath] = process_figures ? FIGURE_EMBED_XPATH : EMBED_XPATH
-      super(args)
+      xpath = process_figures ? FIGURE_EMBED_XPATH : EMBED_XPATH
+      super(
+            name: :xhtml_embed_link,
+            xpath: xpath,
+            manifest: args[:options][:manifest],
+            options: args[:options]
+        )
     end
 
-    def run(xml_doc, args = {})
-      actions = super(xml_doc, args)
-
-      unless actions.empty?
-        reference_node = xml_doc.xpath(FulcrumCSSFilter.XPATH).first
-        raise "unable to add Fulcrum CSS filter" if reference_node.nil?
-
-        a = {
-            reference_node: reference_node,
-            markup: '<link href="../styles/fulcrum_default.css" rel="stylesheet" type="text/css"/>',
-            info_message: "Fulcrum CSS filter must be added"
-          }
-        actions << UMPTG::XML::Pipeline::Actions::NormalizeInsertMarkupAction.new(a)
-      end
-
-      return actions
-    end
-
-    def create_actions(args = {})
-      name = args[:name]
-      reference_node = args[:reference_node]  # figure element
-
-      action_list = []
-
-      case reference_node.name
+    def review(issue, options: {})
+      case issue.content.name
       when "figure"
-        action_list = create_figure_actions(reference_node)
+        issue.actions = create_figure_actions(issue.content)
       when "img"
-        action_list = create_img_actions(reference_node)
+        issue.actions = create_img_actions(issue.content)
       else
-        action_list = create_element_actions(reference_node)
+        issue.actions = create_element_actions(issue.content)
       end
-
-      return action_list
     end
 
     private

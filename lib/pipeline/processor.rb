@@ -14,10 +14,13 @@ module UMPTG::Pipeline
               options: options
           }
 
+      filter_options = { logger: @logger }
+      filter_options[:manifest] = options[:manifest] if options.key?(:manifest)
       m_filters = filters.nil? ? UMPTG::Pipeline::FILTERS : \
               filters.merge(UMPTG::Pipeline::FILTERS)
       a[:filters] = {}
       options.each do |k,v|
+        next if k == :manifest
         next unless v
 
         cl = m_filters[k]
@@ -25,11 +28,10 @@ module UMPTG::Pipeline
         next if cl.nil?
 
         a[:filters][k] = cl.new(
-                      options: { logger: @logger }
+                      options: filter_options
                     )
       end
       #raise "No filters defined" if a[:filters].empty?
-
       super(a)
 
       @name = @properties[:name]

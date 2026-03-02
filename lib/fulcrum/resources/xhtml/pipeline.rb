@@ -1,12 +1,13 @@
 module UMPTG::Fulcrum::Resources::XHTML
   require_relative(File.join("pipeline", "filter"))
+  require_relative(File.join("pipeline", "resourceprocessor"))
 
   def self.Processor(args = {})
-    a = args.clone
-
-    a[:filters] = a[:filters].nil? ? UMPTG::Fulcrum::Resources::XHTML::Pipeline.FILTERS : \
-                  a[:filters].merge(UMPTG::Fulcrum::Resources::XHTML::Pipeline.FILTERS)
-
-    return UMPTG::XHTML::Processor(a)
+    return Pipeline::ResourceProcessor.new(
+              name: args[:name],
+              filters: args[:filters],
+              options: args[:options],
+              logger: args[:logger]
+          )
   end
 end
