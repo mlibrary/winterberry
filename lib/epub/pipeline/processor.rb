@@ -110,7 +110,7 @@ module UMPTG::EPUB::Pipeline
               fact = ea.action_result.issues.first
               entry_xml_doc = fact.nil? ? \
                     UMPTG::XML.parse(xml_content: ea.entry.content) : \
-                    fact.reference_node.document
+                    fact.content.document
               content = UMPTG::XML.doc_to_xml(entry_xml_doc)
             end
             epub.files.add(

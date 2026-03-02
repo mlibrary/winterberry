@@ -31,7 +31,7 @@ module UMPTG::Pipeline
         issues.each do |issue|
           issue.actions.each do |a|
             a.resolve(options: options)
-            modified = modified or (a.normalize and a.status == UMPTG::Action.COMPLETED)
+            modified = (a.normalize and a.status == UMPTG::Action.COMPLETED) unless modified
           end
         end
       end

@@ -22,7 +22,7 @@ module UMPTG
       add_fatal_msg(@properties[:fatal_message]) if @properties.key?(:fatal_message)
     end
 
-    def process(args = {})
+    def resolve(args = {})
       #raise "#{self.class}: method #{__method__} must be implemented."
       @status = @@COMPLETED
     end
