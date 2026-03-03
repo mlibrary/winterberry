@@ -37,12 +37,12 @@ module UMPTG::Fulcrum::Resources::XHTML::Pipeline
 
       unless actions.empty?
         reference_node = issues.last.content.document.xpath(CSS_XPATH).first
-        raise "unable to add Fulcrum CSS filter" if reference_node.nil?
+        raise "unable to add Fulcrum CSS stylesheet" if reference_node.nil?
 
         a = {
             reference_node: reference_node,
             markup: '<link href="../styles/fulcrum_default.css" rel="stylesheet" type="text/css"/>',
-            info_message: "Fulcrum CSS filter must be added"
+            info_message: "Fulcrum CSS stylesheet must be added"
           }
         issues.last.actions << UMPTG::XML::Pipeline::Actions::NormalizeInsertMarkupAction.new(a)
       end
