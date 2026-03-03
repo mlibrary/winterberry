@@ -36,15 +36,24 @@ module UMPTG::Fulcrum::Resources::XHTML::Pipeline
       issues.each {|issue| actions += issue.actions }
 
       unless actions.empty?
-        reference_node = issues.last.content.document.xpath(CSS_XPATH).first
-        raise "unable to add Fulcrum CSS stylesheet" if reference_node.nil?
+        modified = false
+        actions.each do |a|
+          if a.normalize and a.status == UMPTG::Action.COMPLETED
+            modified = true
+            break
+          end
+        end
+        if modified
+          reference_node = issues.last.content.document.xpath(CSS_XPATH).first
+          raise "unable to add Fulcrum CSS stylesheet" if reference_node.nil?
 
-        a = {
-            reference_node: reference_node,
-            markup: '<link href="../styles/fulcrum_default.css" rel="stylesheet" type="text/css"/>',
-            info_message: "Fulcrum CSS stylesheet must be added"
-          }
-        issues.last.actions << UMPTG::XML::Pipeline::Actions::NormalizeInsertMarkupAction.new(a)
+          a = {
+              reference_node: reference_node,
+              markup: '<link href="../styles/fulcrum_default.css" rel="stylesheet" type="text/css"/>',
+              info_message: "Fulcrum CSS stylesheet must be added"
+            }
+          issues.last.actions << UMPTG::XML::Pipeline::Actions::NormalizeInsertMarkupAction.new(a)
+        end
       end
     end
   end
