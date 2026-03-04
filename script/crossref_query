@@ -128,7 +128,9 @@ arg_list.each do |arg|
     next if response.nil?
 
     unless response.status == 200
-      script_logger.error("#{options.message_type} request failed,#{response.status}")
+      url = response.to_hash[:url]
+      script_logger.error("#{options.message_type} request #{url} failed,#{response.status}")
+      parent_node.add_child("<work><DOI>#{url}</><failed>FAILED: #{url}</></>")
       next
     end
     script_logger.info("*** message-type:#{response.body['message-type']}, version:#{response.body['message-version']} ***")
@@ -166,7 +168,7 @@ arg_list.each do |arg|
                 File.dirname(doi_file),
                 File.basename(doi_file, ".*") + "_" + File.basename(__FILE__) + ".csv"
             )
-    xpath = "//*[local-name()='resource']//*[local-name()='URL' and (starts-with(text(),'https://www.fulcrum.org/') or starts-with(text(),'https://services.publishing.umich.edu/') or starts-with(text(),'https://press.umich.edu/'))]"
+    xpath = "//*[local-name()='failed']|//*[local-name()='resource']//*[local-name()='URL' and (starts-with(text(),'https://www.fulcrum.org/') or starts-with(text(),'https://services.publishing.umich.edu/') or starts-with(text(),'https://press.umich.edu/'))]"
     CSV.open(
             doi_list_file,
             "w",
