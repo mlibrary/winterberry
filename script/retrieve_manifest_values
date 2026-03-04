@@ -103,7 +103,11 @@ if options.noids_only
   end
 else
   manifest_headers = options.fulcrum_column_list
-  manifest_headers << "Representative" if options.include_representatives
+  if options.include_representatives
+    manifest_headers << "Representative"
+    manifest_headers << "Representative Type"
+    manifest_headers << "Representative Published?"
+  end
 
   monograph_id_noid.each do |identifier,noid_list|
     if noid_list.empty?
@@ -138,12 +142,12 @@ else
 
         if options.include_representatives
           manifest.representatives().each do |kind,rep_row|
-            #next unless ["epub","pdf","pdf_ebook"].include?(kind)
-            next unless ["epub"].include?(kind)
+            next unless ["epub","pdf","pdf_ebook"].include?(kind)
+            #next unless ["epub"].include?(kind)
 
             field_values = []
             manifest_headers.each do |h|
-              next if h == "Representative"
+              next if h.start_with?("Representative")
               if h == "Monograph ID"
                 #field_values << rep_row['file_name']
                 field_values << identifier
@@ -158,6 +162,8 @@ else
               field_values << manifest.monograph_row[new_h]
             end
             field_values << rep_row['file_name']
+            field_values << kind
+            field_values << rep_row['published?']
             monograph_manifest_rows << field_values
           end
         else
