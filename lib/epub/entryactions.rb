@@ -2,20 +2,23 @@ module UMPTG::EPUB
   #require_relative(File.join("..", "object"))
 
   class EntryActions < UMPTG::Object
-    attr_accessor :action_result, :entry
+    attr_accessor :result, :entry
 
-    def initialize(args = {})
-      super(args)
+    def initialize(entry, result)
+      super(
+              entry: entry,
+              result: result
+            )
 
-      @action_result = @properties[:action_result]
+      @result = @properties[:result]
       @entry = @properties[:entry]
     end
 
-    def select_by_name(args = {})
+    def select_by_name(name)
       name = args[:name]
 
       actions = []
-      action_result.issues.each do |issue|
+      @result.issues.each do |issue|
         next unless issue.name == name
         actions += issue.actions
       end

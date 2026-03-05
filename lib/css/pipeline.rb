@@ -15,12 +15,12 @@ module UMPTG::CSS
             css_times_font: UMPTG::CSS::Pipeline::TimesFontFilter
       }
 
-  def self.Processor(name:, filters: nil, options: {}, logger: nil)
+  def self.Processor(name, filters: nil, options: {}, logger: nil)
     m_filters = filters.nil? ? UMPTG::CSS.FILTERS : \
                   filters.merge(UMPTG::CSS.FILTERS)
 
     return UMPTG::Pipeline::Processor.new(
-            name: name,
+            name,
             filters: m_filters,
             options: options,
             logger: logger

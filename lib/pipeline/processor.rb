@@ -5,7 +5,7 @@ module UMPTG::Pipeline
     attr_reader :name, :filters, :options
     attr_accessor :logger
 
-    def initialize(name:, filters: nil, options: {}, logger: nil)
+    def initialize(name, filters: nil, options: {}, logger: nil)
       @logger = logger.nil? ? UMPTG::Logger.create(logger_fp: STDOUT) : logger
 
       a = {
@@ -15,7 +15,6 @@ module UMPTG::Pipeline
           }
 
       filter_options = { logger: @logger }
-      filter_options[:manifest] = options[:manifest] if options.key?(:manifest)
       m_filters = filters.nil? ? UMPTG::Pipeline::FILTERS : \
               filters.merge(UMPTG::Pipeline::FILTERS)
       a[:filters] = {}
@@ -27,9 +26,7 @@ module UMPTG::Pipeline
         #raise "undefined filter #{k}" if cl.nil?
         next if cl.nil?
 
-        a[:filters][k] = cl.new(
-                      options: filter_options
-                    )
+        a[:filters][k] = create_filter(cl, options: filter_options)
       end
       #raise "No filters defined" if a[:filters].empty?
       super(a)
@@ -37,6 +34,10 @@ module UMPTG::Pipeline
       @name = @properties[:name]
       @filters = @properties[:filters].values
       @options = @properties[:options]
+    end
+
+    def create_filter(class_name, options: {})
+      return class_name.new(options: options)
     end
 
     def select(content, options: {})

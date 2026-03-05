@@ -7,7 +7,7 @@ module UMPTG::XHTML
     m_filters = filters.nil? ? UMPTG::XHTML::Pipeline.FILTERS : \
                   filters.merge(UMPTG::XHTML::Pipeline.FILTERS)
     return Pipeline::Processor.new(
-            name: name,
+            name,
             filters: m_filters,
             options: options,
             logger: logger

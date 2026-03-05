@@ -4,8 +4,7 @@ module UMPTG::EPUB
   require_relative 'util'
 
   class Reviewer < Pipeline::Processor
-    def initialize(args = {})
-      name = args[:name] || "EPUBReviewProcessor"
+    def initialize(name, logger: nil)
       options = {
             css_font_face: false,
             epub_oebps_accessmode: true,
@@ -20,9 +19,9 @@ module UMPTG::EPUB
             xhtml_list_item: false
           }
       super(
-              name: name,
+              name,
               options: options,
-              logger: args[:logger]
+              logger: logger
             )
     end
 

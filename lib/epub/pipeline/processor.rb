@@ -12,16 +12,16 @@ module UMPTG::EPUB::Pipeline
               logger: logger
           }
 
-      a[:css_processor] = UMPTG::CSS::Processor(name: "CSSProcessor", options: options, logger: logger) \
+      a[:css_processor] = UMPTG::CSS::Processor("CSSProcessor", options: options, logger: logger) \
                  if options[:css_processor].nil?
-      a[:ncx_processor] = UMPTG::EPUB::NCX::Processor(name: "NCXProcessor", options: options, logger: logger) \
+      a[:ncx_processor] = UMPTG::EPUB::NCX::Processor("NCXProcessor", options: options, logger: logger) \
                  if options[:ncx_processor].nil?
-      a[:oebps_processor] = UMPTG::EPUB::OEBPS::Processor(name: "OEBPSProcessor", options: options, logger: logger) \
+      a[:oebps_processor] = UMPTG::EPUB::OEBPS::Processor("OEBPSProcessor", options: options, logger: logger) \
                  if options[:oebps_processor].nil?
       a[:xhtml_processor] = options[:xhtml_processor].nil? ? \
-                  UMPTG::XHTML::Processor(name: "XHTMLProcessor", options: options, logger: logger) : \
+                  UMPTG::XHTML::Processor("XHTMLProcessor", options: options, logger: logger) : \
                   options[:xhtml_processor]
-      a[:xml_processor] = UMPTG::XML::Processor(name: "XMLProcessor", options: options, logger: logger) \
+      a[:xml_processor] = UMPTG::XML::Processor("XMLProcessor", options: options, logger: logger) \
                  if options[:xml_processor].nil?
 
       super(a)
@@ -39,8 +39,8 @@ module UMPTG::EPUB::Pipeline
             }
     end
 
-    def run(epub, args = {})
-      save_forced = args[:save_forced]
+    def run(epub, options: {})
+      save_forced = options[:save_forced]
       @logger.info("Force save:#{save_forced}") unless save_forced.nil?
 
       # Indicate the options selected for this run.
@@ -53,7 +53,7 @@ module UMPTG::EPUB::Pipeline
       epub_title =
       entry_actions = []
 
-      run_args = args.clone
+      run_args = options.clone
       run_args[:process_results] = false
       ([epub.rendition.entry] + epub.rendition.manifest.entries).each do |entry|
         media_type = entry.media_type.to_s
@@ -65,7 +65,7 @@ module UMPTG::EPUB::Pipeline
 
         case media_type
         when "text/css"
-          r_args = args.clone
+          r_args = options.clone
           r_args[:process_results] = false
           result = processor.run(entry.content, options: r_args)
         #when "application/xhtml+xml", "application/x-dtbncx+xml", "application/oebps-package+xml"
@@ -78,8 +78,8 @@ module UMPTG::EPUB::Pipeline
         end
 
         entry_actions << UMPTG::EPUB::EntryActions.new(
-                  entry: entry,
-                  action_result: result
+                  entry,
+                  result
                   ) \
            unless result.nil?
       end
@@ -89,7 +89,7 @@ module UMPTG::EPUB::Pipeline
 
         # Report results
         UMPTG::Pipeline::Action.resolve_issues(
-              ea.action_result.issues,
+              ea.result.issues,
               logger: @logger,
               options: {
                     normalize: false,
@@ -98,16 +98,16 @@ module UMPTG::EPUB::Pipeline
               )
         #ea.action_result.actions.each {|a| @logger.info(a) }
 
-        if ea.action_result.modified or args[:save_forced]
+        if ea.result.modified or options[:save_forced]
           @logger.info("Updating entry #{ea.entry.name}")
 
           media_type = ea.entry.media_type.to_s
           #unless media_type == "text/css"
             case media_type
             when "text/css"
-              content = ea.action_result.issues.first.content
+              content = ea.result.issues.first.content
             else
-              fact = ea.action_result.issues.first
+              fact = ea.result.issues.first
               entry_xml_doc = fact.nil? ? \
                     UMPTG::XML.parse(xml_content: ea.entry.content) : \
                     fact.content.document
@@ -127,7 +127,7 @@ module UMPTG::EPUB::Pipeline
             UMPTG::Message.FATAL => 0
       }
       entry_actions.each do |ea|
-        ea.action_result.issues.each do |issue|
+        ea.result.issues.each do |issue|
           issue.actions.each do |action|
             action.messages.each do |msg|
               type_cnt[msg.level] += 1
@@ -151,17 +151,13 @@ module UMPTG::EPUB::Pipeline
       return entry_actions
     end
 
-    def report(args = {})
-      entry_actions = args[:entry_actions]
-      llogger = args[:logger] || @logger
-
-      a = args.clone
-      a[:logger] = llogger
+    def report(entry_actions, options: {}, logger: nil)
+      llogger = logger || @logger
 
       @processors.each do |k,p|
         issues = []
         entry_actions.each do |ea|
-          issues += ea.action_result.issues if ea.entry.media_type == k
+          issues += ea.result.issues if ea.entry.media_type == k
         end
 
         p.report_issues(

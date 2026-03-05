@@ -11,7 +11,7 @@ module UMPTG::Pipeline
 
     attr_reader :name
 
-    def initialize(name:, options: nil)
+    def initialize(name, options: nil)
       super(name: name)
       @name = name
     end

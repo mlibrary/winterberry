@@ -29,14 +29,14 @@ module UMPTG::Fulcrum::Resources::XHTML::Pipeline::Filter
         data-fulcrum-embed-caption-link="%s"/>
     CFSTR
 
-    def initialize(args = {})
+    def initialize(manifest, args = {})
       process_figures = args[:process_figures]
       process_figures = true if process_figures.nil?
       xpath = process_figures ? FIGURE_EMBED_XPATH : EMBED_XPATH
       super(
-            name: :xhtml_embed_link,
-            xpath: xpath,
-            manifest: args[:options][:manifest],
+            :xhtml_embed_link,
+            manifest,
+            xpath,
             options: args[:options]
         )
     end

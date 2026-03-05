@@ -89,7 +89,7 @@ unless options.manifest_file.nil?
   manifest = UMPTG::Fulcrum::Manifest::Document.new(
         csv_file: manifest_file
       )
-  epub_args[:manifest] = manifest
+  #epub_args[:manifest] = manifest
 end
 
 # Configure the EPUB Processor
@@ -102,17 +102,18 @@ when :migrator
 when :resource_processor
   # EPUB Resource processing
   epub_processor = UMPTG::Fulcrum::ResourceProcessor(
-                          epub_args
+                          "FulcrumResourceProcessor",
+                          manifest
                       )
 when :reviewer
   # EPUB Review
   epub_processor = UMPTG::EPUB::Reviewer(
-                          epub_args
+                          "EPUBReviewProcessor"
                       )
 when :timesfont_processor
   # EPUB TimesFont
   epub_processor = UMPTG::EPUB::TimesFontProcessor(
-                          epub_args
+                          "EPUBTimesFontProcessor"
                       )
 else
   # EPUB customized processing. Use the specified filters
@@ -122,13 +123,14 @@ else
   # Use the manifest if specified.
   xhtml_processor = manifest.nil? ? nil : \
         UMPTG::Fulcrum::Resources::XHTML::Processor(
-              name: "FulcrumResourceProcessor",
-              manifest: manifest,
+              "FulcrumResourceProcessor",
+              manifest,
               options: ops
             )
 
   # No processor specified. Just filters specified
   epub_processor = UMPTG::EPUB::Processor(
+            "EPUBProcessor",
             xhtml_processor: xhtml_processor,
             options: ops
       )
@@ -158,15 +160,16 @@ epub_file_list.each do |epub_file|
 
   entry_actions = epub_processor.run(
             epub,
-            {
-                normalize: options.normalize
-            }
+            options: {
+                  normalize: options.normalize
+                }
          )
 
   epub_processor.report(
-          epub: epub,
-          entry_actions: entry_actions,
-          normalize: options.normalize
+          entry_actions,
+          options: {
+                normalize: options.normalize
+              }
         )
 
   if options.normalize and epub.modified

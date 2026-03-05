@@ -3,10 +3,10 @@ module UMPTG::Fulcrum::Filter
   class ManifestFilter < UMPTG::XML::Pipeline::Filter
     attr_reader :manifest
 
-    def initialize(name:, manifest:, xpath:, options: {})
+    def initialize(name, manifest, xpath, options: {})
       super(
-            name: name,
-            xpath: xpath,
+            name,
+            xpath,
             options: options
           )
 

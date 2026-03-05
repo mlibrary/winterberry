@@ -2,12 +2,12 @@ module UMPTG::Fulcrum::Resources::XHTML
   require_relative(File.join("pipeline", "filter"))
   require_relative(File.join("pipeline", "resourceprocessor"))
 
-  def self.Processor(args = {})
+  def self.Processor(name, manifest, options: {}, logger: nil)
     return Pipeline::ResourceProcessor.new(
-              name: args[:name],
-              filters: args[:filters],
-              options: args[:options],
-              logger: args[:logger]
+              name,
+              manifest,
+              options: options,
+              logger: logger
           )
   end
 end
