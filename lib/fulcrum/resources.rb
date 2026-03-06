@@ -7,13 +7,18 @@ module UMPTG::Fulcrum
     # Enable default filter if none specified.
     options = { xhtml_embed_link: true } if options.keys.empty?
 
-    options[:xhtml_processor] = UMPTG::Fulcrum::Resources::XHTML::Processor(
+    xhtml_processor = UMPTG::Fulcrum::Resources::XHTML::Processor(
               "FulcrumResourceProcessor",
               manifest,
               options: options
         )
 
     a = {options: options}
-    return UMPTG::EPUB::Processor(a)
+    return UMPTG::EPUB::Processor(
+            name,
+            processors: {xhtml_processor: xhtml_processor},
+            options: options,
+            logger: logger
+          )
   end
 end

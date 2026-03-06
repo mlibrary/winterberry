@@ -6,12 +6,13 @@ module UMPTG::EPUB
   require_relative('reviewer')
   require_relative('timesfontprocessor')
 
-  def self.Processor(args = {})
+  def self.Processor(name, processors: {}, filters: nil, options: {}, logger: nil)
     return Pipeline::Processor.new(
-              name: args[:name],
-              filters: args[:filters],
-              options: args[:options],
-              logger: args[:logger]
+              name,
+              processors: processors,
+              filters: filters,
+              options: options,
+              logger: logger
             )
   end
 

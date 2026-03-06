@@ -1,58 +1,32 @@
-module UMPTG::Fulcrum::Metadata::XHTML::Pipeline::Filter
+module UMPTG::Fulcrum::Metadata
 
-  class ResourceMetadataFilter < UMPTG::XML::Pipeline::Filter
-
-    XPATH = <<-SXPATH
-    //*[
-    local-name()='figure' and count(descendant::*[local-name()='figure'])=0
-    ] | //*[
-    local-name()='img' and count(ancestor::*[local-name()='figure'])=0
-    ] | //*[
-    @data-fulcrum-embed-filename and local-name()!='figure'
-    ]
-    SXPATH
-
-    def initialize(options: nil)
+  class EPUBProcessor < UMPTG::EPUB::Pipeline::Processor
+    def initialize(name, options: {}, logger: nil)
+      xhtml_processor = UMPTG::Fulcrum::Metadata::XHTML::Processor(
+                "FulcrumResourceMetadataProcessor",
+                options: {
+                    xhtml_resource_metadata: true
+                }
+          )
       super(
-              :xhtml_resource_metadata,
-              XPATH,
-              options: options
-            )
+            name,
+            processors: { xhtml_processor: xhtml_processor },
+            options: options,
+            logger: logger
+          )
     end
 
-    def review(issue, options: {})
-      return unless issue.name == name
-
-      super(
-              issue,
-              options: options
-           )
-
-      name = issue.name
-      reference_node = issue.content
-
-      if reference_node.key?("data-fulcrum-embed-filename")
-        action = UMPTG::XHTML::Pipeline::Actions::MarkerAction.new(
-                             name: issue.name,
-                             reference_node: reference_node
-                             )
-      else
-        action = UMPTG::XHTML::Pipeline::Actions::FigureAction.new(
-            name: issue.name,
-            reference_node: reference_node
-            )
+    def self.update_fmsl(entry_actions, fmsl_csv, logger)
+      actions = []
+      entry_actions.each do |ea|
+        ea.result.issues.each do |issue|
+          actions += issue.actions if issue.name == :xhtml_resource_metadata
+        end
       end
 
-      issue.actions << action
-    end
-
-    def report(issues, logger:, options: {})
-      fmsl_csv = options[:fmsl_csv]
-
-      actions = issues.collect {|i| i.actions }
       actions.each do |a|
         a.object_list.each do |o|
-          fmsl_row = fileset(fmsl_csv, o.resource_name)
+          fmsl_row = UMPTG::Fulcrum::Metadata::EPUBProcessor.fileset(fmsl_csv, o.resource_name)
           if fmsl_row.nil?
             logger.warn("resource #{o.resource_name} not found.")
             next
@@ -91,14 +65,14 @@ module UMPTG::Fulcrum::Metadata::XHTML::Pipeline::Filter
 
     private
 
-    def fileset_ident(fmsl_csv, file_name)
+    def self.fileset_ident(fmsl_csv, file_name)
       regex = sprintf("[;]?[ ]*youtube_id:[ ]*(%s)[ ]*[;]?", file_name)
       fileset_row = fmsl_csv.find {|row| !row['Identifier(s)'].nil? and row['Identifier(s)'].match?(regex) }
       fileset_row['File Name'] = file_name unless fileset_row.nil?
       return fileset_row
     end
 
-    def fileset(fmsl_csv, file_name)
+    def self.fileset(fmsl_csv, file_name)
       unless file_name.nil?
         file_name_base = File.basename(file_name, ".*")
         file_name_base_lc = file_name_base.downcase
@@ -108,7 +82,7 @@ module UMPTG::Fulcrum::Metadata::XHTML::Pipeline::Filter
           fileset_row = fmsl_csv.find {|row| !row['File Name'].nil? and File.basename(row['File Name'], ".*").downcase == file_name_base_lc }
         end
 
-        fileset_row = fileset_ident(fmsl_csv, file_name_base) if fileset_row.nil?
+        fileset_row = UMPTG::Fulcrum::Metadata::EPUBProcessor.fileset_ident(fmsl_csv, file_name_base) if fileset_row.nil?
 
         if fileset_row.nil?
           fn = HTMLEntities.new.decode(file_name)
@@ -116,7 +90,6 @@ module UMPTG::Fulcrum::Metadata::XHTML::Pipeline::Filter
         end
         return fileset_row unless fileset_row.nil?
       end
-
       return nil
     end
   end

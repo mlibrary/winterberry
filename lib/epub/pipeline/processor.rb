@@ -4,25 +4,25 @@ module UMPTG::EPUB::Pipeline
     attr_reader :name, :processors
     attr_accessor :logger
 
-    def initialize(name:, filters: nil, options: {}, logger: nil)
+    def initialize(name, processors: {}, filters: nil, options: {}, logger: nil)
       a = {
-              name: name || "EPUBProcessor",
+              name: name,
               filters: filters,
               options: options,
               logger: logger
           }
 
       a[:css_processor] = UMPTG::CSS::Processor("CSSProcessor", options: options, logger: logger) \
-                 if options[:css_processor].nil?
+                 if processors[:css_processor].nil?
       a[:ncx_processor] = UMPTG::EPUB::NCX::Processor("NCXProcessor", options: options, logger: logger) \
-                 if options[:ncx_processor].nil?
+                 if processors[:ncx_processor].nil?
       a[:oebps_processor] = UMPTG::EPUB::OEBPS::Processor("OEBPSProcessor", options: options, logger: logger) \
-                 if options[:oebps_processor].nil?
-      a[:xhtml_processor] = options[:xhtml_processor].nil? ? \
+                 if processors[:oebps_processor].nil?
+      a[:xhtml_processor] = processors[:xhtml_processor].nil? ? \
                   UMPTG::XHTML::Processor("XHTMLProcessor", options: options, logger: logger) : \
-                  options[:xhtml_processor]
+                  processors[:xhtml_processor]
       a[:xml_processor] = UMPTG::XML::Processor("XMLProcessor", options: options, logger: logger) \
-                 if options[:xml_processor].nil?
+                 if processors[:xml_processor].nil?
 
       super(a)
 

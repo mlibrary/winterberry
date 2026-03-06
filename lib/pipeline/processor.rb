@@ -19,7 +19,6 @@ module UMPTG::Pipeline
               filters.merge(UMPTG::Pipeline::FILTERS)
       a[:filters] = {}
       options.each do |k,v|
-        next if k == :manifest
         next unless v
 
         cl = m_filters[k]

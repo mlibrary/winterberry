@@ -131,7 +131,7 @@ else
   # No processor specified. Just filters specified
   epub_processor = UMPTG::EPUB::Processor(
             "EPUBProcessor",
-            xhtml_processor: xhtml_processor,
+            processors: {xhtml_processor: xhtml_processor},
             options: ops
       )
 end
