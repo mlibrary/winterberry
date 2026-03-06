@@ -148,28 +148,32 @@ epub_file_list.each do |epub_file|
             File.dirname(epub_file),
             File.basename(epub_file, ".*") + "_" + File.basename(__FILE__) + ".log"
             )
-  epub_processor.logger = UMPTG::Logger.create(logger_file: logger_file)
+  #epub_processor.logger = UMPTG::Logger.create(logger_file: logger_file)
+  logger = UMPTG::Logger.create(logger_file: logger_file)
+  logger.info("Time: #{Time.now}")
 
   epub = UMPTG::EPUB(epub_path: epub_file)
-  epub_processor.logger.info("processing EPUB file #{File.basename(epub_file)}")
-  epub_processor.logger.info("Time: #{Time.now}")
-  epub_processor.logger.info("version #{epub.rendition.version}")
-  identifiers = epub.rendition.metadata.dc.elements.identifier.collect {|d| d.text}
-  epub_processor.logger.info("identifiers: #{identifiers.join(',')}")
-  epub_processor.logger.info()
+  logger.info("processing EPUB file #{File.basename(epub_file)}")
 
-  entry_actions = epub_processor.run(
+  logger.info("version #{epub.rendition.version}")
+  identifiers = epub.rendition.metadata.dc.elements.identifier.collect {|d| d.text}
+  logger.info("identifiers: #{identifiers.join(',')}")
+  logger.info()
+
+  entry_results = epub_processor.run(
             epub,
             options: {
                   normalize: options.normalize
-                }
+                },
+            logger: logger
          )
 
   epub_processor.report(
-          entry_actions,
+          entry_results,
           options: {
                 normalize: options.normalize
-              }
+              },
+          logger: logger
         )
 
   if options.normalize and epub.modified

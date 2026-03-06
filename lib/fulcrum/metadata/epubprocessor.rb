@@ -16,7 +16,23 @@ module UMPTG::Fulcrum::Metadata
           )
     end
 
-    def self.update_fmsl(entry_actions, fmsl_csv, logger)
+    def run(epub, fmsl_file, processing_dir, options: {}, logger: nil)
+      entry_results = super(
+              epub,
+              options: options,
+              logger: logger
+            )
+
+      UMPTG::Fulcrum::Metadata::EPUBProcessor.update_fmsl(entry_results, fmsl_file, processing_dir, logger)
+    end
+
+    def self.update_fmsl(entry_actions, fmsl_file, processing_dir, logger)
+      fmsl_csv = CSV.parse(
+                File.read(fmsl_file),
+                :headers => true,
+                :return_headers => false
+                )
+
       actions = []
       entry_actions.each do |ea|
         ea.result.issues.each do |issue|
@@ -59,6 +75,28 @@ module UMPTG::Fulcrum::Metadata
           logger.info("Updating FMSL caption with EPUB caption for resource \"#{resource_name}\"") \
               if (caption.nil? or caption.empty?) and !(epub_caption.nil? or epub_caption.empty?)
           fmsl_row["Caption"] = epub_caption unless epub_caption.nil? or epub_caption.empty?
+        end
+      end
+
+      # Add new columns to the CSV headers if needed.
+      new_fmsl_headers = fmsl_csv.headers
+      new_fmsl_headers << "Caption" unless new_fmsl_headers.include?("Caption")
+      new_fmsl_headers << "Alternative Text" unless new_fmsl_headers.include?("Alternative Text")
+
+      # Save the updated FMSL in the resource processing directory.
+      new_fmsl_file = File.join(processing_dir, File.basename(fmsl_file))
+      CSV.open(
+              new_fmsl_file,
+              "w",
+              :write_headers=> true,
+              :headers => new_fmsl_headers
+            ) do |csv|
+        fmsl_csv.each do |fmsl_row|
+          new_row = {}
+          fmsl_row.each do |key,value|
+            new_row[key] = value.strip.force_encoding("UTF-8") unless value.nil?
+          end
+          csv << new_row
         end
       end
     end
