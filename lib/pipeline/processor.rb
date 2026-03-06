@@ -25,7 +25,7 @@ module UMPTG::Pipeline
         #raise "undefined filter #{k}" if cl.nil?
         next if cl.nil?
 
-        a[:filters][k] = create_filter(cl, options: filter_options)
+        a[:filters][k] = initialize_filter(cl, options: filter_options)
       end
       #raise "No filters defined" if a[:filters].empty?
       super(a)
@@ -35,8 +35,8 @@ module UMPTG::Pipeline
       @options = @properties[:options]
     end
 
-    def create_filter(class_name, options: {})
-      return class_name.new(options: options)
+    def initialize_filter(class_name, options: {})
+      return class_name.new(self, options: options)
     end
 
     def select(content, options: {})

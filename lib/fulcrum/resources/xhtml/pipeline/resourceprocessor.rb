@@ -14,10 +14,11 @@ module UMPTG::Fulcrum::Resources::XHTML::Pipeline
     ]
     SXPATH
 
+    attr_reader :manifest
+
     def initialize(name, manifest, filters: nil, options: {}, logger: nil)
       m_filters = filters.nil? ? UMPTG::Fulcrum::Resources::XHTML::Pipeline.FILTERS : \
                   filters.merge(UMPTG::Fulcrum::Resources::XHTML::Pipeline.FILTERS)
-      @manifest = manifest
 
       super(
             name,
@@ -25,13 +26,7 @@ module UMPTG::Fulcrum::Resources::XHTML::Pipeline
             options: options,
             logger: logger
           )
-    end
-
-    def create_filter(class_name, options: {})
-      return class_name.new(
-                  @manifest,
-                  options: options
-                )
+      @manifest = manifest
     end
 
     def review(issues, options: {})

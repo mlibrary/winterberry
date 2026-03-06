@@ -19,8 +19,9 @@ module UMPTG::EPUB::OEBPS::Pipeline::Filter
     ]
     SXPATH
 
-    def initialize(options: nil)
+    def initialize(process, options: {})
       super(
+              process,
               :epub_oebps_accessible,
               XPATH,
               options: options

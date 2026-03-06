@@ -9,11 +9,15 @@ module UMPTG::Pipeline
 
   class Filter < UMPTG::Object
 
-    attr_reader :name
+    attr_reader :name, :process
 
-    def initialize(name, options: nil)
-      super(name: name)
+    def initialize(process, name, options: nil)
+      super(
+              name: name,
+              process: process
+           )
       @name = name
+      @process = process
     end
 
     def select(content, options: {})

@@ -8,8 +8,9 @@ module UMPTG::XHTML::Pipeline::Filter
     ]
     SXPATH
 
-    def initialize(options: nil)
+    def initialize(process, options: {})
       super(
+              process,
               :xhtml_page_translation,
               XPATH,
               options: options

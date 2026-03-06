@@ -22,8 +22,9 @@ module UMPTG::XHTML::Pipeline::Filter
     ]
     PCKXPATH
 
-    def initialize(options: nil)
+    def initialize(process, options: {})
       super(
+              process,
               :xhtml_migration,
               XPATH,
               options: options

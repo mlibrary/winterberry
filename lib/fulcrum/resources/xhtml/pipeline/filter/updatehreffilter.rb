@@ -1,6 +1,6 @@
 module UMPTG::Fulcrum::Resources::XHTML::Pipeline::Filter
 
-  class UpdateHREFFilter < UMPTG::Fulcrum::Filter::ManifestFilter
+  class UpdateHREFFilter < UMPTG::XML::Pipeline::Filter
 
     XPATH = <<-SXPATH
     //*[
@@ -8,15 +8,18 @@ module UMPTG::Fulcrum::Resources::XHTML::Pipeline::Filter
     ]
     SXPATH
 
-    def initialize(args = {})
-      args[:name] = :xhtml_update_href
-      args[:xpath] = XPATH
-      super(args)
+    def initialize(process, options: {})
+      super(
+            process,
+            :xhtml_update_href,
+            XPATH,
+            options: options
+        )
     end
 
-    def create_actions(args = {})
-      name = args[:name]
-      reference_node = args[:reference_node]  # <a> element
+    def review(issue, options: {})
+      name = issue.name
+      reference_node = issue.content  # <a> element
 
       raise "unknown element #{reference_node.name}" unless reference_node.name == 'a'
 
@@ -33,7 +36,7 @@ module UMPTG::Fulcrum::Resources::XHTML::Pipeline::Filter
              )
       when href.start_with?('https://www.fulcrum.org/concern/file_sets/')
         fileset_noid = href.delete_prefix('https://www.fulcrum.org/concern/file_sets/')
-        fileset = manifest.fileset_from_noid(fileset_noid)
+        fileset = process.manifest.fileset_from_noid(fileset_noid)
         if fileset["noid"].empty?
           action_list << UMPTG::XML::Pipeline::Action.new(
                    name: name,

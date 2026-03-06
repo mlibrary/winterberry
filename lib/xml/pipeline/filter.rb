@@ -4,8 +4,8 @@ module UMPTG::XML::Pipeline
 
     attr_reader :xpath
 
-    def initialize(name, xpath, options: nil)
-      super(name, options: options)
+    def initialize(process, name, xpath, options: {})
+      super(process, name, options: options)
       @xpath = xpath
     end
 

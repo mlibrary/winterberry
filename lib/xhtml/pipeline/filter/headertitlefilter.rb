@@ -10,7 +10,7 @@ module UMPTG::XHTML::Pipeline::Filter
     ]
     SXPATH
 
-    def initialize(options: nil)
+    def initialize(process, options: {})
       super(
               :xhtml_header_title,
               XPATH,

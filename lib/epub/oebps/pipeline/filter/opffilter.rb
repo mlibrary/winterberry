@@ -35,8 +35,9 @@ module UMPTG::EPUB::OEBPS::Pipeline::Filter
     ]
     ORX
 
-    def initialize(options: nil)
+    def initialize(process, options: {})
       super(
+              process,
               :epub_oebps_opf,
               PACKAGE_XPATH,
               options: options
