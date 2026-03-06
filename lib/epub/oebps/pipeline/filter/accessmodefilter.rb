@@ -17,8 +17,8 @@ module UMPTG::EPUB::OEBPS::Pipeline::Filter
 
     def initialize(options: nil)
       super(
-              name: :epub_oebps_accessmode,
-              xpath: XPATH,
+              :epub_oebps_accessmode,
+              XPATH,
               options: options
             )
     end
@@ -43,7 +43,15 @@ module UMPTG::EPUB::OEBPS::Pipeline::Filter
       end
     end
 
-    def self.review(issues, options: {})
+    def report(issues, options: {}, logger: nil)
+      super(
+            issues,
+            options: options,
+            logger: logger
+          )
+
+      llogger = logger || @logger
+
       actions = []
       issues.each {|i| actions += i.actions }
 
@@ -60,19 +68,13 @@ module UMPTG::EPUB::OEBPS::Pipeline::Filter
         end
       end
 
-      issue = UMPTG::Issue.new(name: :epub_oebps_accessmode, content: issues.first.content.parent)
-      issues << issue
-
-      act = UMPTG::Pipeline::Action.new(issue.name, options: options)
-      issue.actions << act
-
       case acs_textual_actions.count
       when 0
-        act.add_warning_msg("#{issue.name}, accessModeSufficient=textual not found")
+        llogger.warn("#{name}, accessModeSufficient=textual not found")
       when 1
-        act.add_info_msg("#{issue.name} accessModeSufficient=textual found")
+        llogger.info("#{name} accessModeSufficient=textual found")
       else
-        act.add_warning_msg("#{issue.name} duplicate markup #{acs_textual_actions.last.reference_node}")
+        llogger.warn("#{name} duplicate markup #{acs_textual_actions.last.reference_node}")
       end
     end
   end

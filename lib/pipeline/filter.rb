@@ -29,7 +29,7 @@ module UMPTG::Pipeline
       issue.actions << act
     end
 
-    def report(issues, logger:, options: {})
+    def report(issues, options: {}, logger: nil)
       actions_cnt = completed_cnt = warning_cnt = error_cnt = 0
       issues.each do |issue|
         issue.actions.each do |a|

@@ -21,8 +21,8 @@ module UMPTG::EPUB::OEBPS::Pipeline::Filter
 
     def initialize(options: nil)
       super(
-              name: :epub_oebps_accessible,
-              xpath: XPATH,
+              :epub_oebps_accessible,
+              XPATH,
               options: options
             )
     end

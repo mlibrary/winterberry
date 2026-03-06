@@ -10,8 +10,8 @@ module UMPTG::XHTML::Pipeline::Filter
 
     def initialize(options: nil)
       super(
-              name: :xhtml_table,
-              xpath: XPATH,
+              :xhtml_table,
+              XPATH,
               options: options
             )
     end

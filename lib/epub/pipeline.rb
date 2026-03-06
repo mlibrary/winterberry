@@ -21,9 +21,15 @@ module UMPTG::EPUB
     return Migrator.new(a)
   end
 
-  def self.Reviewer(args = {})
-    a = args.clone
-    return Reviewer.new(a)
+  def self.Reviewer(name, processors: {}, filters: nil, options: {}, logger: nil)
+    return Reviewer.new(
+                  name,
+                  processors: processors,
+                  filters: filters,
+                  options: options,
+                  logger: logger
+                )
+
   end
 
   def self.TimesFontProcessor(args = {})

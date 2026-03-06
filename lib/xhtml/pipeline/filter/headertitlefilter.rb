@@ -12,8 +12,8 @@ module UMPTG::XHTML::Pipeline::Filter
 
     def initialize(options: nil)
       super(
-              name: :xhtml_header_title,
-              xpath: XPATH,
+              :xhtml_header_title,
+              XPATH,
               options: options
             )
     end

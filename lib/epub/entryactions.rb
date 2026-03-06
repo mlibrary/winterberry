@@ -14,9 +14,7 @@ module UMPTG::EPUB
       @entry = @properties[:entry]
     end
 
-    def select_by_name(name)
-      name = args[:name]
-
+    def select(name:)
       actions = []
       @result.issues.each do |issue|
         next unless issue.name == name

@@ -4,7 +4,7 @@ module UMPTG::EPUB
   require_relative 'util'
 
   class Reviewer < Pipeline::Processor
-    def initialize(name, logger: nil)
+    def initialize(name, processors: {}, filters: nil, options: {}, logger: nil)
       options = {
             css_font_face: false,
             epub_oebps_accessmode: true,
@@ -19,31 +19,34 @@ module UMPTG::EPUB
             xhtml_list_item: false
           }
       super(
-              name,
-              options: options,
-              logger: logger
-            )
+            name,
+            processors: processors,
+            options: options,
+            logger: logger
+          )
     end
 
-    def report(args = {})
-      super(args)
-      return
+    def report(entry_results, options: {}, logger: nil)
+      super(
+          entry_results,
+          options: options,
+          logger: logger
+        )
 
-      entry_actions = args[:entry_actions]
-      llogger = args[:logger] || @logger
+      llogger = logger || @logger
 
       # Figure links
       link_actions = []
-      entry_actions.each {|ea| link_actions += ea.select_by_name(name: :xhtml_link) }
+      entry_results.each {|ea| link_actions += ea.select(name: :xhtml_link) }
 
       figure_actions = []
-      entry_actions.each {|ea| figure_actions += ea.select_by_name(name: :xhtml_figure) }
+      entry_results.each {|ea| figure_actions += ea.select(name: :xhtml_figure) }
 
       unless figure_actions.count == 0
         linked_figures = []
-        entry_actions.each do |ea|
-          ea.select_by_name(name: :xhtml_figure).each do |ac|
-            next unless ac.class == "UMPTG::XML::Pipeline::Action"
+        entry_results.each do |ea|
+          ea.select(name: :xhtml_figure).each do |ac|
+            next unless ac.class.name == "UMPTG::XML::Pipeline::Action"
 
             figure_id = ac.reference_node['id'] || ""
             unless figure_id.empty?

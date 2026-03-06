@@ -98,14 +98,20 @@ module UMPTG::Pipeline
     end
 
     def display_options()
+      filters = []
       c = 0
       @options.each do |o,v|
         if @properties[:filters].key?(o)
-          @logger.info("#{o}:#{v}")
+          filters << "#{o}:#{v}"
           c += 1 if v
         end
       end
-      @logger.warn("#{name}, no filters active") if c == 0
+      if c == 0
+        @logger.warn("#{name}, no filters active")
+      else
+        @logger.info(name)
+        filters.each {|v| @logger.info(v)}
+      end
     end
   end
 end

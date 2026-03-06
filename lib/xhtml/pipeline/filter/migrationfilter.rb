@@ -24,8 +24,8 @@ module UMPTG::XHTML::Pipeline::Filter
 
     def initialize(options: nil)
       super(
-              name: :xhtml_migration,
-              xpath: XPATH,
+              :xhtml_migration,
+              XPATH,
               options: options
             )
     end

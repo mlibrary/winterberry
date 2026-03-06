@@ -10,8 +10,8 @@ module UMPTG::XHTML::Pipeline::Filter
 
     def initialize(options: nil)
       super(
-              name: :xhtml_img_alttext,
-              xpath: XPATH,
+              :xhtml_img_alttext,
+              XPATH,
               options: options
             )
     end

@@ -14,8 +14,8 @@ module UMPTG::EPUB::OEBPS::Pipeline::Filter
 
     def initialize(options: nil)
       super(
-              name: :epub_oebps_accessfeature,
-              xpath: XPATH,
+              :epub_oebps_accessfeature,
+              XPATH,
               options: options
             )
     end
@@ -37,7 +37,11 @@ module UMPTG::EPUB::OEBPS::Pipeline::Filter
       end
     end
 
-    def self.review(issues, options: {})
+    def report(issues, options: {}, logger: nil)
+      super(issues, options: options, logger: logger)
+
+      llogger = logger || @logger
+
       actions = []
       issues.each {|i| actions += i.actions }
 
@@ -58,17 +62,10 @@ module UMPTG::EPUB::OEBPS::Pipeline::Filter
       end
 
       features.each do |k,v|
-        unless v
-          issue = UMPTG::Issue.new(name: :epub_oebps_accessfeature, content: issues.first.content.parent)
-          issues << issue
-
-          act = UMPTG::Pipeline::Action.new(
-                  issue,
-                  options: options
-                  )
-          act.add_warning_msg("#{issue.name}, <meta property=\"schema:accessibilityFeature\">#{k}</meta> not found")
-          issue.actions << act
-        end
+        llogger.info("#{name}, <meta property=\"schema:accessibilityFeature\">#{k}</meta> found") \
+              if v
+        llogger.warn("#{name}, <meta property=\"schema:accessibilityFeature\">#{k}</meta> not found") \
+              unless v
       end
     end
   end

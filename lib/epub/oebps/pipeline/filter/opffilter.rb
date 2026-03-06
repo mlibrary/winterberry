@@ -37,8 +37,8 @@ module UMPTG::EPUB::OEBPS::Pipeline::Filter
 
     def initialize(options: nil)
       super(
-              name: :epub_oebps_opf,
-              xpath: PACKAGE_XPATH,
+              :epub_oebps_opf,
+              PACKAGE_XPATH,
               options: options
             )
     end
