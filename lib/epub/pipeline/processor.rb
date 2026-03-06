@@ -1,7 +1,7 @@
 module UMPTG::EPUB::Pipeline
 
   class Processor < UMPTG::Object
-    attr_reader :name, :processors
+    attr_reader :name, :processors, :xhtml_processor
     attr_accessor :logger
 
     def initialize(name, processors: {}, filters: nil, options: {}, logger: nil)
@@ -28,6 +28,8 @@ module UMPTG::EPUB::Pipeline
 
       @name = @properties[:name]
       @logger = @properties.key?(:logger) ? @properties[:logger] : UMPTG::Logger.create(logger_fp: STDOUT)
+
+      @xhtml_processor = @properties[:xhtml_processor]
 
       @processors = {
                 "text/css" => @properties[:css_processor],

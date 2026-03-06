@@ -14,9 +14,9 @@ module UMPTG::Fulcrum::Resources::XHTML::Pipeline
     ]
     SXPATH
 
-    attr_reader :manifest
+    attr_accessor :manifest
 
-    def initialize(name, manifest, filters: nil, options: {}, logger: nil)
+    def initialize(name, manifest: nil, filters: nil, options: {}, logger: nil)
       m_filters = filters.nil? ? UMPTG::Fulcrum::Resources::XHTML::Pipeline.FILTERS : \
                   filters.merge(UMPTG::Fulcrum::Resources::XHTML::Pipeline.FILTERS)
 

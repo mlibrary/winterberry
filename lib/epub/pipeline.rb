@@ -2,6 +2,7 @@ module UMPTG::EPUB
 
   require_relative(File.join("..", "pipeline"))
   require_relative(File.join('pipeline', 'processor'))
+  require_relative('resourceprocessor')
   require_relative('migrator')
   require_relative('reviewer')
   require_relative('timesfontprocessor')

@@ -12,8 +12,9 @@ module UMPTG::Fulcrum::Metadata::XHTML::Pipeline::Filter
     ]
     SXPATH
 
-    def initialize(options: nil)
+    def initialize(processor, options: nil)
       super(
+              processor,
               :xhtml_resource_metadata,
               XPATH,
               options: options

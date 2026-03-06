@@ -148,7 +148,6 @@ epub_file_list.each do |epub_file|
             File.dirname(epub_file),
             File.basename(epub_file, ".*") + "_" + File.basename(__FILE__) + ".log"
             )
-  #epub_processor.logger = UMPTG::Logger.create(logger_file: logger_file)
   logger = UMPTG::Logger.create(logger_file: logger_file)
   logger.info("Time: #{Time.now}")
 
