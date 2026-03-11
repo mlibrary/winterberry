@@ -24,7 +24,7 @@ option_parser = OptionParser.new do |opts|
   opts.on('-n', '--normalize', 'Resolve issues') do |flag|
     options.normalize = true
   end
-  opts.on('-p', '--processor [metadata|resource]', 'Processor selection') do |p|
+  opts.on('-p', '--processor [metadata|resource|review]', 'Processor selection') do |p|
     options.processors[p.to_sym] = nil
   end
   opts.on_tail('-h', '--help', 'Print this help message') do
@@ -43,7 +43,7 @@ monograph_dir_list = ARGV
 
 processors = options.processors
 processors.keys.each do |k|
-  unless [:metadata, :resource].include?(k)
+  unless [:metadata, :resource, :review].include?(k)
     script_logger.error("invalid processor #{k}")
     exit(1)
   end
@@ -62,6 +62,11 @@ processors[:metadata] = UMPTG::Fulcrum::Metadata::EPUBProcessor.new(
 processors[:resource] = UMPTG::Fulcrum::ResourceProcessor(
                           "FulcrumResourceProcessor"
                       ) if processors.keys.include?(:resource)
+
+# EPUB Review processing
+processors[:review] = UMPTG::EPUB::Reviewer(
+                          "EPUBReviewProcessor"
+                      ) if processors.keys.include?(:review)
 
 monograph_dir_list.each do |mdir|
   monograph_dir = UMPTG::Fulcrum::MonographDir.new(
@@ -83,13 +88,24 @@ monograph_dir_list.each do |mdir|
                 processing_dir,
                 "monograph_resource_metadata.log"
                 )
-     when :resource
+    when :resource
+      processing_dir = File.dirname(monograph_dir.epub_file)
+
       # Create the processing log file for this monograph directory.
       logger_file =  File.join(
-                File.dirname(monograph_dir.epub_file),
+                processing_dir,
                 File.basename(monograph_dir.epub_file, ".*") + "_" + name.to_s + ".log"
                 )
-     end
+    when :review
+      processing_dir = File.join(monograph_dir.monograph_dir, "review")
+      FileUtils.mkdir_p processing_dir
+
+      # Create the processing log file for this monograph directory.
+      logger_file =  File.join(
+                processing_dir,
+                File.basename(monograph_dir.epub_file, ".*") + "_" + name.to_s + ".log"
+                )
+    end
 
     logger = UMPTG::Logger.create(logger_file: logger_file)
     logger.info("Time: #{Time.now}")
@@ -143,11 +159,26 @@ monograph_dir_list.each do |mdir|
                   },
               logger: logger
             )
+    when :review
+      entry_results = processor.run(
+                epub,
+                options: {
+                      normalize: options.normalize
+                    },
+                logger: logger
+             )
+      processor.report(
+              entry_results,
+              options: {
+                    normalize: options.normalize
+                  },
+              logger: logger
+            )
     end
 
     if options.normalize and epub.modified
       new_epub_file = File.join(
-            File.dirname(monograph_dir.epub_file),
+            processing_dir,
             File.basename(monograph_dir.epub_file, ".*") + "_" + \
                   name.to_s + File.extname(monograph_dir.epub_file)
             )
