@@ -1,0 +1,18 @@
+module UMPTG::XHTML::Pipeline::Actions
+
+  class NormalizeFigureCaptionStyleAction < NormalizeFigureAction
+
+    def resolve(args = {})
+      super(args)
+
+      resource_path = @properties[:resource_path]
+
+      style = @reference_node["style"]
+      @reference_node.remove_attribute("style")
+      add_info_msg("image: \"#{resource_path}\" removed @style=\"#{style}\" from caption element #{@reference_node.name}.")
+
+      #@status = Action.COMPLETED
+      @status = NormalizeAction.NORMALIZED
+    end
+  end
+end
