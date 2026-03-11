@@ -37,7 +37,7 @@ module UMPTG::XHTML::Pipeline::Actions
       end
 
       olist.each do |o|
-        add_info_msg("found reference for resource #{o.resource_name}")
+        add_info_msg("#{name}: found reference for resource #{o.resource_name}")
       end
 
       # Attach the list XML fragment objects processed to this

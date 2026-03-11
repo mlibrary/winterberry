@@ -39,7 +39,7 @@ module UMPTG::XHTML::Pipeline::Actions
 
       figure_obj.img_list.each do |img_obj|
         nested_node.add_child(img_obj.container_node)
-        add_info_msg("#{figure_container.name}: nest #{nested_node.name} #{caption_location} #{img_obj.container_node.name}.")
+        add_info_msg("#{name}: #{figure_container.name} nest #{nested_node.name} #{caption_location} #{img_obj.container_node.name}.")
       end
     end
 
@@ -56,7 +56,7 @@ module UMPTG::XHTML::Pipeline::Actions
         NormalizeFigureAction.normalize_caption_class(args)
 
         cap_container.add_child(node)
-        add_info_msg("#{figure_container.name}: nest #{nested_node.name} #{caption_location} #{node.name}.")
+        add_info_msg("#{name}: #{figure_container.name} nest #{nested_node.name} #{caption_location} #{node.name}.")
       end
     end
   end

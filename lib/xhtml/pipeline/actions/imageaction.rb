@@ -13,16 +13,17 @@ module UMPTG::XHTML::Pipeline::Actions
       rpath = @resource_path
       if rpath.nil? or rpath.strip.empty?
         rpath = "(not specified)"
-        add_error_msg("image: \"\" has no src path")
+        add_error_msg("#{name}: \"\" has no src path")
       else
-        add_info_msg(   "image: \"#{rpath}\" has src path")
+        add_info_msg(   "#{name}: \"#{rpath}\" has src path")
       end
 
       alt = @reference_node['alt']
-      add_info_msg(   "image: \"#{rpath}\" has alt text") unless alt.nil? or alt.empty?
-      add_warning_msg("image: \"#{rpath}\" has no alt text") if alt.nil? or alt.empty?
+      add_info_msg(   "#{name}: \"#{rpath}\" has alt text") unless alt.nil? or alt.empty?
+      add_warning_msg("#{name}: \"#{rpath}\" has no alt text") if alt.nil? or alt.empty?
 
-      @status = Action.COMPLETED
+      #@status = Action.COMPLETED
+      @status = Action.NO_ACTION
     end
   end
 end

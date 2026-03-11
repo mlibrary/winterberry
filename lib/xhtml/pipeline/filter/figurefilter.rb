@@ -127,7 +127,7 @@ module UMPTG::XHTML::Pipeline::Filter
           reference_action_list << UMPTG::XML::Pipeline::Action.new(
                    name: name,
                    reference_node: reference_node,
-                   warning_message: "image: \"#{resource_path}\" unable to determine figure container element."
+                   warning_message: "#{name}: \"#{resource_path}\" unable to determine figure container element."
                )
         else
           if reference_node.key?("data-fulcrum-embed-filename")
@@ -138,14 +138,14 @@ module UMPTG::XHTML::Pipeline::Filter
               reference_action_list << UMPTG::XML::Pipeline::Action.new(
                        name: name,
                        reference_node: reference_node,
-                       warning_message: "image: has element #{reference_node.name} as figure container and @data-fulcrum-embed-filename is empty."
+                       warning_message: "#{name}: has element #{reference_node.name} as figure container and @data-fulcrum-embed-filename is empty."
                    )
             else
               @resource_path_list[name] << resource_path
               reference_action_list << UMPTG::XML::Pipeline::Action.new(
                        name: name,
                        reference_node: reference_node,
-                       info_message: "image: \"#{resource_path}\" has element #{reference_node.name} as figure container and @data-fulcrum-embed-filename is set."
+                       info_message: "#{name}: \"#{resource_path}\" has element #{reference_node.name} as figure container and @data-fulcrum-embed-filename is set."
                    )
             end
           else
@@ -166,7 +166,7 @@ module UMPTG::XHTML::Pipeline::Filter
                 reference_action_list << UMPTG::XML::Pipeline::Action.new(
                          name: name,
                          reference_node: reference_node,
-                         warning_message: "image: has element #{reference_node.name} as figure container and is empty."
+                         warning_message: "#{name}: has element #{reference_node.name} as figure container and is empty."
                      )
               else
                 figure_obj = Figure.new(container_node: reference_node)
@@ -226,7 +226,7 @@ module UMPTG::XHTML::Pipeline::Filter
                       reference_action_list << UMPTG::XML::Pipeline::Action.new(
                                name: name,
                                reference_node: reference_node,
-                               warning_message: "image: #{resource_path} is found within a figure caption."
+                               warning_message: "#{name}: #{resource_path} is found within a figure caption."
                            )
                       next
                     end
@@ -235,7 +235,7 @@ module UMPTG::XHTML::Pipeline::Filter
                       reference_action_list << UMPTG::XML::Pipeline::Action.new(
                                name: name,
                                reference_node: reference_node,
-                               info_message: "image: \"#{resource_path}\" has element #{figure_container.name} as figure container."
+                               info_message: "#{name}: \"#{resource_path}\" has element #{figure_container.name} as figure container."
                            )
                     else
                       reference_action_list << UMPTG::XHTML::Pipeline::Actions::NormalizeFigureContainerAction.new(
@@ -244,7 +244,7 @@ module UMPTG::XHTML::Pipeline::Filter
                                resource_path: resource_path,
                                #xpath: xpath_base + "/" + @@DIV_XPATH,
                                action_node: figure_container,
-                               warning_message: "image: \"#{resource_path}\" figure container element should be normalized."
+                               warning_message: "#{name}: \"#{resource_path}\" figure container element should be normalized."
                            )
                       container_normalized = true
                     end
@@ -266,7 +266,7 @@ module UMPTG::XHTML::Pipeline::Filter
                       reference_action_list << UMPTG::XML::Pipeline::Action.new(
                                name: name,
                                reference_node: caption_list.first,
-                               info_message: "image: #{figure_obj.img_list.count} \"#{resource_path}\" has element #{caption_list.first.name} as figure caption container."
+                               info_message: "#{name}: #{figure_obj.img_list.count} \"#{resource_path}\" has element #{caption_list.first.name} as figure caption container."
                            )
                     else
                       reference_action_list << UMPTG::XHTML::Pipeline::Actions::NormalizeFigureCaptionAction.new(
@@ -276,7 +276,7 @@ module UMPTG::XHTML::Pipeline::Filter
                                #xpath: xpath_base.strip + "/" + @@FIGUREDIV_XPATH.strip + @@CAPTION_XPATH.strip,
                                #action_node: node,
                                cap_list: figure_obj.caption_list,
-                               warning_message: "image: figure caption should be normalized."
+                               warning_message: "#{name}: figure caption should be normalized."
                            )
                       figure_obj.caption_list.each do |caption_node|
                         if caption_node.key?("style")
@@ -285,7 +285,7 @@ module UMPTG::XHTML::Pipeline::Filter
                                    name: name,
                                    reference_node: caption_node,
                                    resource_path: resource_path,
-                                   warning_message: "image: \"#{resource_path}\" has caption element #{caption_node.name} with @style=\"#{caption_node['style']}\"."
+                                   warning_message: "#{name}: \"#{resource_path}\" has caption element #{caption_node.name} with @style=\"#{caption_node['style']}\"."
                                )
                         end
                       end
@@ -298,7 +298,7 @@ module UMPTG::XHTML::Pipeline::Filter
                     reference_action_list << UMPTG::XML::Pipeline::Action.new(
                              name: name,
                              reference_node: figure_obj.container_node,
-                             error_message: "image: figure object with no image node."
+                             error_message: "#{name}: figure object with no image node."
                          )
                     next
                   end
@@ -313,7 +313,7 @@ module UMPTG::XHTML::Pipeline::Filter
                                reference_node: img_container,
                                #xpath: xpath_base + "/" + @@DIV_XPATH,
                                action_node: img_container,
-                               warning_message: "image: container element should be normalized."
+                               warning_message: "#{name}: container element should be normalized."
                             )
                     end
                   end
@@ -330,7 +330,7 @@ module UMPTG::XHTML::Pipeline::Filter
                              figure_container: figure_obj.container_node,
                              caption_location: :caption_after,
                              figure_obj: figure_obj,
-                             warning_message: "image: figure container element should be normalized via nesting."
+                             warning_message: "#{name}: figure container element should be normalized via nesting."
                          )
                   end
                 end
@@ -418,7 +418,7 @@ module UMPTG::XHTML::Pipeline::Filter
 
     def self.add_filename_spaces_msg(action, resource_path, is_image = true)
       # Flag this reference if the file name contains spaces.
-      type_txt = is_image ? "image" : "marker"
+      type_txt = is_image ? action.name : "marker"
       if File.basename(resource_path).match?(/[ ]+/)
         action.add_warning_msg("#{type_txt}: \"#{resource_path}\" found and the name contains spaces.")
       else
