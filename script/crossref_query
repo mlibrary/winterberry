@@ -77,7 +77,8 @@ def process_value(parent_node, val)
 end
 
 def process_work(parent_node, work)
-  work_node = parent_node.add_child("<work></>").first
+  work_node = parent_node.xpath("//*[local-name()='work']/*[local-name()='ARG' and text()='#{work['URL']}']/..").first
+  work_node = parent_node.add_child("<work></>").first if work_node.nil?
   return process_value(work_node, work)
 end
 
@@ -100,56 +101,64 @@ arg_list.each do |arg|
     next
   end
 
-  case options.message_type
-  when :funders
-  when :prefixes
-    begin
-      response_list = service.prefixes(prefix_list: doi_list)
-    rescue StandardError => e
-      script_logger.error(e.message)
-      next
-    end
-  when :works
-    begin
-      response_list = service.works(doi_list: doi_list)
-    rescue StandardError => e
-      script_logger.error(e.message)
-      next
-    end
-  else
-    script_logger.error("message type #{options.message_type} not supported.")
-    next
-  end
-
   xml_doc = Nokogiri::XML("<?xml version=\"1.0\" encoding=\"utf-8\"?><#{File.basename(__FILE__)}></>")
   parent_node = xml_doc.document.root
+  doi_list.each {|d| parent_node.add_child("<work><ARG>#{d}</></>") }
 
-  response_list.each do |response|
-    next if response.nil?
+  loop_cnt = 0
+  while loop_cnt < 5
+    loop_cnt += 1
+    break if doi_list.empty?
 
-    unless response.status == 200
-      url = response.to_hash[:url]
-      script_logger.error("#{options.message_type} request #{url} failed,#{response.status}")
-      parent_node.add_child("<work><DOI>#{url}</><failed>FAILED: #{url}</></>")
-      next
-    end
-    script_logger.info("*** message-type:#{response.body['message-type']}, version:#{response.body['message-version']} ***")
-
-    case response.body['message-type']
-    when "prefix"
-      #script_logger.info("#{response.body['message']['prefix']}:#{response.body['message']['name']}")
-      #script_logger.info(response.body['message'])
-    when "work"
-      work = response.body['message']
-      script_logger.info("#{work['URL']}")
-      process_work(parent_node, work)
-    when "work-list"
-      response.body['message']['items'].each do |work|
-        script_logger.info("#{work['URL']}")
-        process_work(parent_node, work)
+    case options.message_type
+    when :funders
+    when :prefixes
+      begin
+        response_list = service.prefixes(prefix_list: doi_list)
+      rescue StandardError => e
+        script_logger.error(e.message)
+        next
+      end
+    when :works
+      begin
+        response_list = service.works(doi_list: doi_list)
+      rescue StandardError => e
+        script_logger.error(e.message)
+        next
       end
     else
-      script_logger.warn("type #{response.body['message-type']} not supported.")
+      script_logger.error("message type #{options.message_type} not supported.")
+      next
+    end
+
+    doi_list = []
+    response_list.each do |response|
+      next if response.nil?
+
+      unless response.status == 200
+        url = response.to_hash[:url]
+        script_logger.error("#{options.message_type} request #{url} failed,#{response.status}")
+        doi_list << url.to_s
+        next
+      end
+      script_logger.info("*** message-type:#{response.body['message-type']}, version:#{response.body['message-version']} ***")
+
+      case response.body['message-type']
+      when "prefix"
+        #script_logger.info("#{response.body['message']['prefix']}:#{response.body['message']['name']}")
+        #script_logger.info(response.body['message'])
+      when "work"
+        work = response.body['message']
+        script_logger.info("#{work['URL']}")
+        process_work(parent_node, work)
+      when "work-list"
+        response.body['message']['items'].each do |work|
+          script_logger.info("#{work['URL']}")
+          process_work(parent_node, work)
+        end
+      else
+        script_logger.warn("type #{response.body['message-type']} not supported.")
+      end
     end
   end
 
@@ -168,7 +177,7 @@ arg_list.each do |arg|
                 File.dirname(doi_file),
                 File.basename(doi_file, ".*") + "_" + File.basename(__FILE__) + ".csv"
             )
-    xpath = "//*[local-name()='failed']|//*[local-name()='resource']//*[local-name()='URL' and (starts-with(text(),'https://www.fulcrum.org/') or starts-with(text(),'https://services.publishing.umich.edu/') or starts-with(text(),'https://press.umich.edu/'))]"
+    xpath = "//*[local-name()='resource']//*[local-name()='URL' and (starts-with(text(),'https://www.fulcrum.org/') or starts-with(text(),'https://services.publishing.umich.edu/') or starts-with(text(),'https://press.umich.edu/'))]"
     CSV.open(
             doi_list_file,
             "w",
