@@ -34,11 +34,19 @@ module UMPTG::XHTML::Pipeline::Filter
               )
         if href.include?(' ') or href.include?('%20')
           href_new = href.gsub(/ /, '').gsub(/%20/, '')
+=begin
           action = UMPTG::XML::Pipeline::Actions::SetAttributeValueAction.new(
                   name: issue.name,
                   reference_node: issue.content,
                   attribute_name: "href",
                   attribute_value: href_new,
+                  warning_message: \
+                    "#{issue.name}, #{issue.content.name} found @id=\"#{id}\" @href=\"#{href}\", @href contains spaces"
+              )
+=end
+          action = UMPTG::XML::Pipeline::Action.new(
+                  name: issue.name,
+                  reference_node: issue.content,
                   warning_message: \
                     "#{issue.name}, #{issue.content.name} found @id=\"#{id}\" @href=\"#{href}\", @href contains spaces"
               )
