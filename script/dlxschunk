@@ -29,7 +29,8 @@ require 'fileutils'
 
 require_relative File.join(root_dir, 'lib', 'xslt')
 
-dlxschunk_xsl_file = File.join(root_dir, "lib", "dlxs", "xsl", "chunk.xsl")
+#dlxschunk_xsl_file = File.join(root_dir, "lib", "dlxs", "xsl", "chunk.xsl")
+dlxschunk_xsl_file = File.join(root_dir, "lib", "journal", "xsl", "dlxschunk.xsl")
 
 dlxs_file_list = ARGV
 dlxs_file_list.each do |dlxs_file|
