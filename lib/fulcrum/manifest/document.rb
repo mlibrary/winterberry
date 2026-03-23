@@ -369,6 +369,13 @@ module UMPTG::Fulcrum::Manifest
     # a specific resource.
     def fileset_embed_jats_markup(args = {})
       file_name = args[:file_name]
+
+      ableplayer_sign_file_name = (args[:ableplayer_sign_file_name] || "").strip
+      ableplayer_present_file_name = (args[:ableplayer_present_file_name] || "").strip
+      ableplayer_present_sign_file_name = (args[:ableplayer_present_sign_file_name] || "").strip
+      ableplayer_vtt_file_name = (args[:ableplayer_vtt_file_name] || "").strip
+      ableplayer_vtt_lang = (args[:ableplayer_vtt_lang] || "").strip
+
       caption_markup = args[:caption_markup]
       figure_id = args[:figure_id]
       renderer = args[:renderer]
@@ -442,70 +449,177 @@ module UMPTG::Fulcrum::Manifest
                 }
                 )
 
-        attrib_element = add_element(
-              "attrib",
-              media_element,
-              '',
-              {
-                  "id" => "umptg_fulcrum_resource_" + noid,
-                  "specific-use" => "umptg_fulcrum_resource"
-              }
-              )
+        ableplayer_sign_fileset = @csv.find {|r| r['file_name'].downcase == ableplayer_sign_file_name.downcase } \
+                unless ableplayer_sign_file_name.empty?
+        ableplayer_present_fileset = @csv.find {|r| r['file_name'].downcase == ableplayer_present_file_name.downcase } \
+                unless ableplayer_present_file_name.empty?
+        ableplayer_present_sign_fileset = @csv.find {|r| r['file_name'].downcase == ableplayer_present_sign_file_name.downcase } \
+                unless ableplayer_present_sign_file_name.empty?
 
-        unless doi.strip.empty?
+        if ableplayer_sign_fileset.nil?
+          attrib_element = add_element(
+                "attrib",
+                media_element,
+                '',
+                {
+                    "id" => "umptg_fulcrum_resource_" + noid,
+                    "specific-use" => "umptg_fulcrum_resource"
+                }
+                )
+
+          unless doi.strip.empty?
+            add_ext_link(
+                attrib_element,
+                {
+                  "ext-link-type" => "doi",
+                  "xlink:href" => doi_noprefix
+                }
+                )
+          end
+
           add_ext_link(
               attrib_element,
               {
-                "ext-link-type" => "doi",
-                "xlink:href" => doi_noprefix
+                "ext-link-type" => "uri",
+                "specific-use" => "umptg_fulcrum_resource_link",
+                "xlink:href" => href
               }
               )
-        end
-
-        add_ext_link(
-            attrib_element,
-            {
-              "ext-link-type" => "uri",
-              "specific-use" => "umptg_fulcrum_resource_link",
-              "xlink:href" => href
-            }
-            )
-        add_ext_link(
-            attrib_element,
-            {
-              "ext-link-type" => "uri",
-              "specific-use" => "umptg_fulcrum_resource_css_stylesheet_link",
-              "xlink:href" => css_link
-            }
-            )
-        add_ext_link(
-            attrib_element,
-            {
-              "ext-link-type" => "uri",
-              "specific-use" => "umptg_fulcrum_resource_embed_link",
-              "xlink:href" => embed_link
-            }
-            )
-
-        alt_element = add_element("alternatives", attrib_element)
-        add_element(
-              "preformat",
-              alt_element,
-              noid,
+          add_ext_link(
+              attrib_element,
               {
-                  "specific-use" => "umptg_fulcrum_resource_identifier",
-                  "position" => "anchor"
+                "ext-link-type" => "uri",
+                "specific-use" => "umptg_fulcrum_resource_css_stylesheet_link",
+                "xlink:href" => css_link
               }
               )
-        add_element_unless_no_content(
-                "preformat",
-                alt_element,
-                title,
+          add_ext_link(
+              attrib_element,
+              {
+                "ext-link-type" => "uri",
+                "specific-use" => "umptg_fulcrum_resource_embed_link",
+                "xlink:href" => embed_link
+              }
+              )
+        else
+          ableplayer_type_link = "https://fulcrum.org/downloads/#{fileset['noid']}?file=#{File.extname(fileset['file_name'])[1..-1]}&locale=en"
+          ableplayer_type_sign_link = "https://fulcrum.org/downloads/#{ableplayer_sign_fileset['noid']}?file=#{File.extname(ableplayer_sign_fileset['file_name'])[1..-1]}&locale=en" \
+                  unless ableplayer_sign_fileset.nil?
+          ableplayer_present_link = "https://fulcrum.org/downloads/#{ableplayer_present_fileset['noid']}?file=#{File.extname(ableplayer_present_fileset['file_name'])[1..-1]}&locale=en" \
+                  unless ableplayer_present_fileset.nil?
+          ableplayer_present_sign_link = "https://fulcrum.org/downloads/#{ableplayer_present_sign_fileset['noid']}?file=#{File.extname(ableplayer_present_sign_fileset['file_name'])[1..-1]}&locale=en" \
+                  unless ableplayer_present_sign_fileset.nil?
+
+          attrib_element = add_element(
+                "attrib",
+                media_element,
+                '',
                 {
-                    "specific-use" => "umptg_fulcrum_resource_title",
-                    "position" => "anchor"
+                    "id" => "umptg_fulcrum_ableplayer_" + noid,
+                    "specific-use" => "umptg_fulcrum_ableplayer"
                 }
                 )
+          add_ext_link(
+              attrib_element,
+              {
+                "ext-link-type" => "uri",
+                "specific-use" => "umptg_fulcrum_ableplayer_link",
+                "xlink:href" => ableplayer_type_link
+              }
+              )
+          add_ext_link(
+                   attrib_element,
+                   {
+                     "ext-link-type" => "uri",
+                     "specific-use" => "umptg_fulcrum_ableplayer_sign_link",
+                     "xlink:href" => ableplayer_type_sign_link
+                   }
+                   ) unless ableplayer_sign_fileset.nil?
+          add_ext_link(
+                   attrib_element,
+                   {
+                     "ext-link-type" => "uri",
+                     "specific-use" => "umptg_fulcrum_ableplayer_present_link",
+                     "xlink:href" => ableplayer_present_link
+                   }
+                   ) unless ableplayer_present_fileset.nil?
+          add_ext_link(
+                   attrib_element,
+                   {
+                     "ext-link-type" => "uri",
+                     "specific-use" => "umptg_fulcrum_ableplayer_present_sign_link",
+                     "xlink:href" => ableplayer_present_sign_link
+                   }
+                   ) unless ableplayer_present_sign_link.nil?
+          add_ext_link(
+                   attrib_element,
+                   {
+                     "ext-link-type" => "uri",
+                     "specific-use" => "umptg_fulcrum_ableplayer_vtt_link",
+                     "xlink:href" => ableplayer_vtt_file_name
+                   }
+                   ) unless ableplayer_vtt_file_name.empty?
+
+          alt_element = add_element("alternatives", attrib_element)
+          add_element(
+                "preformat",
+                alt_element,
+                noid,
+                {
+                    "specific-use" => "umptg_fulcrum_ableplayer_identifier",
+                    "position" => "anchor",
+                    "preformat-type" => File.extname(file_name)[1..-1]
+                }
+                )
+          add_element_unless_no_content(
+                  "preformat",
+                  alt_element,
+                  ableplayer_sign_fileset['noid'],
+                  {
+                      "specific-use" => "umptg_fulcrum_ableplayer_sign_identifier",
+                      "position" => "anchor",
+                      "preformat-type" => File.extname(ableplayer_sign_fileset['file_name'])[1..-1]
+                  }
+                  ) unless ableplayer_sign_fileset.nil?
+          add_element_unless_no_content(
+                  "preformat",
+                  alt_element,
+                  ableplayer_present_fileset['noid'],
+                  {
+                      "specific-use" => "umptg_fulcrum_ableplayer_present_identifier",
+                      "position" => "anchor",
+                      "preformat-type" => File.extname(ableplayer_present_fileset['file_name'])[1..-1]
+                  }
+                  ) unless ableplayer_present_fileset.nil?
+          add_element_unless_no_content(
+                  "preformat",
+                  alt_element,
+                  ableplayer_present_sign_fileset['noid'],
+                  {
+                      "specific-use" => "umptg_fulcrum_ableplayer_present_sign_identifier",
+                      "position" => "anchor",
+                      "preformat-type" => File.extname(ableplayer_present_sign_fileset['file_name'])[1..-1]
+                  }
+                  ) unless ableplayer_present_sign_fileset.nil?
+          add_element_unless_no_content(
+                  "preformat",
+                  alt_element,
+                  ableplayer_vtt_lang,
+                  {
+                      "specific-use" => "umptg_fulcrum_ableplayer_vtt_lang",
+                      "position" => "anchor"
+                  }
+                  ) unless ableplayer_vtt_lang.empty?
+          add_element_unless_no_content(
+                  "preformat",
+                  alt_element,
+                  title,
+                  {
+                      "specific-use" => "umptg_fulcrum_ableplayer_title",
+                      "position" => "anchor"
+                  }
+                  )
+        end
         return media_element.to_xml
       end
     end
