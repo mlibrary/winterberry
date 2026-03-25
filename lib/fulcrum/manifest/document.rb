@@ -476,7 +476,6 @@ module UMPTG::Fulcrum::Manifest
                 }
                 )
           end
-
           add_ext_link(
               attrib_element,
               {
@@ -501,6 +500,25 @@ module UMPTG::Fulcrum::Manifest
                 "xlink:href" => embed_link
               }
               )
+          alt_element = add_element("alternatives", attrib_element)
+          add_element(
+                "preformat",
+                alt_element,
+                noid,
+                {
+                    "specific-use" => "umptg_fulcrum_resource_identifier",
+                    "position" => "anchor",
+                }
+                )
+          add_element_unless_no_content(
+                  "preformat",
+                  alt_element,
+                  title,
+                  {
+                      "specific-use" => "umptg_fulcrum_resource_title",
+                      "position" => "anchor"
+                  }
+                  )
         else
           ableplayer_type_link = "https://fulcrum.org/downloads/#{fileset['noid']}?file=#{File.extname(fileset['file_name'])[1..-1]}&locale=en"
           ableplayer_type_sign_link = "https://fulcrum.org/downloads/#{ableplayer_sign_fileset['noid']}?file=#{File.extname(ableplayer_sign_fileset['file_name'])[1..-1]}&locale=en" \
@@ -519,11 +537,21 @@ module UMPTG::Fulcrum::Manifest
                     "specific-use" => "umptg_fulcrum_ableplayer"
                 }
                 )
+
+          unless doi.strip.empty?
+            add_ext_link(
+                attrib_element,
+                {
+                  "ext-link-type" => "doi",
+                  "xlink:href" => doi_noprefix
+                }
+                )
+          end
           add_ext_link(
               attrib_element,
               {
                 "ext-link-type" => "uri",
-                "specific-use" => "umptg_fulcrum_ableplayer_link",
+                "specific-use" => "umptg_fulcrum_resource_link",
                 "xlink:href" => ableplayer_type_link
               }
               )
@@ -566,11 +594,20 @@ module UMPTG::Fulcrum::Manifest
                 alt_element,
                 noid,
                 {
-                    "specific-use" => "umptg_fulcrum_ableplayer_identifier",
+                    "specific-use" => "umptg_fulcrum_resource_identifier",
                     "position" => "anchor",
                     "preformat-type" => File.extname(file_name)[1..-1]
                 }
                 )
+          add_element_unless_no_content(
+                  "preformat",
+                  alt_element,
+                  title,
+                  {
+                      "specific-use" => "umptg_fulcrum_resource_title",
+                      "position" => "anchor"
+                  }
+                  )
           add_element_unless_no_content(
                   "preformat",
                   alt_element,
@@ -610,15 +647,6 @@ module UMPTG::Fulcrum::Manifest
                       "position" => "anchor"
                   }
                   ) unless ableplayer_vtt_lang.empty?
-          add_element_unless_no_content(
-                  "preformat",
-                  alt_element,
-                  title,
-                  {
-                      "specific-use" => "umptg_fulcrum_ableplayer_title",
-                      "position" => "anchor"
-                  }
-                  )
         end
         return media_element.to_xml
       end

@@ -74,16 +74,16 @@
 
         <!-- Handle Fulcrum Ableplayer Media -->
         <xsl:variable name="fulcrum_elem" select="./*[local-name()='attrib' and @specific-use='umptg_fulcrum_ableplayer']"/>
-        <xsl:variable name="identifier" select="$fulcrum_elem/*[local-name()='alternatives']/*[@specific-use='umptg_fulcrum_ableplayer_identifier']"/>
-        <xsl:variable name="title" select="$fulcrum_elem/*[local-name()='alternatives']/*[@specific-use='umptg_fulcrum_ableplayer_title']"/>
+        <xsl:variable name="identifier" select="$fulcrum_elem/*[local-name()='alternatives']/*[@specific-use='umptg_fulcrum_resource_identifier']"/>
+        <xsl:variable name="title" select="$fulcrum_elem/*[local-name()='alternatives']/*[@specific-use='umptg_fulcrum_resource_title']"/>
 
         <xsl:variable name="resource_type_link">
             <xsl:choose>
-                <xsl:when test="$fulcrum_elem/ext-link[@specific-use='umptg_fulcrum_ableplayer_link']/@xlink:href">
-                    <xsl:value-of select="$fulcrum_elem/ext-link[@specific-use='umptg_fulcrum_ableplayer_link']/@xlink:href"/>
+                <xsl:when test="$fulcrum_elem/ext-link[@specific-use='umptg_fulcrum_resource_link']/@xlink:href">
+                    <xsl:value-of select="$fulcrum_elem/ext-link[@specific-use='umptg_fulcrum_resource_link']/@xlink:href"/>
                 </xsl:when>
-                <xsl:when test="$fulcrum_elem/alternatives/preformat[@specific-use='umptg_fulcrum_ableplayer_identifier']">
-                    <xsl:value-of select="concat('https://fulcrum.org/downloads/',$fulcrum_elem/alternatives/preformat[@specific-use='umptg_fulcrum_ableplayer_identifier'],'?file=',$fulcrum_elem/alternatives/preformat[@specific-use='umptg_fulcrum_ableplayer_identifier']/@preformat-type,'&amp;locale=en')"/>
+                <xsl:when test="$fulcrum_elem/alternatives/preformat[@specific-use='umptg_fulcrum_resource_identifier']">
+                    <xsl:value-of select="concat('https://fulcrum.org/downloads/',$fulcrum_elem/alternatives/preformat[@specific-use='umptg_fulcrum_resource_identifier'],'?file=',$fulcrum_elem/alternatives/preformat[@specific-use='umptg_fulcrum_resource_identifier']/@preformat-type,'&amp;locale=en')"/>
                 </xsl:when>
                 <xsl:otherwise>
                     <xsl:value-of select="''"/>
