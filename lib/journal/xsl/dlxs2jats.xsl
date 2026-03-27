@@ -1501,6 +1501,18 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
     </xsl:template>
     -->
 
+    <xsl:template match="*[((local-name()='HI1' and @REND='math') or local-name()='italic') and ((starts-with(text(), '$$') and ends-with(text(),'$$')) or (starts-with(text(), '\[') and ends-with(text(),'\]')))]">
+        <xsl:element name="disp-formula">
+            <xsl:apply-templates select="node()"/>
+        </xsl:element>
+    </xsl:template>
+
+    <xsl:template match="*[((local-name()='HI1' and @REND='math') or local-name()='italic') and starts-with(text(), '\(') and ends-with(text(),'\)')]">
+        <xsl:element name="inline-formula">
+            <xsl:apply-templates select="node()"/>
+        </xsl:element>
+    </xsl:template>
+
     <xsl:template match="HI1">
         <xsl:choose>
             <xsl:when test="normalize-space(@REND) != ''">
