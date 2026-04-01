@@ -6,7 +6,7 @@
     <!--
     <xsl:import href="/var/www/michigan/src/files/xsl/default-v1.4.3.xsl"/>
     -->
-    <xsl:import href="janeway_default.xsl"/>
+    <xsl:import href="default.xsl"/>
     <xsl:import href="janeway_fulcrum.xsl"/>
 
 </xsl:stylesheet>

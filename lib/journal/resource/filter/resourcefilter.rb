@@ -78,6 +78,11 @@ module UMPTG::Journal::Resource::Filter
       caption_markup = caption_node.nil? ? nil : caption_node.inner_html
       jats_media_markup = @manifest.fileset_embed_jats_markup(
                   file_name: fileset['file_name'],
+                  ableplayer_sign_file_name: fig_node['data-fulcrum-ableplayer-sign-file-name'],
+                  ableplayer_present_file_name: fig_node['data-fulcrum-ableplayer-present-file-name'],
+                  ableplayer_present_sign_file_name: fig_node['data-fulcrum-ableplayer-present-sign-file-name'],
+                  ableplayer_vtt_file_name: fig_node['data-fulcrum-ableplayer-vtt-file-name'],
+                  ableplayer_vtt_lang: fig_node['data-fulcrum-ableplayer-vtt-lang'],
                   caption_markup: caption_markup,
                   figure_id: fig_node['id'],
                   renderer: UMPTG::Journal::JATSRenderer.new

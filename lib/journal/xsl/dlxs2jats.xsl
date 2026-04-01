@@ -672,6 +672,17 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
         </xsl:choose>
     </xsl:template>
 
+    <xsl:template match="*[starts-with(local-name(),'DIV')]/*[local-name()='REF' and starts-with(@TYPE,'ableplayer-')]">
+        <xsl:element name="fig">
+            <xsl:attribute name="data-fulcrum-ableplayer-filename" select="'.mp4'"/>
+            <xsl:attribute name="data-fulcrum-ableplayer-sign-filename" select="'.mp4'"/>
+            <xsl:attribute name="data-fulcrum-ableplayer-present-filename" select="'.webm'"/>
+            <xsl:attribute name="data-fulcrum-ableplayer-present-sign-filename" select="'.webm'"/>
+            <xsl:attribute name="data-fulcrum-ableplayer-vtt-filename" select="'.vtt'"/>
+            <xsl:attribute name="data-fulcrum-ableplayer-vtt-srclang" select="'en'"/>
+        </xsl:element>
+    </xsl:template>
+
     <xsl:template match="HEAD">
         <xsl:element name="title">
             <xsl:choose>
