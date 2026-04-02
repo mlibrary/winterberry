@@ -268,7 +268,7 @@ journal_name_list.each do |journal_name|
   params = {
               "image_list" => URI(rfile)
            }
-  params["article_type"] = options.article_type unless options.article_type.nil?
+  params["article_type_param"] = options.article_type unless options.article_type.nil?
 
   rc = UMPTG::XSLT.transform(
           xslpath: dlxs2jats_xsl_file,

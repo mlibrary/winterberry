@@ -706,8 +706,9 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
     </xsl:template>
 
     <xsl:template match="HEAD[parent::*[starts-with(local-name(),'DIV')] and following-sibling::*[position()=1 and (local-name()='NOTE1' or local-name()='LISTBIBL')]]">
-        <!-- Insert an empty <title>. The heading is added within the group. -->
+        <!-- Insert an empty <title>. The heading is added within the group.
         <xsl:element name="title"/>
+        -->
     </xsl:template>
 
     <xsl:template match="P[@TYPE='title' or @TYPE='author' or @TYPE='author-notes']"/>
@@ -774,134 +775,26 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
                 </xsl:element>
             </xsl:when>
             <xsl:when test="@TYPE='image' or @TYPE = 'video' or @TYPE='audio' or @TYPE='map'">
-                <xsl:element name="media">
-                    <xsl:attribute name="mimetype" select="lower-case(@TYPE)"/>
-                    <xsl:attribute name="position" select="'anchor'"/>
-                    <xsl:attribute name="specific-use" select="'online'"/>
-
-                    <xsl:variable name="image_info" select="mlibxsl:make-resource(@FILENAME)"/>
-                    <xsl:choose>
-                        <xsl:when test="exists($image_info)">
-                            <xsl:attribute name="mime-subtype" select="$image_info/@file_type"/>
-                            <xsl:attribute name="xlink:href" select="$image_info/@embed_link"/>
-                        </xsl:when>
-                        <xsl:otherwise>
-                            <xsl:attribute name="xlink:href" select="@FILENAME"/>
-                        </xsl:otherwise>
-                    </xsl:choose>
-                    <xsl:choose>
-                        <xsl:when test="normalize-space(ancestor::*[local-name()='FIGURE']/*[local-name()='HEAD' or local-name()='P']) !=''">
-                            <!-- In a figure that has a header. Use that and do nothing here. -->
-                            <xsl:message>Figure header exists.</xsl:message>
-                        </xsl:when>
-                        <xsl:when test="normalize-space(./*[local-name()='HEAD' or local-name()='P']) !=''">
-                            <!-- This reference has a header. Use that. -->
-                            <xsl:call-template name="add-label-caption">
+                <xsl:choose>
+                    <xsl:when test=".=''">
+                        <xsl:call-template name="add-media">
+                            <xsl:with-param name="node" select="."/>
+                        </xsl:call-template>
+                    </xsl:when>
+                    <xsl:otherwise>
+                        <xsl:element name="fig">
+                            <xsl:if test="@ID!=''">
+                                <xsl:attribute name="id" select="@ID"/>
+                            </xsl:if>
+                            <xsl:element name="label">
+                                <xsl:value-of select="."/>
+                            </xsl:element>
+                            <xsl:call-template name="add-media">
                                 <xsl:with-param name="node" select="."/>
                             </xsl:call-template>
-
-                            <!--
-                            <xsl:element name="caption">
-                                <xsl:if test="normalize-space(./*[local-name()='HEAD']) !=''">
-                                    <xsl:element name="title">
-                                        <xsl:value-of select="./*[local-name()='HEAD']"/>
-                                    </xsl:element>
-                                </xsl:if>
-                                <xsl:if test="normalize-space(./*[local-name()='P']) !=''">
-                                    <xsl:element name="p">
-                                        <xsl:value-of select="./*[local-name()='P']"/>
-                                    </xsl:element>
-                                </xsl:if>
-                            </xsl:element>
-                            -->
-                        </xsl:when>
-                        <xsl:when test="normalize-space($image_info/title) !='' or normalize-space($image_info/caption) !=''">
-                            <!-- Use title and/or caption assigned to resource. -->
-                            <xsl:element name="caption">
-                                <xsl:if test="normalize-space($image_info/title) !=''">
-                                    <xsl:element name="title">
-                                        <xsl:value-of select="$image_info/title"/>
-                                    </xsl:element>
-                                </xsl:if>
-                                <xsl:if test="normalize-space($image_info/caption) !=''">
-                                    <xsl:element name="p">
-                                        <xsl:value-of select="$image_info/caption"/>
-                                    </xsl:element>
-                                </xsl:if>
-                            </xsl:element>
-                        </xsl:when>
-                    </xsl:choose>
-                    <xsl:choose>
-                        <xsl:when test="exists($image_info)">
-                            <xsl:choose>
-                                <xsl:when test="string-length(normalize-space($image_info/@doi_noprefix)) > 0">
-                                    <xsl:element name="object-id">
-                                        <xsl:attribute name="pub-id-type" select="'doi'"/>
-                                        <xsl:value-of select="$image_info/@doi_noprefix"/>
-                                    </xsl:element>
-                                </xsl:when>
-                            </xsl:choose>
-                            <xsl:element name="attrib">
-                                <xsl:attribute name="id" select="concat('umptg_fulcrum_resource_',$image_info/@noid)"/>
-                                <xsl:attribute name="specific-use" select="'umptg_fulcrum_resource'"/>
-                                <xsl:choose>
-                                    <xsl:when test="string-length(normalize-space($image_info/@doi_noprefix)) > 0">
-                                        <xsl:element name="ext-link">
-                                            <xsl:attribute name="ext-link-type" select="'doi'"/>
-                                            <xsl:attribute name="xlink:href" select="$image_info/@doi_noprefix"/>
-                                        </xsl:element>
-                                    </xsl:when>
-                                </xsl:choose>
-                                <xsl:element name="ext-link">
-                                    <xsl:attribute name="ext-link-type" select="'uri'"/>
-                                    <xsl:attribute name="specific-use" select="'umptg_fulcrum_resource_link'"/>
-                                    <xsl:attribute name="xlink:href" select="$image_info/@link"/>
-                                    <!--
-                                    <xsl:value-of select="$image_info/css_stylesheet"/>
-                                    -->
-                                </xsl:element>
-                                <xsl:element name="ext-link">
-                                    <xsl:attribute name="ext-link-type" select="'uri'"/>
-                                    <xsl:attribute name="specific-use" select="'umptg_fulcrum_resource_css_stylesheet_link'"/>
-                                    <xsl:attribute name="xlink:href" select="$image_info/@css_link"/>
-                                </xsl:element>
-                                <xsl:element name="ext-link">
-                                    <xsl:attribute name="ext-link-type" select="'uri'"/>
-                                    <xsl:attribute name="specific-use" select="'umptg_fulcrum_resource_embed_link'"/>
-                                    <xsl:attribute name="xlink:href" select="$image_info/@embed_link"/>
-                                </xsl:element>
-                                <xsl:element name="alternatives">
-                                    <xsl:element name="preformat">
-                                        <xsl:attribute name="specific-use" select="'umptg_fulcrum_resource_title'"/>
-                                        <xsl:attribute name="position" select="'anchor'"/>
-                                        <xsl:value-of select="$image_info/title"/>
-                                    </xsl:element>
-                                    <xsl:element name="preformat">
-                                        <xsl:attribute name="specific-use" select="'umptg_fulcrum_resource_identifier'"/>
-                                        <xsl:attribute name="position" select="'anchor'"/>
-                                        <xsl:value-of select="$image_info/@noid"/>
-                                    </xsl:element>
-                                    <!--
-                                    <xsl:element name="code">
-                                        <xsl:attribute name="specific-use" select="'umptg_fulcrum_resource_css_embed_code'"/>
-                                        <xsl:attribute name="position" select="'anchor'"/>
-                                        <xsl:attribute name="code-type" select="'xml'"/>
-                                        <xsl:attribute name="code-version" select="'1.0'"/>
-                                        <xsl:value-of select="$image_info/css_stylesheet"/>
-                                    </xsl:element>
-                                    <xsl:element name="code">
-                                        <xsl:attribute name="specific-use" select="'umptg_fulcrum_resource_embed_code'"/>
-                                        <xsl:attribute name="position" select="'anchor'"/>
-                                        <xsl:attribute name="code-type" select="'xml'"/>
-                                        <xsl:attribute name="code-version" select="'1.0'"/>
-                                        <xsl:value-of select="$image_info/embed_code"/>
-                                    </xsl:element>
-                                    -->
-                                </xsl:element>
-                            </xsl:element>
-                        </xsl:when>
-                    </xsl:choose>
-                </xsl:element>
+                        </xsl:element>
+                    </xsl:otherwise>
+                </xsl:choose>
             </xsl:when>
             <xsl:when test="starts-with(lower-case(@URL), 'mailto:')">
                 <xsl:element name="email">
@@ -1882,6 +1775,147 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
                 </xsl:element>
             </xsl:otherwise>
         </xsl:choose>
+    </xsl:template>
+
+    <xsl:template name="add-media">
+        <xsl:param name="node"/>
+
+        <xsl:element name="media">
+            <xsl:attribute name="mimetype" select="lower-case($node/@TYPE)"/>
+            <xsl:attribute name="position" select="'anchor'"/>
+            <xsl:attribute name="specific-use" select="'online'"/>
+
+            <xsl:variable name="image_info" select="mlibxsl:make-resource($node/@FILENAME)"/>
+            <xsl:choose>
+                <xsl:when test="exists($image_info)">
+                    <xsl:attribute name="mime-subtype" select="$image_info/@file_type"/>
+                    <xsl:choose>
+                        <xsl:when test="$image_info/@embed_link!=''">
+                            <xsl:attribute name="xlink:href" select="$image_info/@embed_link"/>
+                        </xsl:when>
+                        <xsl:otherwise>
+                            <xsl:attribute name="xlink:href" select="$image_info/@file_name"/>
+                        </xsl:otherwise>
+                    </xsl:choose>
+                </xsl:when>
+                <xsl:otherwise>
+                    <xsl:attribute name="xlink:href" select="$node/@FILENAME"/>
+                </xsl:otherwise>
+            </xsl:choose>
+            <xsl:choose>
+                <xsl:when test="normalize-space($node/ancestor::*[local-name()='FIGURE']/*[local-name()='HEAD' or local-name()='P']) !=''">
+                    <!-- In a figure that has a header. Use that and do nothing here. -->
+                    <xsl:message>Figure header exists.</xsl:message>
+                </xsl:when>
+                <xsl:when test="normalize-space($node/*[local-name()='HEAD' or local-name()='P']) !=''">
+                    <!-- This reference has a header. Use that. -->
+                    <xsl:call-template name="add-label-caption">
+                        <xsl:with-param name="node" select="$node"/>
+                    </xsl:call-template>
+
+                    <!--
+                    <xsl:element name="caption">
+                        <xsl:if test="normalize-space(./*[local-name()='HEAD']) !=''">
+                            <xsl:element name="title">
+                                <xsl:value-of select="./*[local-name()='HEAD']"/>
+                            </xsl:element>
+                        </xsl:if>
+                        <xsl:if test="normalize-space(./*[local-name()='P']) !=''">
+                            <xsl:element name="p">
+                                <xsl:value-of select="./*[local-name()='P']"/>
+                            </xsl:element>
+                        </xsl:if>
+                    </xsl:element>
+                    -->
+                </xsl:when>
+                <xsl:when test="normalize-space($image_info/title) !='' or normalize-space($image_info/caption) !=''">
+                    <!-- Use title and/or caption assigned to resource. -->
+                    <xsl:element name="caption">
+                        <xsl:if test="normalize-space($image_info/title) !=''">
+                            <xsl:element name="title">
+                                <xsl:value-of select="$image_info/title"/>
+                            </xsl:element>
+                        </xsl:if>
+                        <xsl:if test="normalize-space($image_info/caption) !=''">
+                            <xsl:element name="p">
+                                <xsl:value-of select="$image_info/caption"/>
+                            </xsl:element>
+                        </xsl:if>
+                    </xsl:element>
+                </xsl:when>
+            </xsl:choose>
+            <xsl:choose>
+                <xsl:when test="exists($image_info) and $image_info/@noid!=''">
+                    <xsl:choose>
+                        <xsl:when test="string-length(normalize-space($image_info/@doi_noprefix)) > 0">
+                            <xsl:element name="object-id">
+                                <xsl:attribute name="pub-id-type" select="'doi'"/>
+                                <xsl:value-of select="$image_info/@doi_noprefix"/>
+                            </xsl:element>
+                        </xsl:when>
+                    </xsl:choose>
+                    <xsl:element name="attrib">
+                        <xsl:attribute name="id" select="concat('umptg_fulcrum_resource_',$image_info/@noid)"/>
+                        <xsl:attribute name="specific-use" select="'umptg_fulcrum_resource'"/>
+                        <xsl:choose>
+                            <xsl:when test="string-length(normalize-space($image_info/@doi_noprefix)) > 0">
+                                <xsl:element name="ext-link">
+                                    <xsl:attribute name="ext-link-type" select="'doi'"/>
+                                    <xsl:attribute name="xlink:href" select="$image_info/@doi_noprefix"/>
+                                </xsl:element>
+                            </xsl:when>
+                        </xsl:choose>
+                        <xsl:element name="ext-link">
+                            <xsl:attribute name="ext-link-type" select="'uri'"/>
+                            <xsl:attribute name="specific-use" select="'umptg_fulcrum_resource_link'"/>
+                            <xsl:attribute name="xlink:href" select="$image_info/@link"/>
+                            <!--
+                            <xsl:value-of select="$image_info/css_stylesheet"/>
+                            -->
+                        </xsl:element>
+                        <xsl:element name="ext-link">
+                            <xsl:attribute name="ext-link-type" select="'uri'"/>
+                            <xsl:attribute name="specific-use" select="'umptg_fulcrum_resource_css_stylesheet_link'"/>
+                            <xsl:attribute name="xlink:href" select="$image_info/@css_link"/>
+                        </xsl:element>
+                        <xsl:element name="ext-link">
+                            <xsl:attribute name="ext-link-type" select="'uri'"/>
+                            <xsl:attribute name="specific-use" select="'umptg_fulcrum_resource_embed_link'"/>
+                            <xsl:attribute name="xlink:href" select="$image_info/@embed_link"/>
+                        </xsl:element>
+                        <xsl:element name="alternatives">
+                            <xsl:element name="preformat">
+                                <xsl:attribute name="specific-use" select="'umptg_fulcrum_resource_title'"/>
+                                <xsl:attribute name="position" select="'anchor'"/>
+                                <xsl:value-of select="$image_info/title"/>
+                            </xsl:element>
+                            <xsl:element name="preformat">
+                                <xsl:attribute name="specific-use" select="'umptg_fulcrum_resource_identifier'"/>
+                                <xsl:attribute name="position" select="'anchor'"/>
+                                <xsl:value-of select="$image_info/@noid"/>
+                            </xsl:element>
+                            <!--
+                            <xsl:element name="code">
+                                <xsl:attribute name="specific-use" select="'umptg_fulcrum_resource_css_embed_code'"/>
+                                <xsl:attribute name="position" select="'anchor'"/>
+                                <xsl:attribute name="code-type" select="'xml'"/>
+                                <xsl:attribute name="code-version" select="'1.0'"/>
+                                <xsl:value-of select="$image_info/css_stylesheet"/>
+                            </xsl:element>
+                            <xsl:element name="code">
+                                <xsl:attribute name="specific-use" select="'umptg_fulcrum_resource_embed_code'"/>
+                                <xsl:attribute name="position" select="'anchor'"/>
+                                <xsl:attribute name="code-type" select="'xml'"/>
+                                <xsl:attribute name="code-version" select="'1.0'"/>
+                                <xsl:value-of select="$image_info/embed_code"/>
+                            </xsl:element>
+                            -->
+                        </xsl:element>
+                    </xsl:element>
+                </xsl:when>
+            </xsl:choose>
+            <xsl:apply-templates select="$node/*"/>
+        </xsl:element>
     </xsl:template>
 
     <xsl:template name="set-reference-attributes">
