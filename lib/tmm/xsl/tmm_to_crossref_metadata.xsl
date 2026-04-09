@@ -334,7 +334,6 @@
                                 <xsl:value-of select="$last_name"/>
                             </xsl:element>
                         </xsl:if>
-                        <!--
                         <xsl:if test="$ror != ''">
                             <xsl:element name="affiliations" namespace="{$NAMESPACE_URL}">
                                 <xsl:element name="institution" namespace="{$NAMESPACE_URL}">
@@ -351,7 +350,6 @@
                                 <xsl:value-of select="$orcid"/>
                             </xsl:element>
                         </xsl:if>
-                        -->
                     </xsl:element>
                 </xsl:otherwise>
             </xsl:choose>
