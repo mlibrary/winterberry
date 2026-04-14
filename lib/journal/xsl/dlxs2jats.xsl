@@ -435,7 +435,7 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
         <xsl:element name="article-id">
             <xsl:attribute name="pub-id-type">
                 <xsl:choose>
-                    <xsl:when test="@TYPE='purl'">
+                    <xsl:when test="@TYPE='purl' or @TYPE='muse'">
                         <xsl:value-of select="'handle'"/>
                     </xsl:when>
                     <xsl:when test="@TYPE='dlps'">
