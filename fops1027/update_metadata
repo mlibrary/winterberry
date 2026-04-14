@@ -1,0 +1,109 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# This script takes a merged Fulcrum monograph manifest CSV
+# and a list of Fulcrum metadata CSVs and producs a CSV
+# that can be used to update Fulcrum metadata.
+#
+# Invoke this script without any parameters to display the usage.
+
+require 'optparse'
+require 'ostruct'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+# Process the script parameters.
+options = OpenStruct.new
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)}  <fulcrum_csv_file> <csv_file> [<csv_file>..]"
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    script_logger.info(opts)
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  script_logger.info(option_parser.help)
+  exit 0
+end
+fulcrum_csv_file = ARGV[0]
+csv_file_list = ARGV[1..-1]
+
+require 'csv'
+
+CSV::Converters[:strip_field] = ->(value) { value.strip rescue value }
+
+fulcrum_csv_file = File.expand_path(fulcrum_csv_file)
+unless File.file?(fulcrum_csv_file)
+  script_logger.error("invalid Fulcrum CSV file #{fulcrum_csv_file}")
+  exit(1)
+end
+script_logger.info("using Fulcrum CSV file #{File.basename(fulcrum_csv_file)}")
+
+fulcrum_csv = CSV.parse(
+          File.read(fulcrum_csv_file),
+          headers: true,
+          converters: :strip_field,
+          return_headers: false
+        )
+
+result_row_list = []
+result_headers = ["NOID"]
+non_blank_headers = []
+csv_file_list.each do |csv_file|
+  csv_file = File.expand_path(csv_file)
+  unless File.file?(csv_file)
+    script_logger.error("invalid CSV file #{csv_file}")
+    next
+  end
+  script_logger.info("processing CSV file #{File.basename(csv_file)}")
+  STDOUT.flush
+
+  csv = CSV.parse(
+          File.read(csv_file),
+          headers: true,
+          converters: :strip_field,
+          return_headers: false
+        )
+  result_headers = result_headers.union(csv.headers)
+
+  csv.each do |row|
+    file_name = row["File Name"]
+    next if file_name == "***row left intentionally blank***"
+
+    fname = File.basename(file_name, ".*").gsub(/[ ,\–\&\(\)\’\']/, '_') + File.extname(file_name)
+    fulcrum_row = fulcrum_csv.find {|r| r["File Name"] == fname }
+    if fulcrum_row.nil?
+      script_logger.warn("no Fulcrum row found for entry #{fname}")
+      next
+    end
+    #script_logger.info("Fulcrum row found for entry #{file_name}")
+
+    result_row = { "NOID" => fulcrum_row["NOID"] }
+    row.each do |k,v|
+      result_row[k] = v
+      non_blank_headers << k unless (v.nil? or v.strip.empty?)
+    end
+    result_row_list << result_row
+  end
+end
+puts non_blank_headers.uniq
+
+# Write CSV file.
+result_csv_file = File.join(Dir.pwd, "fulcrum_metadata.csv")
+CSV.open(
+        result_csv_file,
+        "w",
+        write_headers: true,
+        headers: result_headers
+      ) do |csv|
+  csv << { "NOID" => "***row left intentionally blank***" }
+  result_row_list.each {|r| csv << r }
+end
+script_logger.info("saved CSV file #{result_csv_file}")
