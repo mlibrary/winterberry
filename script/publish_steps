@@ -428,6 +428,12 @@ File.open(cmds_file, "w") do |fp|
   fp.puts "\tend"
   fp.puts "end ;0"
   fp.puts
+  fp.puts "# Assign/register resource DOIs"
+  fp.puts "%w[#{monograph_noid_list.join(' ')}].each do |mid|"
+  fp.puts "\tdoc = Crossref::FileSetMetadata.new(mid).build"
+  fp.puts "\tresponse = Crossref::Register.new(doc.to_xml).post"
+  fp.puts "end;0"
+  fp.puts
   fp.puts "# Create monographs"
   fp.puts "find /mnt/umptmm/<monograph_dir>/ -maxdepth 1 -mindepth 1 -type d -print0 | sort -zn | xargs -0 -I '{}' echo bundle exec script/import -d '{}' -p <heb|michigan|um-pccn> -v private -q"
   fp.puts
