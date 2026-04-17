@@ -1425,8 +1425,14 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
                     <xsl:with-param name="style" select="@REND"/>
                 </xsl:call-template>
             </xsl:when>
+            <xsl:when test="normalize-space(@REF) != ''">
+                <xsl:call-template name="add-inline-style">
+                    <xsl:with-param name="node" select="."/>
+                    <xsl:with-param name="style" select="@REF"/>
+                </xsl:call-template>
+            </xsl:when>
             <xsl:otherwise>
-                <xsl:apply-templates select="@*[name()!='TYPE'and name()!='REND']|node()"/>
+                <xsl:apply-templates select="@*[name()!='TYPE'and name()!='REND' and name()!='REF']|node()"/>
             </xsl:otherwise>
         </xsl:choose>
     </xsl:template>
@@ -1571,7 +1577,7 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
             </xsl:when>
             <xsl:when test="$style_lc='i' or $style_lc='italic' or $style_lc='math'">
                 <xsl:element name="italic">
-                    <xsl:apply-templates select="$node/@*[name()!='REND' and name()!='TYPE']|node()"/>
+                    <xsl:apply-templates select="$node/@*[name()!='REND' and name()!='TYPE' and name()!='REF']|node()"/>
                 </xsl:element>
             </xsl:when>
             <xsl:when test="$style_lc='u' or $style_lc='underline' or $style_lc='underlined'">
