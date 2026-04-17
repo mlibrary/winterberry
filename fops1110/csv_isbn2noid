@@ -1,0 +1,90 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# This script inputs a FIT spreadsheet and a list of ISBNS
+# and returns a NOID for each ISBN.
+#
+# Invoke this script without any parameters to display the usage.
+
+require 'optparse'
+require 'ostruct'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+# Process the script parameters.
+options = OpenStruct.new
+options.fulcrum_column_list = []
+options.fulcrum_host = nil
+options.noids_only = false
+options.output_file = File.join(Dir.pwd, "monograph_manifest.csv")
+options.include_representatives = false
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)}  fit_spreadsheet isbn [isbn..]"
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    script_logger.info(opts)
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  script_logger.info(option_parser.help)
+  exit 0
+end
+fit_file = ARGV[0]
+isbn_list = ARGV[1..-1]
+
+fit_file = File.expand_path(fit_file)
+unless File.file?(fit_file)
+  script_logger.error("invalid FIT spreadsheet #{fit_file}")
+  exit 0
+end
+
+require 'csv'
+
+CSV::Converters[:strip_field] = ->(value) { value.strip rescue value }
+csv = CSV.parse(
+          File.read(fit_file),
+          headers: true,
+          converters: :strip_field,
+          return_headers: false
+        )
+
+isbn_list.each do |isbn|
+  #script_logger.info("*** #{isbn} **")
+  STDOUT.flush
+
+  row_list = []
+  csv.each do |r|
+    r.each do |k,v|
+      next if v.nil? or v.empty?
+      row_list << r if v.include?(isbn)
+    end
+  end
+  if row_list.empty?
+    puts "#{isbn},not found"
+    next
+  end
+
+  row_list.each do |r|
+    puts "#{isbn},#{r['NOID']},#{r['ISBN(s)']}"
+  end
+end
+
+=begin
+# Write CSV file.
+CSV.open(
+        options.output_file,
+        "w",
+        write_headers: false,
+      ) do |csv|
+  csv << manifest_headers
+  monograph_manifest_rows.each {|r| csv << r }
+end
+script_logger.info("saved CSV file #{options.output_file}")
+=end

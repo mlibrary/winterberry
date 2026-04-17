@@ -1,0 +1,85 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# This script CSV and generates Fulcrum shared directories.
+#
+# Invoke this script without any parameters to display the usage.
+
+require 'optparse'
+require 'ostruct'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+# Process the script parameters.
+options = OpenStruct.new
+options.mode = :test
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-m exec|test] csv_file [csv_file...]"
+  opts.on('-m', '--mode exec|test', 'Execution mode') do |mode|
+    options.mode = mode.to_sym
+  end
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    script_logger.info(opts)
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  script_logger.info(option_parser.help)
+  exit 0
+end
+csv_file_list = ARGV
+
+require 'csv'
+require 'fileutils'
+
+BASE_DIR = 's:/Information Management/Fulcrum/PTG/tickets/FOPS-1110'
+fulcrum_prep_dir = File.join(BASE_DIR, "Fulcrum_prep")
+
+epub_dir = File.join(BASE_DIR, "epubs")
+epub_dir_list = Dir.glob(File.join(epub_dir, "*.epub"))
+puts epub_dir_list.count
+CSV::Converters[:strip_field] = ->(value) { value.strip rescue value }
+
+csv_file_list.each do |csv_file|
+  script_logger.info("*** #{csv_file} **")
+  STDOUT.flush
+
+  csv = CSV.parse(
+              File.read(csv_file),
+              headers: true,
+              converters: :strip_field,
+              return_headers: false
+            )
+
+  csv.each do |row|
+    isbn_list = row['ISBN(s)']
+    isbns = isbn_list.split(';')
+    dir_isbn = isbns.select {|i| i.strip.end_with?('(ebook)') }
+    dir_isbn = isbns.select {|i| i.strip.end_with?('(hardcover)') } if dir_isbn.empty?
+
+    puts dir_isbn.first.strip unless dir_isbn.empty?
+    if dir_isbn.empty?
+      puts "#{isbn_list.strip}, not found"
+      dir_isbn = isbns
+    end
+
+    isbn = dir_isbn.first.strip[0..12]
+    prep_dir = File.join(fulcrum_prep_dir, isbn)
+    FileUtils.mkdir_p(prep_dir) if options.mode == :exec
+    script_logger.info("created Fulcrum prep dir #{prep_dir}")
+
+    mid = row['Monograph ID'].strip
+    fl = epub_dir_list.select {|e| File.basename(e, ".*").include?(isbn) or File.basename(e, ".*").include?(mid) }
+    src_epub_file = fl.first
+    dest_epub_file = File.join(prep_dir, mid + ".epub")
+    FileUtils.cp(src_epub_file, dest_epub_file) if options.mode == :exec
+    script_logger.info("copied #{src_epub_file} to Fulcrum prep dir #{dest_epub_file}")
+  end
+end
