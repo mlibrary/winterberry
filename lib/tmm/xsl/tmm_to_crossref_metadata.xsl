@@ -11,7 +11,7 @@
 
     <xsl:include href="tmm_to_crossref_common.xsl"/>
 
-    <xsl:param name="MPS_SERVICES_IMPRINTS" select="'a2ru intervals;against the grain, llc;american pancreatic association;amherst college press;bridwell press;disobedience press;faculty reprints;health sciences publishing services;lever press;maize books;michigan publishing services;no imprint;open humanities press;school for environment sustainability;society for cinema and media studies;university of westminster press;'"/>
+    <xsl:param name="MPS_SERVICES_IMPRINTS" select="'a2ru intervals;aberdeen university press;against the grain, llc;american pancreatic association;amherst college press;bridwell press;disobedience press;faculty reprints;health sciences publishing services;lever press;maize books;michigan publishing services;no imprint;open humanities press;school for environment sustainability;society for cinema and media studies;university of westminster press;'"/>
     <xsl:param name="INCLUDE_BOOKKEY" select="'false'"/>
 
     <xsl:variable name="FORMAT_MPS_SERVICES_IMPRINTS" select="concat(';',$MPS_SERVICES_IMPRINTS,';')"/>
