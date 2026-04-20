@@ -1,0 +1,69 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# This script inputs one or more monograph manifest files from Fulcrum
+# and returns the status of each representative in the monograph
+#
+# Invoke this script without any parameters to display the usage.
+
+require 'optparse'
+require 'ostruct'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+# Process the script parameters.
+options = OpenStruct.new
+options.fulcrum_column_list = []
+options.fulcrum_host = nil
+options.noids_only = false
+options.output_file = File.join(Dir.pwd, File.basename(__FILE__) + ".csv")
+options.include_representatives = false
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-o <output_file>] <manifest_file> [<manifest_file>..]"
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    script_logger.info(opts)
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  script_logger.info(option_parser.help)
+  exit 0
+end
+
+require_relative File.join(root_dir, 'lib', 'fulcrum', 'manifest')
+
+# Rest of the parameters is a list of monograph identifiers.
+manifest_file_list = ARGV
+
+manifest_file_list.each do |manifest_file|
+  script_logger.info("*** #{manifest_file} **")
+  STDOUT.flush
+
+  manifest_file = File.expand_path(manifest_file)
+  manifest = UMPTG::Fulcrum::Manifest::Document.new(
+              csv_file: manifest_file
+            )
+  manifest.representatives().each do |k,row|
+    puts "#{k}:#{row['noid']},#{row['file_name']},#{row['published?']}"
+  end
+end
+
+=begin
+# Write CSV file.
+CSV.open(
+        options.output_file,
+        "w",
+        write_headers: false,
+      ) do |csv|
+  csv << manifest_headers
+  monograph_manifest_rows.each {|r| csv << r }
+end
+script_logger.info("saved CSV file #{options.output_file}")
+=end
