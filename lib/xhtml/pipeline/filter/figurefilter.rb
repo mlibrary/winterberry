@@ -295,10 +295,12 @@ module UMPTG::XHTML::Pipeline::Filter
 
                 figure_obj_list.each do |figure_obj|
                   if figure_obj.img_list.empty?
+                    fn = figure_obj.container_node.first_element_child
+                    f = fn.nil? ? "" : fn.name
                     reference_action_list << UMPTG::XML::Pipeline::Action.new(
                              name: name,
                              reference_node: figure_obj.container_node,
-                             error_message: "#{name}: figure object with no image node."
+                             error_message: "#{name}: figure object with no image node #{f}."
                          )
                     next
                   end
