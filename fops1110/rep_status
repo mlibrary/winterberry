@@ -43,16 +43,25 @@ require_relative File.join(root_dir, 'lib', 'fulcrum', 'manifest')
 manifest_file_list = ARGV
 
 manifest_file_list.each do |manifest_file|
-  script_logger.info("*** #{manifest_file} **")
+  #script_logger.info("*** #{manifest_file} **")
   STDOUT.flush
 
   manifest_file = File.expand_path(manifest_file)
   manifest = UMPTG::Fulcrum::Manifest::Document.new(
               csv_file: manifest_file
             )
-  manifest.representatives().each do |k,row|
+  m_noid = manifest.monograph_row['noid']
+  reps = manifest.representatives()
+  epub_row = reps["epub"]
+  pdf_row = reps["pdf_ebook"]
+  do_update =  (epub_row.nil? or epub_row['published?'].downcase == "false") \
+        and !pdf_row.nil? and pdf_row['published?'].downcase == "true"
+  puts "#{manifest.noid},#{do_update}"
+=begin
+  reps.each do |k,row|
     puts "#{k}:#{row['noid']},#{row['file_name']},#{row['published?']}"
   end
+=end
 end
 
 =begin
