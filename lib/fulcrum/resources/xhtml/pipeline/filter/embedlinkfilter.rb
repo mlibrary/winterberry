@@ -1,6 +1,6 @@
 module UMPTG::Fulcrum::Resources::XHTML::Pipeline::Filter
 
-  class EmbedLinkFilter < UMPTG::Fulcrum::Filter::ManifestFilter
+  class EmbedLinkFilter < UMPTG::XML::Pipeline::Filter
 
     EMBED_XPATH = <<-SXPATH
     //*[
@@ -29,51 +29,27 @@ module UMPTG::Fulcrum::Resources::XHTML::Pipeline::Filter
         data-fulcrum-embed-caption-link="%s"/>
     CFSTR
 
-    def initialize(args = {})
-      args[:name] = :xhtml_embed_link
-
-      raise "manifest required" if args[:manifest].nil?
-
-      process_figures = args[:process_figures]
+    def initialize(process, options: {})
+      process_figures = options[:process_figures]
       process_figures = true if process_figures.nil?
-      args[:xpath] = process_figures ? FIGURE_EMBED_XPATH : EMBED_XPATH
-      super(args)
+      xpath = process_figures ? FIGURE_EMBED_XPATH : EMBED_XPATH
+      super(
+            process,
+            :xhtml_embed_link,
+            xpath,
+            options: options
+        )
     end
 
-    def run(xml_doc, args = {})
-      actions = super(xml_doc, args)
-
-      unless actions.empty?
-        reference_node = xml_doc.xpath(FulcrumCSSFilter.XPATH).first
-        raise "unable to add Fulcrum CSS filter" if reference_node.nil?
-
-        a = {
-            reference_node: reference_node,
-            markup: '<link href="../styles/fulcrum_default.css" rel="stylesheet" type="text/css"/>',
-            info_message: "Fulcrum CSS filter must be added"
-          }
-        actions << UMPTG::XML::Pipeline::Actions::NormalizeInsertMarkupAction.new(a)
-      end
-
-      return actions
-    end
-
-    def create_actions(args = {})
-      name = args[:name]
-      reference_node = args[:reference_node]  # figure element
-
-      action_list = []
-
-      case reference_node.name
+    def review(issue, options: {})
+      case issue.content.name
       when "figure"
-        action_list = create_figure_actions(reference_node)
+        issue.actions = create_figure_actions(issue.content)
       when "img"
-        action_list = create_img_actions(reference_node)
+        issue.actions = create_img_actions(issue.content)
       else
-        action_list = create_element_actions(reference_node)
+        issue.actions = create_element_actions(issue.content)
       end
-
-      return action_list
     end
 
     private
@@ -131,7 +107,7 @@ module UMPTG::Fulcrum::Resources::XHTML::Pipeline::Filter
           reference_name = resource_node.name == "img" ? \
                     resource_node["src"] : \
                     resource_node["data-fulcrum-embed-filename"]
-          resource_name = manifest.fileset_file_name(reference_name)
+          resource_name = process.manifest.fileset_file_name(reference_name)
           resource_name_list << resource_name unless resource_name.nil? or resource_name.strip.empty?
         end
 
@@ -158,12 +134,12 @@ module UMPTG::Fulcrum::Resources::XHTML::Pipeline::Filter
 
             # FOPS-487
             #link_descr = "View resource"
-            link_descr = manifest.fileset_link(resource_name)
-            link_markup = manifest.fileset_link_markup(
+            link_descr = process.manifest.fileset_link(resource_name)
+            link_markup = process.manifest.fileset_link_markup(
                     resource_name,
                     {
                         description: link_descr,
-                        #download: manifest.fileset_allow_download(resource_name)
+                        #download: process.manifest.fileset_allow_download(resource_name)
                     }
                   )
             if last_block.nil?
@@ -223,7 +199,7 @@ module UMPTG::Fulcrum::Resources::XHTML::Pipeline::Filter
                 caption_node.add_child(CLASS_FORMAT_STR % ["default-media-display", resource_name, cf, "true"])
 #=begin
                 # FOPS-514
-                if manifest.fileset_external_resource_url(resource_name).empty?
+                if process.manifest.fileset_external_resource_url(resource_name).empty?
                   caption_node.add_child(CLASS_FORMAT_STR % ["default-media-display", resource_name, cf, "true"])
                 else
                   caption_node.add_child(FORMAT_STR % [resource_name, cf, "true"])
@@ -241,7 +217,7 @@ module UMPTG::Fulcrum::Resources::XHTML::Pipeline::Filter
 #=end
             end
 #=begin
-            fs = manifest.fileset(resource_name)
+            fs = process.manifest.fileset(resource_name)
             ext_resource_id = fs["external_resource_id"]
             fragment_node["data-fulcrum-embed-filename"] = ext_resource_id
 #=end
@@ -314,13 +290,13 @@ module UMPTG::Fulcrum::Resources::XHTML::Pipeline::Filter
 
       action_list = []
 
-      content = manifest.fileset_title(reference_name)
+      content = process.manifest.fileset_title(reference_name)
       unless content.empty?
-        link_markup = manifest.fileset_link_markup(
+        link_markup = process.manifest.fileset_link_markup(
                 reference_name,
                 {
                     description: content,
-                    #download: manifest.fileset_allow_download(reference_name)
+                    #download: process.manifest.fileset_allow_download(reference_name)
                 }
               )
         markup = "<span class=\"default-media-display\">" + link_markup + "</span>"
@@ -344,20 +320,20 @@ module UMPTG::Fulcrum::Resources::XHTML::Pipeline::Filter
 
       case field
       when "caption"
-        content = manifest.fileset_caption(resource_name)
+        content = process.manifest.fileset_caption(resource_name)
       when "title"
-        content = manifest.fileset_title(resource_name)
+        content = process.manifest.fileset_title(resource_name)
       else
         content = node.inner_html
-        #content = manifest.fileset_link(resource_name)
+        #content = process.manifest.fileset_link(resource_name)
       end
 
       if link == "true"
-        markup = manifest.fileset_link_markup(
+        markup = process.manifest.fileset_link_markup(
                 resource_name,
                 {
                     description: content,
-                    #download: manifest.fileset_allow_download(resource_name)
+                    #download: process.manifest.fileset_allow_download(resource_name)
                 }
               )
       else

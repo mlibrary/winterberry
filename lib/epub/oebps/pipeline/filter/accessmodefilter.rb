@@ -15,52 +15,67 @@ module UMPTG::EPUB::OEBPS::Pipeline::Filter
     ]
     SXPATH
 
-    def initialize(args = {})
-      a = args.clone
-      a[:name] = :epub_oebps_accessmode
-      a[:xpath] = XPATH
-      super(a)
+    def initialize(process, options: {})
+      super(
+              process,
+              :epub_oebps_accessmode,
+              XPATH,
+              options: options
+            )
     end
 
-    def create_actions(args = {})
-      name = args[:name]
-      reference_node = args[:reference_node]  # <meta> element
+    def review(issue, options: {})
+      return unless issue.name == name
 
-      action_list = []
+      super(
+              issue,
+              options: options
+           )
 
-      case reference_node['property']
+      name = issue.name
+
+      case issue.content['property']
       when 'schema:accessMode', 'schema:accessModeSufficient'
-        action_list << UMPTG::XML::Pipeline::Action.new(
-               name: name,
-               reference_node: reference_node,
-               info_message: "#{name}, found #{reference_node}"
+        issue.actions << UMPTG::XML::Pipeline::Action.new(
+               name: issue.name,
+               reference_node: issue.content,
+               info_message: "#{issue.name}, found #{issue.content}"
            )
       end
-      return action_list
     end
 
-    def process_action_results(args = {})
-      super(args)
+    def report(issues, options: {}, logger: nil)
+      super(
+            issues,
+            options: options,
+            logger: logger
+          )
 
-      action_results = args[:action_results]
-      logger = args[:logger]
+      llogger = logger || @logger
+
+      actions = []
+      issues.each {|i| actions += i.actions }
 
       # <meta property="schema:accessModeSufficient">textual</meta>
-      textual_found = false
+      acs_textual_actions = []
       actions.each do |a|
+        next unless a.class.name == "UMPTG::XML::Pipeline::Action"
+
         if ['schema:accessMode', 'schema:accessModeSufficient'].include?(a.reference_node['property'])
           content = (a.reference_node.content || "").strip
           if content.split(',').select {|s| s.strip.downcase == "textual"}.count > 0
-            textual_found = true
-            break
+            acs_textual_actions << a
           end
         end
       end
 
-      if textual_found
-        logger.info("#{name} accessModeSufficient=textual found")
+      case acs_textual_actions.count
+      when 0
+        llogger.warn("#{name}, accessModeSufficient=textual not found")
+      when 1
+        llogger.info("#{name} accessModeSufficient=textual found")
       else
-        logger.warn("#{name}, accessModeSufficient=textual not found")
+        llogger.warn("#{name} duplicate markup #{acs_textual_actions.last.reference_node}")
       end
     end
   end

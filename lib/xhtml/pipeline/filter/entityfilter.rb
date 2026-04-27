@@ -7,36 +7,40 @@ module UMPTG::XHTML::Pipeline::Filter
     //*
     SXPATH
 
-    def initialize(args = {})
-      a = args.clone
-      a[:name] = :xhtml_entity
-      a[:xpath] = XPATH
-      super(a)
+    def initialize(process, options: {})
+      super(
+              process,
+              :xhtml_entity,
+              XPATH,
+              options: options
+            )
 
       @decoder = nil
     end
 
-    def create_actions(args = {})
-      name = args[:name]
-      reference_node = args[:reference_node]
+    def review(issue, options: {})
+      return unless issue.name == name
 
-      action_list = []
+      super(
+              issue,
+              options: options
+           )
 
-      entity_list = reference_node.children.select {|n| n.type == 5 or n.type == 6 }
+      entity_list = issue.content.children.select {|n| n.type == 5 or n.type == 6 }
       @decoder = HTMLEntities.new if @decoder.nil? and entity_list.count > 0
 
       entity_list.each do |n|
         content = (@decoder.decode(n) || "")
 
         if content.empty?
-          action_list << UMPTG::XML::Pipeline::Action.new(
-                  name: name,
+          issue.actions << UMPTG::XML::Pipeline::Action.new(
+                  name: issue.name,
                   reference_node: n,
                   warning_message: \
-                    "#{name}, found entity #{n}, unable to map to character"
+                    "#{issue.name}, found entity #{n}, unable to map to character"
               )
         else
-          action_list << UMPTG::XML::Pipeline::Actions::MarkupAction.new(
+          issue.actions << UMPTG::XML::Pipeline::Actions::MarkupAction.new(
                   name: name,
                   reference_node: n,
                   action: :replace_node,
@@ -46,7 +50,6 @@ module UMPTG::XHTML::Pipeline::Filter
               )
         end
       end
-      return action_list
     end
   end
 end

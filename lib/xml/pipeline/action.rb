@@ -12,21 +12,21 @@ module UMPTG::XML::Pipeline
       @normalize = false
     end
 
-    def process(args = {})
+    def resolve(args = {})
       super(args)
       @status = Action.PENDING
     end
 
-    def self.process_actions(args = {})
+=begin
+    def self.resolve(args = {})
       actions = args.key?(:actions) ? args[:actions] : []
-      #normalize = args.key?(:normalize) ? args[:normalize] : false
       normalize = args[:normalize] || false
       display_msgs = args[:display_msgs] || true
 
       modified = false
       if normalize
         actions.each do |a|
-          a.process(args)
+          a.resolve(args)
           modified = true if a.normalize and a.status == UMPTG::Action.COMPLETED
         end
       end
@@ -69,5 +69,6 @@ module UMPTG::XML::Pipeline
     def self.report_actions(args = {})
       raise "deprecated"
     end
+=end
   end
 end

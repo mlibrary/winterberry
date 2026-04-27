@@ -1,6 +1,6 @@
 module UMPTG::Fulcrum::Resources::XHTML::Pipeline::Filter
 
-  class UpdateAltFilter < UMPTG::Fulcrum::Filter::ManifestFilter
+  class UpdateAltFilter < UMPTG::XML::Pipeline::Filter
 
     XPATH = <<-SXPATH
     //*[
@@ -8,38 +8,38 @@ module UMPTG::Fulcrum::Resources::XHTML::Pipeline::Filter
     ]
     SXPATH
 
-    def initialize(args = {})
-      args[:name] = :xhtml_update_alt
-      args[:xpath] = XPATH
-      super(args)
+    def initialize(process, options: {})
+      super(
+            process,
+            :xhtml_update_alt,
+            XPATH,
+            options: options
+        )
     end
 
-    def create_actions(args = {})
-      name = args[:name]
-      reference_node = args[:reference_node]  # <img> element
-
-      raise "unknown element #{reference_node.name}" unless reference_node.name == 'img'
+    def review(issue, options: {})
+      raise "unknown element #{issue.content.name}" unless issue.content.name == 'img'
 
       action_list = []
 
-      alt = (reference_node["alt"] || "").strip
-      src = File.basename((reference_node['src'] || "").strip, ".*")
-      fileset = manifest.fileset(src)
+      alt = (issue.content["alt"] || "").strip
+      src = File.basename((issue.content['src'] || "").strip, ".*")
+      fileset = process.manifest.fileset(src)
       if fileset['file_name'].empty?
         action = UMPTG::XML::Pipeline::Action.new(
-                 name: name,
-                 reference_node: reference_node,
+                 name: issue.name,
+                 reference_node: issue.content,
                  warning_message: \
-                   "#{name}: #{reference_node.name}, found @src=\"#{src}\" @alt=\"#{alt}\", no resource found"
+                   "#{issue.name}: #{issue.content.name}, found @src=\"#{src}\" @alt=\"#{alt}\", no resource found"
              )
       else
         action = UMPTG::XML::Pipeline::Actions::SetAttributeValueAction.new(
-                 name: name,
-                 reference_node: reference_node,
+                 name: issue.name,
+                 reference_node: issue.content,
                  attribute_name: "alt",
                  attribute_value: fileset["alternative_text"],
                  info_message: \
-                   "#{name}: #{reference_node.name}, found @src=\"#{src}\" @alt=\"#{alt}\""
+                   "#{issue.name}: #{issue.content.name}, found @src=\"#{src}\" @alt=\"#{alt}\""
              )
       end
       action_list << action

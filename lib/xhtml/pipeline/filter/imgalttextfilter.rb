@@ -8,32 +8,36 @@ module UMPTG::XHTML::Pipeline::Filter
     ]
     SXPATH
 
-    def initialize(args = {})
-      a = args.clone
-      a[:name] = :xhtml_img_alttext
-      a[:xpath] = XPATH
-      super(a)
+    def initialize(process, options: {})
+      super(
+              process,
+              :xhtml_img_alttext,
+              XPATH,
+              options: options
+            )
     end
 
-    def create_actions(args = {})
-      name = args[:name]
-      reference_node = args[:reference_node]  # <img> element
+    def review(issue, options: {})
+      return unless issue.name == name
 
-      action_list = []
+      super(
+              issue,
+              options: options
+           )
 
-      if reference_node.name == 'img'
-        role = (reference_node["role"] || "").strip.downcase
+      if issue.content.name == 'img'
+        role = (issue.content["role"] || "").strip.downcase
         unless role == "presentation"
-          alt = (reference_node["alt"] || "").strip
+          alt = (issue.content["alt"] || "").strip
           if alt.empty?
-              action_list << UMPTG::XML::Pipeline::Action.new(
-                       name: name,
-                       reference_node: reference_node,
+              issue.actions << UMPTG::XML::Pipeline::Action.new(
+                       name: issue.name,
+                       reference_node: issue.content,
                        warning_message: \
-                         "#{name}, #{reference_node.name} no alt text src=\"#{reference_node['src']}\" role=\"#{reference_node['role']}\""
+                         "#{issue.name}, #{issue.content.name} no alt text src=\"#{issue.content['src']}\" role=\"#{issue.content['role']}\""
                    )
 =begin
-              action_list << UMPTG::XML::Pipeline::Actions::SetAttributeValueAction.new(
+              issue.actions << UMPTG::XML::Pipeline::Actions::SetAttributeValueAction.new(
                        name: name,
                        reference_node: reference_node,
                        attribute_name: "role",
@@ -43,26 +47,24 @@ module UMPTG::XHTML::Pipeline::Filter
                    )
 =end
           else
-            action_list << UMPTG::XML::Pipeline::Action.new(
-                     name: name,
-                     reference_node: reference_node,
+            issue.actions << UMPTG::XML::Pipeline::Action.new(
+                     name: issue.name,
+                     reference_node: issue.content,
                      info_message: \
-                       "#{name}, found #{reference_node}"
+                       "#{issue.name}, found #{issue.content}"
                  )
           end
         end
       end
-      return action_list
     end
 
-    def process_action_results(args = {})
-      super(args)
-
-      action_results = args[:action_results]
-      logger = args[:logger]
+    def report(issues, options: {}, logger:)
+      super(issues, options: options, logger: logger)
 
       cnt = 0
-      actions.each {|a| a.messages.each {|m| cnt += 1 if m.level == UMPTG::Message.WARNING } }
+      issues.each do |issue|
+        issue.actions.each {|a| a.messages.each {|m| cnt += 1 if m.level == UMPTG::Message.WARNING } }
+      end
 
       act_text_msg = "#{name}, non-presentation images without alt text=#{cnt}"
       logger.info(act_text_msg) if cnt == 0

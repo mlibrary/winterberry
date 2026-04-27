@@ -3,19 +3,12 @@ module UMPTG::Fulcrum
 
   require_relative File.join('resources', 'xhtml')
 
-  def self.ResourceProcessor(args = {})
-    a = args.clone
-
-    # Enable default filter if none specified.
-    a[:options] = { xhtml_embed_link: true } if a[:options].nil?
-
-    unless args[:manifest].nil?
-      a[:xhtml_processor] = UMPTG::Fulcrum::Resources::XHTML::Processor(
-                name: "FulcrumResourceProcessor",
-                manifest: a[:manifest],
-                options: a[:options]
+  def self.ResourceProcessor(name, manifest: nil, options: {}, logger: nil)
+    return UMPTG::EPUB::ResourceProcessor.new(
+            name,
+            manifest,
+            options: options,
+            logger: logger
           )
-    end
-    return UMPTG::EPUB::Processor(a)
   end
 end

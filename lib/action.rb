@@ -8,14 +8,13 @@ module UMPTG
     @@FAILED = "Failed"
     @@NO_ACTION = "No action"
 
-    attr_reader :status, :message, :messages
+    attr_reader :status, :messages
 
     def initialize(args = {})
       super(args)
 
       @status = Action.PENDING
       @messages = []
-      @message = ""
 
       add_info_msg(@properties[:info_message]) if @properties.key?(:info_message)
       add_warning_msg(@properties[:warning_message]) if @properties.key?(:warning_message)
@@ -23,7 +22,7 @@ module UMPTG
       add_fatal_msg(@properties[:fatal_message]) if @properties.key?(:fatal_message)
     end
 
-    def process(args = {})
+    def resolve(args = {})
       #raise "#{self.class}: method #{__method__} must be implemented."
       @status = @@COMPLETED
     end

@@ -8,31 +8,35 @@ module UMPTG::XHTML::Pipeline::Filter
     ]
     SXPATH
 
-    def initialize(args = {})
-      a = args.clone
-      a[:name] = :xhtml_page_translation
-      a[:xpath] = XPATH
-      super(a)
+    def initialize(process, options: {})
+      super(
+              process,
+              :xhtml_page_translation,
+              XPATH,
+              options: options
+            )
     end
 
-    def create_actions(args = {})
-      name = args[:name]
-      reference_node = args[:reference_node]  # <? class="facing-page-grid-container"> element
+    def review(issue, options: {})
+      return unless issue.name == name
 
-      action_list = []
+      super(
+              issue,
+              options: options
+           )
 
-      cl = (reference_node["class"] || "").strip
+      cl = (issue.content["class"] || "").strip
       if cl == 'facing-page-grid-container'
-        id = reference_node['id'] || ""
+        id = issue.content['id'] || ""
         action = UMPTG::XML::Pipeline::Action.new(
-                 name: name,
-                 reference_node: reference_node,
+                 name: issue.name,
+                 reference_node: issue.content,
                  info_message: \
-                   "#{name}, #{reference_node.name} found @class=\"#{reference_node['class']}\" @id=\"#{id}\""
+                   "#{issue.name}, #{issue.content.name} found @class=\"#{issue.content['class']}\" @id=\"#{id}\""
              )
 
-        reference_node.xpath(".//*[@class='facing-page-grid-child']").each do |node|
-          msg = "#{name}, #{node.name} found"
+        issue.content.xpath(".//*[@class='facing-page-grid-child']").each do |node|
+          msg = "#{issue.name}, #{node.name} found"
           node.attribute_nodes.each do |a|
             px = a.namespace.nil? ? "" : a.namespace.prefix + ":"
             anme = px.empty? ? a.name : px + a.name
@@ -41,9 +45,8 @@ module UMPTG::XHTML::Pipeline::Filter
           action.add_info_msg(msg)
         end
 
-        action_list << action
+        issue.actions << action
       end
-      return action_list
     end
   end
 end

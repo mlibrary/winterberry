@@ -8,23 +8,30 @@ module UMPTG::EPUB::NCX::Pipeline::Filter
     ]
     PCKXPATH
 
-    def initialize(args = {})
-      a = args.clone
-      a[:name] = :epub_ncx_content
-      a[:xpath] = XPATH
-      super(a)
+    def initialize(options: nil)
+      super(
+              name: :epub_ncx_content,
+              xpath: XPATH,
+              options: options
+            )
     end
 
-    def create_actions(args = {})
-      reference_node = args[:reference_node]
+    def review(issue, options: {})
+      return unless issue.name == name
 
-      actions = []
+      super(
+              issue,
+              options: options
+           )
+
+      name = issue.name
+      reference_node = issue.content  # <content> element
 
       if reference_node.name == "content"
         src = reference_node["src"]
         new_src = UMPTG::XHTML::fix_ext(src)
         unless src == new_src
-          actions << UMPTG::XML::Pipeline::Actions::SetAttributeValueAction.new(
+          issue.actions << UMPTG::XML::Pipeline::Actions::SetAttributeValueAction.new(
                     name: name,
                     reference_node: reference_node,
                     attribute_name: "src",
@@ -33,7 +40,6 @@ module UMPTG::EPUB::NCX::Pipeline::Filter
                   )
         end
       end
-      return actions
     end
   end
 end

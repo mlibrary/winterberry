@@ -8,30 +8,34 @@ module UMPTG::XHTML::Pipeline::Filter
     ]
     SXPATH
 
-    def initialize(args = {})
-      a = args.clone
-      a[:name] = :xhtml_extdescr
-      a[:xpath] = XPATH
-      super(a)
+    def initialize(process, options: {})
+      super(
+              process,
+              :xhtml_extdescr,
+              XPATH,
+              options: options
+            )
     end
 
-    def create_actions(args = {})
-      name = args[:name]
-      reference_node = args[:reference_node]  # <img> element
+    def review(issue, options: {})
+      return unless issue.name == name
 
-      action_list = []
+      super(
+              issue,
+              options: options
+           )
 
-      if reference_node.name == 'img'
-        aria_details = (reference_node["aria-details"] || "").strip
+      if issue.content.name == 'img'
+        aria_details = (issue.content["aria-details"] || "").strip
         unless aria_details.empty?
           action = UMPTG::XML::Pipeline::Action.new(
-                   name: name,
-                   reference_node: reference_node,
-                   info_message: "#{name}, #{reference_node.name} found aria-details=\"#{aria_details}\""
+                   name: issue.name,
+                   reference_node: issue.content,
+                   info_message: "#{issue.name}, #{issue.content.name} found aria-details=\"#{aria_details}\""
                )
-          action_list << action
+          issue.actions << action
 
-          ext_descr_node = reference_node.document.at_css("[id='#{aria_details}']")
+          ext_descr_node = issue.content.document.at_css("[id='#{aria_details}']")
           if ext_descr_node.nil?
             action.add_error_msg("no extended description link found for ID #{aria_details}")
           elsif ext_descr_node.name == 'a'
@@ -42,14 +46,14 @@ module UMPTG::XHTML::Pipeline::Filter
             unless first_elem.nil? or first_elem.name != 'a'
               first_elem_id = first_elem['id'] || ""
               if first_elem_id.empty?
-                action_list << UMPTG::XML::Pipeline::Actions::SetAttributeValueAction.new(
-                         name: name,
+                issue.actions << UMPTG::XML::Pipeline::Actions::SetAttributeValueAction.new(
+                         name: issue.name,
                          reference_node: first_elem,
                          attribute_name: "id",
                          attribute_value: aria_details
                      )
-                action_list << UMPTG::XML::Pipeline::Actions::RemoveAttributeAction.new(
-                         name: name,
+                issue.actions << UMPTG::XML::Pipeline::Actions::RemoveAttributeAction.new(
+                         name: issue.name,
                          reference_node: ext_descr_node,
                          attribute_name: "id"
                      )
@@ -58,7 +62,6 @@ module UMPTG::XHTML::Pipeline::Filter
           end
         end
       end
-      return action_list
     end
   end
 end

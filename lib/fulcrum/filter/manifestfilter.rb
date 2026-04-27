@@ -3,10 +3,15 @@ module UMPTG::Fulcrum::Filter
   class ManifestFilter < UMPTG::XML::Pipeline::Filter
     attr_reader :manifest
 
-    def initialize(args = {})
-      super(args)
+    def initialize(process, name, manifest, xpath, options: {})
+      super(
+            process,
+            name,
+            xpath,
+            options: options
+          )
 
-      @manifest = @properties[:manifest]
+      @manifest = manifest
       raise "manifest must be specified" if @manifest.nil?
     end
   end

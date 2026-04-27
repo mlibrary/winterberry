@@ -12,35 +12,39 @@ module UMPTG::EPUB::OEBPS::Pipeline::Filter
     ]
     SXPATH
 
-    def initialize(args = {})
-      a = args.clone
-      a[:name] = :epub_oebps_accessfeature
-      a[:xpath] = XPATH
-      super(a)
+    def initialize(process, options: {})
+      super(
+              process,
+              :epub_oebps_accessfeature,
+              XPATH,
+              options: options
+            )
     end
 
-    def create_actions(args = {})
-      name = args[:name]
-      reference_node = args[:reference_node]  # <meta> element
+    def review(issue, options: {})
+      return unless issue.name == name
 
-      action_list = []
+      super(
+              issue,
+              options: options
+           )
 
-      if reference_node['property'] == 'schema:accessibilityFeature'
-        action_list << UMPTG::XML::Pipeline::Action.new(
-               name: name,
-               reference_node: reference_node,
-               info_message: "#{name}, found #{reference_node}"
+      if issue.content['property'] == 'schema:accessibilityFeature'
+        issue.actions << UMPTG::XML::Pipeline::Action.new(
+               name: issue.name,
+               reference_node: issue.content,
+               info_message: "#{name}, found #{issue.content}"
            )
       end
-
-      return action_list
     end
 
-    def process_action_results(args = {})
-      super(args)
+    def report(issues, options: {}, logger: nil)
+      super(issues, options: options, logger: logger)
 
-      action_results = args[:action_results]
-      logger = args[:logger]
+      llogger = logger || @logger
+
+      actions = []
+      issues.each {|i| actions += i.actions }
 
       # <meta property="schema:accessibilityFeature">alternativeText</meta>
       # <meta property="schema:accessibilityFeature">printPageNumbers</meta>
@@ -51,18 +55,18 @@ module UMPTG::EPUB::OEBPS::Pipeline::Filter
             "displayTransformability" => false,
             "readingOrder" => false
           }
-      alt_text_found = print_page_numbers = false
       actions.each do |a|
+        next unless a.class.name == "UMPTG::XML::Pipeline::Action"
+
         content = (a.reference_node.content || "").strip
         features[content] = true if features.key?(content)
       end
 
       features.each do |k,v|
-        if v
-          logger.info("#{name}, <meta property=\"schema:accessibilityFeature\">#{k}</meta> found")
-        else
-          logger.warn("#{name}, <meta property=\"schema:accessibilityFeature\">#{k}</meta> not found")
-        end
+        llogger.info("#{name}, <meta property=\"schema:accessibilityFeature\">#{k}</meta> found") \
+              if v
+        llogger.warn("#{name}, <meta property=\"schema:accessibilityFeature\">#{k}</meta> not found") \
+              unless v
       end
     end
   end

@@ -9,7 +9,7 @@ module UMPTG::XHTML::Pipeline::Actions
   SXPATH
 
     # Process an additional resource (Marker) action.
-    def process(args = {})
+    def resolve(args = {})
       # Marker node. If there is a comment,
       # then use it value. Otherwise use the
       # element content.
@@ -57,7 +57,7 @@ module UMPTG::XHTML::Pipeline::Actions
       end
 
       olist.each do |o|
-        add_info_msg("found reference for resource #{o.resource_name}")
+        add_info_msg("#{name}: found reference for resource #{o.resource_name}")
       end
 
       # Attach the list of Marker objects to this action

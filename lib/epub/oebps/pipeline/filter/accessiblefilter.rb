@@ -19,38 +19,40 @@ module UMPTG::EPUB::OEBPS::Pipeline::Filter
     ]
     SXPATH
 
-    def initialize(args = {})
-      a = args.clone
-      a[:name] = :epub_oebps_accessible
-      a[:xpath] = XPATH
-      super(a)
+    def initialize(process, options: {})
+      super(
+              process,
+              :epub_oebps_accessible,
+              XPATH,
+              options: options
+            )
     end
 
-    def create_actions(args = {})
-      name = args[:name]
-      reference_node = args[:reference_node]  # <meta> element
+    def review(issue, options: {})
+      return unless issue.name == name
+
+      super(
+              issue,
+              options: options
+           )
 
       action_list = []
 
-      if reference_node.name == 'meta'
+      if issue.content.name == 'meta'
         action_list << UMPTG::XML::Pipeline::Action.new(
-               name: name,
-               reference_node: reference_node,
-               info_message: "#{name}, found #{reference_node}"
+               name: issue.name,
+               reference_node: issue.content,
+               info_message: "#{issue.name}, found #{issue.content}"
            )
       end
       return action_list
     end
 
-    def process_action_results(args = {})
-      action_results = args[:action_results]
-      actions = args[:actions]
-      logger = args[:logger]
-
-      logger.info("metadata issues:#{actions.count}")
+    def report(issue, options: {}, logger: nil)
+      logger.info("metadata issues:#{issue.actions.count}")
 
       # <meta property="schema:accessModeSufficient">textual</meta>
-      act = actions.select {|a|
+      act = issue.actions.select {|a|
           a.reference_node['property'] == 'schema:accessModeSufficient' and a.reference_node.content == "textual"
         }
       if act.empty?
@@ -60,7 +62,7 @@ module UMPTG::EPUB::OEBPS::Pipeline::Filter
       end
 
       # <meta property="schema:accessibilityFeature">alternativeText</meta>
-      act = actions.select {|a|
+      act = issue.actions.select {|a|
           a.reference_node['property'] == 'schema:accessibilityFeature' and a.reference_node.content == "alternativeText"
         }
       if act.empty?
@@ -70,7 +72,7 @@ module UMPTG::EPUB::OEBPS::Pipeline::Filter
       end
 
       # <meta property="schema:accessibilityFeature">printPageNumbers</meta>
-      act = actions.select {|a|
+      act = issue.actions.select {|a|
           a.reference_node['property'] == 'schema:accessibilityFeature' and a.reference_node.content == "printPageNumbers"
         }
       if act.empty?
@@ -80,7 +82,7 @@ module UMPTG::EPUB::OEBPS::Pipeline::Filter
       end
 
       # <meta property="pageBreakSource">...</meta>
-      act = actions.select {|a| a.reference_node['property'] == 'pageBreakSource' }
+      act = issue.actions.select {|a| a.reference_node['property'] == 'pageBreakSource' }
       if act.empty?
         logger.warn("pageBreakSource not found")
       else
