@@ -2,14 +2,6 @@ module UMPTG::XHTML::Pipeline::Filter
 
   class FigureFilter < UMPTG::XML::Pipeline::Filter
 
-=begin
-    XPATH = <<-SXPATH
-    //*[
-    local-name()='figure'
-    ]
-    SXPATH
-=end
-
     RESOURCE_REFERENCE_XPATH = <<-SXPATH
     //*[
     local-name()='figure'
