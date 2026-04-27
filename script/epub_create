@@ -17,8 +17,12 @@ script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
 
 # Process the script parameters.
 options = OpenStruct.new
+options.epubcheck = false
 option_parser = OptionParser.new do |opts|
-  opts.banner = "Usage: #{File.basename(__FILE__)} dirpath [dirpath...]"
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-e] dirpath [dirpath...]"
+  opts.on('-e', "--epubcheck", "Invoke EPUBCheck") do |flag|
+    options.epubcheck = flag
+  end
   opts.on_tail('-h', '--help', 'Print this help message') do
     script_logger.info(opts)
     exit 0
@@ -33,6 +37,7 @@ end
 dirpath_list = ARGV
 
 require_relative File.join(root_dir, "lib", "epub")
+require_relative File.join(root_dir, 'lib', 'epubcheck')
 
 dirpath_list.each do |dirpath|
   dirpath = File.expand_path(dirpath)
@@ -48,4 +53,14 @@ dirpath_list.each do |dirpath|
         directory: dirpath,
         epub_file: epub_file
       )
+
+  if options.epubcheck
+    log_file = File.join(File.dirname(epub_file), File.basename(epub_file, ".*") + "_epubcheck.xml")
+    UMPTG::EPUBCheck.check_file(
+          epub_file: epub_file,
+          logfile: log_file,
+          version: UMPTG::EPUBCheck.versions_default
+        )
+    script_logger.info("Log saved in file #{File.basename(log_file)}")
+  end
 end
