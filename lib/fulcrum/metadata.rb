@@ -5,4 +5,12 @@ module UMPTG::Fulcrum
 
   require_relative File.join('metadata', 'xhtml')
   require_relative File.join('metadata', 'epubprocessor')
+
+  def self.MetadataProcessor(name, options: {}, logger: nil)
+    return UMPTG::Fulcrum::Metadata::EPUBProcessor.new(
+                name,
+                options: options,
+                logger: logger
+            )
+  end
 end

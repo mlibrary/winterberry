@@ -20,7 +20,7 @@ options = OpenStruct.new
 options.processors = {}
 options.normalize = false
 option_parser = OptionParser.new do |opts|
-  opts.banner = "Usage: #{File.basename(__FILE__)} monograph_dir [monograph_dir...]"
+  opts.banner = "Usage: #{File.basename(__FILE__)} -p [metadata|resource|review] monograph_dir [monograph_dir...]"
   opts.on('-n', '--normalize', 'Resolve issues') do |flag|
     options.normalize = true
   end
@@ -54,7 +54,7 @@ require_relative File.join(root_dir, "lib", "fulcrum", "monographdir")
 require_relative File.join(root_dir, "lib", "fulcrum", "metadata")
 require_relative File.join(root_dir, "lib", "fulcrum", "resources")
 
-processors[:metadata] = UMPTG::Fulcrum::Metadata::EPUBProcessor.new(
+processors[:metadata] = UMPTG::Fulcrum::MetadataProcessor(
             "EPUBMetadataProcessor"
         ) if processors.keys.include?(:metadata)
 
