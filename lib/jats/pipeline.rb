@@ -1,6 +1,5 @@
 module UMPTG::JATS
   require_relative(File.join("pipeline", "filter"))
-  #require_relative(File.join("pipeline", "processor"))
 
   def self.Processor(name, filters: nil, options: {}, logger: nil)
     m_filters = filters.nil? ? UMPTG::JATS::Pipeline.FILTERS : \
@@ -11,13 +10,5 @@ module UMPTG::JATS
             options: options,
             logger: logger
         )
-=begin
-    return Pipeline::Processor.new(
-            name,
-            filters: m_filters,
-            options: options,
-            logger: logger
-          )
-=end
   end
 end
