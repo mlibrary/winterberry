@@ -8,10 +8,11 @@ module UMPTG::EPUB::NCX::Pipeline::Filter
     ]
     PCKXPATH
 
-    def initialize(options: nil)
+    def initialize(process, options: {})
       super(
-              name: :epub_ncx_content,
-              xpath: XPATH,
+              process,
+              :epub_ncx_content,
+              XPATH,
               options: options
             )
     end

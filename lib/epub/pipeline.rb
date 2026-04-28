@@ -17,9 +17,15 @@ module UMPTG::EPUB
             )
   end
 
-  def self.Migrator(args = {})
-    a = args.clone
-    return Migrator.new(a)
+  def self.Migrator(name, processors: {}, filters: nil, options: {}, logger: nil)
+    return Migrator.new(
+                  name,
+                  processors: processors,
+                  filters: filters,
+                  options: options,
+                  logger: logger
+                )
+
   end
 
   def self.Reviewer(name, processors: {}, filters: nil, options: {}, logger: nil)

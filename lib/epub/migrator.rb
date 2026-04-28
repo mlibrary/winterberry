@@ -4,39 +4,38 @@ module UMPTG::EPUB
   require_relative 'util'
 
   class Migrator < Pipeline::Processor
-    def initialize(args = {})
-      a = args.clone
-      a[:name] = "EPUBMigrateProcessor"
-      a[:options] = {
+    def initialize(name, processors: {}, filters: nil, options: {}, logger: nil)
+      options = {
             epub_ncx_content: true,
             epub_ncx_navigation: true,
             epub_oebps_opf: true,
             xhtml_migration: true,
             xhtml_entity: false
           }
-      super(a)
+      super(
+            name,
+            processors: processors,
+            options: options,
+            logger: logger
+          )
     end
 
-    def run(epub, args = {})
-      llogger = args[:logger] || @logger
-
+    def run(epub, options: {}, logger: nil)
       epub_version = epub.rendition.version || ""
-      llogger.info("version: #{epub_version}")
+      logger.info("version: #{epub_version}")
       if epub_version.start_with?("3.")
-        llogger.info("EPUB 3.x compliant. Skipping")
+        logger.info("EPUB 3.x compliant. Skipping")
         return []
       end
-      return super(epub, args)
+      entry_actions = super(epub, options: options, logger: logger)
+      process_entry_action_results(epub, options: options, logger: logger)
+      return entry_actions
     end
 
-    def process_entry_action_results(args = {})
-      super(args)
-
-      normalize = args[:normalize]
+    def process_entry_action_results(epub, options: {}, logger: nil)
+      normalize = options[:normalize] || false
       if normalize
-        epub = args[:epub]
-        entry_actions = args[:entry_actions]
-        llogger = args[:logger] || @logger
+        llogger = logger || @logger
 
         ncx_entry = epub.files.find(media_type: "application/x-dtbncx+xml").first
         unless ncx_entry.nil?

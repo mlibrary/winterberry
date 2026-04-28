@@ -97,8 +97,8 @@ case options.process
 when :migrator
   # EPUB Migration
   epub_processor = UMPTG::EPUB::Migrator(
-                    epub_args
-          )
+                        "EPUBMigrateProcessor"
+                    )
 when :resource_processor
   # EPUB Resource processing
   epub_processor = UMPTG::Fulcrum::ResourceProcessor(
