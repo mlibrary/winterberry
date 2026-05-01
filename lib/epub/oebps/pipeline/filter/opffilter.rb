@@ -46,7 +46,6 @@ module UMPTG::EPUB::OEBPS::Pipeline::Filter
 
     def review(issue, options: {})
       actions = []
-
       case issue.content.name
       when "package"
         actions += process_package(issue.content)
@@ -59,7 +58,7 @@ module UMPTG::EPUB::OEBPS::Pipeline::Filter
         actions += process_spine(issue.content)
       else
       end
-
+      issue.actions = actions
       return actions
     end
 

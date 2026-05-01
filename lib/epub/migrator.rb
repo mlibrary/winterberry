@@ -41,8 +41,18 @@ module UMPTG::EPUB
         unless ncx_entry.nil?
 
           # Update the NCX identifier to match the OPF identifier
-          identifiers = epub.rendition.metadata.dc.elements.identifier.collect {|d| d.text}
-          epub_identifier = identifiers.first || ""
+          opf_doc = epub.rendition.entry.document
+          uniq_id = opf_doc.xpath("//*[local-name()='package']/@unique-identifier") || ""
+          unless uniq_id.empty?
+              n = opf_doc.xpath("//*[local-name()='package']/*[local-name()='metadata']/*[@id='#{uniq_id}']").first
+              epub_identifier = n.nil? ? "" : n.content
+          end
+
+          if epub_identifier.empty?
+            identifiers = epub.rendition.metadata.dc.elements.identifier.collect {|d| d.text}
+            epub_identifier = identifiers.first || ""
+          end
+
           unless epub_identifier.empty?
             UMPTG::EPUB::Util.update_ncx_identifier(ncx_entry.document, epub_identifier)
             epub.files.add(
