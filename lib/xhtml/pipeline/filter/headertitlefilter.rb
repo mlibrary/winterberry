@@ -12,6 +12,7 @@ module UMPTG::XHTML::Pipeline::Filter
 
     def initialize(process, options: {})
       super(
+              process,
               :xhtml_header_title,
               XPATH,
               options: options
@@ -29,6 +30,7 @@ module UMPTG::XHTML::Pipeline::Filter
       if issue.content.name == 'title'
         content = (issue.content.text || "").strip
         if content.empty? or content == "Header Title"
+          epub = options[:entry].files.epub
           m = epub.rendition.metadata.dc.elements.title.first.text
           issue.actions << UMPTG::XML::Pipeline::Actions::MarkupAction.new(
                     name: issue.name,

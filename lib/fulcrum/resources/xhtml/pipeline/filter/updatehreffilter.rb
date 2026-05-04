@@ -68,6 +68,7 @@ module UMPTG::Fulcrum::Resources::XHTML::Pipeline::Filter
                    "#{reference_node.name}: found link #{href}"
              )
       end
+      issue.actions = action_list
 
       return action_list
     end

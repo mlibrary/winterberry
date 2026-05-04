@@ -131,7 +131,7 @@ else
   xhtml_processor = manifest.nil? ? nil : \
         UMPTG::Fulcrum::Resources::XHTML::Processor(
               "FulcrumResourceProcessor",
-              manifest,
+              manifest: manifest,
               options: ops
             )
 

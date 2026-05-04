@@ -10,7 +10,9 @@ module UMPTG::EPUB
             epub_ncx_navigation: true,
             epub_oebps_opf: true,
             xhtml_migration: true,
-            xhtml_entity: false
+            xhtml_entity: false,
+            xhtml_header_title: true,
+            xhtml_header_meta_role: true
           }
       super(
             name,
@@ -23,10 +25,12 @@ module UMPTG::EPUB
     def run(epub, options: {}, logger: nil)
       epub_version = epub.rendition.version || ""
       logger.info("version: #{epub_version}")
+=begin
       if epub_version.start_with?("3.")
         logger.info("EPUB 3.x compliant. Skipping")
         return []
       end
+=end
       entry_actions = super(epub, options: options, logger: logger)
       process_entry_action_results(epub, options: options, logger: logger)
       return entry_actions

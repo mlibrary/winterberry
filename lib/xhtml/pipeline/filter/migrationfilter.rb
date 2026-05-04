@@ -327,7 +327,34 @@ module UMPTG::XHTML::Pipeline::Filter
                  action_node: n,
                  warning_message: "#{name}, found empty element #{n.name}"
                )
-        end
+      end
+
+      # Transform table/colgroup/@width to table/colgroup/@style
+      reference_node.xpath("./*[local-name()='colgroup' and @width]").each do |node|
+          width = node["width"] || ""
+          unless width.empty?
+            actions << UMPTG::XML::Pipeline::Actions::RemoveAttributeAction.new(
+                   name: name,
+                   reference_node: node,
+                   attribute_name: "width",
+                   warning_message: \
+                     "#{name}, #{node.name} found invalid attribute @width"
+                 )
+
+            attribute_value = "width:#{width}"
+            style = node["style"] || ""
+            style += ";" + attribute_value unless style.empty?
+            style = attribute_value if style.empty?
+            actions << UMPTG::XML::Pipeline::Actions::SetAttributeValueAction.new(
+                   name: name,
+                   reference_node: node,
+                   attribute_name: "style",
+                   attribute_value: style,
+                   info_message: \
+                     "#{name}, #{node.name} set attribute style=\"#{style}\""
+                 )
+          end
+      end
 
       return actions
     end
