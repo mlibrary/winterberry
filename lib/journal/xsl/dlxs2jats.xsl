@@ -672,6 +672,7 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
         </xsl:choose>
     </xsl:template>
 
+    <!--
     <xsl:template match="*[starts-with(local-name(),'DIV')]/*[local-name()='REF' and starts-with(@TYPE,'ableplayer-')]">
         <xsl:element name="fig">
             <xsl:attribute name="data-fulcrum-ableplayer-filename" select="'.mp4'"/>
@@ -682,6 +683,7 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
             <xsl:attribute name="data-fulcrum-ableplayer-vtt-srclang" select="'en'"/>
         </xsl:element>
     </xsl:template>
+    -->
 
     <xsl:template match="HEAD">
         <xsl:element name="title">
@@ -1772,9 +1774,7 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
                         </xsl:when>
                         <xsl:when test="normalize-space($node/*[local-name()!='HEAD' and local-name()!='REF'])!=''">
                             <xsl:element name="title">
-                                <!--
                                 <xsl:apply-templates select="$node/*[local-name()!='HEAD' and local-name()!='REF' and local-name()!='FIGURE']"/>
-                                -->
                             </xsl:element>
                         </xsl:when>
                     </xsl:choose>
