@@ -1,0 +1,233 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Script that extracts chapters from one or more EPUBs.
+
+require 'optparse'
+require 'ostruct'
+require 'os'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+# Process the script parameters.
+options = OpenStruct.new
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} epub_file [epub_file...]"
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    script_logger.info(opts)
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  script_logger.info(option_parser.help)
+  return
+end
+
+# Process the command line parameters.
+epub_file_list = ARGV
+
+require 'nokogiri'
+require 'mime/types'
+require 'net/http'
+
+require_relative File.join(root_dir, "lib", "epub")
+
+class Segment
+  attr_reader :idref, :toc_item
+  attr_accessor :manifest_item_list
+
+  def initialize(i, t)
+    @idref = i
+    @toc_item = t
+    @manifest_item_list = []
+  end
+end
+
+# Process each EPUB
+epub_file_list.each do |epub_file|
+  unless File.file?(epub_file)
+    script_logger.error("invalid EPUB file #{epub_file}")
+    exit 1
+  end
+  script_logger.info("processing EPUB file #{File.basename(epub_file)}")
+
+  epub = UMPTG::EPUB(epub_path: epub_file)
+
+  # Select each reference within the spine.
+  segment_list = []
+  ctr = 0
+  epub.rendition.spine.children.each do |itemref|
+    # Determine whether @linear="no"
+    linear = itemref['linear'] || "yes"
+    next if linear.downcase == "no"
+
+    # Find the manifest item for this reference
+    idref = itemref['idref']
+    entries = epub.rendition.manifest.entries(entry_id: idref)
+    if entries.empty?
+      # No manifest entries. Shouldn't happen for a valid EPUB.
+      script_logger.warn("no entry found for idref=#{idref}")
+      next
+    end
+    entry = entries.first
+    script_logger.warn("multiple entries found for idref=#{idref}. Using #{entry.name}") \
+            if entries.count > 1
+
+    ctr += 1
+    next unless (ctr % 2) == 0 or entry.name == epub.rendition.cover.name
+    #next unless (ctr % 2) == 1 or entry.name == epub.rendition.cover.name
+
+    # Find any TOC entries for this manifest item
+    toc = epub.rendition.navigation.toc
+    toc_items = []
+    toc.children.each do |t|
+      a = t.xpath(".//*[local-name()='a']").first
+      uri = URI(a['href'])
+      toc_items << a if File.basename(uri.path) == File.basename(entry.name)
+    end
+    if toc_items.empty?
+      # No TOC item for this spine reference. Add to current segment.
+      script_logger.warn("no TOC entry for #{entry.name}. Adding.")
+      segment_list.first.manifest_item_list << entry unless segment_list.empty?
+      next
+    end
+
+    # Found a spine reference that has a TOC entry.
+    # Save this manifest item content to a file.
+    # Use the basename of the manifest href.
+
+    toc_item = toc_items.first
+    toc_title = toc_item.content
+    script_logger.warn("multiple TOC entries found for #{entry.name}. Using \"#{toc_title}\"") \
+            if entries.count > 1
+
+    segment = Segment.new(idref, toc_item)
+    segment.manifest_item_list << entry
+    segment_list << segment
+  end
+
+  # Need to generate an EPUB that contains the chapter text and any images referenced.
+  # If chapter includes links to any references outside the chapter, indicate that.
+  keep_entry_list = []
+  segment_list.each do |segment|
+    elist = segment.manifest_item_list.collect {|e| e.name }
+    keep_entry_list += segment.manifest_item_list
+    segment.manifest_item_list.each do |entry|
+      img_list = entry.document.xpath("//*[local-name()='img']")
+      img_list.each do |img|
+        src = img["src"]
+        epub.rendition.manifest.entries.each do |entry|
+          #puts "src=#{File.basename(src)},entry=#{File.basename(entry.name)}"
+          keep_entry_list << entry if File.basename(src) == File.basename(entry.name)
+        end
+      end
+    end
+  end
+
+  # Remove all entries that are needed.
+  epub.rendition.manifest.entries.each do |entry|
+    next if ["text/css","application/x-dtbncx+xml"].include?(entry.media_type)
+
+    item = epub.rendition.manifest.children.select {|i| File.basename(i['href']) == File.basename(entry.name) }.first
+    properties = item["properties"] || ""
+    next if properties.include?("nav")
+
+    list = keep_entry_list.select {|e| e.name == entry.name }
+    next unless list.empty?
+
+    epub.rendition.manifest.remove(entry_name: entry.name)
+    spine_item = epub.rendition.spine.children.select {|s| s['idref'] == item['id'] }.first
+    spine_item.remove unless spine_item.nil?
+    #script_logger.info("removed entry #{entry.name}")
+  end
+
+  # Remove guide entries
+  guide_node = epub.rendition.entry.document.xpath("//*[local-name()='guide']").first
+  unless guide_node.nil?
+    guide_node.xpath("./*[local-name()='reference']").each do |r|
+      list = keep_entry_list.select {|k| k.name == r['href'] }
+      next unless list.empty?
+      r.remove
+    end
+    guide_node.remove if guide_node.elements.count == 0
+  end
+
+  # Remove TOC entries that are not needed
+  epub.rendition.navigation.entry.document.xpath("//*[local-name()='a']").each do |a|
+    list = segment_list.select {|s| File.basename(s.toc_item['href']) == File.basename(a['href']) }
+    next unless list.empty?
+
+    a.parent.remove
+  end
+  epub.rendition.navigation.entry.document.xpath("//*[local-name()='ol']").each do |ol|
+    ol.parent.remove if ol.elements.empty?
+  end
+  content = UMPTG::XML.doc_to_xml(epub.rendition.navigation.entry.document)
+  epub.files.add(
+          entry_name: epub.rendition.navigation.entry.name,
+          entry_content: content
+        )
+  script_logger.info("updated TOC")
+
+  # Remove NCX entries that are not needed
+  ncx_entry = epub.files.find(media_type: "application/x-dtbncx+xml").first
+  ncx_entry.document.xpath("//*[local-name()='content']").each do |c|
+    list = segment_list.select {|s| File.basename(s.toc_item['href']) == File.basename(c['src']) }
+    next unless list.empty?
+
+    c.parent.remove
+  end
+  p = 0
+  ncx_entry.document.xpath("//*[local-name()='navPoint']").each do |c|
+    p +=1
+    c['playOrder'] = p
+  end
+  content = UMPTG::XML.doc_to_xml(ncx_entry.document)
+  epub.files.add(
+          entry_name: ncx_entry.name,
+          entry_content: content
+        )
+  script_logger.info("updated NCX")
+
+  # Remove broken links
+  manifest_list = epub.rendition.manifest.children
+  epub.rendition.manifest.entries.each do |entry|
+    next unless entry.media_type == "application/xhtml+xml"
+
+    entry.document.xpath("//*[local-name()='a']").each do |a|
+      href = a['href'] || ""
+      next if href.empty?
+
+      uri = URI(href)
+      scheme = uri.scheme || "file"
+      next unless scheme.downcase == "file"
+
+      path = uri.path || ""
+      next if path.empty?
+
+      list = manifest_list.select {|i| File.basename(i['href']) == File.basename(path) }
+      next unless list.empty?
+      #puts "entry=#{entry.name},a=#{href}"
+      a.replace(a.content)
+    end
+    content = UMPTG::XML.doc_to_xml(entry.document)
+    epub.files.add(
+              entry_name: entry.name,
+              entry_content: content
+            )
+    script_logger.info("updated #{entry.name}")
+  end
+
+  # Save the new EPUB.
+  new_epub_file = File.join(File.dirname(epub_file),
+                File.basename(epub_file, ".*") + "_chapters" + File.extname(epub_file))
+  epub.save(epub_file: new_epub_file)
+  script_logger.info("saved EPUB #{new_epub_file}")
+end
