@@ -134,6 +134,19 @@ module UMPTG::XHTML::Pipeline::Filter
                   )
         end
       end
+
+      ctype_list = reference_node.xpath(".//*[local-name()='meta' and @content='text/xml; charset=utf-8']")
+      unless ctype_list.empty?
+        ctype_list.each do |n|
+          actions << UMPTG::XML::Pipeline::Actions::RemoveElementAction.new(
+                 name: name,
+                 reference_node: n,
+                 action_node: n,
+                 warning_message: "#{name}, invalid meta[@http-equiv='Content-Type']/@content=\"#{n['content']}\""
+               )
+        end
+      end
+
       return actions
     end
 
