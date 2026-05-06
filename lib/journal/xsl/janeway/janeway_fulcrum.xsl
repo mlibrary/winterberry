@@ -69,11 +69,11 @@
         </xsl:element>
     </xsl:template>
 
-    <xsl:template match="*[local-name()='media' and ./*[local-name()='attrib' and @specific-use='umptg_fulcrum_ableplayer']]">
+    <xsl:template match="*[local-name()='media' and ./*[local-name()='attrib' and @specific-use='umptg_fulcrum_ableplayer_embed_three']]">
         <xsl:variable name="data-doi" select="child::object-id[@pub-id-type='doi']/text()"/>
 
         <!-- Handle Fulcrum Ableplayer Media -->
-        <xsl:variable name="fulcrum_elem" select="./*[local-name()='attrib' and @specific-use='umptg_fulcrum_ableplayer']"/>
+        <xsl:variable name="fulcrum_elem" select="./*[local-name()='attrib' and @specific-use='umptg_fulcrum_ableplayer_embed_three']"/>
         <xsl:variable name="identifier" select="$fulcrum_elem/*[local-name()='alternatives']/*[@specific-use='umptg_fulcrum_resource_identifier']"/>
         <xsl:variable name="title" select="$fulcrum_elem/*[local-name()='alternatives']/*[@specific-use='umptg_fulcrum_resource_title']"/>
 

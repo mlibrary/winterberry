@@ -429,7 +429,7 @@
   <xsl:template name="body-footnotes">
     <!-- Handle footnotes scattered around the body inside p tags, rather than fn-group -->
     <xsl:if test="//article/body/p/fn">
-      <h2>Footnotes</h2>
+      <h2 id="footnotes-header">Footnotes</h2>
         <ol class="footnotes">
           <xsl:for-each select="//article/body/p/fn">
 	    <xsl:call-template name="referenced-footnote" />
@@ -443,11 +443,20 @@
          <!-- Adds a header for footnotes when there the first child is not a title tag
            *( See 'back/fn-group/title[1]' for heading implementation)
          -->
-        <h2>Notes</h2>
+        <h2 id="footnotes-header">Notes</h2>
       </xsl:if>
+      <xsl:apply-templates select="title" />
         <ol class="footnotes">
-            <xsl:apply-templates/>
+          <xsl:apply-templates select="*[not(self::title)]"/>
         </ol>
+    </xsl:template>
+
+    <xsl:template match="back/notes/fn-group">
+        <!-- Render note items as an ordered list -->
+        <xsl:element name="ol">
+            <xsl:attribute name="class">footnotes</xsl:attribute>
+            <xsl:apply-templates/>
+        </xsl:element>
     </xsl:template>
 
   <xsl:template match="back/notes/title[1]">
@@ -486,7 +495,7 @@
               <xsl:apply-templates/>
             <xsl:for-each select="//xref[@rid=$fn-id]">
               <xsl:variable name="i"><xsl:value-of select="string(position())"></xsl:value-of></xsl:variable>
-              <a class="footnotemarker"  href="#{$fn-id}-nm{$i}"> ⮭</a>
+              <a class="footnotemarker"  href="#{$fn-id}-nm{$i}" aria-label="location of {$fn-id} in text" role="doc-backlink"> ---^ </a>
             </xsl:for-each>
           </li>
     </xsl:template>
@@ -1083,6 +1092,7 @@
                   <xsl:text>nm</xsl:text>
                   <xsl:number level="any" count="xref[@rid=$rid]"/>
               </xsl:attribute>
+              <xsl:attribute name="aria-describedby">footnotes-header</xsl:attribute>
               <sup><xsl:apply-templates/></sup>
             </xsl:when>
             <xsl:otherwise>
@@ -1110,7 +1120,7 @@
     </xsl:template>
 
     <xsl:template match="table-wrap/label" mode="captionLabel">
-        <span class="table-label">
+        <span class="table-label" id="tab{count(preceding::table-wrap)+1}-label">
             <xsl:apply-templates/>
         </span>
         <xsl:text> </xsl:text>
@@ -1533,7 +1543,7 @@
             <div class="acta-fig-image-caption-wrapper">
                 <div class="fig-expansion">
                     <div class="fig-inline-img">
-                        <a href="{$graphics}" class="figure-expand-popup" title="{$caption}" data-lightbox="article-figures" data-title="{$caption}">
+                        <a href="{$graphics}" class="figure-expand-popup" aria-label="Enlarge {$caption}" title="{$caption}" data-lightbox="article-figures" data-title="{$caption}">
                             <img data-img="{$graphics}" src="{$graphics}" alt="{$caption}" class="img-fluid"/>
                         </a>
                     </div>
@@ -1576,14 +1586,15 @@
             <div class="acta-fig-image-caption-wrapper">
                 <div class="fig-expansion">
                     <div class="fig-inline-img">
-                        <a href="{@xlink:href}" class="figure-expand-popup" title="{$caption}" data-lightbox="article-figures" data-title="{$caption}" data-alt="{$alt}">
+                        <a href="{@xlink:href}" class="figure-expand-popup" aria-label="Enlarge {$caption}" title="{$caption}" data-lightbox="article-figures" data-title="{$caption}" data-alt="{$alt}">
                             <img data-img="{$graphics}" src="{@xlink:href}" class="responsive-img img-fluid" alt="{$alt}" />
                         </a>
                     </div>
                 </div>
             </div>
 	    </xsl:for-each>
-            <xsl:apply-templates/>
+          <!-- label is handled directly rather than with a template -->
+          <xsl:apply-templates select="*[not(self::label)]" />
         </div>
     </xsl:template>
 
@@ -1753,15 +1764,18 @@
     <xsl:template match="ref-list">
         <!-- We inject the references heading only when there is no title block -->
         <xsl:if test="name(*[1]) != 'title'">
-          <h2>References</h2>
+          <h2 id="reference-header">References</h2>
         </xsl:if>
         <div id="reflist">
+          <ul>
             <xsl:apply-templates/>
+          </ul>
         </div>
     </xsl:template>
     <xsl:template match="ref-list/title">
         <xsl:if test="node() != ''">
             <xsl:element name="h2">
+                <xsl:attribute name="id">reference-header</xsl:attribute>
                 <xsl:apply-templates/>
             </xsl:element>
         </xsl:if>
@@ -1776,26 +1790,26 @@
   <!-- If ref/label, ref is a table row;
     If count(ref/citation) > 1, each citation is a table row -->
   <xsl:template match="ref">
-    <xsl:choose>
-      <xsl:when test="count(element-citation)=1">
-          <p id="{@id}">
-              <xsl:if test="label">
-                  <xsl:apply-templates select="label"/>
-              </xsl:if>
-            <xsl:apply-templates select="element-citation | nlm-citation"/>
-          </p>
-      </xsl:when>
-      <xsl:otherwise>
-        <xsl:for-each select="element-citation | nlm-citation | mixed-citation">
-            <p id="{parent::*/@id}">
-                <xsl:if test="parent::ref/label">
-                  <xsl:apply-templates select="parent::ref/label"/>
+      <xsl:choose>
+        <xsl:when test="count(element-citation)=1">
+            <li id="{@id}">
+                <xsl:if test="label">
+                    <xsl:apply-templates select="label"/>
                 </xsl:if>
-                <xsl:apply-templates select="."/>
-            </p>
-        </xsl:for-each>
-      </xsl:otherwise>
-    </xsl:choose>
+              <xsl:apply-templates select="element-citation | nlm-citation"/>
+            </li>
+        </xsl:when>
+        <xsl:otherwise>
+          <xsl:for-each select="element-citation | nlm-citation | mixed-citation">
+              <li id="{parent::*/@id}">
+                  <xsl:if test="parent::ref/label">
+                    <xsl:apply-templates select="parent::ref/label"/>
+                  </xsl:if>
+                  <xsl:apply-templates select="."/>
+              </li>
+          </xsl:for-each>
+        </xsl:otherwise>
+      </xsl:choose>
   </xsl:template>
 
   <!-- becomes content of table cell, column 1-->
@@ -2611,7 +2625,7 @@
       <xsl:when test="$pub-id-type='doi'">
         <xsl:text>&#160;</xsl:text>
         <a href="https://doi.org/{current()}" target="_blank">
-          <xsl:text>http://doi.org/</xsl:text>
+          <xsl:text>https://doi.org/</xsl:text>
           <xsl:apply-templates/>
         </a>
       </xsl:when>
@@ -2926,19 +2940,23 @@
    -->
     <xsl:choose>
       <xsl:when test="self::person-group/@person-group-type='author'"> 
-          <xsl:apply-templates select="node()" mode="none"/>            
+        <xsl:apply-templates select="node()" mode="none"/>
         <xsl:if test="not(preceding-sibling::person-group)">
-        <xsl:text> (</xsl:text>
-        <xsl:value-of select="..//year"/>
-        <xsl:text>).</xsl:text>
+          <xsl:if test="..//year">
+            <xsl:text> (</xsl:text>
+            <xsl:value-of select="..//year"/>
+            <xsl:text>).</xsl:text>
+          </xsl:if>
         </xsl:if>
       </xsl:when>
       <xsl:when test="self::person-group/@person-group-type='editor'">
-          <xsl:apply-templates select="node()" mode="none"/>
+        <xsl:apply-templates select="node()" mode="none"/>
         <xsl:if test="not(preceding-sibling::person-group)">
-        <xsl:text>. (</xsl:text>
-        <xsl:value-of select="..//year"/>
-        <xsl:text>).</xsl:text>
+          <xsl:if test="..//year">
+            <xsl:text>. (</xsl:text>
+            <xsl:value-of select="..//year"/>
+            <xsl:text>).</xsl:text>
+          </xsl:if>
         </xsl:if>
       </xsl:when>
       <xsl:otherwise>
@@ -3109,7 +3127,7 @@
   <xsl:template match="fpage" mode="none">
     <xsl:variable name="fpgct" select="count(../fpage)"/>
     <xsl:variable name="lpgct" select="count(../lpage)"/>
-    <xsl:variable name="hermano" select="name(following-sibling::node())"/>
+    <xsl:variable name="siblingName" select="name(following-sibling::*)"/>
     <xsl:choose>
       <xsl:when test="preceding-sibling::fpage">
         <xsl:choose>
@@ -3117,7 +3135,7 @@
             <xsl:text> </xsl:text>
             <xsl:apply-templates/>
 
-            <xsl:if test="$hermano='lpage'">
+            <xsl:if test="$siblingName='lpage'">
               <xsl:text>&#8211;</xsl:text>
               <xsl:apply-templates select="following-sibling::lpage[1]" mode="none"/>
             </xsl:if>
@@ -3126,7 +3144,7 @@
           <xsl:otherwise>
             <xsl:text> </xsl:text>
             <xsl:apply-templates/>
-            <xsl:if test="$hermano='lpage'">
+            <xsl:if test="$siblingName='lpage'">
               <xsl:text>&#8211;</xsl:text>
               <xsl:apply-templates select="following-sibling::lpage[1]" mode="none"/>
             </xsl:if>
@@ -3173,7 +3191,7 @@
         </xsl:choose>
         <xsl:apply-templates/>
         <xsl:choose>
-          <xsl:when test="$hermano='lpage'">
+          <xsl:when test="$siblingName='lpage'">
             <xsl:text>&#8211;</xsl:text>
             <xsl:apply-templates select="following-sibling::lpage[1]" mode="write"/>
             <xsl:choose>
@@ -3185,7 +3203,7 @@
               </xsl:otherwise>
             </xsl:choose>
           </xsl:when>
-          <xsl:when test="$hermano='fpage'">
+          <xsl:when test="$siblingName='fpage'">
             <xsl:text>,</xsl:text>
           </xsl:when>
           <xsl:otherwise>
@@ -5051,7 +5069,7 @@
             <!-- Output -->
             <li id="fn{$fnnumfull}">
                 <xsl:apply-templates/>
-              <a href="#fnLink{$fnnumfull}" > ⮭</a>
+              <a href="#fnLink{$fnnumfull}" aria-label="location of {$fnnumfull} in text" role="doc-backlink"> ---^ </a>
             </li>
           </xsl:for-each>
           <!-- END model for each footnote -->
