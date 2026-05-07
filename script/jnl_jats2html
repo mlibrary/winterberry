@@ -35,16 +35,19 @@ jats2html_xsl_file = File.join(root_dir, "lib", "journal", "xsl", "janeway", "mi
 
 jats_file_list.each do |jats_file|
     jats_file = File.expand_path(jats_file)
-    if !File.file?(jats_file)
+    unless File.file?(jats_file)
         puts "Error: invalid file #{jats_file}"
         next
     end
-
+    puts "using #{jats_file}"
 
     parameters = {
       }
 
-    html_file = File.join(File.dirname(jats_file), File.basename(jats_file, ".*") + ".html")
+    html_file = File.join(
+        File.dirname(jats_file),
+        File.basename(jats_file, ".*") + "_" + File.basename(jats2html_xsl_file, ".*") + ".html"
+        )
     UMPTG::XSLT.transform(
             :xslpath => jats2html_xsl_file,
             :srcpath => jats_file,

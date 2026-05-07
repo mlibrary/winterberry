@@ -1,0 +1,153 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# This script inputs one Fulcrum journal monograph manifest and a list of
+# journal articles and inserts Ableplayer markup in each.
+#
+# Invoke this script without any parameters to display the usage.
+
+require 'optparse'
+require 'ostruct'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+# Process the script parameters.
+options = OpenStruct.new
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} <manifest_file> article.xml [<article.xml>..]"
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    script_logger.info(opts)
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  script_logger.info(option_parser.help)
+  exit 0
+end
+
+# Rest of the parameters is a list of manifest files.
+manifest_file = ARGV[0]
+article_file_list = ARGV[1..-1]
+
+require_relative File.join(root_dir, 'lib', 'fulcrum', 'manifest')
+require_relative File.join(root_dir, 'lib', 'xml')
+
+unless File.file?(manifest_file)
+  script_logger.error("invalid manifest file #{manifest_file}")
+  exit(1)
+end
+script_logger.info("*** #{File.basename(manifest_file)} **")
+STDOUT.flush
+
+manifest = UMPTG::Fulcrum::Manifest::Document.new(
+            csv_file: manifest_file
+          )
+if manifest.csv.nil?
+  script_logger.error("no manifest found for CSV file #{manifest_file}")
+  exit(1)
+end
+script_logger.info("manifest found for CSV file #{manifest_file}")
+
+filesets = manifest.filesets()
+if filesets.count == 0
+  script_logger.info("manifest contains no filesets.")
+  exit(1)
+end
+script_logger.info("manifest contains #{filesets.count} filesets.")
+
+EMBED_TWO = <<-SXPATH
+<sec>
+<title>Presentation Video</title>
+<media mime-subtype="mp4" mimetype="video" position="anchor" specific-use="online" xlink:href="https://www.fulcrum.org/embed?hdl=2027%%2Ffulcrum.%s" xmlns:xlink="http://www.w3.org/1999/xlink">
+<attrib id="umptg_fulcrum_ableplayer_%s" specific-use="umptg_fulcrum_ableplayer_embed_two">
+<ext-link ext-link-type="uri" specific-use="umptg_fulcrum_ableplayer_vtt_link" xlink:href="https://journals.publishing.umich.edu/media/journals/12/%s.vtt"></ext-link>
+<alternatives>
+<preformat position="anchor" preformat-type="video/mp4" specific-use="umptg_fulcrum_resource_identifier">%s</preformat>
+<preformat position="anchor" preformat-type="video/webm" specific-use="umptg_fulcrum_ableplayer_present_identifier">%s</preformat>
+<preformat position="anchor" specific-use="umptg_fulcrum_ableplayer_vtt_lang">en</preformat>
+</alternatives>
+</attrib>
+</media>
+</sec>
+SXPATH
+
+EMBED_THREE = <<-SXPATH
+<sec>
+<title>Presentation Video and Slides</title>
+<media mime-subtype="mp4" mimetype="video" position="anchor" specific-use="online" xlink:href="https://www.fulcrum.org/embed?hdl=2027%%2Ffulcrum.%s" xmlns:xlink="http://www.w3.org/1999/xlink">
+<attrib id="umptg_fulcrum_ableplayer_%s" specific-use="umptg_fulcrum_ableplayer_embed_three">
+<ext-link ext-link-type="uri" specific-use="umptg_fulcrum_ableplayer_vtt_link" xlink:href="https://journals.publishing.umich.edu/media/journals/12/%s.vtt"></ext-link>
+<alternatives>
+<preformat position="anchor" preformat-type="video/mp4" specific-use="umptg_fulcrum_resource_identifier">%s</preformat>
+<preformat position="anchor" preformat-type="video/mp4" specific-use="umptg_fulcrum_ableplayer_sign_identifier">%s</preformat>
+<preformat position="anchor" preformat-type="video/webm" specific-use="umptg_fulcrum_ableplayer_present_identifier">%s</preformat>
+<preformat position="anchor" preformat-type="video/webm" specific-use="umptg_fulcrum_ableplayer_present_sign_identifier">%s</preformat>
+<preformat position="anchor" specific-use="umptg_fulcrum_ableplayer_vtt_lang">en</preformat>
+</alternatives>
+</attrib>
+</media>
+</sec>
+SXPATH
+
+article_file_list.each do |article_file|
+  article_file = File.expand_path(article_file)
+  unless File.file?(article_file)
+    script_logger.error("invalid manifest file #{article_file}")
+    next
+  end
+  script_logger.info("*** #{File.basename(article_file)} **")
+  STDOUT.flush
+
+  article_doc = UMPTG::XML.parse(xml_file: article_file)
+  n = article_doc.xpath("//*[local-name()='article-meta']/*[local-name()='article-id' and @pub-id-type='manuscript']").first
+  manuscript_file = n.nil? ? "" : n.content
+  if manuscript_file.empty?
+    script_logger.warn("manuscript not found. Skipping.")
+    next
+  end
+  prefix = manuscript_file[0..8]
+  script_logger.info("manuscript #{File.basename(manuscript_file)} found. Using prefix #{prefix}")
+
+  resource_list = filesets.select {|f| f['file_name'][0..8] == prefix }
+  if resource_list.count == 0
+    script_logger.warn("0 resources found. Skipping.")
+    next
+  end
+  script_logger.info("#{resource_list.count} resources found.")
+
+  vtt_file = prefix + ".vtt"
+  mp4_resource = resource_list.select {|r| r['noid'] if r['file_name'].downcase == "#{prefix}.mp4" }.first
+  mp4_noid = mp4_resource.nil? ? "" : mp4_resource['noid']
+  webm_resource = resource_list.select {|r| r['noid'] if r['file_name'].downcase == "#{prefix}.webm" }.first
+  webm_noid = webm_resource.nil? ? "" : webm_resource['noid']
+
+  case resource_list.count
+  when 2
+    markup = sprintf(EMBED_TWO, mp4_noid, mp4_noid, prefix, mp4_noid, webm_noid)
+  when 4
+    mp4_ppt_resource = resource_list.select {|r| r['noid'] if r['file_name'].downcase == "#{prefix}_ppt.mp4" }.first
+    mp4_ppt_noid = mp4_ppt_resource.nil? ? "" : mp4_ppt_resource['noid']
+    webm_ppt_resource = resource_list.select {|r| r['noid'] if r['file_name'].downcase == "#{prefix}_ppt.webm" }.first
+    webm_ppt_noid = webm_ppt_resource.nil? ? "" : webm_ppt_resource['noid']
+    markup = sprintf(EMBED_THREE, mp4_noid, mp4_noid, prefix, mp4_noid, mp4_ppt_noid, webm_noid, webm_ppt_noid)
+  end
+  #script_logger.info(markup)
+
+  body_node = article_doc.xpath("//*[local-name()='body']").first
+  if body_node.nil?
+    script_logger.warn("body node not found. Skipping.")
+    next
+  end
+  body_node.first_element_child.add_previous_sibling(markup)
+
+  new_article_file = File.join(File.dirname(article_file), File.basename(article_file, ".*") + "_updated" + File.extname(article_file))
+  File.write(new_article_file, UMPTG::XML.doc_to_xml(article_doc))
+  script_logger.info("saved file #{File.dirname(new_article_file)}")
+end
