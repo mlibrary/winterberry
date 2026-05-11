@@ -124,7 +124,6 @@ monograph_dir_list.each do |mdir|
         logger.warn("no FMSL file loaded.")
         next
       end
-      logger.info("Using FMSL #{File.basename(monograph_dir.fmsl_file)}.")
 
       entry_actions = processor.run(
             epub,

@@ -40,6 +40,7 @@ module UMPTG::Fulcrum::Metadata
         end
       end
 
+      logger.info("Updating FMSL #{File.basename(fmsl_file)}.")
       actions.each do |a|
         a.object_list.each do |o|
           fmsl_row = UMPTG::Fulcrum::Metadata::EPUBProcessor.fileset(fmsl_csv, o.resource_name)
