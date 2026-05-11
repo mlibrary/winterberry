@@ -62,6 +62,22 @@ if filesets.count == 0
 end
 script_logger.info("manifest contains #{filesets.count} filesets.")
 
+EMBED_ONE = <<-SXPATH
+<sec>
+<title>Presentation Video</title>
+<media mime-subtype="mp4" mimetype="video" position="anchor" specific-use="online" xlink:href="https://www.fulcrum.org/embed?hdl=2027%%2Ffulcrum.%s" xmlns:xlink="http://www.w3.org/1999/xlink">
+<attrib id="umptg_fulcrum_ableplayer_%s" specific-use="umptg_fulcrum_ableplayer_embed_one">
+<ext-link ext-link-type="uri" specific-use="umptg_fulcrum_ableplayer_vtt_link" xlink:href="https://journals.publishing.umich.edu/media/journals/12/%s.vtt"></ext-link>
+<alternatives>
+<preformat position="anchor" preformat-type="video/mp4" specific-use="umptg_fulcrum_resource_identifier">%s</preformat>
+<preformat position="anchor" preformat-type="video/webm" specific-use="umptg_fulcrum_ableplayer_present_identifier">%s</preformat>
+<preformat position="anchor" specific-use="umptg_fulcrum_ableplayer_vtt_lang">en</preformat>
+</alternatives>
+</attrib>
+</media>
+</sec>
+SXPATH
+
 EMBED_TWO = <<-SXPATH
 <sec>
 <title>Presentation Video</title>
@@ -112,10 +128,16 @@ article_file_list.each do |article_file|
     script_logger.warn("manuscript not found. Skipping.")
     next
   end
-  prefix = manuscript_file[0..8]
+  #prefix = manuscript_file[0..8]
+  p = manuscript_file.match(/([^_]+_[^_]+_[^_]+)_/)
+  if p.nil?
+    script_logger.info("manuscript #{File.basename(manuscript_file)} found. Unable to determine prefix. Skipping.")
+    next
+  end
+  prefix = p[1]
   script_logger.info("manuscript #{File.basename(manuscript_file)} found. Using prefix #{prefix}")
 
-  resource_list = filesets.select {|f| f['file_name'][0..8] == prefix }
+  resource_list = filesets.select {|f| f['file_name'].start_with?(prefix) }
   if resource_list.count == 0
     script_logger.warn("0 resources found. Skipping.")
     next
@@ -125,18 +147,25 @@ article_file_list.each do |article_file|
   vtt_file = prefix + ".vtt"
   mp4_resource = resource_list.select {|r| r['noid'] if r['file_name'].downcase == "#{prefix}.mp4" }.first
   mp4_noid = mp4_resource.nil? ? "" : mp4_resource['noid']
+  mp4_doi = mp4_resource.nil? ? "" : mp4_resource['article_permalink']
+  doi = (mp4_doi || "").delete_prefix("https://doi.org/")
+
   webm_resource = resource_list.select {|r| r['noid'] if r['file_name'].downcase == "#{prefix}.webm" }.first
   webm_noid = webm_resource.nil? ? "" : webm_resource['noid']
 
   case resource_list.count
   when 2
-    markup = sprintf(EMBED_TWO, mp4_noid, mp4_noid, prefix, mp4_noid, webm_noid)
+    markup = sprintf(EMBED_ONE, mp4_noid, mp4_noid, prefix, mp4_noid, webm_noid)
+    #markup = sprintf(EMBED_TWO, mp4_noid, mp4_noid, prefix, mp4_noid, webm_noid)
   when 4
     mp4_ppt_resource = resource_list.select {|r| r['noid'] if r['file_name'].downcase == "#{prefix}_ppt.mp4" }.first
     mp4_ppt_noid = mp4_ppt_resource.nil? ? "" : mp4_ppt_resource['noid']
     webm_ppt_resource = resource_list.select {|r| r['noid'] if r['file_name'].downcase == "#{prefix}_ppt.webm" }.first
     webm_ppt_noid = webm_ppt_resource.nil? ? "" : webm_ppt_resource['noid']
     markup = sprintf(EMBED_THREE, mp4_noid, mp4_noid, prefix, mp4_noid, mp4_ppt_noid, webm_noid, webm_ppt_noid)
+  else
+    script_logger.warn("#{resource_list.count} not implemented. Skipping.")
+    next
   end
   #script_logger.info(markup)
 
@@ -145,7 +174,18 @@ article_file_list.each do |article_file|
     script_logger.warn("body node not found. Skipping.")
     next
   end
-  body_node.first_element_child.add_previous_sibling(markup)
+  if body_node.first_element_child.nil?
+    body_node.add_child(markup)
+  else
+    body_node.first_element_child.add_previous_sibling(markup)
+  end
+
+  # Update article DOI
+  n = article_doc.xpath("//*[local-name()='front']//*[local-name()='article-id' and @pub-id-type='doi']").first
+  unless n.nil?
+    n.content = doi
+    script_logger.info("updated DOI #{doi}")
+end
 
   new_article_file = File.join(File.dirname(article_file), File.basename(article_file, ".*") + "_updated" + File.extname(article_file))
   File.write(new_article_file, UMPTG::XML.doc_to_xml(article_doc))
