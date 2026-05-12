@@ -3241,54 +3241,49 @@
 
                     <xsl:call-template name="fulcrum_ableplayer_includes"/>
 
-                    <xsl:element name="div">
-                        <xsl:attribute name="id">
-                            <xsl:value-of select="'player'"/>
+                    <xsl:element name="video">
+                        <xsl:attribute name="preload">
+                            <xsl:value-of select="'auto'"/>
                         </xsl:attribute>
-                        <xsl:element name="video">
-                            <xsl:attribute name="preload">
-                                <xsl:value-of select="'auto'"/>
+                        <xsl:attribute name="data-able-player"/>
+                        <xsl:attribute name="data-debug"/>
+                        <xsl:attribute name="data-hide-controls"/>
+                        <xsl:attribute name="playsinline"/>
+                        <xsl:attribute name="data-captions-position">
+                            <xsl:value-of select="'below'"/>
+                        </xsl:attribute>
+                        <xsl:attribute name="data-meta-type">
+                            <xsl:value-of select="'selector'"/>
+                        </xsl:attribute>
+                        <xsl:attribute name="data-skin">
+                            <xsl:value-of select="'2020'"/>
+                        </xsl:attribute>
+                        <xsl:attribute name="data-transcript-div">
+                            <xsl:value-of select="'transcript'"/>
+                        </xsl:attribute>
+                        <xsl:attribute name="data-seek-interval">
+                            <xsl:value-of select="'10'"/>
+                        </xsl:attribute>
+                        <!--
+                        <xsl:attribute name="poster">
+                            <xsl:value-of select="'[path or URL to poster image *-thumbnail.jpg file]'"/>
+                        </xsl:attribute>
+                        -->
+                        <xsl:element name="source">
+                            <xsl:attribute name="type">
+                                <xsl:value-of select="$resource_present_mime_type"/>
                             </xsl:attribute>
-                            <xsl:attribute name="data-able-player"/>
-                            <xsl:attribute name="data-debug"/>
-                            <xsl:attribute name="data-hide-controls"/>
-                            <xsl:attribute name="playsinline"/>
-                            <xsl:attribute name="data-captions-position">
-                                <xsl:value-of select="'below'"/>
+                            <xsl:attribute name="src">
+                                <xsl:value-of select="$resource_present_link"/>
                             </xsl:attribute>
-                            <xsl:attribute name="data-meta-type">
-                                <xsl:value-of select="'selector'"/>
+                        </xsl:element>
+                        <xsl:element name="source">
+                            <xsl:attribute name="type">
+                                <xsl:value-of select="$resource_mime_type"/>
                             </xsl:attribute>
-                            <xsl:attribute name="data-skin">
-                                <xsl:value-of select="'2020'"/>
+                            <xsl:attribute name="src">
+                                <xsl:value-of select="$resource_type_link"/>
                             </xsl:attribute>
-                            <xsl:attribute name="data-transcript-div">
-                                <xsl:value-of select="'transcript'"/>
-                            </xsl:attribute>
-                            <xsl:attribute name="data-seek-interval">
-                                <xsl:value-of select="'10'"/>
-                            </xsl:attribute>
-                            <!--
-                            <xsl:attribute name="poster">
-                                <xsl:value-of select="'[path or URL to poster image *-thumbnail.jpg file]'"/>
-                            </xsl:attribute>
-                            -->
-                            <xsl:element name="source">
-                                <xsl:attribute name="type">
-                                    <xsl:value-of select="$resource_present_mime_type"/>
-                                </xsl:attribute>
-                                <xsl:attribute name="src">
-                                    <xsl:value-of select="$resource_present_link"/>
-                                </xsl:attribute>
-                            </xsl:element>
-                            <xsl:element name="source">
-                                <xsl:attribute name="type">
-                                    <xsl:value-of select="$resource_mime_type"/>
-                                </xsl:attribute>
-                                <xsl:attribute name="src">
-                                    <xsl:value-of select="$resource_type_link"/>
-                                </xsl:attribute>
-                            </xsl:element>
                         </xsl:element>
                     </xsl:element>
                 </xsl:element>
