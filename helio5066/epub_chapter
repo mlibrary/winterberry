@@ -81,7 +81,7 @@ epub_file_list.each do |epub_file|
             if entries.count > 1
 
     ctr += 1
-    next unless (ctr % 2) == 0 or entry.name == epub.rendition.cover.name
+    #next unless (ctr % 2) == 0 or entry.name == epub.rendition.cover.name
     #next unless (ctr % 2) == 1 or entry.name == epub.rendition.cover.name
 
     # Find any TOC entries for this manifest item
@@ -95,7 +95,7 @@ epub_file_list.each do |epub_file|
     if toc_items.empty?
       # No TOC item for this spine reference. Add to current segment.
       script_logger.warn("no TOC entry for #{entry.name}. Adding.")
-      segment_list.first.manifest_item_list << entry unless segment_list.empty?
+      segment_list.last.manifest_item_list << entry unless segment_list.empty?
       next
     end
 
@@ -113,11 +113,24 @@ epub_file_list.each do |epub_file|
     segment_list << segment
   end
 
+=begin
+  # Determine if this EPUB has a segment consisting of multiple spine entries.
+  segment_list.each do |segment|
+    next if segment.manifest_item_list.count < 2
+
+    segment.manifest_item_list.each do |entry|
+      puts "entry=#{entry.name}"
+    end
+  end
+  next
+=end
+
   # Need to generate an EPUB that contains the chapter text and any images referenced.
   # If chapter includes links to any references outside the chapter, indicate that.
   keep_entry_list = []
   segment_list.each do |segment|
-    elist = segment.manifest_item_list.collect {|e| e.name }
+    next unless segment.manifest_item_list.count > 1
+
     keep_entry_list += segment.manifest_item_list
     segment.manifest_item_list.each do |entry|
       img_list = entry.document.xpath("//*[local-name()='img']")
@@ -161,10 +174,13 @@ epub_file_list.each do |epub_file|
 
   # Remove TOC entries that are not needed
   epub.rendition.navigation.entry.document.xpath("//*[local-name()='a']").each do |a|
-    list = segment_list.select {|s| File.basename(s.toc_item['href']) == File.basename(a['href']) }
+    uri = URI(a['href'])
+    h = File.basename(uri.path)
+    list = keep_entry_list.select {|e| File.basename(e.name) == h }
     next unless list.empty?
 
-    a.parent.remove
+    p = a.xpath("parent::*[local-name()='li']").first
+    p.remove unless p.nil?
   end
   epub.rendition.navigation.entry.document.xpath("//*[local-name()='ol']").each do |ol|
     ol.parent.remove if ol.elements.empty?
@@ -179,10 +195,13 @@ epub_file_list.each do |epub_file|
   # Remove NCX entries that are not needed
   ncx_entry = epub.files.find(media_type: "application/x-dtbncx+xml").first
   ncx_entry.document.xpath("//*[local-name()='content']").each do |c|
-    list = segment_list.select {|s| File.basename(s.toc_item['href']) == File.basename(c['src']) }
+    uri = URI(c['src'])
+    h = File.basename(uri.path)
+    list = keep_entry_list.select {|e| File.basename(e.name) == h }
     next unless list.empty?
 
-    c.parent.remove
+    p = c.xpath("parent::*[local-name()='navPoint']").first
+    p.remove unless p.nil?
   end
   p = 0
   ncx_entry.document.xpath("//*[local-name()='navPoint']").each do |c|
