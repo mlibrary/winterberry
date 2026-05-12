@@ -168,7 +168,9 @@ monograph_id_list.each do |monograph_id|
         end
         products = [ cl ]
       when "livedplaces"
-        products += [ "#{monograph_press}_complete", "#{monograph_press}_#{pub_date.year}" ]
+        p = pub_date.year > 2022 ? "#{monograph_press}_#{pub_date.year}" : "#{monograph_press}_2023"
+        products += [ "#{monograph_press}_complete", p ]
+        products << "#{monograph_press}_oa" if manifest.open_access
       when "michigan", "cjs"
         p = pub_date.year > 2011 ? "ebc_#{pub_date.year}" : "ebc_2011pre"
         products += [p, "ebc_complete"]
