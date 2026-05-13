@@ -18,7 +18,8 @@ module UMPTG::Fulcrum::Resources::XHTML::Pipeline::Filter
     end
 
     def review(issue, options: {})
-      name = issue.name
+      return unless name == issue.name
+
       reference_node = issue.content  # <a> element
 
       raise "unknown element #{reference_node.name}" unless reference_node.name == 'a'
@@ -29,7 +30,7 @@ module UMPTG::Fulcrum::Resources::XHTML::Pipeline::Filter
       case
       when href.nil?
         action_list << UMPTG::XML::Pipeline::Action.new(
-                 name: name,
+                 name: issue.name,
                  reference_node: reference_node,
                  warning_message: \
                    "#{reference_node.name}: found link with no @href value"
@@ -39,14 +40,14 @@ module UMPTG::Fulcrum::Resources::XHTML::Pipeline::Filter
         fileset = process.manifest.fileset_from_noid(fileset_noid)
         if fileset["noid"].empty?
           action_list << UMPTG::XML::Pipeline::Action.new(
-                   name: name,
+                   name: issue.name,
                    reference_node: reference_node,
                    warning_message: \
                      "#{reference_node.name}: no Fulcrum fileset for #{href}"
                )
         else
           action_list << UMPTG::XML::Pipeline::Actions::SetAttributeValueAction.new(
-                   name: name,
+                   name: issue.name,
                    reference_node: reference_node,
                    attribute_name: "href",
                    attribute_value: fileset["doi"],
@@ -54,7 +55,7 @@ module UMPTG::Fulcrum::Resources::XHTML::Pipeline::Filter
                      "#{reference_node.name}: found Fulcrum fileset #{href}"
                )
           action_list << UMPTG::XML::Pipeline::Actions::MarkupAction.new(
-                   name: name,
+                   name: issue.name,
                    reference_node: reference_node,
                    action: :replace_content,
                    markup: fileset["doi"]
@@ -62,7 +63,7 @@ module UMPTG::Fulcrum::Resources::XHTML::Pipeline::Filter
         end
       else
         action_list << UMPTG::XML::Pipeline::Action.new(
-                 name: name,
+                 name: issue.name,
                  reference_node: reference_node,
                  info_message: \
                    "#{reference_node.name}: found link #{href}"
