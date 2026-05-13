@@ -164,30 +164,32 @@ fmsl_file_list.each do |fmsl_file|
       next if resource_name.strip == UMPTG::Fulcrum::Manifest.MONOGRAPH_FILE_NAME
       next if UMPTG::Fulcrum::Manifest.blank_row_name?(resource_name)
 
-      vtt_name = row['Closed Captions']
-      next if vtt_name.nil? or vtt_name.strip.empty?
+      ['Closed Captions','Visual Descriptions'].each do |col|
+        vtt_name = row[col]
+        next if vtt_name.nil? or vtt_name.strip.empty?
 
-      # Determine if the vtt file exists.
-      #vtt_name = vtt_name.strip.gsub(' ','_')
-      vtt_file = File.expand_path(File.join(File.dirname(fmsl_file), "vtt", vtt_name))
-      vtt_file = File.expand_path(File.join(File.dirname(fmsl_file), vtt_name)) \
-            unless File.file?(vtt_file)
-      unless File.file?(vtt_file)
-        script_logger.warn("VTT file #{vtt_file} not found.")
-        next
-      end
-      script_logger.info("VTT file #{vtt_name} found.")
+        # Determine if the vtt file exists.
+        #vtt_name = vtt_name.strip.gsub(' ','_')
+        vtt_file = File.expand_path(File.join(File.dirname(fmsl_file), "vtt", vtt_name))
+        vtt_file = File.expand_path(File.join(File.dirname(fmsl_file), vtt_name)) \
+              unless File.file?(vtt_file)
+        unless File.file?(vtt_file)
+          script_logger.warn("VTT file #{vtt_file} not found.")
+          next
+        end
+        script_logger.info("VTT file #{vtt_name} found.")
 
-      row['Closed Captions'] = File.read(vtt_file)
+        row[col] = File.read(vtt_file)
 =begin
-      File.open(vtt_file, "rb") do |file|
-        content = file.read
+        File.open(vtt_file, "rb") do |file|
+          content = file.read
 
-        # Convert to Unix line endings
-        unix_content = content.encode(content.encoding, universal_newline: true)
-        row['Transcript'] = unix_content
-      end
+          # Convert to Unix line endings
+          unix_content = content.encode(content.encoding, universal_newline: true)
+          row['Transcript'] = unix_content
+        end
 =end
+      end
     end
   end
 

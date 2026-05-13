@@ -145,6 +145,10 @@
   :field_name: Closed Captions
   :multivalued: :no
 - :object: :file_set
+  :metadata_name: visual_descriptions
+  :field_name: Visual Descriptions
+  :multivalued: :no
+- :object: :file_set
   :metadata_name: credit_line
   :field_name: Credit Line
   :multivalued: :no

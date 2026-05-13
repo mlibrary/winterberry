@@ -35,6 +35,7 @@
     <xs:element name="creator" type="type_creator"/>
     <xs:element name="creator_list" type="type_contributor_list"/>
     <xs:element name="closed_captions" type="type_closed_captions"/>
+    <xs:element name="visual_descriptions" type="type_visual_descriptions"/>
     <xs:element name="credit_line" type="type_credit_line"/>
     <xs:element name="date_created" type="type_date_created"/>
     <xs:element name="description" type="type_description"/>
@@ -532,6 +533,7 @@
                     <xs:element ref="allow_display_after_expiration" minOccurs="0"/>
                     <xs:element ref="allow_download_after_expiration" minOccurs="0"/>
                     <xs:element ref="closed_captions" minOccurs="0"/>
+                    <xs:element ref="visual_descriptions" minOccurs="0"/>
                     <xs:element ref="credit_line" minOccurs="0"/>
                     <xs:element ref="exclusive_to_platform" minOccurs="0"/>
                     <xs:element ref="content_type_list" minOccurs="0"/>
@@ -586,6 +588,7 @@
                     <xs:element ref="allow_display_after_expiration" minOccurs="0"/>
                     <xs:element ref="allow_download_after_expiration" minOccurs="0"/>
                     <xs:element ref="closed_captions" minOccurs="0"/>
+                    <xs:element ref="visual_descriptions" minOccurs="0"/>
                     <xs:element ref="credit_line" minOccurs="0"/>
                     <xs:element ref="exclusive_to_platform" minOccurs="0"/>
                     <xs:element ref="content_type_list" minOccurs="0"/>
@@ -1262,6 +1265,15 @@
             <xs:extension base="type_string_url">
                 <xs:attribute name="object" type="xs:string" fixed="universal"/>
                 <xs:attribute name="field_name" type="xs:string" fixed="Link"/>
+                <xs:attribute name="multivalued" type="xs:string" fixed="no"/>
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+    <xs:complexType name="type_visual_descriptions">
+        <xs:simpleContent>
+            <xs:extension base="type_string">
+                <xs:attribute name="object" type="xs:string" fixed="file_set"/>
+                <xs:attribute name="field_name" type="xs:string" fixed="Visual Descriptions"/>
                 <xs:attribute name="multivalued" type="xs:string" fixed="no"/>
             </xs:extension>
         </xs:simpleContent>
