@@ -189,7 +189,7 @@ epub_file_list.each do |epub_file|
     uri = URI(a['href'])
     h = File.basename(uri.path)
     list = keep_entry_list.select {|e| File.basename(e.name) == h }
-    a.remove unless list.empty?
+    a.remove if list.empty?
   end
 
   epub.rendition.navigation.entry.document.xpath("//*[local-name()='ol' or local-name()='li']").each do |n|
