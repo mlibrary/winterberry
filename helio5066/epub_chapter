@@ -142,6 +142,18 @@ epub_file_list.each do |epub_file|
         end
       end
     end
+
+    # Parent TOC entries
+    ol = segment.toc_item.xpath("./ancestor::*[local-name()='ol'][1]").first
+    #puts "title=#{segment.toc_item.content},ol=#{ol.nil?}"
+    unless ol.nil?
+      if ol.previous_element.name == 'a'
+        uri = URI(ol.previous_element['href'])
+        h = File.basename(uri.path)
+        entry = epub.rendition.manifest.entries.find {|e| File.basename(e.name) == h }
+        keep_entry_list << entry unless entry.nil?
+      end
+    end
   end
 
   # Remove all entries that are needed.
@@ -177,13 +189,11 @@ epub_file_list.each do |epub_file|
     uri = URI(a['href'])
     h = File.basename(uri.path)
     list = keep_entry_list.select {|e| File.basename(e.name) == h }
-    next unless list.empty?
-
-    p = a.xpath("parent::*[local-name()='li']").first
-    p.remove unless p.nil?
+    a.remove unless list.empty?
   end
-  epub.rendition.navigation.entry.document.xpath("//*[local-name()='ol']").each do |ol|
-    ol.parent.remove if ol.elements.empty?
+
+  epub.rendition.navigation.entry.document.xpath("//*[local-name()='ol' or local-name()='li']").each do |n|
+    n.remove if n.elements.empty?
   end
   content = UMPTG::XML.doc_to_xml(epub.rendition.navigation.entry.document)
   epub.files.add(
@@ -219,6 +229,7 @@ epub_file_list.each do |epub_file|
   manifest_list = epub.rendition.manifest.children
   epub.rendition.manifest.entries.each do |entry|
     next unless entry.media_type == "application/xhtml+xml"
+    #next if File.basename(entry.name) == "toc.xhtml"
 
     entry.document.xpath("//*[local-name()='a']").each do |a|
       href = a['href'] || ""
