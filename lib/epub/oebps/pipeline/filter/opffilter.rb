@@ -116,7 +116,6 @@ module UMPTG::EPUB::OEBPS::Pipeline::Filter
       mdate = tm.strftime("%Y-%m-%dT%H:%M:%SZ")
 
       opf_dates = reference_node.xpath(".//*[namespace-uri()='http://purl.org/dc/elements/1.1/' and local-name()='date']")
-      puts "reference_node=#{reference_node.name},dates=#{opf_dates.count}"
       if opf_dates.count > 1
         val = 0
         opf_dates.each {|d| val = d.content.to_i if d.content.to_i > val }
