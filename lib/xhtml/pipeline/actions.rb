@@ -11,4 +11,5 @@ module UMPTG::XHTML::Pipeline
   require_relative(File.join("actions", "normalizefigurecontaineraction"))
   require_relative(File.join("actions", "normalizefigurenestaction"))
   require_relative(File.join("actions", "normalizeimagecontaineraction"))
+  require_relative(File.join("actions", "normalizetableoverflowaction"))
 end

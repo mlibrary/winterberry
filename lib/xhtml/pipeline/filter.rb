@@ -15,7 +15,8 @@ module UMPTG::XHTML::Pipeline
         xhtml_noteref: UMPTG::XHTML::Pipeline::Filter::NoterefFilter,
         xhtml_page_translation: UMPTG::XHTML::Pipeline::Filter::PageTranslationFilter,
         xhtml_spine_item: UMPTG::XHTML::Pipeline::Filter::SpineItemFilter,
-        xhtml_table: UMPTG::XHTML::Pipeline::Filter::TableFilter
+        xhtml_table: UMPTG::XHTML::Pipeline::Filter::TableFilter,
+        xhtml_table_overflow: UMPTG::XHTML::Pipeline::Filter::TableOverflowFilter,
       }
 
   def self.FILTERS
