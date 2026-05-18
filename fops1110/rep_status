@@ -26,6 +26,9 @@ options.output_file = File.join(Dir.pwd, File.basename(__FILE__) + ".csv")
 options.include_representatives = false
 option_parser = OptionParser.new do |opts|
   opts.banner = "Usage: #{File.basename(__FILE__)} [-o <output_file>] <manifest_file> [<manifest_file>..]"
+  opts.on('-o', '--output_file output_file', 'Output file') do |output_file|
+    options.output_file = output_file
+  end
   opts.on_tail('-h', '--help', 'Print this help message') do
     script_logger.info(opts)
     exit 0
@@ -42,6 +45,7 @@ require_relative File.join(root_dir, 'lib', 'fulcrum', 'manifest')
 # Rest of the parameters is a list of monograph identifiers.
 manifest_file_list = ARGV
 
+output_rows = []
 manifest_file_list.each do |manifest_file|
   #script_logger.info("*** #{manifest_file} **")
   STDOUT.flush
@@ -50,29 +54,26 @@ manifest_file_list.each do |manifest_file|
   manifest = UMPTG::Fulcrum::Manifest::Document.new(
               csv_file: manifest_file
             )
-  m_noid = manifest.monograph_row['noid']
   reps = manifest.representatives()
   epub_row = reps["epub"]
   pdf_row = reps["pdf_ebook"]
   do_update =  (epub_row.nil? or epub_row['published?'].downcase == "false") \
         and !pdf_row.nil? and pdf_row['published?'].downcase == "true"
-  puts "#{manifest.noid},#{do_update}"
-=begin
-  reps.each do |k,row|
-    puts "#{k}:#{row['noid']},#{row['file_name']},#{row['published?']}"
-  end
-=end
+  output_rows << {
+          "NOID" => manifest.noid,
+          "ISBN(s)" => manifest.monograph_row['isbn(s)'],
+          "Update?" => do_update
+      }
 end
 
-=begin
 # Write CSV file.
 CSV.open(
         options.output_file,
         "w",
-        write_headers: false,
+        force_quotes: true,
+        write_headers: true,
+        headers: ["NOID","ISBN(s)","Update?"]
       ) do |csv|
-  csv << manifest_headers
-  monograph_manifest_rows.each {|r| csv << r }
+  output_rows.each {|r| csv << r }
 end
 script_logger.info("saved CSV file #{options.output_file}")
-=end
