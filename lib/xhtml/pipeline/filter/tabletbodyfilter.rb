@@ -1,6 +1,6 @@
 module UMPTG::XHTML::Pipeline::Filter
 
-  class TableFilter < UMPTG::XML::Pipeline::Filter
+  class TableTbodyFilter < UMPTG::XML::Pipeline::Filter
 
     XPATH = <<-SXPATH
     //*[
@@ -11,7 +11,7 @@ module UMPTG::XHTML::Pipeline::Filter
     def initialize(process, options: {})
       super(
               process,
-              :xhtml_table,
+              :xhtml_table_tbody,
               XPATH,
               options: options
             )

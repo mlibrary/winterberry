@@ -7,6 +7,8 @@ module UMPTG::CSS::Pipeline
       super(args)
 
       @issue = @properties[:issue]
+      @name = @issue.name
+      @content = @issue.content
       @add_content = @properties[:add_content]
     end
 

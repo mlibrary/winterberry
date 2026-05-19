@@ -47,7 +47,7 @@ module UMPTG::Pipeline
 
     def review(issues, options: {})
       issues.each do |issue|
-        @filters.each {|f| f.review(issue, options: options) }
+        @filters.each {|f| f.review(issue, options: options) if f.name == issue.name }
       end
     end
 

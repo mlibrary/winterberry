@@ -24,8 +24,6 @@ module UMPTG::CSS::Pipeline
     end
 
     def review(issue, options: {})
-      return unless issue.name == name
-
       super(
               issue,
               options: options

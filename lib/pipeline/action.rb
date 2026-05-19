@@ -30,6 +30,8 @@ module UMPTG::Pipeline
       if normalize
         issues.each do |issue|
           issue.actions.each do |a|
+            next unless issue.name == a.name
+
             a.resolve(options: options)
             modified = (a.normalize and a.status == UMPTG::Action.COMPLETED) unless modified
           end

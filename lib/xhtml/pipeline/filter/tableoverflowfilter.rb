@@ -18,8 +18,6 @@ module UMPTG::XHTML::Pipeline::Filter
     end
 
     def review(issue, options: {})
-      return unless issue.name == name
-
       super(
               issue,
               options: options
@@ -30,20 +28,6 @@ module UMPTG::XHTML::Pipeline::Filter
       if issue.content.name == 'table'
         table_elem = issue.content
         id = table_elem['id'] || ""
-
-        # Determine if the table caption contains pagebreak(s). If so,
-        # move them outside of the table wrapper.
-        table_elem.xpath(".//*[local-name()='caption' or local-name()='thead']//*[@role='doc-pagebreak' or @epub:type='pagebreak']").each do |n|
-          msg = "#{issue.name}, #{table_elem.name} @id=\"#{id}\" found pagebreak #{n}"
-          issue.actions << UMPTG::XML::Pipeline::Actions::MarkupAction.new(
-                   name: issue.name,
-                   reference_node: table_elem,
-                   action: :add_previous,
-                   markup: "<p>#{n.to_xml}</p>",
-                   info_message: msg
-               )
-          n.remove
-        end
 
         # Determine whether the table is wrapped within a figure and within
         # div/*[@class="table_container" and @tabindex="0">].
