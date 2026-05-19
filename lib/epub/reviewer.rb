@@ -15,7 +15,9 @@ module UMPTG::EPUB
             xhtml_header_title: false,
             xhtml_img_alttext: true,
             xhtml_link: true,
-            xhtml_table: true,
+            xhtml_table_overflow: false,
+            xhtml_table_pagebreak: false,
+            xhtml_table_tbody: true,
             xhtml_list_item: false
           }
       super(
