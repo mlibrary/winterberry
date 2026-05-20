@@ -24,9 +24,9 @@ module UMPTG::XHTML::Pipeline::Filter
     ][1]
     ICOXPATHN
 
-    @@IMGCAPTION_XPATH = <<-ICXPATH
-    .//*[local-name()='img'
-    or local-name()='figcaption'
+    @@IMGCAPTIONTABLE_XPATH = <<-ICXPATH
+    .//*[
+    local-name()='img' or local-name()='figcaption' or local-name()='table'
     or (
     count(ancestor::*[local-name()='figcaption'])=0
     and (
@@ -156,7 +156,7 @@ module UMPTG::XHTML::Pipeline::Filter
                           }
                     )
             else
-              container_child_list = reference_node.xpath(@@IMGCAPTION_XPATH)
+              container_child_list = reference_node.xpath(@@IMGCAPTIONTABLE_XPATH)
               if container_child_list.empty?
                 # Give warning, but shouldn't be an issue.
                 reference_action_list << UMPTG::XML::Pipeline::Action.new(
@@ -172,6 +172,8 @@ module UMPTG::XHTML::Pipeline::Filter
                 caption_found = false
                 container_child_list.each do |child|
                   case child.name
+                  when "table"
+                    figure_obj.table_list << child
                   when "img"
                     within_caption = !child.xpath(IMGPARENT_XPATH).empty?
 
@@ -205,6 +207,16 @@ module UMPTG::XHTML::Pipeline::Filter
                 figure_obj_list.each do |figure_obj|
                   figure_container = figure_obj.container_node
                   container_normalized = figure_container.name == "figure"
+
+                  if figure_obj.table_list.count > 0
+                    reference_action_list << UMPTG::XML::Pipeline::Action.new(
+                             issue,
+                             options: {
+                                 info_message: "#{name}: #{figure_container.name} contains #{figure_obj.table_list.count} table(s)."
+                               }
+                         )
+                  end
+
                   figure_obj.img_list.each do |img_obj|
                     reference_node = img_obj.img_node
 
@@ -309,7 +321,7 @@ module UMPTG::XHTML::Pipeline::Filter
                              issue,
                              options: {
                                  reference_node: figure_obj.container_node,
-                                 error_message: "#{name}: figure object with no image node #{f}."
+                                 warning_message: "#{name}: figure object with no image node #{f}."
                                }
                          )
                     next
