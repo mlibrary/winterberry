@@ -44,17 +44,18 @@ module UMPTG::Fulcrum::Resources::XHTML::Pipeline::Filter
     def review(issue, options: {})
       case issue.content.name
       when "figure"
-        issue.actions = create_figure_actions(issue.content)
+        issue.actions = create_figure_actions(issue)
       when "img"
-        issue.actions = create_img_actions(issue.content)
+        issue.actions = create_img_actions(issue)
       else
-        issue.actions = create_element_actions(issue.content)
+        issue.actions = create_element_actions(issue)
       end
     end
 
     private
 
-    def create_figure_actions(reference_node)
+    def create_figure_actions(issue)
+      reference_node = issue.content
       fragment_node = reference_node.dup
 
       action_list = []
@@ -71,9 +72,10 @@ module UMPTG::Fulcrum::Resources::XHTML::Pipeline::Filter
         src = img_node["src"]
         if src.nil? or src.strip.empty?
           action_list << UMPTG::XML::Pipeline::Action.new(
-                   name: name,
-                   reference_node: reference_node,
-                   warning_message: "#{reference_node.name}: image with no @src value"
+                   issue,
+                   options: {
+                      warning_message: "#{reference_node.name}: image with no @src value"
+                    }
                )
           next
         end
@@ -88,17 +90,19 @@ module UMPTG::Fulcrum::Resources::XHTML::Pipeline::Filter
       if resource_node_list.count == 0
         # No resource references found.
         action_list << UMPTG::XML::Pipeline::Action.new(
-                 name: name,
-                 reference_node: reference_node,
-                 error_message: "#{reference_node.name}: no resource references found"
+                 issue,
+                 options: {
+                    error_message: "#{reference_node.name}: no resource references found"
+                  }
              )
       else
         if resource_node_list.count > 1
           # Multiple resource references found.
           action_list << UMPTG::XML::Pipeline::Action.new(
-                   name: name,
-                   reference_node: reference_node,
-                   warning_message: "#{reference_node.name}: multiple resource references found #{resource_name_list.join(',')}"
+                   issue,
+                   options: {
+                      warning_message: "#{reference_node.name}: multiple resource references found #{resource_name_list.join(',')}"
+                    }
                )
         end
 
@@ -116,10 +120,11 @@ module UMPTG::Fulcrum::Resources::XHTML::Pipeline::Filter
           caption_added = false
           if caption_node.nil?
             action_list << UMPTG::XML::Pipeline::Action.new(
-                     name: name,
-                     reference_node: reference_node,
-                     warning_message: \
-                       "#{reference_node.name}: added figcaption element for #{fragment_node}"
+                     issue,
+                     options: {
+                         warning_message: \
+                           "#{reference_node.name}: added figcaption element for #{fragment_node}"
+                       }
                  )
             fragment_node.add_child("<figcaption class=\"figcaption\"/>")
             caption_node = fragment_node.xpath(".//*[local-name()='figcaption']").first
@@ -228,20 +233,22 @@ module UMPTG::Fulcrum::Resources::XHTML::Pipeline::Filter
             insert_metadata(node, resource_name_list.first)
           end
           action_list << UMPTG::XML::Pipeline::Actions::MarkupAction.new(
-                   name: name,
-                   reference_node: reference_node,
-                   action: :replace_node,
-                   markup: fragment_node.to_xml,
-                   info_message: "#{reference_node.name}: links for resources #{resource_name_list.join(',')}"
+                   issue,
+                   options: {
+                     action: :replace_node,
+                     markup: fragment_node.to_xml,
+                     info_message: "#{reference_node.name}: links for resources #{resource_name_list.join(',')}"
+                   }
                )
         else
           res_node_list = fragment_node.xpath("./*[@data-fulcrum-embed-filename]")
           if res_node_list.count > 1
             res_name_list = res_node_list.collect {|n| n['data-fulcrum-embed-filename'] }
             action_list << UMPTG::XML::Pipeline::Action.new(
-                     name: name,
-                     reference_node: reference_node,
-                     warning_message: "#{caption_node.name}: multiple caption resource references found #{res_name_list.join(',')}"
+                     issue,
+                     options: {
+                         warning_message: "#{caption_node.name}: multiple caption resource references found #{res_name_list.join(',')}"
+                       }
                  )
           elsif res_node_list.count == 1
             res_node = res_node_list.first
@@ -258,11 +265,12 @@ module UMPTG::Fulcrum::Resources::XHTML::Pipeline::Filter
             end
 
             action_list << UMPTG::XML::Pipeline::Actions::MarkupAction.new(
-                     name: name,
-                     reference_node: reference_node,
-                     action: :replace_node,
-                     markup: fragment_node.to_xml,
-                     info_message: "#{reference_node.name}: setting @data-fulcrum-embed-filename=\"#{embed_filename}\"."
+                     issue,
+                     options: {
+                         action: :replace_node,
+                         markup: fragment_node.to_xml,
+                         info_message: "#{reference_node.name}: setting @data-fulcrum-embed-filename=\"#{embed_filename}\"."
+                       }
                  )
           end
         end
@@ -270,22 +278,25 @@ module UMPTG::Fulcrum::Resources::XHTML::Pipeline::Filter
       return action_list
     end
 
-    def create_element_actions(reference_node)
+    def create_element_actions(issue)
+      reference_node = issue.content
       fragment_node = reference_node.dup
 
       action_list = []
       node = insert_metadata(fragment_node)
       action_list << UMPTG::XML::Pipeline::Actions::MarkupAction.new(
-               name: name,
-               reference_node: reference_node,
-               action: :replace_node,
-               markup: node.to_xml,
-               info_message: "#{reference_node.name}: links for resources #{fragment_node.name}"
+               issue,
+               options: {
+                   action: :replace_node,
+                   markup: node.to_xml,
+                   info_message: "#{reference_node.name}: links for resources #{fragment_node.name}"
+                 }
            )
       return action_list
     end
 
-    def create_img_actions(reference_node)
+    def create_img_actions(issue)
+      reference_node = issue.content
       reference_name = reference_node["src"]
 
       action_list = []
@@ -302,11 +313,12 @@ module UMPTG::Fulcrum::Resources::XHTML::Pipeline::Filter
         markup = "<span class=\"default-media-display\">" + link_markup + "</span>"
 
         action_list << UMPTG::XML::Pipeline::Actions::MarkupAction.new(
-                 name: name,
-                 reference_node: reference_node,
-                 action: :add_next,
-                 markup: markup,
-                 info_message: "#{reference_name}: links for resource"
+                 issue,
+                 options: {
+                     action: :add_next,
+                     markup: markup,
+                     info_message: "#{reference_name}: links for resource"
+                   }
              )
       end
       return action_list

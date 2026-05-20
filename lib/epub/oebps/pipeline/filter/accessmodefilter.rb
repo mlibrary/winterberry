@@ -32,14 +32,13 @@ module UMPTG::EPUB::OEBPS::Pipeline::Filter
               options: options
            )
 
-      name = issue.name
-
       case issue.content['property']
       when 'schema:accessMode', 'schema:accessModeSufficient'
         issue.actions << UMPTG::XML::Pipeline::Action.new(
-               name: issue.name,
-               reference_node: issue.content,
-               info_message: "#{issue.name}, found #{issue.content}"
+               issue,
+               options: {
+                  info_message: "#{issue.name}, found #{issue.content}"
+                }
            )
       end
     end
@@ -61,8 +60,8 @@ module UMPTG::EPUB::OEBPS::Pipeline::Filter
       actions.each do |a|
         next unless a.class.name == "UMPTG::XML::Pipeline::Action"
 
-        if ['schema:accessMode', 'schema:accessModeSufficient'].include?(a.reference_node['property'])
-          content = (a.reference_node.content || "").strip
+        if ['schema:accessMode', 'schema:accessModeSufficient'].include?(a.issue.content['property'])
+          content = (a.issue.content.text || "").strip
           if content.split(',').select {|s| s.strip.downcase == "textual"}.count > 0
             acs_textual_actions << a
           end
@@ -75,7 +74,7 @@ module UMPTG::EPUB::OEBPS::Pipeline::Filter
       when 1
         llogger.info("#{name} accessModeSufficient=textual found")
       else
-        llogger.warn("#{name} duplicate markup #{acs_textual_actions.last.reference_node}")
+        llogger.warn("#{name} duplicate markup #{acs_textual_actions.last.issue.content}")
       end
     end
   end

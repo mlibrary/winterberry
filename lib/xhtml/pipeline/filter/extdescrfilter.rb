@@ -18,8 +18,6 @@ module UMPTG::XHTML::Pipeline::Filter
     end
 
     def review(issue, options: {})
-      return unless issue.name == name
-
       super(
               issue,
               options: options
@@ -29,9 +27,10 @@ module UMPTG::XHTML::Pipeline::Filter
         aria_details = (issue.content["aria-details"] || "").strip
         unless aria_details.empty?
           action = UMPTG::XML::Pipeline::Action.new(
-                   name: issue.name,
-                   reference_node: issue.content,
-                   info_message: "#{issue.name}, #{issue.content.name} found aria-details=\"#{aria_details}\""
+                   issue,
+                   options: {
+                       info_message: "#{issue.name}, #{issue.content.name} found aria-details=\"#{aria_details}\""
+                     }
                )
           issue.actions << action
 
@@ -47,15 +46,17 @@ module UMPTG::XHTML::Pipeline::Filter
               first_elem_id = first_elem['id'] || ""
               if first_elem_id.empty?
                 issue.actions << UMPTG::XML::Pipeline::Actions::SetAttributeValueAction.new(
-                         name: issue.name,
-                         reference_node: first_elem,
-                         attribute_name: "id",
-                         attribute_value: aria_details
+                         issue,
+                         options: {
+                             attribute_name: "id",
+                             attribute_value: aria_details
+                           }
                      )
                 issue.actions << UMPTG::XML::Pipeline::Actions::RemoveAttributeAction.new(
-                         name: issue.name,
-                         reference_node: ext_descr_node,
-                         attribute_name: "id"
+                         issue,
+                         options: {
+                             attribute_name: "id"
+                           }
                      )
               end
             end

@@ -1,19 +1,18 @@
 module UMPTG::XML::Pipeline
 
-  class Action < UMPTG::Action
-    attr_reader :name, :normalize, :reference_node
+  class Action < UMPTG::Pipeline::Action
+    attr_reader :issue, :normalize, :reference_node
 
-    def initialize(args = {})
-      super(args)
+    def initialize(issue, options: {})
+      super(issue, options: options)
 
-      @name = @properties[:name]
-      @reference_node = @properties[:reference_node]
-      @action_node = @properties[:action_node]
+      @reference_node = options[:reference_node]
+      @action_node = options[:action_node]
       @normalize = false
     end
 
-    def resolve(args = {})
-      super(args)
+    def resolve(options: {})
+      super(options: options)
       @status = Action.PENDING
     end
 

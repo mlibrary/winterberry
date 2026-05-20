@@ -1,19 +1,16 @@
 module UMPTG::CSS::Pipeline
 
-  class AddTableOverflowAction < UMPTG::XML::Pipeline::Actions::NormalizeAction
-    attr_reader :name, :content
+  class AddTableOverflowAction < UMPTG::Pipeline::NormalizeAction
+    attr_reader :issue, :add_content
 
-    def initialize(args = {})
-      super(args)
+    def initialize(issue, options: {})
+      super(issue, options: options)
 
-      @issue = @properties[:issue]
-      @name = @issue.name
-      @content = @issue.content
-      @add_content = @properties[:add_content]
+      @add_content = options[:add_content]
     end
 
-    def resolve(args = {})
-      super(args)
+    def resolve(options: {})
+      super(options: options)
 
       @issue.content += "\n\n" + @add_content
       add_info_msg("#{@issue.name}, added table overflow CSS")

@@ -34,13 +34,11 @@ module UMPTG::Fulcrum::Metadata::XHTML::Pipeline::Filter
 
       if reference_node.key?("data-fulcrum-embed-filename")
         action = UMPTG::XHTML::Pipeline::Actions::MarkerAction.new(
-                             name: issue.name,
-                             reference_node: reference_node
+                             issue
                              )
       else
         action = UMPTG::XHTML::Pipeline::Actions::FigureAction.new(
-            name: issue.name,
-            reference_node: reference_node
+            issue
             )
       end
 

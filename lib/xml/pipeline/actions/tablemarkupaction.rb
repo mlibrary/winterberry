@@ -5,15 +5,18 @@ module UMPTG::XML::Pipeline::Actions
 
     ACTIONS = [ :add_tbody ]
 
-    def initialize(args = {})
-      super(args)
+    def initialize(issue, options: {})
+      super(issue, options: options)
+
       raise "invalid action #{@properties[:action]}" \
             unless ACTIONS.include?(@properties[:action])
-      @action = @properties[:action]
+      @action = options[:action]
     end
 
-    def resolve(args = {})
-      super(args)
+    def resolve(options: {})
+      super(options: options)
+
+      reference_node = issue.content
 
       raise "invalid table element" unless reference_node.name == "table"
 

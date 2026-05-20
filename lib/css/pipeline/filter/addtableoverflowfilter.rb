@@ -30,9 +30,11 @@ module UMPTG::CSS::Pipeline
            )
 
       issue.actions << UMPTG::CSS::Pipeline::AddTableOverflowAction.new(
-                issue: issue,
-                add_content: CSS,
-                info_msg: "#{issue.name} action"
+                issue,
+                options: {
+                    add_content: CSS,
+                    info_msg: "#{issue.name} action"
+                    }
               )
     end
   end

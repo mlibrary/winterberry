@@ -18,8 +18,6 @@ module UMPTG::XHTML::Pipeline::Filter
     end
 
     def review(issue, options: {})
-      return unless issue.name == name
-
       super(
               issue,
               options: options
@@ -29,8 +27,7 @@ module UMPTG::XHTML::Pipeline::Filter
         id = issue.content['id'] || ""
         href = (issue.content['href'] || "").strip
         action = UMPTG::XML::Pipeline::Action.new(
-                 name: issue.name,
-                 reference_node: issue.content
+                 issue
               )
         if href.include?(' ') or href.include?('%20')
           href_new = href.gsub(/ /, '').gsub(/%20/, '')
@@ -45,10 +42,11 @@ module UMPTG::XHTML::Pipeline::Filter
               )
 =end
           action = UMPTG::XML::Pipeline::Action.new(
-                  name: issue.name,
-                  reference_node: issue.content,
-                  warning_message: \
-                    "#{issue.name}, #{issue.content.name} found @id=\"#{id}\" @href=\"#{href}\", @href contains spaces"
+                  issue,
+                  options: {
+                      warning_message: \
+                        "#{issue.name}, #{issue.content.name} found @id=\"#{id}\" @href=\"#{href}\", @href contains spaces"
+                      }
               )
         else
           action.add_info_msg("#{issue.name}, #{issue.content.name} found @id=\"#{id}\" @href=\"#{href}\"")

@@ -19,8 +19,6 @@ module UMPTG::XHTML::Pipeline::Filter
     end
 
     def review(issue, options: {})
-      return unless issue.name == name
-
       super(
               issue,
               options: options
@@ -34,19 +32,21 @@ module UMPTG::XHTML::Pipeline::Filter
 
         if content.empty?
           issue.actions << UMPTG::XML::Pipeline::Action.new(
-                  name: issue.name,
-                  reference_node: n,
-                  warning_message: \
-                    "#{issue.name}, found entity #{n}, unable to map to character"
+                  issue,
+                  options: {
+                      warning_message: \
+                        "#{issue.name}, found entity #{n}, unable to map to character"
+                    }
               )
         else
           issue.actions << UMPTG::XML::Pipeline::Actions::MarkupAction.new(
-                  name: name,
-                  reference_node: n,
-                  action: :replace_node,
-                  markup: content,
-                  warning_message: \
-                    "#{name}, found entity #{n}"
+                  issue,
+                  options: {
+                      action: :replace_node,
+                      markup: content,
+                      warning_message: \
+                        "#{name}, found entity #{n}"
+                    }
               )
         end
       end

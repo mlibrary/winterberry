@@ -1,11 +1,11 @@
 module UMPTG::XHTML::Pipeline::Actions
 
-  class NormalizeTableOverflowAction < UMPTG::XML::Pipeline::Actions::NormalizeAction
+  class NormalizeTableOverflowAction < UMPTG::Pipeline::NormalizeAction
 
-    def resolve(args = {})
-      super(args)
+    def resolve(options: {})
+      super(options: options)
 
-      table_elem = reference_node
+      table_elem = issue.content
       raise "invalid element" if table_elem.nil? or table_elem.name != 'table'
 
       id = table_elem['id'] || ""
@@ -25,7 +25,7 @@ module UMPTG::XHTML::Pipeline::Actions
         div_elem = figure_elem.first_element_child
         div_elem.add_child(table_elem)
 
-        msg = "#{name}, #{table_elem.name} @id=\"#{id}\" " +
+        msg = "#{issue.name}, #{table_elem.name} @id=\"#{id}\" " +
             "added overflow markup #{overflow_markup}"
         add_info_msg(msg)
       when figure_elem.nil?
@@ -33,19 +33,19 @@ module UMPTG::XHTML::Pipeline::Actions
         figure_elem = div_elem.add_previous_sibling("<figure></figure>")
         figure_elem.add_child(div_elem)
 
-        msg = "#{name}, #{table_elem.name} @id=\"#{id}\" " +
+        msg = "#{issue.name}, #{table_elem.name} @id=\"#{id}\" " +
             "figure wrapped round existing overflow markup #{overflow_markup}"
         add_info_msg(msg)
       when div_elem.nil?
           # figure element is found, div is not found.
         div_elem = figure_elem.add_child("<div class='table_container' tabindex='0'></div>").first
 
-        msg = "#{name}, #{table_elem.name} @id=\"#{id}\" " +
+        msg = "#{issue.name}, #{table_elem.name} @id=\"#{id}\" " +
             "div inserted within existing overflow markup #{overflow_markup}"
         add_info_msg(msg)
       else
         # Found both. Issue info message.
-        msg = "#{name}, #{table_elem.name} @id=\"#{id}\" " +
+        msg = "#{issue.name}, #{table_elem.name} @id=\"#{id}\" " +
             "overflow markup found #{overflow_markup}"
         add_info_msg(msg)
       end
@@ -53,7 +53,7 @@ module UMPTG::XHTML::Pipeline::Actions
       # If table has a caption, move the caption to figcaption.
       caption_elem = table_elem.xpath(".//*[local-name()='caption']").first
       if caption_elem.nil?
-        msg = "#{name}, #{table_elem.name} @id=\"#{id}\" no caption found"
+        msg = "#{issue.name}, #{table_elem.name} @id=\"#{id}\" no caption found"
         add_info_msg(msg)
       else
         f = figure_elem.first_element_child
@@ -62,12 +62,12 @@ module UMPTG::XHTML::Pipeline::Actions
         figcaption_elem.first.add_child(caption_elem.inner_html)
         caption_elem.remove
 
-        msg = "#{name}, #{table_elem.name} @id=\"#{id}\" added figure/figcaption, removed table/caption"
+        msg = "#{issue.name}, #{table_elem.name} @id=\"#{id}\" added figure/figcaption, removed table/caption"
         add_info_msg(msg)
       end
 
       table_elem.document.xpath("//*[local-name()='head']/*[local-name()='meta' and @http-equiv='Content-Type']").each do |n|
-        msg = "#{name}, removed #{n.to_html}"
+        msg = "#{issue.name}, removed #{n.to_html}"
         n.remove
         add_info_msg(msg)
       end

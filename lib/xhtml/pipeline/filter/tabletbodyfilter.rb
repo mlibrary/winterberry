@@ -18,14 +18,10 @@ module UMPTG::XHTML::Pipeline::Filter
     end
 
     def review(issue, options: {})
-      return unless issue.name == name
-
       super(
               issue,
               options: options
            )
-
-      name = issue.name
 
       if issue.content.name == 'table'
         id = issue.content['id']
@@ -33,29 +29,32 @@ module UMPTG::XHTML::Pipeline::Filter
         tbody_node = issue.content.xpath("./*[local-name()='tbody']").first
         if tbody_node.nil?
           issue.actions << UMPTG::XML::Pipeline::Actions::TableMarkupAction.new(
-                   name: issue.name,
-                   reference_node: issue.content,
-                   action: :add_tbody,
-                   warning_message: \
-                     "#{issue.name}, #{issue.content.name} @id=\"#{id}\" tbody element not found"
+                   issue,
+                   options: {
+                       action: :add_tbody,
+                       warning_message: \
+                         "#{issue.name}, #{issue.content.name} @id=\"#{id}\" tbody element not found"
+                     }
                )
         else
           issue.actions << UMPTG::XML::Pipeline::Action.new(
-                   name: issue.name,
-                   reference_node: issue.content,
-                   info_message: \
-                     "#{issue.name}, #{issue.content.name} @id=\"#{id}\" tbody element found"
+                   issue,
+                   options: {
+                       info_message: \
+                         "#{issue.name}, #{issue.content.name} @id=\"#{id}\" tbody element found"
+                       }
                )
         end
 
         if issue.content.key?('fromhtml')
           # Invalid attribute. Remove.
           issue.actions << UMPTG::XML::Pipeline::Actions::RemoveAttributeAction.new(
-                   name: issue.name,
-                   reference_node: issue.content,
-                   attribute_name: "fromhtml",
-                   warning_message: \
-                     "#{issue.name}, #{issue.content.name} found invalid attribute @fromhtml"
+                   issue,
+                   options: {
+                       attribute_name: "fromhtml",
+                       warning_message: \
+                         "#{issue.name}, #{issue.content.name} found invalid attribute @fromhtml"
+                     }
                )
         end
       end

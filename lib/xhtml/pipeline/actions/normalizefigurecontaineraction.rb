@@ -2,8 +2,8 @@ module UMPTG::XHTML::Pipeline::Actions
 
   class NormalizeFigureContainerAction < UMPTG::XML::Pipeline::Actions::NormalizeAction
 
-    def resolve(args = {})
-      super(args)
+    def resolve(options: {})
+      super(options: options)
 
       node_name = @action_node.name
 

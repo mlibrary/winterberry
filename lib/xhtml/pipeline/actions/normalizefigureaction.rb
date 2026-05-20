@@ -1,6 +1,6 @@
 module UMPTG::XHTML::Pipeline::Actions
 
-  class NormalizeFigureAction < UMPTG::XML::Pipeline::Actions::NormalizeAction
+  class NormalizeFigureAction < UMPTG::Pipeline::NormalizeAction
     def self.normalize_caption_class(args = {})
       node = args[:caption_node]
       normalize_caption_class = args[:normalize_caption_class]

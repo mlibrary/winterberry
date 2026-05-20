@@ -2,18 +2,12 @@ module UMPTG::Pipeline
 
   class NormalizeAction < UMPTG::Pipeline::Action
 
-    def initialize(issue, options: nil)
+    def initialize(issue, options: {})
       super(
             issue,
             options: options
           )
       @normalize = true
-    end
-
-    def process(options: nil)
-      super(
-              options: options
-          )
     end
   end
 end

@@ -1,9 +1,9 @@
 module UMPTG::XHTML::Pipeline::Actions
 
-  class NormalizeFigureCaptionStyleAction < UMPTG::XML::Pipeline::Actions::NormalizeAction
+  class NormalizeFigureCaptionStyleAction < UMPTG::Pipeline::NormalizeAction
 
-    def resolve(args = {})
-      super(args)
+    def resolve(options: {})
+      super(options: options)
 
       resource_path = @properties[:resource_path]
 

@@ -21,23 +21,23 @@ module UMPTG::XHTML::Pipeline::Actions
     ]
     SXPATH
 
-    def resolve(args = {})
+    def resolve(options: {})
       olist = []
       case @node.name
       when 'img'
         # Process <img> fragment.
-        olist = Action.process_image(@node, args)
+        olist = Action.process_image(issue, @node)
       else
         # Must be a <figure> fragment. Process the contained images and captions.
         nodes = @node.xpath(@@SELECTION_XPATH)
         if nodes.count > 0
           # Empty figure elements not expected.
-          olist = Action.process_figure(nodes, args)
+          olist = Action.process_figure(issue, nodes)
         end
       end
 
       olist.each do |o|
-        add_info_msg("#{name}: found reference for resource #{o.resource_name}")
+        add_info_msg("#{issue.name}: found reference for resource #{o.resource_name}")
       end
 
       # Attach the list XML fragment objects processed to this

@@ -2,8 +2,8 @@ module UMPTG::XHTML::Pipeline::Actions
 
   class NormalizeFigureNestAction < NormalizeFigureAction
 
-    def resolve(args = {})
-      super(args)
+    def resolve(options: {})
+      super(options: options)
 
       #reference_node = @properties[:reference_node]
       #caption_node = @properties[:caption_node]

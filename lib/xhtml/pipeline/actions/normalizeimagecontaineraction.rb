@@ -1,9 +1,9 @@
 module UMPTG::XHTML::Pipeline::Actions
 
-  class NormalizeImageContainerAction < UMPTG::XML::Pipeline::Actions::NormalizeAction
+  class NormalizeImageContainerAction < UMPTG::Pipeline::NormalizeAction
 
-    def resolve(args = {})
-      super(args)
+    def resolve(options: {})
+      super(options: options)
 
 =begin
       node_name = @action_node.name

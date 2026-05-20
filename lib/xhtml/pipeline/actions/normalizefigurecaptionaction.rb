@@ -1,9 +1,9 @@
 module UMPTG::XHTML::Pipeline::Actions
 
-  class NormalizeFigureCaptionAction < UMPTG::XML::Pipeline::Actions::NormalizeAction
+  class NormalizeFigureCaptionAction < UMPTG::Pipeline::NormalizeAction
 
-    def resolve(args = {})
-      super(args)
+    def resolve(options: {})
+      super(options: options)
 
       cap_list = @properties[:cap_list]
 

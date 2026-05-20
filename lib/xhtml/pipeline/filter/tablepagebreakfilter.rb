@@ -34,11 +34,12 @@ module UMPTG::XHTML::Pipeline::Filter
         table_elem.xpath(x).each do |n|
           msg = "#{issue.name}, #{table_elem.name} @id=\"#{id}\" found pagebreak #{n}"
           issue.actions << UMPTG::XML::Pipeline::Actions::MarkupAction.new(
-                   name: issue.name,
-                   reference_node: table_elem,
-                   action: :add_previous,
-                   markup: "<p>#{n.to_xml}</p>",
-                   info_message: msg
+                   issue,
+                   options: {
+                      action: :add_previous,
+                      markup: "<p>#{n.to_xml}</p>",
+                      info_message: msg
+                      }
                )
           n.remove
         end

@@ -40,18 +40,20 @@ module UMPTG::XHTML::Pipeline::Filter
               "overflow markup found #{figure_elem.name}//#{div_elem.name}" +
               "[@class=\"#{div_elem['class']}\" and @tabindex=\"#{div_elem['tabindex']}\"]"
           issue.actions << UMPTG::XML::Pipeline::Actions::Action.new(
-                   name: issue.name,
-                   reference_node: issue.content,
-                   info_message: msg
+                   issue,
+                   options: {
+                        info_message: msg
+                      }
                )
         else
           # Either figure element or div not found.
           msg = "#{issue.name}, #{table_elem.name} @id=\"#{id}\" " +
               "overflow markup not found."
           issue.actions << UMPTG::XHTML::Pipeline::Actions::NormalizeTableOverflowAction.new(
-                   name: issue.name,
-                   reference_node: issue.content,
-                   warning_message: msg
+                   issue,
+                   options: {
+                     warning_message: msg
+                    }
                )
         end
       end

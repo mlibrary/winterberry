@@ -31,9 +31,10 @@ module UMPTG::EPUB::OEBPS::Pipeline::Filter
 
       if issue.content['property'] == 'schema:accessibilityFeature'
         issue.actions << UMPTG::XML::Pipeline::Action.new(
-               name: issue.name,
-               reference_node: issue.content,
-               info_message: "#{name}, found #{issue.content}"
+               issue,
+               options: {
+                   info_message: "#{name}, found #{issue.content}"
+                 }
            )
       end
     end
@@ -58,7 +59,7 @@ module UMPTG::EPUB::OEBPS::Pipeline::Filter
       actions.each do |a|
         next unless a.class.name == "UMPTG::XML::Pipeline::Action"
 
-        content = (a.reference_node.content || "").strip
+        content = (a.issue.content.text || "").strip
         features[content] = true if features.key?(content)
       end
 

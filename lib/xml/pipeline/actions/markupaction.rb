@@ -5,18 +5,20 @@ module UMPTG::XML::Pipeline::Actions
 
     ACTIONS = [ :add_child, :add_next, :add_previous, :replace_content, :replace_node ]
 
-    def initialize(args = {})
-      super(args)
-      raise "invalid action #{@properties[:action]}" \
-            unless ACTIONS.include?(@properties[:action])
-      @action = @properties[:action]
+    def initialize(issue, options: {})
+      super(issue, options: options)
 
-      @markup = @properties[:markup]
+      raise "invalid action #{options[:action]}" \
+            unless ACTIONS.include?(options[:action])
+      @action = options[:action]
+      @markup = options[:markup]
       raise "empty markup" if @markup.strip.empty?
     end
 
-    def resolve(args = {})
-      super(args)
+    def resolve(options: {})
+      super(options: options)
+
+      reference_node = issue.content
 
       fragment = reference_node.document.parse(markup)
       case action

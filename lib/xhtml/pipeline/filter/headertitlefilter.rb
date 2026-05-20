@@ -20,8 +20,6 @@ module UMPTG::XHTML::Pipeline::Filter
     end
 
     def review(issue, options: {})
-      return unless issue.name == name
-
       super(
               issue,
               options: options
@@ -33,11 +31,12 @@ module UMPTG::XHTML::Pipeline::Filter
           epub = options[:entry].files.epub
           m = epub.rendition.metadata.dc.elements.title.first.text
           issue.actions << UMPTG::XML::Pipeline::Actions::MarkupAction.new(
-                    name: issue.name,
-                    reference_node: issue.content,
-                    action: :replace_content,
-                    markup: m,
-                    warning_message: "#{issue.name}, #{issue.content.name} no content"
+                    issue,
+                    options: {
+                        action: :replace_content,
+                        markup: m,
+                        warning_message: "#{issue.name}, #{issue.content.name} no content"
+                      }
                   )
         end
       end

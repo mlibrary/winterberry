@@ -50,11 +50,11 @@ module UMPTG::EPUB
           ea.select(name: :xhtml_figure).each do |ac|
             next unless ac.class.name == "UMPTG::XML::Pipeline::Action"
 
-            figure_id = ac.reference_node['id'] || ""
+            figure_id = ac.issue.content['id'] || ""
             unless figure_id.empty?
               href = File.basename(ea.entry.name) + "#" + figure_id
-              ll = link_actions.find {|la| (la.reference_node['href'] || "").strip.end_with?(href) }
-              linked_figures << ll.reference_node unless ll.nil?
+              ll = link_actions.find {|la| (la.issue.content['href'] || "").strip.end_with?(href) }
+              linked_figures << ll.issue.content unless ll.nil?
             end
           end
         end

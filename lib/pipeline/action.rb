@@ -4,10 +4,9 @@ module UMPTG::Pipeline
     attr_reader :issue, :normalize, :options
 
     def initialize(issue, options: {})
-      super(
-            issue: issue,
-            options: options
-          )
+      args = options.clone
+      args[:issue] = issue
+      super(args)
 
       @issue = issue
       @normalize = false
@@ -15,10 +14,6 @@ module UMPTG::Pipeline
     end
 
     def resolve(options: {})
-      super(
-          issue: @issue,
-          options: options
-        )
       @status = Action.PENDING
     end
 
@@ -30,7 +25,7 @@ module UMPTG::Pipeline
       if normalize
         issues.each do |issue|
           issue.actions.each do |a|
-            next unless issue.name == a.name
+            next unless issue.name == a.issue.name
 
             a.resolve(options: options)
             modified = (a.normalize and a.status == UMPTG::Action.COMPLETED) unless modified
