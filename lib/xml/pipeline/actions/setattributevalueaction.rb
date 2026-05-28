@@ -1,10 +1,11 @@
 module UMPTG::XML::Pipeline::Actions
 
-  class SetAttributeValueAction < NormalizeAction
-    def resolve(args = {})
-      super(args)
+  class SetAttributeValueAction < UMPTG::Pipeline::NormalizeAction
+    def resolve(options: {})
+      super(options: options)
 
-      reference_node = @properties[:reference_node]
+      #reference_node = @properties[:reference_node]
+      reference_node = @properties[:action_node] || issue.content
       attribute_name = @properties[:attribute_name]
       if attribute_name.nil? or attribute_name.empty?
         add_error_msg("missing attribute name")

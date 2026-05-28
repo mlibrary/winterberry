@@ -7,6 +7,7 @@ module UMPTG::XHTML::Pipeline
         xhtml_entity: UMPTG::XHTML::Pipeline::Filter::EntityFilter,
         xhtml_extdescr: UMPTG::XHTML::Pipeline::Filter::ExtDescrFilter,
         xhtml_figure: UMPTG::XHTML::Pipeline::Filter::FigureFilter,
+        xhtml_figure_div: UMPTG::XHTML::Pipeline::Filter::FigureDivFilter,
         xhtml_header_meta_role: UMPTG::XHTML::Pipeline::Filter::HeaderMetaRoleFilter,
         xhtml_header_title: UMPTG::XHTML::Pipeline::Filter::HeaderTitleFilter,
         xhtml_link: UMPTG::XHTML::Pipeline::Filter::LinkFilter,

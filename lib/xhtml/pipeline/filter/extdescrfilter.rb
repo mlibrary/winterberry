@@ -36,11 +36,11 @@ module UMPTG::XHTML::Pipeline::Filter
 
           ext_descr_node = issue.content.document.at_css("[id='#{aria_details}']")
           if ext_descr_node.nil?
-            action.add_error_msg("no extended description link found for ID #{aria_details}")
+            action.add_error_msg("#{issue.name}, no extended description link found for ID #{aria_details}")
           elsif ext_descr_node.name == 'a'
-            action.add_info_msg("extended description link found #{ext_descr_node}")
+            action.add_info_msg("#{issue.name}, extended description link found #{ext_descr_node}")
           else
-            action.add_warning_msg("extended description link invalid #{ext_descr_node}")
+            action.add_warning_msg("#{issue.name}, extended description link invalid #{ext_descr_node}")
             first_elem = ext_descr_node.first_element_child
             unless first_elem.nil? or first_elem.name != 'a'
               first_elem_id = first_elem['id'] || ""
@@ -48,6 +48,7 @@ module UMPTG::XHTML::Pipeline::Filter
                 issue.actions << UMPTG::XML::Pipeline::Actions::SetAttributeValueAction.new(
                          issue,
                          options: {
+                             action_node: first_elem,
                              attribute_name: "id",
                              attribute_value: aria_details
                            }
@@ -55,6 +56,7 @@ module UMPTG::XHTML::Pipeline::Filter
                 issue.actions << UMPTG::XML::Pipeline::Actions::RemoveAttributeAction.new(
                          issue,
                          options: {
+                             action_node: ext_descr_node,
                              attribute_name: "id"
                            }
                      )
