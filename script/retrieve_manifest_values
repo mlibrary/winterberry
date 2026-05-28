@@ -107,6 +107,8 @@ else
     manifest_headers << "Representative"
     manifest_headers << "Representative Type"
     manifest_headers << "Representative Published?"
+    #manifest_headers << "NOID"
+    #manifest_headers << "Allow Download?"
   end
 
   monograph_id_noid.each do |identifier,noid_list|
@@ -164,6 +166,8 @@ else
             field_values << rep_row['file_name']
             field_values << kind
             field_values << rep_row['published?']
+            #field_values << rep_row['noid']
+            #field_values << rep_row['allow_download?']
             monograph_manifest_rows << field_values
           end
         else
