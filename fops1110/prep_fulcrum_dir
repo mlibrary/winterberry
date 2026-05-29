@@ -42,8 +42,8 @@ dir_path_list = ARGV
 require 'fileutils'
 
 dir_path_list.each do |dir_path|
-  #script_logger.info("*** #{dir_path} **")
-  #STDOUT.flush
+  script_logger.info("*** #{File.basename(dir_path)} **")
+  STDOUT.flush
 
   dir_path = File.expand_path(dir_path)
   unless File.directory?(dir_path)
@@ -58,11 +58,18 @@ dir_path_list.each do |dir_path|
   when 1
     script_logger.info("using EPUB #{File.basename(epub_list.first)}")
   else
-    script_logger.info(epub_list.collect {|e| File.basename(e) }.join(','))
+    script_logger.info("found EPUBs #{epub_list.collect {|e| File.basename(e) }.join(',')}")
+
+    script_logger.info("creating archive directory")
+    archive_dir = File.join(dir_path, "archive")
+    FileUtils.mkdir_p(archive_dir) if options.mode == :exec
+
     epub_list.each do |e|
       next if e == epub_list.last
-      script_logger.info("removing EPUB #{File.basename(e)}")
-      FileUtils.remove(e) if options.mode == :exec
+
+      new_e = File.join(archive_dir, File.basename(e, ".*") + "_version1" + File.extname(e))
+      script_logger.info("moving EPUB #{File.basename(e)} to archive #{File.basename(new_e)}")
+      FileUtils.mv(e, new_e) if options.mode == :exec
     end
     new_epub_file = File.join(
             File.dirname(epub_list.last),
