@@ -61,6 +61,9 @@ epub_file_list.each do |epub_file|
   epub = UMPTG::EPUB(epub_path: epub_file)
 
   # Select each reference within the spine.
+  # Create a list of chapter segments, where
+  # each segment has a TOC entry that is associated
+  # with 1 or more spine references.
   segment_list = []
   ctr = 0
   epub.rendition.spine.children.each do |itemref|
