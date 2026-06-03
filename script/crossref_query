@@ -178,6 +178,7 @@ arg_list.each do |arg|
                 File.basename(doi_file, ".*") + "_" + File.basename(__FILE__) + ".csv"
             )
     xpath = "//*[local-name()='resource']//*[local-name()='URL' and (starts-with(text(),'https://www.fulcrum.org/') or starts-with(text(),'https://services.publishing.umich.edu/') or starts-with(text(),'https://press.umich.edu/'))]"
+    #xpath = "//*[local-name()='resource']//*[local-name()='URL']"
     CSV.open(
             doi_list_file,
             "w",
