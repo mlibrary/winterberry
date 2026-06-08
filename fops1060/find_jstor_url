@@ -1,0 +1,105 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# This script inputs a list of MPUB DOIs and searches
+# a JSTOR CSV produce a map of MPUB DOI to JSTOR URL.
+#
+# Invoke this script without any parameters to display the usage.
+
+require 'optparse'
+require 'ostruct'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+# Process the script parameters.
+options = OpenStruct.new
+options.output_file = File.join(Dir.pwd, "fops1060_mpub_2_jstor_url.csv")
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)}  doi_file jstor_csv_file"
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    script_logger.info(opts)
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  script_logger.info(option_parser.help)
+  exit 0
+end
+doi_file = ARGV[0]
+jstor_csv_file = ARGV[1]
+
+require 'csv'
+require 'uri'
+
+doi_list = File.readlines(doi_file).map(&:chomp)
+
+CSV::Converters[:strip_field] = ->(value) { value.strip rescue value }
+
+jstor_csv = CSV.parse(
+      File.read(jstor_csv_file),
+      headers: true,
+      converters: :strip_field,
+      return_headers: false
+    )
+#jstor_csv.each {|r| puts "#{r['doi']},#{r['jstor stable url']}" }
+
+CSV.open(
+        options.output_file,
+        "w",
+        force_quotes: true,
+        write_headers: true,
+        headers: [ "DOI", "JSTOR URL" ]
+      ) do |csv|
+  doi_list.each do |doi|
+    doi2 = doi.delete_prefix("https://doi.org/")
+    jstor_row = jstor_csv.find {|r| r['doi'] == doi2 }
+    jstor_url = jstor_row.nil? ? "" : jstor_row['jstor stable url']
+    #puts "#{doi},#{jstor_url}"
+    csv << {
+        "DOI" => doi,
+        "JSTOR URL" => jstor_url
+      }
+  end
+end
+script_logger.info("saved CSV file #{options.output_file}")
+
+=begin
+csv_file_list.each do |csv_file|
+  csv_file = File.expand_path(csv_file)
+  unless File.file?(csv_file)
+    script_logger.error("invalid CSV file #{csv_file}")
+    next
+  end
+  script_logger.error("using CSV file #{csv_file}")
+
+  xml_str = ''
+  doi_resources = []
+  csv.each do |row|
+    ndx = 0
+    items = ''
+    row.each do |k,v|
+      unless v.nil? or v.empty? or !k.start_with?('Secondary URL')
+        ndx += 1
+        items += sprintf(ITEM_FORMAT, "SECONDARY_#{ndx}", v)
+      end
+    end
+    doi_resources << sprintf(RESOURCES_FORMAT, row['DOI'].delete_prefix("https://doi.org/"), items)
+  end
+
+  time = Time.now
+  # [Y0001]-[M01]-[D01]T[H01]:[m01]:[s01][Z]
+  batch_id = "#{time.strftime("%Y-%m-%dT%H:%M:%S")}#{sprintf("%03d:00", time.utc_offset/3600)}"
+  xml_str = sprintf(XML_FORMAT, batch_id, doi_resources.join("\n"))
+
+  xml_file = File.join(File.dirname(csv_file), File.basename(csv_file, ".*") + ".xml")
+  File.write(xml_file, xml_str)
+  script_logger.info("saved XML file #{xml_file}")
+end
+=end

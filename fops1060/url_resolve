@@ -1,0 +1,114 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Script for testing a URL
+
+require 'optparse'
+require 'ostruct'
+require 'os'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+# Process the script parameters.
+options = OpenStruct.new
+options.manifest_file = nil
+options.normalize = false
+options.filter_list = []
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} url [url...]"
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    script_logger.info(opts)
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  script_logger.info(option_parser.help)
+  return
+end
+
+require 'uri'
+require 'net/http'
+require 'nokogiri'
+
+# Process the command line parameters.
+url_list = ARGV
+
+DOMAINS = [
+            "http://www.press.umich.edu/",
+            "https://muse.jhu.edu/",
+            "http://www.jstor.org/",
+            "https://www.oapen.org/"
+    ]
+
+url_list.each do |url|
+  url_file = File.expand_path(url)
+  if File.file?(url_file)
+    url_path_list = File.readlines(url_file).map(&:chomp)
+    logger_file = File.join(File.dirname(url_file), File.basename(url_file, ".*") + "_resolution.txt")
+    out_logger = UMPTG::Logger.create(logger_file: logger_file)
+  else
+    url_path_list = [ url ]
+    out_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+  end
+  url_path_list.each do |url_path|
+    script_logger.info(url_path)
+    STDOUT.flush
+
+    body = ""
+    unless url_path[0] == '#'
+      up = url_path
+      loop do
+        uri = URI(up)
+        #uri = URI.parse(URI.encode_uri_component(up.strip))
+        #uri = URI.parse(up.strip)
+        res = Net::HTTP.get_response(uri)
+        #puts "code=#{res.code},message=#{res.message}"
+        #puts "res=#{res.to_hash}"
+        case res.code
+        when "301", "302"
+          up = res['location']
+        else
+          body = res.body
+          break
+        end
+      end
+    end
+
+    #url_dest = ''
+    unless body.empty?
+      #puts body
+      #body_doc = Nokogiri::XML(body)
+      body_doc = Nokogiri::HTML(body)
+      #puts body_doc
+      node_list = body_doc.xpath("//*[local-name()='div' and @class='resource-line']/*[local-name()='a']")
+      href_list = node_list.collect {|n| "#{n['href']}" }
+      res_list = [ href_list[0] ]
+      unless href_list[1..-1].nil?
+        DOMAINS.each {|d| res_list += href_list[1..-1].select {|h| h.start_with?(d) } }
+        res_list += href_list[1..-1].select do |h|
+          u = URI(h)
+          !DOMAINS.include?(u.scheme + "://" + u.host + "/")
+        end
+      end
+      res_list = '"' + res_list.join('","') + '"'
+=begin
+      node = body_doc.xpath("//*[local-name()='META' and @HTTP-EQUIV='Location']").first
+      url_dest = node['Content'] unless node.nil?
+      node = body_doc.xpath("//*[local-name()='body']//*[@class='error-code']").first
+      if node.nil?
+        node = body_doc.xpath("//*[local-name()='body']//*[local-name()='a']").first
+        url_dest = node.nil? ? "(unknown)" : node["href"]
+        url_dest = '' if url_dest == 'https://www.doi.org'
+      end
+=end
+    end
+    out_logger.info("\"#{url_path}\",#{res_list}")
+  end
+end
