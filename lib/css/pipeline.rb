@@ -1,6 +1,8 @@
 module UMPTG::CSS
+  require_relative(File.join("..", "pipeline"))
   require_relative(File.join("pipeline", "actions"))
   require_relative(File.join("pipeline", "filter"))
+  require_relative(File.join("pipeline", "filter", "addtableoverflowfilter"))
   require_relative(File.join("pipeline", "filter", "fontfacefilter"))
   require_relative(File.join("pipeline", "filter", "fontfamilyfilter"))
   require_relative(File.join("pipeline", "filter", "fontfixfilter"))
@@ -8,18 +10,33 @@ module UMPTG::CSS
   require_relative(File.join("pipeline", "processor"))
 
   FILTERS = {
+            css_add_table_overflow: UMPTG::CSS::Pipeline::AddTableOverflowFilter,
             css_font_face: UMPTG::CSS::Pipeline::FontFaceFilter,
             css_font_family: UMPTG::CSS::Pipeline::FontFamilyFilter,
             css_font_fix: UMPTG::CSS::Pipeline::FontFixFilter,
             css_times_font: UMPTG::CSS::Pipeline::TimesFontFilter
       }
 
+  def self.Processor(name, filters: nil, options: {}, logger: nil)
+    m_filters = filters.nil? ? UMPTG::CSS.FILTERS : \
+                  filters.merge(UMPTG::CSS.FILTERS)
+
+    return UMPTG::Pipeline::Processor.new(
+            name,
+            filters: m_filters,
+            options: options,
+            logger: logger
+          )
+  end
+
+=begin
   def self.Processor(args = {})
     a = args.clone
     a[:filters] = a[:filters].nil? ? UMPTG::CSS.FILTERS : \
                   a[:filters].merge(UMPTG::CSS.FILTERS)
     return UMPTG::CSS::Pipeline::Processor.new(a)
   end
+=end
 
   def self.fulcrum_default
     return UMPTG::CSS.fulcrum_css("fulcrum_default.css")

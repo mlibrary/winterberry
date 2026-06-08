@@ -21,8 +21,12 @@ options.manifest_file = nil
 options.normalize = false
 options.filter_list = []
 options.process = :none
+options.epubcheck = false
 option_parser = OptionParser.new do |opts|
-  opts.banner = "Usage: #{File.basename(__FILE__)} [-f filter] [-m manifest_file] [-n] [-p migrator|none|resource_processor|reviewer] epub_file [epub_file...]"
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-e] [-f filter] [-m manifest_file] [-n] [-p migrator|none|resource_processor|reviewer] epub_file [epub_file...]"
+  opts.on('-e', "--epubcheck", "Invoke EPUBCheck") do |flag|
+    options.epubcheck = flag
+  end
   opts.on('-f', '--filter filter', 'Filter name') do |filter|
     options.filter_list << filter.to_sym
   end
@@ -57,6 +61,7 @@ require_relative File.join(root_dir, "lib", "fulcrum", "manifest")
 require_relative File.join(root_dir, "lib", "fulcrum", "filter")
 require_relative File.join(root_dir, "lib", "fulcrum", "metadata")
 require_relative File.join(root_dir, "lib", "fulcrum", "resources")
+require_relative File.join(root_dir, 'lib', 'epubcheck')
 
 # Verify process and filter arguments
 if options.filter_list.empty?
@@ -89,7 +94,7 @@ unless options.manifest_file.nil?
   manifest = UMPTG::Fulcrum::Manifest::Document.new(
         csv_file: manifest_file
       )
-  epub_args[:manifest] = manifest
+  #epub_args[:manifest] = manifest
 end
 
 # Configure the EPUB Processor
@@ -97,22 +102,23 @@ case options.process
 when :migrator
   # EPUB Migration
   epub_processor = UMPTG::EPUB::Migrator(
-                    epub_args
-          )
+                        "EPUBMigrateProcessor"
+                    )
 when :resource_processor
   # EPUB Resource processing
   epub_processor = UMPTG::Fulcrum::ResourceProcessor(
-                          epub_args
+                          "FulcrumResourceProcessor",
+                          manifest
                       )
 when :reviewer
   # EPUB Review
   epub_processor = UMPTG::EPUB::Reviewer(
-                          epub_args
+                          "EPUBReviewProcessor"
                       )
 when :timesfont_processor
   # EPUB TimesFont
   epub_processor = UMPTG::EPUB::TimesFontProcessor(
-                          epub_args
+                          "EPUBTimesFontProcessor"
                       )
 when :cover_extractor
   # No processor needed.
@@ -124,14 +130,15 @@ else
   # Use the manifest if specified.
   xhtml_processor = manifest.nil? ? nil : \
         UMPTG::Fulcrum::Resources::XHTML::Processor(
-              name: "FulcrumResourceProcessor",
+              "FulcrumResourceProcessor",
               manifest: manifest,
               options: ops
             )
 
   # No processor specified. Just filters specified
   epub_processor = UMPTG::EPUB::Processor(
-            xhtml_processor: xhtml_processor,
+            "EPUBProcessor",
+            processors: {xhtml_processor: xhtml_processor},
             options: ops
       )
 end
@@ -163,29 +170,31 @@ epub_file_list.each do |epub_file|
             File.dirname(epub_file),
             File.basename(epub_file, ".*") + "_" + File.basename(__FILE__) + ".log"
             )
-  epub_processor.logger = UMPTG::Logger.create(logger_file: logger_file)
+  logger = UMPTG::Logger.create(logger_file: logger_file)
+  logger.info("Time: #{Time.now}")
 
-  epub_processor.logger.info("processing EPUB file #{File.basename(epub_file)}")
-  epub_processor.logger.info("Time: #{Time.now}")
-  epub_processor.logger.info("Version: #{epub.rendition.version}")
-  layout = epub.rendition.metadata.layout
-  layout = "(not specified)" if layout.empty?
-  epub_processor.logger.info("Layout: #{layout}")
+  epub = UMPTG::EPUB(epub_path: epub_file)
+  logger.info("processing EPUB file #{File.basename(epub_file)}")
+
+  logger.info("version #{epub.rendition.version}")
   identifiers = epub.rendition.metadata.dc.elements.identifier.collect {|d| d.text}
-  epub_processor.logger.info("Identifiers: #{identifiers.join(',')}")
-  epub_processor.logger.info()
+  logger.info("identifiers: #{identifiers.join(',')}")
+  logger.info()
 
-  entry_actions = epub_processor.run(
+  entry_results = epub_processor.run(
             epub,
-            {
-                normalize: options.normalize
-            }
+            options: {
+                  normalize: options.normalize
+                },
+            logger: logger
          )
 
-  epub_processor.process_entry_action_results(
-          epub: epub,
-          entry_actions: entry_actions,
-          normalize: options.normalize
+  epub_processor.report(
+          entry_results,
+          options: {
+                normalize: options.normalize
+              },
+          logger: logger
         )
 
   if options.normalize and epub.modified
@@ -195,5 +204,15 @@ epub_file_list.each do |epub_file|
           )
     epub.save(epub_file: new_epub_file)
     script_logger.info("Saved File #{new_epub_file}.")
+
+    if options.epubcheck
+      log_file = File.join(File.dirname(new_epub_file), File.basename(new_epub_file, ".*") + "_epubcheck.xml")
+      UMPTG::EPUBCheck.check_file(
+            epub_file: new_epub_file,
+            logfile: log_file,
+            version: UMPTG::EPUBCheck.versions_default
+          )
+      script_logger.info("Log saved in file #{File.basename(log_file)}")
+    end
   end
 end

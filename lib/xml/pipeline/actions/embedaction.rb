@@ -1,6 +1,6 @@
 module UMPTG::XML::Pipeline::Actions
 
-  class EmbedAction < NormalizeAction
+  class EmbedAction < UMPTG::Pipeline::NormalizeAction
 
     # Method generates the XML markup for a container that
     # wraps the default display of a specific resource

@@ -2,7 +2,7 @@ module UMPTG::Fulcrum::Metadata::XHTML::Pipeline::Filter
 
   class ResourceMetadataFilter < UMPTG::XML::Pipeline::Filter
 
-    RESOURCE_XPATH = <<-SXPATH
+    XPATH = <<-SXPATH
     //*[
     local-name()='figure' and count(descendant::*[local-name()='figure'])=0
     ] | //*[
@@ -12,44 +12,43 @@ module UMPTG::Fulcrum::Metadata::XHTML::Pipeline::Filter
     ]
     SXPATH
 
-    def initialize(args = {})
-      args[:name] = :xhtml_resource_metadata
-      args[:xpath] = RESOURCE_XPATH
-      super(args)
+    def initialize(processor, options: nil)
+      super(
+              processor,
+              :xhtml_resource_metadata,
+              XPATH,
+              options: options
+            )
     end
 
-    def create_actions(args = {})
-      a = args.clone
+    def review(issue, options: {})
+      return unless issue.name == name
 
-      # Node could be one of the following:
-      #   figure
-      #   img with no figure parent
-      #   span with @data-fulcrum-embed-filename
-      reference_node = a[:reference_node]
+      super(
+              issue,
+              options: options
+           )
 
-      action_list = []
+      name = issue.name
+      reference_node = issue.content
+
       if reference_node.key?("data-fulcrum-embed-filename")
         action = UMPTG::XHTML::Pipeline::Actions::MarkerAction.new(
-                             name: args[:name],
-                             reference_node: reference_node
+                             issue
                              )
       else
         action = UMPTG::XHTML::Pipeline::Actions::FigureAction.new(
-            name: args[:name],
-            reference_node: reference_node
+            issue
             )
       end
 
-      action_list << action
-      return action_list
+      issue.actions << action
     end
 
-    def process_action_results(args = {})
-      action_results = args[:action_results]
-      actions = args[:actions]
-      logger = args[:logger]
-      fmsl_csv = args[:fmsl_csv]
+    def report(issues, logger:, options: {})
+      fmsl_csv = options[:fmsl_csv]
 
+      actions = issues.collect {|i| i.actions }
       actions.each do |a|
         a.object_list.each do |o|
           fmsl_row = fileset(fmsl_csv, o.resource_name)

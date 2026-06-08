@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
-# Script for XML Pipeline class
+# Script for processing XML files
 
 require 'optparse'
 require 'ostruct'

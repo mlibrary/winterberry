@@ -4,14 +4,17 @@ module UMPTG::EPUB
   require_relative 'util'
 
   class TimesFontProcessor < Pipeline::Processor
-    def initialize(args = {})
-      a = args.clone
-      a[:name] = "EPUBTimesFontProcessor"
-      a[:options] = {
-            css_times_font: true,
-            css_font_face: false
-          }
-      super(a)
+    def initialize(name, options: {})
+      if options.keys.empty?
+        options = {
+              css_times_font: true,
+              css_font_face: false
+            }
+      end
+      super(
+              name,
+              options: options
+            )
     end
 
     def process_entry_action_results(args = {})

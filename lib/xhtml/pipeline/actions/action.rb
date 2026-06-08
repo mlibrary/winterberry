@@ -4,13 +4,15 @@ module UMPTG::XHTML::Pipeline::Actions
   class Action < UMPTG::XML::Pipeline::Action
     attr_reader :node, :object_list
 
-    def initialize(args = {})
-      super(args)
-      @node = args[:reference_node]
+    def initialize(issue, options: {})
+      super(issue, options: options)
+
+      @node = options[:reference_node] if options.key(:reference_node)
+      @node = issue.content unless options.key(:reference_node)
       @object_list = []
     end
 
-    def self.process_images(args = {})
+    def self.process_images(issue, node, args = {})
       # Generate a list of FigureObject consisting of
       # image elements.
       node = args[:node]
@@ -20,24 +22,24 @@ module UMPTG::XHTML::Pipeline::Actions
       img_node_list.each do |img_node|
         # Image fragment. Just add object to list. No caption.
         object_list << FigureObject.new(
-                name: args[:name],
+                name: issue.name,
                 node: img_node
               )
       end
       return object_list
     end
 
-    def self.process_image(node, args = {})
+    def self.process_image(issue, node, args = {})
       # Image fragment. Just add object to list. No caption.
       return [
                 FigureObject.new(
-                  :name => args[:name],
-                  :node => node
+                  name: issue.name,
+                  node: node
                 )
               ]
     end
 
-    def self.process_figure(nodes, args = {})
+    def self.process_figure(issue, nodes, args = {})
       # Processing a figure, which is assumed to consist
       # of one or more image and either a caption for each
       # image, or one caption for the entire figure.
@@ -67,9 +69,9 @@ module UMPTG::XHTML::Pipeline::Actions
         if node.name == 'img' or node.name == 'video' or node.name == 'audio'
           caption = caption_ndx == -1 ? nil : captions_list[caption_ndx]
           img_list << FigureObject.new(
-                  :node=> node,
-                  :name => args[:name],
-                  :caption=> caption
+                  node: node,
+                  name: issue.name,
+                  caption: caption
               )
         else
           caption_ndx += 1 unless caption_ndx +1 == captions_list.count

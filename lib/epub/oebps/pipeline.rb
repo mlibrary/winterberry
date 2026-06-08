@@ -2,13 +2,15 @@ module UMPTG::EPUB::OEBPS
   require_relative File.join('pipeline', 'filter')
   require_relative File.join('pipeline', 'accessmodeprocessor')
 
-  def self.Processor(args = {})
-    a = args.clone
+  def self.Processor(name, filters: nil, options: {}, logger: nil)
+    m_filters = filters.nil? ? UMPTG::EPUB::OEBPS::Pipeline.FILTERS : \
+                  filters.merge(UMPTG::EPUB::OEBPS::Pipeline.FILTERS)
 
-    a[:filters] = a[:filters].nil? ? UMPTG::EPUB::OEBPS::Pipeline.FILTERS : \
-                  a[:filters].merge(UMPTG::EPUB::OEBPS::Pipeline.FILTERS)
-
-    return UMPTG::XML::Processor(a)
-    #return UMPTG::EPUB::OEBPS::Pipeline::AccessModeProcessor.new(a)
+    return UMPTG::XML::Pipeline::Processor.new(
+            name,
+            filters: m_filters,
+            options: options,
+            logger: logger
+          )
   end
 end

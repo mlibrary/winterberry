@@ -1,0 +1,72 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Script for testing new UMPTG::Pipeline.
+
+require 'optparse'
+require 'ostruct'
+require 'os'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+# Process the script parameters.
+options = OpenStruct.new
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} xml_file [xml_file...]"
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    script_logger.info(opts)
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 0
+  script_logger.info(option_parser.help)
+  exit(0)
+end
+
+# Process the command line parameters.
+xml_file_list = ARGV
+
+require_relative File.join(root_dir, "lib", "xhtml")
+
+processor = UMPTG::XHTML.Processor(
+            name: "XHTMLTest1Processor",
+            options: {
+                    xhtml_entity: false,
+                    xhtml_extdescr: false,
+                    xhtml_figure: false,
+                    xhtml_header_title: false,
+                    xhtml_img_alttext: false,
+                    xhtml_link: false,
+                    xhtml_list_item: false,
+                    xhtml_migration: false,
+                    xhtml_page_translation: false,
+                    xhtml_table: false
+                  },
+            logger: script_logger
+         )
+processor.display_options()
+
+xml_file_list.each do |xml_file|
+  xml_file = File.expand_path(xml_file)
+  unless File.file?(xml_file)
+    script_logger.error("invalid XML file #{xml_file}")
+    next
+  end
+  script_logger.info("processing XML file #{xml_file}")
+
+  xml_doc = UMPTG::XML.parse(xml_file: xml_file)
+  results = processor.run(
+        xml_doc,
+        options: {
+            normalize: true,
+            process_results: true
+          }
+      )
+end

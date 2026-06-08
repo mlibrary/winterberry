@@ -1,25 +1,13 @@
 module UMPTG::Fulcrum::Resources::XHTML::Pipeline
-  require_relative(File.join("filter", "embedlinkfilter"))
-  require_relative(File.join("filter", "updatealtfilter"))
-  require_relative(File.join("filter", "updatehreffilter"))
+  rq_path = File.join(File.expand_path(File.dirname(__FILE__)), "filter", "*")
+  Dir.glob(rq_path).each {|f| require_relative(f) }
 
   FILTERS = {
       xhtml_embed_link: Filter::EmbedLinkFilter,
+      xhtml_set_embed: Filter::SetEmbedFilter,
       xhtml_update_alt: Filter::UpdateAltFilter,
       xhtml_update_href: Filter::UpdateHREFFilter
     }
-
-  def self.EmbedLinkFilter(args = {})
-    return FILTERS[:xhtml_embed_link].new(args)
-  end
-
-  def self.UpdateAltFilter(args = {})
-    return FILTERS[:xhtml_update_alt].new(args)
-  end
-
-  def self.UpdateHREFFilter(args = {})
-    return FILTERS[:xhtml_update_href].new(args)
-  end
 
   def self.FILTERS
     return FILTERS

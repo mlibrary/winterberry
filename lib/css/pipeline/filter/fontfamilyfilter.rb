@@ -1,20 +1,28 @@
 module UMPTG::CSS::Pipeline
 
-  class FontFamilyFilter < UMPTG::CSS::Pipeline::Filter
+  class FontFamilyFilter < UMPTG::Pipeline::Filter
 
-    def initialize(args = {})
-      a = args.clone
-      a[:name] = :css_font_family
-      super(a)
+    def initialize(options: nil)
+      super(
+              name: :css_font_family,
+              options: options
+            )
     end
 
-    def run(css_parser, args = {})
-      a = args.clone
-      actions = []
+    def resolve(issue, options: {})
+      return unless issue.name == name
 
-      actions << UMPTG::CSS::Pipeline::FontFamilyAction.new(
-              name: a[:name],
-              content: css_parser
+      super(
+              issue,
+              options: options
+           )
+
+      name = issue.name
+
+      issue.actions << UMPTG::CSS::Pipeline::FontFamilyAction.new(
+                name: name,
+                content: issue.content,
+                info_msg: "#{a[:name]} action"
             )
 =begin
       ndx = css_parser.index(/font-family:/)
@@ -25,7 +33,6 @@ module UMPTG::CSS::Pipeline
                 content: css_parser
             )
 =end
-      return actions
     end
   end
 end

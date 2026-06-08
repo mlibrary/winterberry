@@ -1,0 +1,73 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Script for testing new UMPTG::Pipeline.
+
+require 'optparse'
+require 'ostruct'
+require 'os'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+# Process the script parameters.
+options = OpenStruct.new
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)}"
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    script_logger.info(opts)
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 0
+  script_logger.info(option_parser.help)
+  exit(0)
+end
+
+# Process the command line parameters.
+
+require_relative File.join(script_dir, "test1_pipeline")
+
+class Test1Processor < UMPTG::Pipeline::Processor
+  def resolve_all(result, options: {}, logger: nil)
+    dup_str_issues = result.issues.select {|i| i.name == :test1_dup_string }
+    new_issues = dup_str_issues.collect {|i| UMPTG::Issue.new(name: :test1_string_length, content: i.content) }
+
+    resolve(new_issues, options: options)
+    new_result = process(new_issues, options: options, logger: logger)
+=begin
+    new_result = UMPTG::Pipeline::Action.process_issues(
+            new_issues,
+            logger: logger,
+            options: options
+          )
+=end
+    result.issues += new_issues
+    result.modified = new_result.modified unless result.modified
+    super(result, options: options, logger: logger)
+  end
+end
+
+processor = Test1Processor.new(
+            name: "Test1Processor",
+            filters: Test1Pipeline.FILTERS,
+            options: {
+                    pipeline_string_length: true,
+                    pipeline_dup_string: true,
+                  },
+            logger: script_logger
+         )
+processor.display_options()
+results = processor.run(
+      "12345",
+      options: {
+          normalize: true,
+          process_results: true
+        }
+    )
