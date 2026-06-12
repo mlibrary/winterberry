@@ -1,0 +1,121 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# This script inputs a FIT spreadsheet and a list of ISBNs
+# and generates a greensub component CSV file.
+#
+# Invoke this script without any parameters to display the usage.
+
+require 'optparse'
+require 'ostruct'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+# Process the script parameters.
+options = OpenStruct.new
+options.output_file = File.join(Dir.pwd, "fops1060.csv")
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)}  fit_file isbn [isbn..]"
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    script_logger.info(opts)
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 2
+  script_logger.info(option_parser.help)
+  exit 0
+end
+fit_file = ARGV[0]
+isbn_list = ARGV[1..-1]
+
+require 'csv'
+require_relative File.join(root_dir, 'lib', 'services', 'heliotrope')
+
+# Load FIT
+CSV::Converters[:strip_field] = ->(value) { value.strip rescue value }
+fit_file = File.expand_path(fit_file)
+unless File.file?(fit_file)
+  script_logger.error("invalid CSV file #{fit_file}")
+  exit(1)
+end
+script_logger.info("using CSV file #{fit_file}")
+
+fit_csv = CSV.parse(
+      File.read(fit_file),
+      headers: true,
+      converters: :strip_field,
+      return_headers: false
+    )
+
+class Component
+  attr_reader :isbn, :doi, :noid
+
+  def initialize(i, d, n)
+    @isbn = i
+    @doi = d
+    @noid = n
+  end
+end
+
+# Create the serivce for retrieving the NOID manifest.
+service = UMPTG::Services::Heliotrope.new()
+
+# Search FIT CSV for each ISBN product.
+# Generate resulting CSV consisting of NOID,DOI
+components_by_product = {}
+isbn_list.each do |isbn|
+  fit_row = fit_csv.find {|r| r['EAN'] == isbn }
+  if fit_row.nil?
+    script_logger.warn("no FIT row for ISBN #{isbn}")
+    next
+  end
+  script_logger.warn("found FIT row for ISBN #{isbn}")
+
+  product = fit_row['FulcrumProduct1']
+  doi = fit_row['DOI']
+
+  # Get Fulcrum NOID for this ISBN
+  isbn_2_noid_list = service.monograph_noid(identifier: isbn)
+  noid_list = isbn_2_noid_list[isbn]
+  if noid_list.empty?
+    script_logger.warn("no NOIDs found for ISBN #{isbn}")
+    next
+  end
+  script_logger.warn("multiple NOIDs found for ISBN #{isbn}") \
+          if noid_list.count > 1
+
+  # Create component and add it to product list
+  comp = Component.new(isbn, doi, noid_list.first)
+  components_by_product[product] = [] unless components_by_product.key?(product)
+  components_by_product[product] << comp
+end
+
+# Write the product component CSVs
+components_by_product.each do |product, component_list|
+  # Write CSV file.
+  comp_csv_file = File.join(
+            File.dirname(fit_file),
+            product +".csv"
+          )
+  CSV.open(
+          comp_csv_file,
+          "w",
+          write_headers: false,
+          headers: ["NOID", "DOI"]
+        ) do |csv|
+    component_list.each do |comp|
+      csv << {
+                "NOID" => comp.noid,
+                "DOI" => comp.doi
+             }
+    end
+  end
+  script_logger.info("saved CSV file #{comp_csv_file}")
+end

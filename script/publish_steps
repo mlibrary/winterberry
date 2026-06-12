@@ -351,7 +351,7 @@ File.open(cmds_file, "w") do |fp|
   fp.puts
   fp.puts "# Verify monograph products"
   products_file = File.join(task_dir, "products.csv")
-  fp.puts "bundle exec ruby script/retrieve_manifest_values -o #{products_file.gsub(' ', '\ ')} -c 'Title/Link' -c 'Published?' -c Component -c Products #{monograph_id_list.join(' ')}"
+  fp.puts "bundle exec ruby script/retrieve_manifest_values -o #{products_file.gsub(' ', '\ ')} -c 'Title/Link' -c DOI -c 'ISBN(s)' -c Press -c 'Published?' -c Component -c Products #{monograph_id_list.join(' ')}"
   fp.puts
   fp.puts "# Rails console"
   monograph_noid_list = monograph_info.values.collect {|v| v.monograph_noid}
