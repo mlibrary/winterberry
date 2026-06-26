@@ -6,7 +6,7 @@
 >
     <xsl:include href="tmm_to_crossref_common.xsl"/>
 
-    <xsl:param name="IMPRINTS" select="'lived places publishing;'"/>
+    <xsl:param name="IMPRINTS" select="'lived places publishing;university of michigan press'"/>
     <xsl:param name="REMOVE_RESOLUTION" select="'true'"/>
 
     <xsl:variable name="FORMAT_IMPRINTS" select="concat(';',$IMPRINTS,';')"/>
