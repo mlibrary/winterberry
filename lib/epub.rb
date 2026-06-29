@@ -6,6 +6,7 @@ module UMPTG
   require_relative(File.join('epub', 'pipeline'))
   require_relative(File.join('epub', 'ncx'))
   require_relative(File.join('epub', 'oebps'))
+  require_relative(File.join('epub', 'reviewer'))
   require_relative(File.join('epub', 'util'))
 
   class << self

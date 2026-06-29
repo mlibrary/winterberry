@@ -4,10 +4,8 @@ module UMPTG::EPUB
   require_relative 'util'
 
   class Reviewer < Pipeline::Processor
-    def initialize(args = {})
-      a = args.clone
-      a[:name] = "EPUBReviewProcessor"
-      a[:options] = {
+    def initialize(name, processors: {}, filters: nil, options: {}, logger: nil)
+      options = {
             css_font_face: false,
             epub_oebps_accessmode: true,
             epub_oebps_accessfeature: true,
@@ -17,34 +15,46 @@ module UMPTG::EPUB
             xhtml_header_title: false,
             xhtml_img_alttext: true,
             xhtml_link: true,
-            xhtml_table: true,
+            xhtml_table_overflow: false,
+            xhtml_table_pagebreak: false,
+            xhtml_table_tbody: true,
             xhtml_list_item: false
           }
-      super(a)
+      super(
+            name,
+            processors: processors,
+            options: options,
+            logger: logger
+          )
     end
 
-    def process_entry_action_results(args = {})
-      super(args)
+    def report(entry_results, options: {}, logger: nil)
+      super(
+          entry_results,
+          options: options,
+          logger: logger
+        )
 
-      entry_actions = args[:entry_actions]
-      llogger = args[:logger] || @logger
+      llogger = logger || @logger
 
       # Figure links
       link_actions = []
-      entry_actions.each {|ea| link_actions += ea.select_by_name(name: :xhtml_link) }
+      entry_results.each {|ea| link_actions += ea.select(name: :xhtml_link) }
 
       figure_actions = []
-      entry_actions.each {|ea| figure_actions += ea.select_by_name(name: :xhtml_figure) }
+      entry_results.each {|ea| figure_actions += ea.select(name: :xhtml_figure) }
 
       unless figure_actions.count == 0
         linked_figures = []
-        entry_actions.each do |ea|
-          ea.select_by_name(name: :xhtml_figure).each do |ac|
-            figure_id = ac.reference_node['id'] || ""
+        entry_results.each do |ea|
+          ea.select(name: :xhtml_figure).each do |ac|
+            next unless ac.class.name == "UMPTG::XML::Pipeline::Action"
+
+            figure_id = ac.issue.content['id'] || ""
             unless figure_id.empty?
               href = File.basename(ea.entry.name) + "#" + figure_id
-              ll = link_actions.find {|la| (la.reference_node['href'] || "").strip.end_with?(href) }
-              linked_figures << ll.reference_node unless ll.nil?
+              ll = link_actions.find {|la| (la.issue.content['href'] || "").strip.end_with?(href) }
+              linked_figures << ll.issue.content unless ll.nil?
             end
           end
         end

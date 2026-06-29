@@ -1,28 +1,29 @@
 module UMPTG::CSS::Pipeline
 
-  class FontFaceFilter < UMPTG::CSS::Pipeline::Filter
+  class FontFaceFilter < UMPTG::Pipeline::Filter
 
-    def initialize(args = {})
-      a = args.clone
-      a[:name] = :css_font_face
-      super(a)
+    def initialize(options: nil)
+      super(
+              name: :css_font_face,
+              options: options
+            )
     end
 
-    def run(css_parser, args = {})
-      a = args.clone
-      actions = []
+    def resolve(issue, options: {})
+      return unless issue.name == name
 
-      actions << UMPTG::CSS::Pipeline::FontFaceAction.new(
-                name: a[:name],
-                content: css_parser,
+      super(
+              issue,
+              options: options
+           )
+
+      name = issue.name
+
+      issue.actions << UMPTG::CSS::Pipeline::FontFaceAction.new(
+                name: name,
+                content: issue.content,
                 info_msg: "#{a[:name]} action"
             )
-      return actions
-    end
-
-    def create_actions(args = {})
-      name = args[:name]
-      return super(args)
     end
   end
 end

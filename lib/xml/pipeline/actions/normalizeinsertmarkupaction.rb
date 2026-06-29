@@ -2,7 +2,7 @@ module UMPTG::XML::Pipeline::Actions
 
   class NormalizeInsertMarkupAction < NormalizeAction
 
-    def process(args = {})
+    def resolve(args = {})
       super(args)
 
       reference_node = @properties[:reference_node]

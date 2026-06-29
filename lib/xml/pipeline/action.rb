@@ -1,32 +1,31 @@
 module UMPTG::XML::Pipeline
 
-  class Action < UMPTG::Action
-    attr_reader :name, :normalize, :reference_node
+  class Action < UMPTG::Pipeline::Action
+    attr_reader :issue, :normalize, :reference_node
 
-    def initialize(args = {})
-      super(args)
+    def initialize(issue, options: {})
+      super(issue, options: options)
 
-      @name = @properties[:name]
-      @reference_node = @properties[:reference_node]
-      @action_node = @properties[:action_node]
+      @reference_node = options[:reference_node]
+      @action_node = options[:action_node]
       @normalize = false
     end
 
-    def process(args = {})
-      super(args)
+    def resolve(options: {})
+      super(options: options)
       @status = Action.PENDING
     end
 
-    def self.process_actions(args = {})
+=begin
+    def self.resolve(args = {})
       actions = args.key?(:actions) ? args[:actions] : []
-      #normalize = args.key?(:normalize) ? args[:normalize] : false
       normalize = args[:normalize] || false
       display_msgs = args[:display_msgs] || true
 
       modified = false
       if normalize
         actions.each do |a|
-          a.process(args)
+          a.resolve(args)
           modified = true if a.normalize and a.status == UMPTG::Action.COMPLETED
         end
       end
@@ -69,5 +68,6 @@ module UMPTG::XML::Pipeline
     def self.report_actions(args = {})
       raise "deprecated"
     end
+=end
   end
 end

@@ -8,42 +8,51 @@ module UMPTG::XHTML::Pipeline::Filter
     ]
     SXPATH
 
-    def initialize(args = {})
-      a = args.clone
-      a[:name] = :xhtml_link
-      a[:xpath] = XPATH
-      super(a)
+    def initialize(process, options: {})
+      super(
+              process,
+              :xhtml_link,
+              XPATH,
+              options: options
+            )
     end
 
-    def create_actions(args = {})
-      name = args[:name]
-      reference_node = args[:reference_node]  # <a> element
+    def review(issue, options: {})
+      super(
+              issue,
+              options: options
+           )
 
-      action_list = []
-
-      if reference_node.name == 'a'
-        id = reference_node['id'] || ""
-        href = (reference_node['href'] || "").strip
+      if issue.content.name == 'a'
+        id = issue.content['id'] || ""
+        href = (issue.content['href'] || "").strip
         action = UMPTG::XML::Pipeline::Action.new(
-                 name: name,
-                 reference_node: reference_node
+                 issue
               )
         if href.include?(' ') or href.include?('%20')
           href_new = href.gsub(/ /, '').gsub(/%20/, '')
+=begin
           action = UMPTG::XML::Pipeline::Actions::SetAttributeValueAction.new(
-                  name: name,
-                  reference_node: reference_node,
+                  name: issue.name,
+                  reference_node: issue.content,
                   attribute_name: "href",
                   attribute_value: href_new,
                   warning_message: \
-                    "#{name}, #{reference_node.name} found @id=\"#{id}\" @href=\"#{href}\", @href contains spaces"
+                    "#{issue.name}, #{issue.content.name} found @id=\"#{id}\" @href=\"#{href}\", @href contains spaces"
+              )
+=end
+          action = UMPTG::XML::Pipeline::Action.new(
+                  issue,
+                  options: {
+                      warning_message: \
+                        "#{issue.name}, #{issue.content.name} found @id=\"#{id}\" @href=\"#{href}\", @href contains spaces"
+                      }
               )
         else
-          action.add_info_msg("#{name}, #{reference_node.name} found @id=\"#{id}\" @href=\"#{href}\"")
+          action.add_info_msg("#{issue.name}, #{issue.content.name} found @id=\"#{id}\" @href=\"#{href}\"")
         end
-        action_list << action
+        issue.actions << action
       end
-      return action_list
     end
   end
 end

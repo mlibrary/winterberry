@@ -10,35 +10,36 @@ module UMPTG::XHTML::Pipeline::Filter
     ]
     SXPATH
 
-    def initialize(args = {})
-      a = args.clone
-      a[:name] = :xhtml_header_title
-      a[:xpath] = XPATH
-      super(a)
+    def initialize(process, options: {})
+      super(
+              process,
+              :xhtml_header_title,
+              XPATH,
+              options: options
+            )
     end
 
-    def create_actions(args = {})
-      name = args[:name]
-      reference_node = args[:reference_node]  # <title> element
-      entry = args[:entry]
-      epub = entry.files.epub
+    def review(issue, options: {})
+      super(
+              issue,
+              options: options
+           )
 
-      action_list = []
-
-      if reference_node.name == 'title'
-        content = (reference_node.text || "").strip
+      if issue.content.name == 'title'
+        content = (issue.content.text || "").strip
         if content.empty? or content == "Header Title"
+          epub = options[:entry].files.epub
           m = epub.rendition.metadata.dc.elements.title.first.text
-          action_list << UMPTG::XML::Pipeline::Actions::MarkupAction.new(
-                    name: name,
-                    reference_node: reference_node,
-                    action: :replace_content,
-                    markup: m,
-                    warning_message: "#{name}, #{reference_node.name} no content"
+          issue.actions << UMPTG::XML::Pipeline::Actions::MarkupAction.new(
+                    issue,
+                    options: {
+                        action: :replace_content,
+                        markup: m,
+                        warning_message: "#{issue.name}, #{issue.content.name} no content"
+                      }
                   )
         end
       end
-      return action_list
     end
   end
 end

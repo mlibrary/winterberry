@@ -35,37 +35,36 @@ module UMPTG::EPUB::OEBPS::Pipeline::Filter
     ]
     ORX
 
-    def initialize(args = {})
-      a = args.clone
-      a[:name] = :epub_oebps_opf
-      a[:xpath] = PACKAGE_XPATH
-      super(a)
+    def initialize(process, options: {})
+      super(
+              process,
+              :epub_oebps_opf,
+              PACKAGE_XPATH,
+              options: options
+            )
     end
 
-    def create_actions(args = {})
-      reference_node = args[:reference_node]
-
+    def review(issue, options: {})
       actions = []
-
-      case reference_node.name
+      case issue.content.name
       when "package"
-        actions += process_package(reference_node, args)
+        actions += process_package(issue.content)
       when "metadata"
-        actions += process_metadata(reference_node, args)
+        actions += process_metadata(issue.content)
       #when "manifest", "guide"
       when "guide"
-        actions += process_manifest(reference_node, args)
+        actions += process_manifest(issue.content)
       when "spine"
-        actions += process_spine(reference_node, args)
+        actions += process_spine(issue.content)
       else
       end
-
+      issue.actions = actions
       return actions
     end
 
     private
 
-    def process_package(reference_node, args)
+    def process_package(reference_node)
       actions = []
 
       direction = reference_node["dir"]
@@ -109,12 +108,20 @@ module UMPTG::EPUB::OEBPS::Pipeline::Filter
       return actions
     end
 
-    def process_metadata(reference_node, args)
+    def process_metadata(reference_node)
       actions = []
 
       # Set[Y0001]-[M01]-[D01]T[H01]:[m01]:[s01]Z
       tm = Time.now
       mdate = tm.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+      opf_dates = reference_node.xpath(".//*[namespace-uri()='http://purl.org/dc/elements/1.1/' and local-name()='date']")
+      if opf_dates.count > 1
+        val = 0
+        opf_dates.each {|d| val = d.content.to_i if d.content.to_i > val }
+        opf_dates.first.content = val
+        opf_dates[1..-1].each {|d| d.remove }
+      end
 
       mdate_list = reference_node.xpath("./*[local-name()='meta' and @property='dcterms:modified']")
       if mdate_list.empty?
@@ -180,7 +187,7 @@ module UMPTG::EPUB::OEBPS::Pipeline::Filter
       return actions
     end
 
-    def process_manifest(reference_node, args)
+    def process_manifest(reference_node)
       actions = []
       href_list = reference_node.xpath("./*[local-name()='item' or local-name()='reference']")
       href_list.each do |n|
@@ -215,7 +222,7 @@ module UMPTG::EPUB::OEBPS::Pipeline::Filter
       return actions
     end
 
-    def process_spine(reference_node, args)
+    def process_spine(reference_node)
       actions = []
 
       lin_list = reference_node.xpath("./*[local-name()='itemref' and @linear='no']")

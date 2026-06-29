@@ -1,35 +1,40 @@
 module UMPTG::CSS::Pipeline
 
-  class FontFixFilter < UMPTG::CSS::Pipeline::Filter
+  class FontFixFilter < UMPTG::Pipeline::Filter
 
-    def initialize(args = {})
-      a = args.clone
-      a[:name] = :css_font_fix
-      super(a)
+    def initialize(options: nil)
+      super(
+              name: :css_font_fix,
+              options: options
+            )
     end
 
-    def run(css_parser, args = {})
-      a = args.clone
-      actions = []
+    def resolve(issue, options: {})
+      return unless issue.name == name
 
-      css_parser.match(/^body[ ]+\{/) do |md|
-        actions << UMPTG::CSS::Pipeline::FontFixAction.new(
+      super(
+              issue,
+              options: options
+           )
+
+      name = issue.name
+
+      issue.content.match(/^body[ ]+\{/) do |md|
+        issue.actions << UMPTG::CSS::Pipeline::FontFixAction.new(
                 name: a[:name],
-                content: css_parser,
+                content: issue.content,
                 match_data: md,
                 info_message: "#{a[:name]}, found #{md[0]}"
               )
       end
-
 =begin
-      css_parser.match(/font-family:[^;]+/) do |md|
-        actions << UMPTG::XML::Pipeline::Action.new(
+      issue.content.match(/font-family:[^;]+/) do |md|
+        issue.actions << UMPTG::XML::Pipeline::Action.new(
                   name: a[:name],
                   info_message: "#{a[:name]}, found #{md[0]}"
               )
       end
 =end
-      return actions
     end
   end
 end

@@ -24,7 +24,7 @@ module UMPTG::XHTML::Pipeline::Actions
       end
       @resource_name = (rname.nil? or rname.strip.empty?) ? "" : File.basename(rname.strip)
 
-      raise "#{@node.name} unsupported figure object." if @resource_name.empty?
+      raise "#{name}: #{@node.name} unsupported figure object." if @resource_name.empty?
     end
   end
 end
