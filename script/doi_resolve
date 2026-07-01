@@ -1,0 +1,121 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Script for resolving a DOI
+
+require 'optparse'
+require 'ostruct'
+require 'os'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+# Process the script parameters.
+options = OpenStruct.new
+options.manifest_file = nil
+options.normalize = false
+options.filter_list = []
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} url|file [url|file...]"
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    script_logger.info(opts)
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  script_logger.info(option_parser.help)
+  return
+end
+
+# Process the command line parameters.
+url_list = ARGV
+
+require 'net/http'
+require 'nokogiri'
+require 'csv'
+require_relative File.join(root_dir, 'lib', 'services', 'crossref')
+
+service = nil
+url_list.each do |url|
+  url_file = File.expand_path(url)
+  if File.file?(url_file)
+    #url_path_list = File.readlines(url_file).map(&:chomp)
+    csv = CSV.parse(
+            File.read(url_file),
+            :headers => true,
+            :return_headers => false
+          )
+    url_path_list = csv.collect {|r| r['DOI'] }
+    logger_file = File.join(File.dirname(url_file), File.basename(url_file, ".*") + "_resolution.txt")
+    out_logger = UMPTG::Logger.create(logger_file: logger_file)
+  else
+    url_path_list = [ url ]
+    out_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+  end
+
+  url_path_list.each do |url_path|
+    script_logger.info(url_path)
+    STDOUT.flush
+
+    body = ''
+    unless url_path[0] == '#'
+      uri = URI(url_path)
+      #uri = URI.parse(URI.encode_uri_component(url_path.strip))
+      #uri = URI.parse(url_path.strip)
+      begin
+        body = Net::HTTP.get(uri)
+      rescue => e
+        script_logger.error("#{url_path}: #{e.message}")
+        out_logger.info("#{url_path},failed")
+        #next
+      end
+    end
+
+    url_dest = ''
+    unless body.nil? or body.empty?
+      body_doc = Nokogiri::XML(body)
+
+      error_code_node = body_doc.xpath("//*[local-name()='body']//*[@class='error-code']").first
+      if error_code_node.nil?
+        node = body_doc.xpath("//*[local-name()='body']//*[local-name()='a']").first
+        url_dest = node.nil? ? "(unknown)" : node["href"]
+        url_dest = '' if url_dest == 'https://www.doi.org'
+
+        if url_dest.start_with?('http://mr.crossref.org/iPage?doi=')
+          # Create the serivce for retrieving the NOID manifest.
+          service = UMPTG::Services::Crossref.new() if service.nil?
+
+          response = nil
+          cnt = 0
+          while cnt < 5
+            begin
+              response = service.works(doi_list: [ url_path ]).first
+            rescue StandardError => e
+              script_logger.error(e.message)
+              next
+            end
+            break if response.status == 200
+          end
+
+          if response.nil? or !response.success?
+            url = res.to_hash[:url]
+            script_logger.error("#{options.message_type} request #{url} failed,#{response.status}")
+            next
+          end
+
+          rep = response.to_hash
+          url_dest = rep[:body]['message']['resource']['primary']['URL']
+        end
+        url_dest = url_dest.delete_suffix('?locale=en')
+        url_dest = url_dest.delete_suffix('?locale')
+      end
+    end
+    out_logger.info("\"#{url_path}\",\"#{url_dest}\"")
+  end
+end

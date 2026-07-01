@@ -174,7 +174,7 @@ doi_report_file_list.each do |doi_report_file|
         bnode_list = doi_report_doc.xpath("//*[(local-name()='ISBN1' or local-name()='ISBN2' or local-name()='ISBN3' or local-name()='ISBN4' or local-name()='ISBN5') and string()='#{monograph_id}']/ancestor::*[local-name()='book'][1]")
       when "DOI"
         doi_value = monograph_id.start_with?("https://doi.org/") ? monograph_id : "https://doi.org/" + monograph_id
-        bnode_list = doi_report_doc.xpath("//*[(local-name()='doi') and string()='#{doi_value}']/ancestor::*[local-name()='book'][1]")
+        bnode_list = doi_report_doc.xpath("//*[(local-name()='doi' or local-name()='OAURL') and string()='#{doi_value}']/ancestor::*[local-name()='book'][1]")
       when "NOID"
         bnode_list = doi_report_doc.xpath("//*[local-name()='resource' and contains(string(),'#{monograph_id}')]/ancestor::*[local-name()='book'][1]")
       else
