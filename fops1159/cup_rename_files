@@ -1,0 +1,97 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Script inputs a CSV and replaces the
+# path in the "Closed Captions" column
+# with the contents of the path.
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+require 'optparse'
+require 'ostruct'
+
+# Process the script parameters.
+options = OpenStruct.new
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} noid_dir [noid_dir...]"
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    script_logger.info(opts)
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  script_logger.info(option_parser.help)
+  return
+end
+
+noid_dir_list = ARGV
+
+require 'fileutils'
+require_relative File.join(root_dir, "lib", "fulcrum", "manifest")
+
+# HEB and B10 duplicate monographs
+NOID_EXCLUDES = [ "6t053j17j", "vt150j78h", "3484zh43g", "1j92g952c", "nc580q51v" ]
+REP_DIR = "S:/Information\ Management/Fulcrum/PTG/tickets/FOPS-1159/representatives"
+
+noid_dir_list.each do |noid_dir|
+  noid = noid_dir
+  if NOID_EXCLUDES.include?(noid)
+    script_logger.warn("skipping #{noid}")
+    next
+  end
+
+  noid_dir = File.expand_path(noid_dir)
+  unless File.directory?(noid_dir)
+    script_logger.warn("invalid directory #{noid_dir}")
+    next
+  end
+  script_logger.info("using directory #{noid_dir}")
+
+  manifest_file = File.join(noid_dir, "manifest.csv")
+  unless File.file?(manifest_file)
+    script_logger.warn("invalid manifest file #{manifest_file}")
+    next
+  end
+  script_logger.info("using manifest file #{manifest_file}")
+
+  manifest = UMPTG::Fulcrum::Manifest::Document.new(
+                csv_body: File.read(manifest_file)
+              )
+  script_logger.info(manifest.isbn)
+
+  default_isbn = (
+          manifest.isbn['open access'] || \
+          manifest.isbn['ebook'] || \
+          manifest.isbn['hardcover'] || \
+          manifest.isbn.values[0]
+     ).gsub(/-/, '')
+  isbn_list = manifest.isbn.values.collect {|v| v.gsub(/-/, '') }
+
+  rep = manifest.representatives['epub']
+  rep = manifest.representatives['pdf_ebook'] if rep.nil? or rep['published?'] == 'false'
+  rep = nil if rep.nil? or rep['published?'] == 'false'
+  if rep.nil?
+    script_logger.warn("no published EPUB/PDF representative found. Skipping.")
+    next
+  end
+
+  rep_file = rep['file_name']
+  if isbn_list.include?(File.basename(rep_file, '.*'))
+    fl = rep_file
+    script_logger.info("use #{rep_file}")
+  else
+    fl = default_isbn + File.extname(rep_file)
+    script_logger.info("rename #{rep_file} to #{fl}")
+  end
+  src_file = File.join(noid_dir, rep_file)
+  dest_file = File.join(REP_DIR, fl)
+  script_logger.info("cp #{src_file} to #{dest_file}")
+  #FileUtils.cp(src_file, dest_file)
+end

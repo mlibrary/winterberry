@@ -1,0 +1,66 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Script inputs a CSV and replaces the
+# path in the "Closed Captions" column
+# with the contents of the path.
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+require 'optparse'
+require 'ostruct'
+
+# Process the script parameters.
+options = OpenStruct.new
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)}  csv_file isbn [isbn...]"
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    script_logger.info(opts)
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 2
+  script_logger.info(option_parser.help)
+  return
+end
+
+csv_file = ARGV[0]
+isbn_list = ARGV[1..-1]
+
+require 'csv'
+require_relative File.join(root_dir, "lib", "services", "heliotrope")
+
+# Create the serivce for retrieving the NOID manifest.
+service = UMPTG::Services::Heliotrope.new()
+
+# Determine file existence.
+csv_file = File.expand_path(csv_file)
+if !File.file?(csv_file)
+  script_logger.error("invalid CSV file #{csv_file}")
+  exit(1)
+end
+script_logger.info("using CSV #{File.basename(csv_file)}")
+
+csv = CSV.parse(
+        File.read(csv_file),
+        headers: true,
+        return_headers: false
+      )
+isbn_list.each do |isbn|
+  row = csv.find {|r| r['eISBN'] == isbn }
+  pISBN = row['Print ISBNs']
+  aISBN = row['Alt ISBN ']
+
+  ilist =[]
+  ilist << pISBN unless pISBN.nil? or pISBN.strip.empty?
+  ilist << aISBN unless aISBN.nil? or aISBN.strip.empty?
+  noid_list = service.monograph_noid(identifier: ilist)
+  puts "#{isbn}=#{noid_list}"
+end
