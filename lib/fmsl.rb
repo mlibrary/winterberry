@@ -16,6 +16,7 @@ module UMPTG
             "exclusive_to_the_fulcrum" => "Exclusive to Fulcrum",
             "exclusive_to_fulcrum?" => "Exclusive to Fulcrum",
             "persistent_id" => "DOI",
+            "dois" => "DOI",
             "legacy_id" => "Identifier(s)",
             "copyright_holder" => "Rightsholder",
             "alt_text" => "Alternative Text"
