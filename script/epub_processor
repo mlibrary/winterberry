@@ -24,7 +24,7 @@ options.filter_path_list = []
 options.process = :none
 options.epubcheck = false
 option_parser = OptionParser.new do |opts|
-  opts.banner = "Usage: #{File.basename(__FILE__)} [-e] [d filer_path] [-f filter] [-m manifest_file] [-n] [-p migrator|none|resource_processor|reviewer] epub_file [epub_file...]"
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-e] [-d filer_path] [-f filter] [-m manifest_file] [-n] [-p migrator|none|resource_processor|reviewer] epub_file [epub_file...]"
   opts.on('-e', "--epubcheck", "Invoke EPUBCheck") do |flag|
     options.epubcheck = flag
   end
@@ -67,7 +67,7 @@ require_relative File.join(root_dir, "lib", "fulcrum", "metadata")
 require_relative File.join(root_dir, "lib", "fulcrum", "resources")
 require_relative File.join(root_dir, 'lib', 'epubcheck')
 
-options.filter_path_list.each {|p| require_relative(p) }
+options.filter_path_list.each {|p| require_relative(File.expand_path(p)) }
 
 # Verify process and filter arguments
 if options.filter_list.empty?
