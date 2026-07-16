@@ -1,10 +1,10 @@
-module UMPTG::EPUB::OEBPS::Pipeline::Filter
+module UMPTG::EPUB::XHTML::Pipeline::Filter
 
-  class OEBPSLangFilter < UMPTG::XML::Pipeline::Filter
+  class LangFilter < UMPTG::XML::Pipeline::Filter
 
     XPATH = <<-SXPATH
     //*[
-    local-name()='package'
+    local-name()='html'
     and not(@xml:lang)
     ]
     SXPATH
@@ -12,7 +12,7 @@ module UMPTG::EPUB::OEBPS::Pipeline::Filter
     def initialize(process, options: {})
       super(
               process,
-              :epub_oebps_lang,
+              :epub_xhtml_lang,
               XPATH,
               options: options
             )
@@ -26,9 +26,12 @@ module UMPTG::EPUB::OEBPS::Pipeline::Filter
               options: options
            )
 
+      raise "missing entry property" if options[:entry].nil?
+
       epub = options[:entry].files.epub
       lang_node = epub.rendition.metadata.dc.find(element_name: "language").first
       lang = (lang_node.nil? or lang_node.text.downcase == "en") ? "en-US" : lang_node.text
+
       issue.actions << UMPTG::XML::Pipeline::Actions::SetAttributeValueAction.new(
             issue,
              options: {

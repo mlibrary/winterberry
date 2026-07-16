@@ -1,10 +1,10 @@
-module UMPTG::XHTML::Pipeline::Filter
+module UMPTG::EPUB::OEBPS::Pipeline::Filter
 
-  class HTMLLangFilter < UMPTG::XML::Pipeline::Filter
+  class LangFilter < UMPTG::XML::Pipeline::Filter
 
     XPATH = <<-SXPATH
     //*[
-    local-name()='html'
+    local-name()='package'
     and not(@xml:lang)
     ]
     SXPATH
@@ -12,7 +12,7 @@ module UMPTG::XHTML::Pipeline::Filter
     def initialize(process, options: {})
       super(
               process,
-              :epub_xhtml_lang,
+              :epub_oebps_lang,
               XPATH,
               options: options
             )

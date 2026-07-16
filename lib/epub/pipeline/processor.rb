@@ -19,7 +19,7 @@ module UMPTG::EPUB::Pipeline
       a[:oebps_processor] = UMPTG::EPUB::OEBPS::Processor("OEBPSProcessor", options: options, logger: logger) \
                  if processors[:oebps_processor].nil?
       a[:xhtml_processor] = processors[:xhtml_processor].nil? ? \
-                  UMPTG::XHTML::Processor("XHTMLProcessor", options: options, logger: logger) : \
+                  UMPTG::EPUB::XHTML::Processor("XHTMLProcessor", options: options, logger: logger) : \
                   processors[:xhtml_processor]
       a[:xml_processor] = UMPTG::XML::Processor("XMLProcessor", options: options, logger: logger) \
                  if processors[:xml_processor].nil?
@@ -74,7 +74,8 @@ module UMPTG::EPUB::Pipeline
           result = processor.run(entry.content, options: r_args)
         #when "application/xhtml+xml", "application/x-dtbncx+xml", "application/oebps-package+xml"
         else
-          xml_doc = UMPTG::XML.parse(xml_content: entry.content)
+          #xml_doc = UMPTG::XML.parse(xml_content: entry.content)
+          xml_doc = entry.document
           llogger.error("#{entry.name}: #{xml_doc.errors.count} parse errors") unless xml_doc.errors.empty?
 
           run_args[:entry] = entry
