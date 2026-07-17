@@ -5,7 +5,7 @@ module UMPTG::EPUB::XHTML
     m_filters = filters.nil? ? UMPTG::EPUB::XHTML::Pipeline.FILTERS : \
                   filters.merge(UMPTG::EPUB::XHTML::Pipeline.FILTERS)
 
-    return UMPTG::XHTML::Pipeline::Processor.new(
+    return UMPTG::XHTML.Processor(
             name,
             filters: m_filters,
             options: options,

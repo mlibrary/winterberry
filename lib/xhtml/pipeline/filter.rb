@@ -14,6 +14,7 @@ module UMPTG::XHTML::Pipeline
         xhtml_list_item: UMPTG::XHTML::Pipeline::Filter::ListItemFilter,
         xhtml_migration: UMPTG::XHTML::Pipeline::Filter::MigrationFilter,
         xhtml_noteref: UMPTG::XHTML::Pipeline::Filter::NoterefFilter,
+        xhtml_pagebreak: UMPTG::XHTML::Pipeline::Filter::PageBreakFilter,
         xhtml_page_translation: UMPTG::XHTML::Pipeline::Filter::PageTranslationFilter,
         xhtml_spine_item: UMPTG::XHTML::Pipeline::Filter::SpineItemFilter,
         xhtml_table_tbody: UMPTG::XHTML::Pipeline::Filter::TableTbodyFilter,

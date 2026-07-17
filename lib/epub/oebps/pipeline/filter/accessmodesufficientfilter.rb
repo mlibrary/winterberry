@@ -1,6 +1,6 @@
 module UMPTG::EPUB::OEBPS::Pipeline::Filter
 
-  class AccessModeSufficientFilter < UMPTG::XML::Pipeline::Filter
+  class AccessModeSufficientFilter < AccessFilter
 
     XPATH = <<-SXPATH
     //*[
@@ -17,6 +17,21 @@ module UMPTG::EPUB::OEBPS::Pipeline::Filter
               XPATH,
               options: options
             )
+    end
+
+    def report(issues, options: {}, logger: nil)
+      super(
+            issues,
+            options: options,
+            logger: logger
+          )
+      llogger = logger || @logger
+
+      AccessFilter.mode_report(
+            issues,
+            options: options,
+            logger: (logger || @logger),
+          )
     end
   end
 end

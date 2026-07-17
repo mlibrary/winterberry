@@ -1,6 +1,6 @@
 module UMPTG::EPUB::OEBPS::Pipeline::Filter
 
-  class AccessHazardFilter < UMPTG::XML::Pipeline::Filter
+  class AccessHazardFilter < AccessFilter
 
     XPATH = <<-SXPATH
     //*[
@@ -17,6 +17,34 @@ module UMPTG::EPUB::OEBPS::Pipeline::Filter
               XPATH,
               options: options
             )
+    end
+
+    def report(issues, options: {}, logger: nil)
+      super(
+            issues,
+            options: options,
+            logger: logger
+          )
+
+      features = {
+            "flashing" => false,
+            "motionSimulation" => false,
+            "sound" => false,
+            "none" => false,
+            "noFlashingHazard" => false,
+            "noMotionSimulationHazard" => false,
+            "noSoundHazard" => false,
+            "unknown" => false,
+            "unknownFlashingHazard" => false,
+            "unknownMotionSimulationHazard" => false,
+            "unknownSoundHazard" => false,
+         }
+      AccessFilter.report(
+            issues,
+            features,
+            options: options,
+            logger: (logger || @logger),
+          )
     end
   end
 end

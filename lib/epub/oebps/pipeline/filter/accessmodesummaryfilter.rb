@@ -1,19 +1,19 @@
 module UMPTG::EPUB::OEBPS::Pipeline::Filter
 
-  class AccessModeFilter < AccessFilter
+  class AccessSummaryFilter < AccessFilter
 
     XPATH = <<-SXPATH
     //*[
     local-name()='metadata'
     ]/*[
-    local-name()='meta' and @property='schema:accessMode'
+    local-name()='meta' and @property='schema:accessibilitySummary'
     ]
     SXPATH
 
     def initialize(process, options: {})
       super(
               process,
-              :epub_oebps_accessmode,
+              :epub_oebps_access_summary,
               XPATH,
               options: options
             )
@@ -26,8 +26,11 @@ module UMPTG::EPUB::OEBPS::Pipeline::Filter
             logger: logger
           )
 
-      AccessFilter.mode_report(
+      features = {}
+      issues.each {|i| features[i.content.content] = false }
+      AccessFilter.report(
             issues,
+            features,
             options: options,
             logger: (logger || @logger),
           )
