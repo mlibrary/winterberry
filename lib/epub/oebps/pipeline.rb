@@ -1,6 +1,5 @@
 module UMPTG::EPUB::OEBPS
   require_relative File.join('pipeline', 'filter')
-  #require_relative File.join('pipeline', 'accessmodeprocessor')
   require_relative File.join('pipeline', 'processor')
 
   def self.Processor(name, filters: nil, options: {}, logger: nil)
