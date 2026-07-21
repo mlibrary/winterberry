@@ -46,5 +46,33 @@ module UMPTG::EPUB::OEBPS::Pipeline::Filter
             logger: (logger || @logger),
           )
     end
+
+    def self.review_issues(issues, options: {})
+      entry = options[:entry]
+
+      metadata_node = entry.document.xpath("//*[local-name()='metadata']").first
+
+      ach_issues = issues.select {|i| i.name == :epub_oebps_access_hazard }
+      if ach_issues.count == 0
+        issue = UMPTG::Issue.new(
+                  name: :epub_oebps_access_hazard,
+                  content: metadata_node
+                )
+        issues << issue
+
+        #["noFlashingHazard", "noSoundHazard", "noMotionSimulationHazard"].each do |hazard|
+        ["unknown"].each do |hazard|
+          markup = "<meta property=\"schema:accessibilityHazard\">#{hazard}</>"
+          issue.actions << UMPTG::XML::Pipeline::Actions::MarkupAction.new(
+                    issue,
+                    options: {
+                          action: :add_child,
+                          markup: markup,
+                          warning_msg: "#{issue.name} missing meta/@property=\"accessibilityHazard\"=\"#{hazard}\""
+                        }
+                  )
+        end
+      end
+    end
   end
 end

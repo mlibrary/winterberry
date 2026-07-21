@@ -4,7 +4,6 @@ module UMPTG::EPUB::OEBPS::Pipeline
   Dir.glob(File.join(rq_path, "*")).each {|f| require_relative(f) }
 
   FILTERS = {
-        epub_oebps_accessible: UMPTG::EPUB::OEBPS::Pipeline::Filter::AccessibleFilter,
         epub_oebps_accessmode: UMPTG::EPUB::OEBPS::Pipeline::Filter::AccessModeFilter,
         epub_oebps_accessmode_sufficient: UMPTG::EPUB::OEBPS::Pipeline::Filter::AccessModeSufficientFilter,
         epub_oebps_accessfeature: UMPTG::EPUB::OEBPS::Pipeline::Filter::AccessFeatureFilter,
