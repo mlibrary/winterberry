@@ -41,6 +41,61 @@ module UMPTG::EPUB::Pipeline
             }
     end
 
+    def select(epub, options: {}, logger: nil)
+      entry_actions = []
+      ([epub.rendition.entry] + epub.rendition.manifest.entries).each do |entry|
+        media_type = entry.media_type.to_s
+        processor = @processors[media_type]
+        if processor.nil?
+          logger.warn("#{entry.name}, no processor for media type #{media_type}")
+          next
+        end
+
+        case media_type
+        when "text/css"
+          options[:process_results] = false
+          #result = processor.run(entry.content, options: options)
+        else
+          #xml_doc = UMPTG::XML.parse(xml_content: entry.content)
+          xml_doc = entry.document
+          logger.error("#{entry.name}: #{xml_doc.errors.count} parse errors") unless xml_doc.errors.empty?
+
+          options[:entry] = entry
+          issues = processor.select(xml_doc, options: options)
+        end
+
+        entry_actions << UMPTG::EPUB::EntryActions.new(
+                  entry,
+                  processor: processor,
+                  issues: issues || []
+                  )
+      end
+      return entry_actions
+    end
+
+    def review(entry_actions, options: {}, logger: nil)
+      entry_actions.each do |ea|
+        options[:entry] = ea.entry
+        ea.processor.review(ea.issues, options: options)
+      end
+    end
+
+    def resolve(entry_actions, options: {}, logger: nil)
+      entry_actions.each do |ea|
+        options[:entry] = ea.entry
+        ea.result = ea.processor.resolve(ea.issues, options: options, logger: logger)
+      end
+    end
+
+=begin
+    def report_new(entry_actions, options: {}, logger: nil)
+      entry_actions.each do |ea|
+        options[:entry] = ea.entry
+        ea.processor.report(ea.result, options: options, logger: logger)
+      end
+    end
+=end
+
     def run(epub, options: {}, logger: nil)
       llogger = logger || @logger
 
@@ -54,7 +109,89 @@ module UMPTG::EPUB::Pipeline
         processor.logger = nil
       end
 
-      epub_title =
+      run_options = options.clone
+      run_options[:process_results] = false
+
+      entry_actions = select(epub, options: run_options, logger: llogger)
+      review(entry_actions, options: run_options, logger: llogger)
+      resolve(entry_actions, options: run_options, logger: llogger)
+      #report_new(entry_actions, options: run_options, logger: llogger)
+
+      entry_actions.each do |ea|
+        llogger.info("Entry: #{ea.entry.name}")
+
+        UMPTG::Pipeline::Action.display_messages(
+              ea.issues,
+              logger: logger
+           )
+
+        if ea.result.modified or options[:save_forced]
+          llogger.info("Updating entry #{ea.entry.name}")
+
+          media_type = ea.entry.media_type.to_s
+          #unless media_type == "text/css"
+            case media_type
+            when "text/css"
+              content = ea.result.issues.first.content
+            else
+              fact = ea.result.issues.first
+              entry_xml_doc = fact.nil? ? \
+                    UMPTG::XML.parse(xml_content: ea.entry.content) : \
+                    fact.content.document
+              content = UMPTG::XML.doc_to_xml(entry_xml_doc)
+            end
+            epub.files.add(
+                  entry_name: ea.entry.name,
+                  entry_content: content
+                )
+          #end
+        end
+      end
+      type_cnt = {
+            UMPTG::Message.INFO => 0,
+            UMPTG::Message.WARNING => 0,
+            UMPTG::Message.ERROR => 0,
+            UMPTG::Message.FATAL => 0
+      }
+      entry_actions.each do |ea|
+        ea.result.issues.each do |issue|
+          issue.actions.each do |action|
+            action.messages.each do |msg|
+              type_cnt[msg.level] += 1
+            end
+          end
+        end
+      end
+
+      case
+      when type_cnt[UMPTG::Message.FATAL] > 0
+        llogger.fatal("Fatal:#{type_cnt[UMPTG::Message.FATAL]}  Error:#{type_cnt[UMPTG::Message.ERROR]}  Warning:#{type_cnt[UMPTG::Message.WARNING]}")
+      when type_cnt[UMPTG::Message.ERROR] > 0
+        llogger.error("Error:#{type_cnt[UMPTG::Message.ERROR]}  Warning:#{type_cnt[UMPTG::Message.WARNING]}")
+      when type_cnt[UMPTG::Message.WARNING] > 0
+        llogger.warn("Warning:#{type_cnt[UMPTG::Message.WARNING]}")
+      else
+        llogger.info("Error: 0")
+      end
+      llogger.info("Normalization not necessary.") unless epub.modified
+
+      return entry_actions
+    end
+
+=begin
+    def run_old(epub, options: {}, logger: nil)
+      llogger = logger || @logger
+
+      save_forced = options[:save_forced]
+      llogger.info("Force save:#{save_forced}") unless save_forced.nil?
+
+      # Indicate the options selected for this run.
+      @processors.values.each do |processor|
+        processor.logger = llogger
+        processor.display_options()
+        processor.logger = nil
+      end
+
       entry_actions = []
 
       run_args = options.clone
@@ -155,6 +292,7 @@ module UMPTG::EPUB::Pipeline
 
       return entry_actions
     end
+=end
 
     def report(entry_actions, options: {}, logger: nil)
       llogger = logger || @logger

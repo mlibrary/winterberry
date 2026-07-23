@@ -35,7 +35,7 @@ module UMPTG::EPUB::OEBPS::Pipeline::Filter
 
     def self.review_issues(issues, options: {})
       entry = options[:entry]
-      media_list = entry.document.xpath(AccessFilter.MEDIA_XPATH)
+      entry_actions = options[:entry_actions]
 
       metadata_node = entry.document.xpath("//*[local-name()='metadata']").first
 
@@ -54,6 +54,7 @@ module UMPTG::EPUB::OEBPS::Pipeline::Filter
         issues << issue
 
         if ac_textual_issues.count == 0
+          # OK to add if missing from OEBPS.
           markup = "<meta property=\"schema:accessMode\">textual</>"
           issue.actions << UMPTG::XML::Pipeline::Actions::MarkupAction.new(
                     issue,
@@ -65,7 +66,23 @@ module UMPTG::EPUB::OEBPS::Pipeline::Filter
                   )
         end
         if ac_visual_issues.count == 0
-          if media_list.count > 0
+          # OK to add if missing and EPUB has non-presentational images
+          ac_imgalt_info = []
+          ac_imgalt_warnings = []
+          entry_actions.each do |ea|
+            ea.issues.each do |issue|
+              next unless issue.name == :xhtml_img_alttext
+
+              issue.actions.each do |a|
+                a.messages.each do |m|
+                  ac_imgalt_info << issue if m.level == UMPTG::Message.INFO
+                  ac_imgalt_warnings << issue if m.level == UMPTG::Message.WARNING
+                end
+              end
+            end
+          end
+
+          if ac_imgalt_info.count > 0 and ac_imgalt_warnings.count == 0
             markup = "<meta property=\"schema:accessMode\">visual</>"
             issue.actions << UMPTG::XML::Pipeline::Actions::MarkupAction.new(
                       issue,
@@ -78,6 +95,7 @@ module UMPTG::EPUB::OEBPS::Pipeline::Filter
           end
         end
       end
+      return issue
     end
   end
 end

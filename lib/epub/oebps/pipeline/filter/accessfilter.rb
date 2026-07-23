@@ -30,23 +30,25 @@ module UMPTG::EPUB::OEBPS::Pipeline::Filter
     end
 
     def self.report(issues, features, options: {}, logger: nil)
-      property = issues.first.content['property']
+      unless issues.empty?
+        property = issues.first.content['property']
 
-      actions = []
-      issues.each {|i| actions += i.actions }
+        actions = []
+        issues.each {|i| actions += i.actions }
 
-      actions.each do |a|
-        next unless a.class.name == "UMPTG::XML::Pipeline::Action"
+        actions.each do |a|
+          next unless a.class.name == "UMPTG::XML::Pipeline::Action"
 
-        content = (a.issue.content.text || "").strip
-        features[content] = true if features.key?(content)
-      end
+          content = (a.issue.content.text || "").strip
+          features[content] = true if features.key?(content)
+        end
 
-      features.each do |k,v|
-        logger.info("#{issues.first.name}, <meta property=\"#{property}\">#{k}</meta> found") \
-              if v
-        #logger.warn("#{issues.first.name}, <meta property=\"#{property}\">#{k}</meta> not found") \
-        #      unless v
+        features.each do |k,v|
+          logger.info("#{issues.first.name}, <meta property=\"#{property}\">#{k}</meta> found") \
+                if v
+          #logger.warn("#{issues.first.name}, <meta property=\"#{property}\">#{k}</meta> not found") \
+          #      unless v
+        end
       end
     end
 
