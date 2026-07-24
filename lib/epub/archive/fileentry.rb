@@ -25,7 +25,14 @@ module UMPTG::EPUB::Archive
     end
 
     def document
-      @document = Nokogiri::XML(@content) if @document.nil?
+      if @document.nil?
+        case @media_type
+        when "text/css"
+          @document = Nokogiri::XML.fragment(@content)
+        else
+          @document = Nokogiri::XML(@content) if @document.nil?
+        end
+      end
       return @document
     end
 

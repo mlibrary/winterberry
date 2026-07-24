@@ -25,14 +25,24 @@ module UMPTG::XHTML::Pipeline::Filter
 
       if issue.content.name == 'img'
         role = (issue.content["role"] || "").strip.downcase
-        unless role == "presentation"
+        if role == "presentation"
+          issue.actions << UMPTG::XML::Pipeline::Action.new(
+                   issue,
+                   options: {
+                       info_message: \
+                         "#{issue.name}, #{issue.content.name} presentation image found src=\"#{issue.content['src']}\" role=\"#{issue.content['role']}\" alt=\"#{issue.content['alt']}\""
+                       }
+               )
+        else
+          src = (issue.content["src"] || "").strip
           alt = (issue.content["alt"] || "").strip
-          if alt.empty?
+          is_suspect = ["cover","image","images","","alt",File.basename(src).downcase,File.basename(src,".*").downcase].include?(alt.downcase)
+          if is_suspect
               issue.actions << UMPTG::XML::Pipeline::Action.new(
                        issue,
                        options: {
                            warning_message: \
-                             "#{issue.name}, #{issue.content.name} no alt text src=\"#{issue.content['src']}\" role=\"#{issue.content['role']}\""
+                             "#{issue.name}, #{issue.content.name} image with invalid alt text src=\"#{issue.content['src']}\" role=\"#{issue.content['role']}\" alt=\"#{issue.content['alt']}\""
                            }
                    )
 =begin

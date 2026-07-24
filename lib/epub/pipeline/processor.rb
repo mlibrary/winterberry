@@ -51,18 +51,12 @@ module UMPTG::EPUB::Pipeline
           next
         end
 
-        case media_type
-        when "text/css"
-          options[:process_results] = false
-          #result = processor.run(entry.content, options: options)
-        else
-          #xml_doc = UMPTG::XML.parse(xml_content: entry.content)
-          xml_doc = entry.document
-          logger.error("#{entry.name}: #{xml_doc.errors.count} parse errors") unless xml_doc.errors.empty?
+        #xml_doc = UMPTG::XML.parse(xml_content: entry.content)
+        xml_doc = entry.document
+        logger.error("#{entry.name}: #{xml_doc.errors.count} parse errors") unless xml_doc.errors.empty?
 
-          options[:entry] = entry
-          issues = processor.select(xml_doc, options: options)
-        end
+        options[:entry] = entry
+        issues = processor.select(xml_doc, options: options)
 
         entry_actions << UMPTG::EPUB::EntryActions.new(
                   entry,
@@ -87,14 +81,22 @@ module UMPTG::EPUB::Pipeline
       end
     end
 
-=begin
-    def report_new(entry_actions, options: {}, logger: nil)
-      entry_actions.each do |ea|
-        options[:entry] = ea.entry
-        ea.processor.report(ea.result, options: options, logger: logger)
+    def report(entry_actions, options: {}, logger: nil)
+      llogger = logger || @logger
+
+      @processors.each do |k,p|
+        issues = []
+        entry_actions.each do |ea|
+          issues += ea.result.issues if ea.entry.media_type == k
+        end
+
+        p.report_issues(
+              issues,
+              logger: llogger,
+              options: {process_results: true}
+            )
       end
     end
-=end
 
     def run(epub, options: {}, logger: nil)
       llogger = logger || @logger
@@ -175,140 +177,9 @@ module UMPTG::EPUB::Pipeline
       end
       llogger.info("Normalization not necessary.") unless epub.modified
 
-      return entry_actions
-    end
-
-=begin
-    def run_old(epub, options: {}, logger: nil)
-      llogger = logger || @logger
-
-      save_forced = options[:save_forced]
-      llogger.info("Force save:#{save_forced}") unless save_forced.nil?
-
-      # Indicate the options selected for this run.
-      @processors.values.each do |processor|
-        processor.logger = llogger
-        processor.display_options()
-        processor.logger = nil
-      end
-
-      entry_actions = []
-
-      run_args = options.clone
-      run_args[:process_results] = false
-      ([epub.rendition.entry] + epub.rendition.manifest.entries).each do |entry|
-        media_type = entry.media_type.to_s
-        processor = @processors[media_type]
-        if processor.nil?
-          llogger.warn("#{entry.name}, no processor for media type #{media_type}")
-          next
-        end
-
-        case media_type
-        when "text/css"
-          r_args = options.clone
-          r_args[:process_results] = false
-          result = processor.run(entry.content, options: r_args)
-        #when "application/xhtml+xml", "application/x-dtbncx+xml", "application/oebps-package+xml"
-        else
-          #xml_doc = UMPTG::XML.parse(xml_content: entry.content)
-          xml_doc = entry.document
-          llogger.error("#{entry.name}: #{xml_doc.errors.count} parse errors") unless xml_doc.errors.empty?
-
-          run_args[:entry] = entry
-          result = processor.run(xml_doc, options: run_args, logger: llogger)
-        end
-
-        entry_actions << UMPTG::EPUB::EntryActions.new(
-                  entry,
-                  result
-                  ) \
-           unless result.nil?
-      end
-
-      entry_actions.each do |ea|
-        llogger.info("Entry: #{ea.entry.name}")
-
-        # Report results
-        UMPTG::Pipeline::Action.resolve_issues(
-              ea.result.issues,
-              logger: llogger,
-              options: {
-                    normalize: false,
-                    display_msgs: true
-                  }
-              )
-        #ea.action_result.actions.each {|a| @logger.info(a) }
-
-        if ea.result.modified or options[:save_forced]
-          llogger.info("Updating entry #{ea.entry.name}")
-
-          media_type = ea.entry.media_type.to_s
-          #unless media_type == "text/css"
-            case media_type
-            when "text/css"
-              content = ea.result.issues.first.content
-            else
-              fact = ea.result.issues.first
-              entry_xml_doc = fact.nil? ? \
-                    UMPTG::XML.parse(xml_content: ea.entry.content) : \
-                    fact.content.document
-              content = UMPTG::XML.doc_to_xml(entry_xml_doc)
-            end
-            epub.files.add(
-                  entry_name: ea.entry.name,
-                  entry_content: content
-                )
-          #end
-        end
-      end
-      type_cnt = {
-            UMPTG::Message.INFO => 0,
-            UMPTG::Message.WARNING => 0,
-            UMPTG::Message.ERROR => 0,
-            UMPTG::Message.FATAL => 0
-      }
-      entry_actions.each do |ea|
-        ea.result.issues.each do |issue|
-          issue.actions.each do |action|
-            action.messages.each do |msg|
-              type_cnt[msg.level] += 1
-            end
-          end
-        end
-      end
-
-      case
-      when type_cnt[UMPTG::Message.FATAL] > 0
-        llogger.fatal("Fatal:#{type_cnt[UMPTG::Message.FATAL]}  Error:#{type_cnt[UMPTG::Message.ERROR]}  Warning:#{type_cnt[UMPTG::Message.WARNING]}")
-      when type_cnt[UMPTG::Message.ERROR] > 0
-        llogger.error("Error:#{type_cnt[UMPTG::Message.ERROR]}  Warning:#{type_cnt[UMPTG::Message.WARNING]}")
-      when type_cnt[UMPTG::Message.WARNING] > 0
-        llogger.warn("Warning:#{type_cnt[UMPTG::Message.WARNING]}")
-      else
-        llogger.info("Error: 0")
-      end
-      llogger.info("Normalization not necessary.") unless epub.modified
+      report(entry_actions, options: options, logger: llogger)
 
       return entry_actions
-    end
-=end
-
-    def report(entry_actions, options: {}, logger: nil)
-      llogger = logger || @logger
-
-      @processors.each do |k,p|
-        issues = []
-        entry_actions.each do |ea|
-          issues += ea.result.issues if ea.entry.media_type == k
-        end
-
-        p.report_issues(
-              issues,
-              logger: llogger,
-              options: {process_results: true}
-            )
-      end
     end
 
     def filters()

@@ -6,6 +6,7 @@ module UMPTG::EPUB
   class Reviewer < Pipeline::Processor
     def initialize(name, processors: {}, filters: nil, options: {}, logger: nil)
       options = {
+            css_a_decoration: true,
             css_font_face: false,
             epub_oebps_accessmode: true,
             epub_oebps_accessfeature: true,
