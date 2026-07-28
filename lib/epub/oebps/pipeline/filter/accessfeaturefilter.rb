@@ -31,16 +31,18 @@ module UMPTG::EPUB::OEBPS::Pipeline::Filter
           }
       AccessFilter.report(
             issues,
+            name,
+            "schema:accessibilityFeature",
             features,
             options: options,
             logger: (logger || @logger),
           )
     end
 
-    def self.review_issues(issues, options: {})
-      entry = options[:entry]
+    def self.review_issues(entry_actions, access_mode_info, options: options)
+      issues = access_mode_info.oebps_entry_action.issues
 
-      metadata_node = entry.document.xpath("//*[local-name()='metadata']").first
+      metadata_node = access_mode_info.oebps_entry_action.entry.document.xpath("//*[local-name()='metadata']").first
 
       acf_issues = issues.select {|i| i.name == :epub_oebps_accessfeature }
 
@@ -53,18 +55,16 @@ module UMPTG::EPUB::OEBPS::Pipeline::Filter
 
         features = ["displayTransformability", "readingOrder"]
 
-        acf_alttext_issues = issues.select do |i|
-          next unless i.name == :xhtml_img_alttext
+        acf_alttext_issues = access_mode_info.imgalt_total.select do |i|
+          #next unless i.name == :xhtml_img_alttext
           next if (i.content['role'] || "").strip.downcase == "presentation"
           next unless (i.content['alt'] || "").strip.empty?
           i
         end
         features << "alternativeText" if acf_alttext_issues.count == 0
-
-        acf_pagebreak_issues = issues.select {|i| i.name == :xhtml_pagebreak }
-        features << "pageBreakMarkers" unless acf_pagebreak_issues.count == 0
-
-        features << "tableOfContents" unless entry.files.epub.rendition.navigation.nil?
+        features << "pageBreakMarkers" unless access_mode_info.pagebreak.count == 0
+        features << "tableOfContents" \
+              unless access_mode_info.oebps_entry_action.entry.files.epub.rendition.navigation.nil?
 
         features.each do |f|
           markup = "<meta property=\"schema:accessibilityFeature\">#{f}</>"

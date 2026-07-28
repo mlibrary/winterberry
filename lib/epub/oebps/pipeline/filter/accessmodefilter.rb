@@ -28,17 +28,18 @@ module UMPTG::EPUB::OEBPS::Pipeline::Filter
 
       AccessFilter.mode_report(
             issues,
+            name,
+            "schema:accessMode",
             options: options,
             logger: (logger || @logger),
           )
     end
 
-    def self.review_issues(issues, options: {})
-      entry = options[:entry]
-      entry_actions = options[:entry_actions]
+    def self.review_issues(entry_actions, access_mode_info, options: {})
+      metadata_node = access_mode_info.oebps_entry_action.entry.document.xpath("//*[local-name()='metadata']").first
+      raise "unable to locate OEBPS metadata node" if metadata_node.nil?
 
-      metadata_node = entry.document.xpath("//*[local-name()='metadata']").first
-
+      issues = access_mode_info.oebps_entry_action.issues
       ac_textual_issues = issues.select {|i|
               i.name == :epub_oebps_accessmode and i.content.content.strip.downcase == 'textual'
             }
@@ -61,41 +62,26 @@ module UMPTG::EPUB::OEBPS::Pipeline::Filter
                     options: {
                           action: :add_child,
                           markup: markup,
-                          warning_msg: "#{issue.name} missing meta/@property=\"accessMode\"=\"textual\""
+                          warning_message: "#{issue.name} missing meta/@property=\"accessMode\"=\"textual\""
                         }
                   )
         end
         if ac_visual_issues.count == 0
           # OK to add if missing and EPUB has non-presentational images
-          ac_imgalt_info = []
-          ac_imgalt_warnings = []
-          entry_actions.each do |ea|
-            ea.issues.each do |issue|
-              next unless issue.name == :xhtml_img_alttext
-
-              issue.actions.each do |a|
-                a.messages.each do |m|
-                  ac_imgalt_info << issue if m.level == UMPTG::Message.INFO
-                  ac_imgalt_warnings << issue if m.level == UMPTG::Message.WARNING
-                end
-              end
-            end
-          end
-
-          if ac_imgalt_info.count > 0 and ac_imgalt_warnings.count == 0
+          if access_mode_info.imgalt_total.count > 0 \
+                  and access_mode_info.imgalt_warnings.count == 0
             markup = "<meta property=\"schema:accessMode\">visual</>"
             issue.actions << UMPTG::XML::Pipeline::Actions::MarkupAction.new(
                       issue,
                       options: {
                             action: :add_child,
                             markup: markup,
-                            warning_msg: "#{issue.name} missing meta/@property=\"accessMode\"=\"visual\""
+                            warning_message: "#{issue.name} missing meta/@property=\"accessMode\"=\"visual\""
                           }
                     )
           end
         end
       end
-      return issue
     end
   end
 end

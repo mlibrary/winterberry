@@ -29,30 +29,28 @@ module UMPTG::EPUB::OEBPS::Pipeline::Filter
          )
     end
 
-    def self.report(issues, features, options: {}, logger: nil)
+    def self.report(issues, issue_name, property, features, options: {}, logger: nil)
       unless issues.empty?
-        property = issues.first.content['property']
-
         actions = []
         issues.each {|i| actions += i.actions }
 
         actions.each do |a|
-          next unless a.class.name == "UMPTG::XML::Pipeline::Action"
+          #next unless a.class.name == "UMPTG::XML::Pipeline::Action"
 
-          content = (a.issue.content.text || "").strip
+          content = (a.resolved_content.text || "").strip unless a.resolved_content.nil?
           features[content] = true if features.key?(content)
         end
+      end
 
-        features.each do |k,v|
-          logger.info("#{issues.first.name}, <meta property=\"#{property}\">#{k}</meta> found") \
-                if v
-          #logger.warn("#{issues.first.name}, <meta property=\"#{property}\">#{k}</meta> not found") \
-          #      unless v
-        end
+      features.each do |k,v|
+        #logger.info("#{issue_name}, <meta property=\"#{property}\">#{k}</meta> found") \
+        #      if v
+        logger.warn("#{issue_name}, <meta property=\"#{property}\">#{k}</meta> not found") \
+              unless v
       end
     end
 
-    def self.mode_report(issues, options: {}, logger: nil)
+    def self.mode_report(issues, issue_name, property, options: {}, logger: nil)
       features = {
           "auditory" => false,
           "tactile" => false,
@@ -61,6 +59,8 @@ module UMPTG::EPUB::OEBPS::Pipeline::Filter
         }
       self.report(
           issues,
+          issue_name,
+          property,
           features,
           options: options,
           logger: logger

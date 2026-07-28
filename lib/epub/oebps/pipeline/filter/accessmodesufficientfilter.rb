@@ -29,16 +29,18 @@ module UMPTG::EPUB::OEBPS::Pipeline::Filter
 
       AccessFilter.mode_report(
             issues,
+            name,
+            "schema:accessModeSufficient",
             options: options,
             logger: (logger || @logger),
           )
     end
 
-    def self.review_issues(issues, options: {})
-      entry = options[:entry]
-      media_list = entry.document.xpath(AccessFilter.MEDIA_XPATH)
+    def self.review_issues(entry_actions, access_mode_info, options: {})
+      metadata_node = access_mode_info.oebps_entry_action.entry.document.xpath("//*[local-name()='metadata']").first
+      raise "unable to locate OEBPS metadata node" if metadata_node.nil?
 
-      metadata_node = entry.document.xpath("//*[local-name()='metadata']").first
+      issues = access_mode_info.oebps_entry_action.issues
 
       acs_textual_issues = issues.select {|i|
               i.name == :epub_oebps_accessmode_sufficient and i.content.content.strip.downcase == 'textual'
@@ -58,7 +60,8 @@ module UMPTG::EPUB::OEBPS::Pipeline::Filter
         issues << issue
 
         if acs_textual_visual_issues.count == 0
-          if media_list.count > 0
+          if access_mode_info.imgalt_total.count > 0 \
+                  and access_mode_info.imgalt_warnings.count == 0
             markup = "<meta property=\"schema:accessModeSufficient\">textual,visual</>"
             issue.actions << UMPTG::XML::Pipeline::Actions::MarkupAction.new(
                       issue,

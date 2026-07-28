@@ -44,20 +44,7 @@ module UMPTG::EPUB
            logger: logger
          )
 
-      entry_action = entry_actions.find {|ea| ea.entry.media_type == "application/oebps-package+xml" }
-      raise "missing OEBPS entry" if entry_action.nil?
-
-      metadata_node = entry_action.entry.document.xpath("//*[local-name()='metadata']").first
-      raise "unable to locate OEBPS metadata node" if metadata_node.nil?
-
-      run_options = options.clone
-      run_options[:entry] = entry_action.entry
-      run_options[:entry_actions] = entry_actions
-
-      OEBPS::Pipeline::Filter::AccessModeFilter.review_issues(entry_action.issues, options: run_options)
-      OEBPS::Pipeline::Filter::AccessModeSufficientFilter.review_issues(entry_action.issues, options: run_options)
-      OEBPS::Pipeline::Filter::AccessHazardFilter.review_issues(entry_action.issues, options: run_options)
-      OEBPS::Pipeline::Filter::AccessFeatureFilter.review_issues(entry_action.issues, options: run_options)
+      UMPTG::EPUB::OEBPS::Pipeline.review_issues(entry_actions, options: options, logger: logger)
     end
 
     def report(entry_results, options: {}, logger: nil)

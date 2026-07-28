@@ -21,31 +21,36 @@ module UMPTG::XML::Pipeline::Actions
       reference_node = issue.content
 
       fragment = reference_node.document.parse(markup)
+
+      resolved_nodelist = nil
+
       case action
       when :add_child
         #puts "reference_node:#{reference_node.name},fragment:#{fragment.to_xml}"
-        reference_node.add_child(fragment)
+        resolved_nodelist = reference_node.add_child(fragment)
         add_info_msg("#{issue.name}: #{reference_node.name}, added child markup #{markup}.")
       when :add_next
-        reference_node.add_next_sibling(fragment)
+        resolved_nodelist = reference_node.add_next_sibling(fragment)
         add_info_msg("#{issue.name}: #{reference_node.name}, added next sibling markup #{markup}.")
       when :add_previous
-        reference_node.add_previous_sibling(fragment)
+        resolved_nodelist = reference_node.add_previous_sibling(fragment)
         add_info_msg("#{issue.name}: #{reference_node.name}, added previous sibling markup #{markup}.")
       when :replace_content
         reference_node.content = ""
         # If markup just text, then this is empty.
         #reference_node.add_child(fragment)
-        reference_node.add_child(markup)
+        resolved_nodelist = reference_node.add_child(markup)
         add_info_msg("#{issue.name}: #{reference_node.name}, replaced content markup #{markup}.")
       when :replace_node
         reference_name = reference_node.name
-        reference_node.add_next_sibling(fragment)
+        resolved_nodelist = reference_node.add_next_sibling(fragment)
         reference_node.remove
         add_info_msg("#{issue.name}: #{reference_name}, replaced with #{markup}.")
       else
         add_error_msg("#{issue.name}: #{reference_node.name}, invalid action #{action}.")
       end
+
+      @resolved_content = resolved_nodelist.first unless resolved_nodelist.nil?
       @status = UMPTG::Action.COMPLETED
     end
   end

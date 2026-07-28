@@ -41,16 +41,18 @@ module UMPTG::EPUB::OEBPS::Pipeline::Filter
          }
       AccessFilter.report(
             issues,
+            name,
+            "schema:accessibilityHazard",
             features,
             options: options,
             logger: (logger || @logger),
           )
     end
 
-    def self.review_issues(issues, options: {})
-      entry = options[:entry]
+    def self.review_issues(entry_actions, access_mode_info, options: {})
+      issues = access_mode_info.oebps_entry_action.issues
 
-      metadata_node = entry.document.xpath("//*[local-name()='metadata']").first
+      metadata_node = access_mode_info.oebps_entry_action.entry.document.xpath("//*[local-name()='metadata']").first
 
       ach_issues = issues.select {|i| i.name == :epub_oebps_access_hazard }
       if ach_issues.count == 0

@@ -42,7 +42,7 @@ module UMPTG::XHTML::Pipeline::Filter
                        issue,
                        options: {
                            warning_message: \
-                             "#{issue.name}, #{issue.content.name} image with invalid alt text src=\"#{issue.content['src']}\" role=\"#{issue.content['role']}\" alt=\"#{issue.content['alt']}\""
+                             "#{issue.name}, #{issue.content.name} image with possible invalid alt text src=\"#{issue.content['src']}\" role=\"#{issue.content['role']}\" alt=\"#{issue.content['alt']}\""
                            }
                    )
 =begin
