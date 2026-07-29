@@ -4,13 +4,15 @@ module UMPTG::EPUB::OEBPS::Pipeline
 
   class AccessModeInfo
     attr_accessor :oebps_entry_action, \
-        :imgalt_total, :imgalt_info, :imgalt_warnings, :pagebreak
+        :imgalt_total, :imgalt_info, :imgalt_warnings, :imgalt_cover, \
+        :pagebreak
 
-    def initialize(oea, iat: [], iai: [], iaw: [], pb: [])
+    def initialize(oea, iat: [], iai: [], iaw: [], iac: false, pb: [])
       @oebps_entry_action = oea
       @imgalt_total = iat
       @imgalt_info = iai
       @imgalt_warnings = iaw
+      @imgalt_cover = iac
       @pagebreak = pb
     end
   end
@@ -35,6 +37,12 @@ module UMPTG::EPUB::OEBPS::Pipeline
           access_mode_info.pagebreak << issue
         end
       end
+    end
+
+    if access_mode_info.imgalt_total.count == 1 \
+          and access_mode_info.imgalt_warnings.count == 0
+      # Determine if only valid imgalt exists and it is the cover.
+      access_mode_info.imgalt_cover = access_mode_info.imgalt_total[0].content['role'] == 'doc-cover'
     end
 
     Filter::AccessModeFilter.review_issues(entry_actions, access_mode_info, options: options)

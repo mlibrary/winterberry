@@ -13,6 +13,17 @@ module UMPTG::EPUB::OEBPS::Pipeline::Filter
     ]
     SXPATH
 
+    AUDIO_VIDEO_MEDIA_XPATH = <<-AXPATH
+    //*[
+    local-name()='manifest'
+    ]/*[
+    local-name()='item' and (
+    starts-with(@media-type,'audio/')
+    or starts-with(@media-type, 'video/')
+    )
+    ]
+    AXPATH
+
     ACCESSIBILITY_SUMMARY = "<meta property=\"schema:accessibilitySummary\">This publication meets the EPUB Accessibility requirements and it also meets the Web Content Accessibility Guidelines (WCAG-AA). It is screen-reader friendly and is accessible to persons with disabilities. A book with images which are defined with accessible structural markup. This book contains various accessibility features such as alternative text and long descriptions for images, tables, table of content, page-list, landmark, reading order, structural navigation, index and semantic structure.</meta>"
 
     def review(issue, options: {})
@@ -36,8 +47,8 @@ module UMPTG::EPUB::OEBPS::Pipeline::Filter
 
         actions.each do |a|
           #next unless a.class.name == "UMPTG::XML::Pipeline::Action"
-
-          content = (a.resolved_content.text || "").strip unless a.resolved_content.nil?
+          content = (a.resolved_content.text || "").strip if a.is_a?(UMPTG::Pipeline::NormalizeAction) and !a.resolved_content.nil?
+          content = (a.issue.content.text || "").strip unless a.is_a?(UMPTG::Pipeline::NormalizeAction)
           features[content] = true if features.key?(content)
         end
       end

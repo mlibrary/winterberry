@@ -56,23 +56,28 @@ module UMPTG::EPUB::OEBPS::Pipeline::Filter
 
       ach_issues = issues.select {|i| i.name == :epub_oebps_access_hazard }
       if ach_issues.count == 0
-        issue = UMPTG::Issue.new(
-                  name: :epub_oebps_access_hazard,
-                  content: metadata_node
-                )
-        issues << issue
-
-        #["noFlashingHazard", "noSoundHazard", "noMotionSimulationHazard"].each do |hazard|
-        ["unknown"].each do |hazard|
-          markup = "<meta property=\"schema:accessibilityHazard\">#{hazard}</>"
-          issue.actions << UMPTG::XML::Pipeline::Actions::MarkupAction.new(
-                    issue,
-                    options: {
-                          action: :add_child,
-                          markup: markup,
-                          warning_msg: "#{issue.name} missing meta/@property=\"accessibilityHazard\"=\"#{hazard}\""
-                        }
+        # No hazards found.
+        media_list = access_mode_info.oebps_entry_action.entry.document.xpath(AUDIO_VIDEO_MEDIA_XPATH)
+        if media_list.count == 0
+          # EPUB appears to contain no audio/video. OK to add hazard "none"
+          issue = UMPTG::Issue.new(
+                    name: :epub_oebps_access_hazard,
+                    content: metadata_node
                   )
+          issues << issue
+
+          #["noFlashingHazard", "noSoundHazard", "noMotionSimulationHazard"].each do |hazard|
+          ["none"].each do |hazard|
+            markup = "<meta property=\"schema:accessibilityHazard\">#{hazard}</>"
+            issue.actions << UMPTG::XML::Pipeline::Actions::MarkupAction.new(
+                      issue,
+                      options: {
+                            action: :add_child,
+                            markup: markup,
+                            warning_msg: "#{issue.name} missing meta/@property=\"accessibilityHazard\"=\"#{hazard}\""
+                          }
+                    )
+          end
         end
       end
     end

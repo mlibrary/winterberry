@@ -52,38 +52,61 @@ module UMPTG::EPUB::OEBPS::Pipeline::Filter
                   )
             }
 
-      if acs_textual_issues.count == 0 or acs_textual_visual_issues.count == 0
+      issue = nil
+      condition = (access_mode_info.imgalt_total.count > 0 \
+                                    and access_mode_info.imgalt_warnings.count == 0 \
+                                    and !access_mode_info.imgalt_cover)
+      case
+      when (acs_textual_visual_issues.count == 0 and condition)
+        # Add feature if it doesn't exist and the condition is true.
         issue = UMPTG::Issue.new(
                   name: :epub_oebps_accessmode_sufficient,
                   content: metadata_node
                 )
         issues << issue
 
-        if acs_textual_visual_issues.count == 0
-          if access_mode_info.imgalt_total.count > 0 \
-                  and access_mode_info.imgalt_warnings.count == 0
-            markup = "<meta property=\"schema:accessModeSufficient\">textual,visual</>"
-            issue.actions << UMPTG::XML::Pipeline::Actions::MarkupAction.new(
-                      issue,
-                      options: {
-                            action: :add_child,
-                            markup: markup,
-                            warning_msg: "#{issue.name} missing meta/@property=\"accessModeSufficient\"=\"textual,visual\""
-                          }
-                    )
-          end
+        markup = "<meta property=\"schema:accessModeSufficient\">textual,visual</>"
+        issue.actions << UMPTG::XML::Pipeline::Actions::MarkupAction.new(
+                  issue,
+                  options: {
+                        action: :add_child,
+                        markup: markup,
+                        warning_message: "#{issue.name} missing meta/@property=\"accessModeSufficient\"=\"textual,visual\""
+                      }
+                )
+      when (acs_textual_visual_issues.count == 0 and !condition)
+        # Skip add if feature is missing and condition is false.
+      when (acs_textual_visual_issues.count > 0 and condition)
+        # Skip add if feature exists and condition is true.
+      else
+        # Feature exists, but condition is false, report error
+        issue = acs_textual_visual_issues.first
+        act = UMPTG::Pipeline::Action.new(
+              issue,
+              options: options
+            )
+        act.add_error_msg("#{issue.name}, found meta/@property=\"accessModeSufficient\"=\"textual,visual\", but invalid alt text reported")
+        issue.actions << act
+      end
+
+      if acs_textual_issues.count == 0
+        if issue.nil?
+          issue = UMPTG::Issue.new(
+                    name: :epub_oebps_accessmode_sufficient,
+                    content: metadata_node
+                  ) if issue.nil?
+          issues << issue
         end
-        if acs_textual_issues.count == 0
-          markup = "<meta property=\"schema:accessModeSufficient\">textual</>"
-          issue.actions << UMPTG::XML::Pipeline::Actions::MarkupAction.new(
-                    issue,
-                    options: {
-                          action: :add_child,
-                          markup: markup,
-                          warning_msg: "#{issue.name} missing meta/@property=\"accessModeSufficient\"=\"textual\""
-                        }
-                  )
-        end
+
+        markup = "<meta property=\"schema:accessModeSufficient\">textual</>"
+        issue.actions << UMPTG::XML::Pipeline::Actions::MarkupAction.new(
+                  issue,
+                  options: {
+                        action: :add_child,
+                        markup: markup,
+                        warning_message: "#{issue.name} missing meta/@property=\"accessModeSufficient\"=\"textual\""
+                      }
+                )
       end
     end
   end

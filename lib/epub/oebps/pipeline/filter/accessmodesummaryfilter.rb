@@ -27,7 +27,6 @@ module UMPTG::EPUB::OEBPS::Pipeline::Filter
           )
       llogger = logger || @logger
 
-      puts "issues=#{issues.count}"
       #logger.info("epub_oebps_access_summary, <meta property=\"schema:accessibilitySummary\">...</meta> found") \
       #      if v
       logger.warn("epub_oebps_access_summary, <meta property=\"schema:accessibilitySummary\">...</meta> not found")

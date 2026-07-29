@@ -69,7 +69,8 @@ module UMPTG::EPUB::OEBPS::Pipeline::Filter
         if ac_visual_issues.count == 0
           # OK to add if missing and EPUB has non-presentational images
           if access_mode_info.imgalt_total.count > 0 \
-                  and access_mode_info.imgalt_warnings.count == 0
+                  and access_mode_info.imgalt_warnings.count == 0 \
+                  and !access_mode_info.imgalt_cover
             markup = "<meta property=\"schema:accessMode\">visual</>"
             issue.actions << UMPTG::XML::Pipeline::Actions::MarkupAction.new(
                       issue,
