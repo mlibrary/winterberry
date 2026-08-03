@@ -8,6 +8,7 @@ module UMPTG::EPUB
       options = {
             css_a_decoration: true,
             css_font_face: false,
+            css_access_display_transform: true,
             epub_oebps_accessmode: true,
             epub_oebps_accessfeature: true,
             epub_oebps_access_hazard: true,
