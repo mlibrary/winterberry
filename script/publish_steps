@@ -364,7 +364,7 @@ File.open(cmds_file, "w") do |fp|
   fp.puts
   fp.puts "# Register fileset DOIs"
   fp.puts "%w[#{monograph_noid_list.join(' ')}].each do |noid|"
-  fp.puts "\tdoc = Crossref::FileSetMetadata.new(\"noid\").build"
+  fp.puts "\tdoc = Crossref::FileSetMetadata.new(noid).build"
   fp.puts "\tresponse = Crossref::Register.new(doc.to_xml).post"
   fp.puts "end;0"
   fp.puts
