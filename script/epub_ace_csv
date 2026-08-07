@@ -40,10 +40,14 @@ ace_json_file_list = ARGV
 require 'json'
 require 'csv'
 
-METADATA_HEADERS = [
+MHEADERS = [
       "conformsTo","accessMode","accessModeSufficient",
       "accessibilityFeature","accessibilitySummary",
-      "accessibilityHazard","certifiedBy","certifierCredential"
+      "accessibilityHazard"
+    ]
+
+METADATA_HEADERS = MHEADERS + [
+      "certifiedBy","certifierCredential"
     ]
 
 CSV_HEADERS = [
@@ -205,7 +209,7 @@ end
 
 # Determine if remediation is necessary.
 rows.each do |r|
-  missing_metadata = METADATA_HEADERS.select {|h| r[h].downcase == 'missing' }
+  missing_metadata = MHEADERS.select {|h| r[h].downcase == 'missing' }
   violations = MAP_VIOLATIONS.values.select {|v| r[v] > 0 }
   alt_text_violations = r["Alt Text"].start_with?("warnings:true")
   r["Remediation Plan"] = (alt_text_violations or missing_metadata.count > 0 or violations.count > 0) ? "true" : "false"
