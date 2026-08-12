@@ -14,16 +14,19 @@ module UMPTG::EPUB
             epub_oebps_access_hazard: true,
             epub_oebps_accessmode_sufficient: true,
             epub_oebps_access_summary: true,
-            epub_oebps_conforms_to: false,
+            epub_oebps_conforms_to: true,
             epub_oebps_lang: true,
             epub_oebps_opf: false,
+            epub_oebps_pagebreaksource: true,
             epub_xhtml_lang: true,
+            epub_xhtml_divisionrole: false,
+            epub_xhtml_tocrole: false,
             xhtml_entity: false,
             xhtml_extdescr: true,
             xhtml_figure: true,
             xhtml_header_title: false,
             xhtml_img_alttext: true,
-            xhtml_pagebreak: true,
+            xhtml_pagebreak: false,
             xhtml_link: true,
             xhtml_table_overflow: false,
             xhtml_table_pagebreak: false,
@@ -46,6 +49,10 @@ module UMPTG::EPUB
          )
 
       UMPTG::EPUB::OEBPS::Pipeline.review_issues(entry_actions, options: options, logger: logger)
+      UMPTG::EPUB::Reviewer.review_pagebreak_issues(entry_actions, options: options, logger: logger)
+
+      #nav_entry_name = entry_actions.first.entry.files.epub.rendition.navigation.entry.name
+      #nav_entry_actions = entry_actions.select {|ea| ea.entry.name == nav_entry_name }.first
     end
 
     def report(entry_results, options: {}, logger: nil)
@@ -79,6 +86,45 @@ module UMPTG::EPUB
           end
         end
         llogger.info("#{name}, linked figures=#{linked_figures.count}")
+      end
+    end
+
+    def self.review_pagebreak_issues(entry_actions, options: options, logger: logger)
+      pagebreak_issues = []
+      css_entry_action = nil
+      entry_actions.each do |ea|
+        css_entry_action = ea if ea.entry.media_type == "text/css"
+        pagebreak_issues += ea.issues.select {|i| i.name == :xhtml_pagebreak }
+      end
+
+      if pagebreak_issues.count > 0
+        raise "missing CSS entry" if css_entry_action.nil?
+
+        pagebreak_issues.each do |issue|
+          issue.actions << UMPTG::XML::Pipeline::Actions::SetAttributeValueAction.new(
+              issue,
+              options: {
+                      attribute_name: "class",
+                      attribute_value: "umptg_page",
+                      attribute_append: true,
+                      warning_message: "#{@name}, found invalid pagebreak class attribute #{issue.content}"
+                  }
+            )
+        end
+
+        issue = UMPTG::Issue.new(
+                  name: :xhtml_pagebreak,
+                  content: css_entry_action.entry.document
+                )
+        css_entry_action.issues << issue
+
+        issue.actions << UMPTG::CSS::Pipeline::AddClassAction.new(
+                issue,
+                options: {
+                      add_content: ".umptg_page { font-style: inherit; font-size: 80%; color: #666666; text-decoration: none; }",
+                      warning_message: "#{@name}, missing CSS class \".page\""
+                    }
+              )
       end
     end
   end

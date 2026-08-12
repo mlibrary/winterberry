@@ -5,15 +5,16 @@ module UMPTG::EPUB::OEBPS::Pipeline
   class AccessModeInfo
     attr_accessor :oebps_entry_action, \
         :imgalt_total, :imgalt_info, :imgalt_warnings, :imgalt_cover, \
-        :pagebreak
+        :pagebreak, :pagebreaksource
 
-    def initialize(oea, iat: [], iai: [], iaw: [], iac: false, pb: [])
+    def initialize(oea, iat: [], iai: [], iaw: [], iac: false, pb: [], pbs: [])
       @oebps_entry_action = oea
       @imgalt_total = iat
       @imgalt_info = iai
       @imgalt_warnings = iaw
       @imgalt_cover = iac
       @pagebreak = pb
+      @pagebreaksource = pbs
     end
   end
 
@@ -35,6 +36,8 @@ module UMPTG::EPUB::OEBPS::Pipeline
           end
         when :xhtml_pagebreak
           access_mode_info.pagebreak << issue
+        when :epub_oebps_pagebreaksource
+          access_mode_info.pagebreaksource << issue
         end
       end
     end
@@ -49,5 +52,7 @@ module UMPTG::EPUB::OEBPS::Pipeline
     Filter::AccessModeSufficientFilter.review_issues(entry_actions, access_mode_info, options: options)
     Filter::AccessHazardFilter.review_issues(entry_actions, access_mode_info, options: options)
     Filter::AccessFeatureFilter.review_issues(entry_actions, access_mode_info, options: options)
+    Filter::AccessSummaryFilter.review_issues(entry_actions, access_mode_info, options: options)
+    Filter::PageBreakSourceFilter.review_issues(entry_actions, access_mode_info, options: options)
   end
 end

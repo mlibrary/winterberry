@@ -11,6 +11,7 @@ module UMPTG::CSS::Pipeline
           Regexp.new(/(.bmcenter[\s]+\{[a-zA-Z0-9\.\-:;\s]*(color[\s]*:[^;]+;))/),
           Regexp.new(/(.bmcenter1[\s]+\{[a-zA-Z0-9\.\-:;\s]*(color[\s]*:[^;]+;))/),
           Regexp.new(/(.color[\s]+\{[a-zA-Z0-9\.\-:;\s]*(color[\s]*:[^;]+;))/),
+          Regexp.new(/(.nounder[\s]+\{[\s]+text-decoration[\s]*:[\s]*(none)[\s]*;)/),
         ]
 
     class Content

@@ -4,7 +4,7 @@ module UMPTG::XHTML::Pipeline::Filter
 
     XPATH = <<-SXPATH
     //*[
-    @role="doc-pagebreak"
+    @role="doc-pagebreak" or @epub:type="pagebreak"
     ]
     SXPATH
 
@@ -20,13 +20,68 @@ module UMPTG::XHTML::Pipeline::Filter
     def review(issue, options: {})
       super(issue, options: options)
 
-      id = issue.content['id'] || ""
-      act = UMPTG::Pipeline::Action.new(
+      case
+      when (issue.content['role'] == 'doc-pagebreak' and issue.content['epub:type'] == 'pagebreak')
+        issue.actions << UMPTG::Pipeline::Action.new(
             issue,
-            options: options
+            options: {
+                    info_message: "#{@name}, found pagebreak #{issue.content}"
+                }
           )
-      act.add_info_msg("#{@name}, found pagebreak id=\"#{id}\"")
-      issue.actions << act
+      when issue.content['epub:type'] == 'pagebreak'
+        issue.actions << UMPTG::XML::Pipeline::Actions::SetAttributeValueAction.new(
+            issue,
+            options: {
+                    attribute_name: "role",
+                    attribute_value: "doc-pagebreak",
+                    warning_message: "#{@name}, found pagebreak #{issue.content}"
+                }
+          )
+      end
+
+      unless issue.content.name == 'span'
+        issue.actions << UMPTG::XML::Pipeline::Actions::RenameElementAction.new(
+            issue,
+            options: {
+                    new_element_name: "span",
+                    warning_message: "#{@name}, found invalid pagebreak #{issue.content}"
+                }
+          )
+      end
+
+      pg_ndx = issue.content['id'].rindex('_')
+      pg_no = issue.content['id'][pg_ndx+1..-1]
+
+      issue.actions << UMPTG::XML::Pipeline::Actions::SetAttributeValueAction.new(
+          issue,
+          options: {
+                  attribute_name: "aria-label",
+                  attribute_value: "Page " + pg_no,
+                  warning_message: "#{@name}, found invalid pagebreak #{issue.content}"
+              }
+        )
+=begin
+      # Moved to Reviewer.review()
+      issue.actions << UMPTG::XML::Pipeline::Actions::SetAttributeValueAction.new(
+          issue,
+          options: {
+                  attribute_name: "class",
+                  attribute_value: "page",
+                  attribute_append: true,
+                  warning_message: "#{@name}, found invalid pagebreak class attribute #{issue.content}"
+              }
+        )
+=end
+      if issue.content.text.empty?
+        issue.actions << UMPTG::XML::Pipeline::Actions::MarkupAction.new(
+            issue,
+            options: {
+                    action: :replace_content,
+                    markup: "Page " + pg_no,
+                    warning_message: "#{@name}, found invalid pagebreak content #{issue.content}"
+                }
+          )
+      end
     end
   end
 end

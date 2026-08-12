@@ -11,7 +11,8 @@ module UMPTG::EPUB::OEBPS::Pipeline
         epub_oebps_conforms_to: UMPTG::EPUB::OEBPS::Pipeline::Filter::ConformsToFilter,
         epub_oebps_access_hazard: UMPTG::EPUB::OEBPS::Pipeline::Filter::AccessHazardFilter,
         epub_oebps_lang: UMPTG::EPUB::OEBPS::Pipeline::Filter::LangFilter,
-        epub_oebps_opf: UMPTG::EPUB::OEBPS::Pipeline::Filter::OPFFilter
+        epub_oebps_opf: UMPTG::EPUB::OEBPS::Pipeline::Filter::OPFFilter,
+        epub_oebps_pagebreaksource: UMPTG::EPUB::OEBPS::Pipeline::Filter::PageBreakSourceFilter
       }
 
   def self.FILTERS

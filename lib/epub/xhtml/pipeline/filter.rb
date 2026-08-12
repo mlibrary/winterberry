@@ -5,6 +5,8 @@ module UMPTG::EPUB::XHTML::Pipeline
 
   XHTML_FILTERS = {
         epub_xhtml_lang: UMPTG::EPUB::XHTML::Pipeline::Filter::LangFilter,
+        epub_xhtml_divisionrole: UMPTG::EPUB::XHTML::Pipeline::Filter::DivisionRoleFilter,
+        epub_xhtml_tocrole: UMPTG::EPUB::XHTML::Pipeline::Filter::TOCRoleFilter,
       }
 
   def self.FILTERS
