@@ -6,7 +6,7 @@ module UMPTG::EPUB
   class Reviewer < Pipeline::Processor
     def initialize(name, processors: {}, filters: nil, options: {}, logger: nil)
       options = {
-            css_a_decoration: true,
+            css_a_decoration: false,
             css_font_face: false,
             css_access_display_transform: true,
             epub_oebps_accessmode: true,
@@ -21,9 +21,12 @@ module UMPTG::EPUB
             epub_xhtml_lang: true,
             epub_xhtml_divisionrole: false,
             epub_xhtml_tocrole: false,
+            xhtml_empty_header: false,
+            xhtml_empty_link: false,
             xhtml_entity: false,
             xhtml_extdescr: true,
             xhtml_figure: true,
+            xhtml_header_level: false,
             xhtml_header_title: false,
             xhtml_img_alttext: true,
             xhtml_pagebreak: false,
@@ -50,9 +53,6 @@ module UMPTG::EPUB
 
       UMPTG::EPUB::OEBPS::Pipeline.review_issues(entry_actions, options: options, logger: logger)
       UMPTG::EPUB::Reviewer.review_pagebreak_issues(entry_actions, options: options, logger: logger)
-
-      #nav_entry_name = entry_actions.first.entry.files.epub.rendition.navigation.entry.name
-      #nav_entry_actions = entry_actions.select {|ea| ea.entry.name == nav_entry_name }.first
     end
 
     def report(entry_results, options: {}, logger: nil)

@@ -1,14 +1,13 @@
 module UMPTG::XML::Pipeline::Actions
 
-  class RemoveElementAction < NormalizeAction
-    def resolve(args = {})
-      super(args)
+  class RemoveElementAction < UMPTG::Pipeline::NormalizeAction
+    def resolve(options: {})
+      super(options: options)
 
-      reference_node = @properties[:reference_node]
-      action_node = @properties[:action_node]
+      reference_node = issue.content
 
-      action_node_markup = action_node.to_s
-      action_node.remove()
+      action_node_markup = issue.content.to_s
+      issue.content.remove()
       add_info_msg("removed element #{action_node_markup}")
 
       @status = UMPTG::Action.COMPLETED

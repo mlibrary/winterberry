@@ -4,10 +4,13 @@ module UMPTG::XHTML::Pipeline
 
   FILTERS = {
         xhtml_img_alttext: UMPTG::XHTML::Pipeline::Filter::ImgAltTextFilter,
+        xhtml_empty_header: UMPTG::XHTML::Pipeline::Filter::EmptyHeaderFilter,
+        xhtml_empty_link: UMPTG::XHTML::Pipeline::Filter::EmptyLinkFilter,
         xhtml_entity: UMPTG::XHTML::Pipeline::Filter::EntityFilter,
         xhtml_extdescr: UMPTG::XHTML::Pipeline::Filter::ExtDescrFilter,
         xhtml_figure: UMPTG::XHTML::Pipeline::Filter::FigureFilter,
         xhtml_figure_div: UMPTG::XHTML::Pipeline::Filter::FigureDivFilter,
+        xhtml_header_level: UMPTG::XHTML::Pipeline::Filter::HeaderLevelFilter,
         xhtml_header_meta_role: UMPTG::XHTML::Pipeline::Filter::HeaderMetaRoleFilter,
         xhtml_header_title: UMPTG::XHTML::Pipeline::Filter::HeaderTitleFilter,
         xhtml_link: UMPTG::XHTML::Pipeline::Filter::LinkFilter,

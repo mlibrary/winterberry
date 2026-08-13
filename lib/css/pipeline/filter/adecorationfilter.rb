@@ -3,7 +3,9 @@ module UMPTG::CSS::Pipeline
   class ADecorationFilter < UMPTG::Pipeline::Filter
 
     REG_EXP_LIST = [
-          Regexp.new(/(a[\s]+\{[\s]+text-decoration[\s]*:[\s]*(none)[\s]*;)/),
+          #Regexp.new(/(a[\s]*\{[\s]+text-decoration[\s]*:[\s]*(none)[\s]*;)/),
+          Regexp.new(/(a[\s]*\{[a-zA-Z0-9\.\-:;\s]*text-decoration[\s]*:[\s]*(none)[\s]*;)/),
+          Regexp.new(/(.author[\s]+\{[a-zA-Z0-9\.\-:;\s]*(color[\s]*:[^;]+;))/),
           Regexp.new(/(.h2b[\s]+\{[a-zA-Z0-9\.\-:;\s]*(color[\s]*:[^;]+;))/),
           Regexp.new(/(.h2_b[\s]+\{[a-zA-Z0-9\.\-:;\s]*(color[\s]*:[^;]+;))/),
           Regexp.new(/(.h3[\s]+\{[a-zA-Z0-9\.\-:;\s]*(color[\s]*:[^;]+;))/),

@@ -1,6 +1,7 @@
 module UMPTG::EPUB::Archive
   require 'nokogiri'
   require 'mime/types'
+  require 'htmlentities'
 
   class FileEntry < UMPTG::Object
     attr_accessor :name, :content, :media_type
@@ -53,7 +54,13 @@ module UMPTG::EPUB::Archive
 
       a = args.clone
       a[:entry_name] = @name
-      a[:entry_content] = @document.nil? ? @content : @document.to_xml
+
+      con = @document.nil? ? @content : @document.to_xml
+      if @media_type == "text/css"
+        con = HTMLEntities.new.decode(con)
+        #con.gsub!(/&gt;/,'>')
+      end
+      a[:entry_content] = con
       FileEntry.write(output_stream, a)
     end
 

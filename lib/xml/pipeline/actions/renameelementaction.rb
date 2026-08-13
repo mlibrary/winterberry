@@ -1,8 +1,8 @@
 module UMPTG::XML::Pipeline::Actions
 
   class RenameElementAction < UMPTG::Pipeline::NormalizeAction
-    def initialize(issue, options: {})
-      super(issue, options: options)
+    def resolve(options: {})
+      super(options: options)
 
       reference_node = issue.content
       new_element_name = @properties[:new_element_name]
