@@ -194,7 +194,7 @@ epub_file_list.each do |epub_file|
                 },
             logger: logger
          )
-
+=begin
   epub_processor.report(
           entry_results,
           options: {
@@ -202,7 +202,7 @@ epub_file_list.each do |epub_file|
               },
           logger: logger
         )
-
+=end
   if options.normalize and epub.modified
     new_epub_file = File.join(
           File.dirname(epub_file),

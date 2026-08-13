@@ -1,14 +1,13 @@
 module UMPTG::EPUB::OEBPS::Pipeline
-  rq_path = File.join(File.expand_path(File.dirname(__FILE__)), "filter", "*")
-  Dir.glob(rq_path).each {|f| require_relative(f) }
+  require_relative(File.join("filter", "CertifiedByFilter"))
+  require_relative(File.join("filter", "CertifierCredentialFilter"))
 
-  FFILTERS = {
-        epub_oebps_conforms_to: UMPTG::EPUB::OEBPS::Pipeline::Filter::ConformsToFilter,
+  OEBPS_FILTERS = {
         epub_oebps_certified_by: UMPTG::EPUB::OEBPS::Pipeline::Filter::CertifiedByFilter,
         epub_oebps_certifier_credential: UMPTG::EPUB::OEBPS::Pipeline::Filter::CertifierCredentialFilter,
       }
 
   def self.FILTERS
-    return FFILTERS
+    return OEBPS_FILTERS
   end
 end

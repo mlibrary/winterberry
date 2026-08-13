@@ -1,8 +1,6 @@
 module UMPTG::EPUB::OEBPS::Pipeline::Filter
 
-  class AccessFeatureFilter < UMPTG::XML::Pipeline::Filter
-  # <meta property="schema:accessibilityFeature">alternativeText</meta>
-  # <meta property="schema:accessibilityFeature">printPageNumbers</meta>
+  class AccessFeatureFilter < AccessFilter
 
     XPATH = <<-SXPATH
     //*[
@@ -11,6 +9,17 @@ module UMPTG::EPUB::OEBPS::Pipeline::Filter
     local-name()='meta' and @property='schema:accessibilityFeature'
     ]
     SXPATH
+
+    FEATURES = [
+          "alternativeText",
+          "displayTransformability",
+          "pageBreakMarkers",
+          "pageNavigation",
+          "printPageNumbers",
+          "readingOrder",
+          "structuralNavigation",
+          "tableOfContents"
+        ]
 
     def initialize(process, options: {})
       super(
@@ -21,54 +30,98 @@ module UMPTG::EPUB::OEBPS::Pipeline::Filter
             )
     end
 
-    def review(issue, options: {})
-      return unless issue.name == name
-
-      super(
-              issue,
-              options: options
-           )
-
-      if issue.content['property'] == 'schema:accessibilityFeature'
-        issue.actions << UMPTG::XML::Pipeline::Action.new(
-               issue,
-               options: {
-                   info_message: "#{name}, found #{issue.content}"
-                 }
-           )
-      end
-    end
-
     def report(issues, options: {}, logger: nil)
       super(issues, options: options, logger: logger)
 
-      llogger = logger || @logger
+      features_found = {}
+      FEATURES.each {|f| features_found[f] = false }
+      AccessFilter.report(
+            issues,
+            name,
+            "schema:accessibilityFeature",
+            features_found,
+            options: options,
+            logger: (logger || @logger),
+          )
+    end
 
-      actions = []
-      issues.each {|i| actions += i.actions }
+    def self.review_issues(entry_actions, access_mode_info, options: options)
+      issues = access_mode_info.oebps_entry_action.issues
 
-      # <meta property="schema:accessibilityFeature">alternativeText</meta>
-      # <meta property="schema:accessibilityFeature">printPageNumbers</meta>
-      features = {
-            "alternativeText" => false,
-            "printPageNumbers" => false,
-            "structuralNavigation" => false,
-            "displayTransformability" => false,
-            "readingOrder" => false
-          }
-      actions.each do |a|
-        next unless a.class.name == "UMPTG::XML::Pipeline::Action"
+      metadata_node = access_mode_info.oebps_entry_action.entry.document.xpath("//*[local-name()='metadata']").first
 
-        content = (a.issue.content.text || "").strip
-        features[content] = true if features.key?(content)
+      features_found = {}
+      FEATURES.each {|f| features_found[f] = nil }
+      issues.each do |issue|
+        feature = issue.content.content.strip
+        features_found[feature] = issue unless feature.empty?
       end
 
-      features.each do |k,v|
-        llogger.info("#{name}, <meta property=\"schema:accessibilityFeature\">#{k}</meta> found") \
-              if v
-        llogger.warn("#{name}, <meta property=\"schema:accessibilityFeature\">#{k}</meta> not found") \
-              unless v
+      features_found.each do |feature,issue|
+        condition = false
+        msg = ""
+        case feature
+        when "alternativeText"
+          # True if there are no reported img alt text issues.
+          condition = (access_mode_info.imgalt_total.count > 0 \
+                  and access_mode_info.imgalt_warnings.count == 0 \
+                  and !access_mode_info.imgalt_cover)
+          errmsg = "but invalid alt text reported"
+        when "pageBreakMarkers"
+          # True if pagebreaks do exist.
+          condition = access_mode_info.pagebreak.count > 0
+          errmsg = "but no pagebreaks found"
+        when "pageNavigation"
+          # True if a page list exists.
+          toc_doc = access_mode_info.oebps_entry_action.entry.files.epub.rendition.navigation.entry.document
+          pagelist_node = toc_doc.xpath("//*[local-name()='nav' and (@epub:type='page-list' or @role='doc-pagelist')]").first
+          condition = !pagelist_node.nil?
+          errmsg = "but no pagelist found"
+        when "tableOfContents"
+          # True if a TOC exists.
+          condition = !access_mode_info.oebps_entry_action.entry.files.epub.rendition.navigation.nil?
+          errmsg = "but no TOC found"
+        else
+          next
+        end
+
+        case
+        when (issue.nil? and condition)
+          # Add feature if it doesn't exist and the condition is true.
+        when (issue.nil? and !condition)
+          # Skip add if feature is missing and condition is false.
+          next
+        when (!issue.nil? and condition)
+          # Skip add if feature exists and condition is true.
+          next
+        else
+          # Feature exists, but condition is false, report error
+          act = UMPTG::Pipeline::Action.new(
+                issue,
+                options: options
+              )
+          act.add_error_msg("#{issue.name}, found feature=\"#{feature}\" #{errmsg}.")
+          issue.actions << act
+          next
+        end
+
+        issue = UMPTG::Issue.new(
+                  name: :epub_oebps_accessfeature,
+                  content: metadata_node
+                )
+        issues << issue
+
+        markup = "<meta property=\"schema:accessibilityFeature\">#{feature}</>"
+        issue.actions << UMPTG::XML::Pipeline::Actions::MarkupAction.new(
+                  issue,
+                  options: {
+                        action: :add_child,
+                        markup: markup,
+                        warning_message: "#{issue.name} missing meta/@property=\"accessibilityFeature\"=\"#{feature}\""
+                      }
+                )
       end
+
     end
   end
 end

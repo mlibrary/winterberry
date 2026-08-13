@@ -11,7 +11,7 @@ module UMPTG::Pipeline
 
     attr_reader :name, :process
 
-    def initialize(process, name, options: nil)
+    def initialize(process, name, options: {})
       super(
               name: name,
               process: process

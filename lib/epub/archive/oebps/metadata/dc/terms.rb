@@ -9,6 +9,7 @@ module UMPTG::EPUB::Archive::OEBPS::Metadata::DC
       super(args)
 
       @ns_prefix = UMPTG::EPUB::Archive::OEBPS::Metadata::Metadata.namespace_prefix(obj_node, NAMESPACE_URI)
+      @ns_prefix = "dcterms" if @ns_prefix == 'zzzz'
       @xpath_children = "./*[local-name()='meta' and starts-with(@property,concat('#{@ns_prefix}',':'))]"
     end
 

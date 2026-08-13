@@ -2,6 +2,8 @@ module UMPTG::CSS
   require_relative(File.join("..", "pipeline"))
   require_relative(File.join("pipeline", "actions"))
   require_relative(File.join("pipeline", "filter"))
+  require_relative(File.join("pipeline", "filter", "accessdisplaytransformfilter"))
+  require_relative(File.join("pipeline", "filter", "adecorationfilter"))
   require_relative(File.join("pipeline", "filter", "addtableoverflowfilter"))
   require_relative(File.join("pipeline", "filter", "fontfacefilter"))
   require_relative(File.join("pipeline", "filter", "fontfamilyfilter"))
@@ -10,6 +12,8 @@ module UMPTG::CSS
   require_relative(File.join("pipeline", "processor"))
 
   FILTERS = {
+            css_access_display_transform: UMPTG::CSS::Pipeline::AccessDisplayTransformFilter,
+            css_a_decoration: UMPTG::CSS::Pipeline::ADecorationFilter,
             css_add_table_overflow: UMPTG::CSS::Pipeline::AddTableOverflowFilter,
             css_font_face: UMPTG::CSS::Pipeline::FontFaceFilter,
             css_font_family: UMPTG::CSS::Pipeline::FontFamilyFilter,

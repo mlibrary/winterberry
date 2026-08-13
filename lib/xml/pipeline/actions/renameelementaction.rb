@@ -1,17 +1,16 @@
 module UMPTG::XML::Pipeline::Actions
 
-  class RenameElementAction < NormalizeAction
-    def resolve(args = {})
-      super(args)
+  class RenameElementAction < UMPTG::Pipeline::NormalizeAction
+    def resolve(options: {})
+      super(options: options)
 
-      reference_node = @properties[:reference_node]
-      action_node = @properties[:action_node]
+      reference_node = issue.content
       new_element_name = @properties[:new_element_name]
 
-      current_element_name = action_node.name
-      clss = action_node["class"]
-      action_node.name = new_element_name
-      add_info_msg("Renamed element #{current_element_name} to #{action_node.name}, class=#{clss}")
+      current_element_name = reference_node.name
+      clss = reference_node["class"]
+      reference_node.name = new_element_name
+      add_info_msg("#{issue.name}: renamed element #{current_element_name} to #{reference_node.name}")
 
       @status = UMPTG::Action.COMPLETED
     end

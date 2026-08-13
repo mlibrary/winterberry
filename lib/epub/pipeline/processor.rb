@@ -19,7 +19,7 @@ module UMPTG::EPUB::Pipeline
       a[:oebps_processor] = UMPTG::EPUB::OEBPS::Processor("OEBPSProcessor", options: options, logger: logger) \
                  if processors[:oebps_processor].nil?
       a[:xhtml_processor] = processors[:xhtml_processor].nil? ? \
-                  UMPTG::XHTML::Processor("XHTMLProcessor", options: options, logger: logger) : \
+                  UMPTG::EPUB::XHTML::Processor("XHTMLProcessor", options: options, logger: logger) : \
                   processors[:xhtml_processor]
       a[:xml_processor] = UMPTG::XML::Processor("XMLProcessor", options: options, logger: logger) \
                  if processors[:xml_processor].nil?
@@ -41,6 +41,63 @@ module UMPTG::EPUB::Pipeline
             }
     end
 
+    def select(epub, options: {}, logger: nil)
+      entry_actions = []
+      ([epub.rendition.entry] + epub.rendition.manifest.entries).each do |entry|
+        media_type = entry.media_type.to_s
+        processor = @processors[media_type]
+        if processor.nil?
+          logger.warn("#{entry.name}, no processor for media type #{media_type}")
+          next
+        end
+
+        #xml_doc = UMPTG::XML.parse(xml_content: entry.content)
+        xml_doc = entry.document
+        logger.error("#{entry.name}: #{xml_doc.errors.count} parse errors") unless xml_doc.errors.empty?
+
+        options[:entry] = entry
+        issues = processor.select(xml_doc, options: options)
+
+        entry_actions << UMPTG::EPUB::EntryActions.new(
+                  entry,
+                  processor: processor,
+                  issues: issues || []
+                  )
+      end
+      return entry_actions
+    end
+
+    def review(entry_actions, options: {}, logger: nil)
+      entry_actions.each do |ea|
+        options[:entry] = ea.entry
+        ea.processor.review(ea.issues, options: options)
+      end
+    end
+
+    def resolve(entry_actions, options: {}, logger: nil)
+      entry_actions.each do |ea|
+        options[:entry] = ea.entry
+        ea.result = ea.processor.resolve(ea.issues, options: options, logger: logger)
+      end
+    end
+
+    def report(entry_actions, options: {}, logger: nil)
+      llogger = logger || @logger
+
+      @processors.each do |k,p|
+        issues = []
+        entry_actions.each do |ea|
+          issues += ea.result.issues if ea.entry.media_type == k
+        end
+
+        p.report_issues(
+              issues,
+              logger: llogger,
+              options: {process_results: true}
+            )
+      end
+    end
+
     def run(epub, options: {}, logger: nil)
       llogger = logger || @logger
 
@@ -54,53 +111,21 @@ module UMPTG::EPUB::Pipeline
         processor.logger = nil
       end
 
-      epub_title =
-      entry_actions = []
+      run_options = options.clone
+      run_options[:process_results] = false
 
-      run_args = options.clone
-      run_args[:process_results] = false
-      ([epub.rendition.entry] + epub.rendition.manifest.entries).each do |entry|
-        media_type = entry.media_type.to_s
-        processor = @processors[media_type]
-        if processor.nil?
-          llogger.warn("#{entry.name}, no processor for media type #{media_type}")
-          next
-        end
-
-        case media_type
-        when "text/css"
-          r_args = options.clone
-          r_args[:process_results] = false
-          result = processor.run(entry.content, options: r_args)
-        #when "application/xhtml+xml", "application/x-dtbncx+xml", "application/oebps-package+xml"
-        else
-          xml_doc = UMPTG::XML.parse(xml_content: entry.content)
-          llogger.error("#{entry.name}: #{xml_doc.errors.count} parse errors") unless xml_doc.errors.empty?
-
-          run_args[:entry] = entry
-          result = processor.run(xml_doc, options: run_args, logger: llogger)
-        end
-
-        entry_actions << UMPTG::EPUB::EntryActions.new(
-                  entry,
-                  result
-                  ) \
-           unless result.nil?
-      end
+      entry_actions = select(epub, options: run_options, logger: llogger)
+      review(entry_actions, options: run_options, logger: llogger)
+      resolve(entry_actions, options: run_options, logger: llogger)
+      #report_new(entry_actions, options: run_options, logger: llogger)
 
       entry_actions.each do |ea|
         llogger.info("Entry: #{ea.entry.name}")
 
-        # Report results
-        UMPTG::Pipeline::Action.resolve_issues(
-              ea.result.issues,
-              logger: llogger,
-              options: {
-                    normalize: false,
-                    display_msgs: true
-                  }
-              )
-        #ea.action_result.actions.each {|a| @logger.info(a) }
+        UMPTG::Pipeline::Action.display_messages(
+              ea.issues,
+              logger: logger
+           )
 
         if ea.result.modified or options[:save_forced]
           llogger.info("Updating entry #{ea.entry.name}")
@@ -152,24 +177,9 @@ module UMPTG::EPUB::Pipeline
       end
       llogger.info("Normalization not necessary.") unless epub.modified
 
+      report(entry_actions, options: options, logger: llogger)
+
       return entry_actions
-    end
-
-    def report(entry_actions, options: {}, logger: nil)
-      llogger = logger || @logger
-
-      @processors.each do |k,p|
-        issues = []
-        entry_actions.each do |ea|
-          issues += ea.result.issues if ea.entry.media_type == k
-        end
-
-        p.report_issues(
-              issues,
-              logger: llogger,
-              options: {process_results: true}
-            )
-      end
     end
 
     def filters()

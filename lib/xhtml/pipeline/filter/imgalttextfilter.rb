@@ -25,27 +25,57 @@ module UMPTG::XHTML::Pipeline::Filter
 
       if issue.content.name == 'img'
         role = (issue.content["role"] || "").strip.downcase
-        unless role == "presentation"
+        if role == "presentation"
+          issue.actions << UMPTG::XML::Pipeline::Action.new(
+                   issue,
+                   options: {
+                       info_message: \
+                         "#{issue.name}, #{issue.content.name} presentation image found src=\"#{issue.content['src']}\" role=\"#{issue.content['role']}\" alt=\"#{issue.content['alt']}\""
+                       }
+               )
+        else
+          src = (issue.content["src"] || "").strip
           alt = (issue.content["alt"] || "").strip
-          if alt.empty?
-              issue.actions << UMPTG::XML::Pipeline::Action.new(
-                       issue,
-                       options: {
-                           warning_message: \
-                             "#{issue.name}, #{issue.content.name} no alt text src=\"#{issue.content['src']}\" role=\"#{issue.content['role']}\""
-                           }
-                   )
-=begin
+          #is_suspect = ["cover","image","images","","alt",File.basename(src).downcase,File.basename(src,".*").downcase].include?(alt.downcase)
+          is_suspect = ["image1", "inline", "cover","image","images","","alt",File.basename(src).downcase,File.basename(src,".*").downcase].include?(alt.downcase)
+          #is_suspect = true
+          #puts "is_suspect=#{is_suspect},alt=#{alt}"
+          if is_suspect
+            #set_as_presentation = false
+            role_value = "presentation"
+            case alt.downcase
+            when "cover"
+              role_value = "presentation"
+            when "image", "inline"
+              role_value = "presentation"
+            end
+            if !role_value.empty?
               issue.actions << UMPTG::XML::Pipeline::Actions::SetAttributeValueAction.new(
                        issue,
                        options: {
                            attribute_name: "role",
-                           attribute_value: "presentation",
+                           attribute_value: role_value,
                            warning_message: \
-                             "#{name}, #{reference_node.name} no alt text src=\"#{reference_node['src']}\" role=\"#{reference_node['role']}\""
+                             "#{name}, #{issue.content.name} no alt text src=\"#{issue.content['src']}\" role=\"#{issue.content['role']}\""
                            }
                    )
-=end
+              issue.actions << UMPTG::XML::Pipeline::Actions::RemoveAttributeAction.new(
+                       issue,
+                       options: {
+                           attribute_name: "alt",
+                           warning_message: \
+                             "#{name}, #{issue.content.name} invalid alt text src=\"#{issue.content['src']}\" alt=\"#{issue.content['alt']}\""
+                           }
+                   )
+            else
+              issue.actions << UMPTG::XML::Pipeline::Action.new(
+                       issue,
+                       options: {
+                           warning_message: \
+                             "#{issue.name}, #{issue.content.name} image with possible invalid alt text src=\"#{issue.content['src']}\" role=\"#{issue.content['role']}\" alt=\"#{issue.content['alt']}\""
+                           }
+                   )
+            end
           else
             issue.actions << UMPTG::XML::Pipeline::Action.new(
                      issue,
