@@ -125,6 +125,40 @@ module UMPTG::EPUB
                       warning_message: "#{@name}, missing CSS class \".page\""
                     }
               )
+
+=begin
+        toc_entry = css_entry_action.entry.files.epub.rendition.navigation.entry
+        toc_entry_action = entry_actions.select {|ea| ea.entry.name == toc_entry.name }.first
+
+        toc_doc = toc_entry.document
+        page_list_nav_node = toc_doc.xpath("//*[local-name()='nav' and (role='doc-pagelist' or epub:type='page-list')]").first
+        if page_list_nav_node.nil?
+          toc_body_node = toc_doc.xpath("//*[local-name()='body']").first
+          raise "missing TOC body element" if toc_body_node.nil?
+
+          toc_issue = UMPTG::Issue.new(
+                    name: :xhtml_pagebreak,
+                    content: toc_body_node
+                  )
+          toc_entry_action.issues << toc_issue
+
+          markup = '<nav id="pagelist" role="doc-pagelist" epub:type="page-list"><h1>Pages</h1><ol style="list-style-type:none;">'
+          pagebreak_issues.each do |i|
+            pb_entry_action = entry_actions.select {|ea| ea.entry.document == i.content.document }.first
+            p = File.basename(pb_entry_action.entry.name)
+            markup += "<li><a href=\"#{p}\##{i.content['id']}\">#{i.content['id'].delete_prefix('page_')}</a></li>"
+          end
+          markup += "</ol></nav>"
+          toc_issue.actions << UMPTG::XML::Pipeline::Actions::MarkupAction.new(
+                  toc_issue,
+                  options: {
+                        action: :add_child,
+                        markup: markup,
+                        warning_message: "#{@name}, pagebreaks exist, but no pagelist."
+                      }
+                )
+        end
+=end
       end
     end
   end

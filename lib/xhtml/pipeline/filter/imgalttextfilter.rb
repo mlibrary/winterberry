@@ -37,8 +37,9 @@ module UMPTG::XHTML::Pipeline::Filter
           src = (issue.content["src"] || "").strip
           alt = (issue.content["alt"] || "").strip
           #is_suspect = ["cover","image","images","","alt",File.basename(src).downcase,File.basename(src,".*").downcase].include?(alt.downcase)
-          #is_suspect = ["image1", "inline", "cover","image","images","","alt",File.basename(src).downcase,File.basename(src,".*").downcase].include?(alt.downcase)
-          is_suspect = true
+          is_suspect = ["image1", "inline", "cover","image","images","","alt",File.basename(src).downcase,File.basename(src,".*").downcase].include?(alt.downcase)
+          #is_suspect = true
+          #puts "is_suspect=#{is_suspect},alt=#{alt}"
           if is_suspect
             #set_as_presentation = false
             role_value = "presentation"
