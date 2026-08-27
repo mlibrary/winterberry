@@ -15,27 +15,30 @@ module UMPTG::Journal::Resource::Filter
     ]
     SXPATH
 
-    def initialize(args = {})
-      args[:name] = :resource
-      args[:xpath] = XPATH
-
-      super(args)
-
-      @manifest = @properties[:manifest]
-      @logger = @properties[:logger]
-      @resource_map = @properties[:resource_map]
+    def initialize(process, options: {})
+    puts process.class.name
+      super(
+              process,
+              :jats_resource,
+              XPATH,
+              options: options
+            )
     end
 
-    def create_actions(args = {})
-      name = args[:name]
-      reference_node = args[:reference_node]
+    def review(issue, options: {})
+      super(issue, options: options)
 
-      actions = []
+      reference_node = issue.content
 
       fig_node = reference_node.xpath("ancestor-or-self::*[local-name()='fig'][1]").first
       if fig_node.nil?
-        @logger.warn("no figure container for link #{reference_node['xlink:href']}.")
-        return actions
+        issue.actions << UMPTG::XML::Pipeline::Action.new(
+              issue,
+              options: {
+                      warning_message: "#{@name}, no figure container for link #{reference_node['xlink:href']}. Skipping."
+                  }
+            )
+        return
       end
 
       href = fig_node['data-fulcrum-embed-filename']
@@ -50,33 +53,49 @@ module UMPTG::Journal::Resource::Filter
         end
       end
       if href.nil?
-        @logger.warn("no HREF found for reference #{reference_node}. Skipping.")
-        return actions
+        issue.actions << UMPTG::XML::Pipeline::Action.new(
+              issue,
+              options: {
+                      warning_message: "#{@name}, no HREF found for reference #{reference_node}. Skipping."
+                  }
+            )
+        return
       end
 
       fileset = nil
       unless @resource_map.nil?
-        resource = @resource_map.reference_resource(href)
+        resource = process.resource_map.reference_resource(href)
         unless resource.nil?
-          @logger.info("mapped #{href} to #{resource.name}.")
-          fileset = manifest.fileset(resource.name)
+          action << UMPTG::XML::Pipeline::Action.new(
+                issue,
+                options: {
+                        info_message: "#{@name}, mapped #{href} to #{resource.name}."
+                    }
+              )
+
+          fileset = process.manifest.fileset(resource.name)
           if fileset['noid'].empty?
-            @logger.warn("no fileset found for #{resource.name}.")
+            action.add_warning_msg("#{@name}, no fileset found for #{resource.name}. Skipping.")
           end
+          issue.actions << action
         end
       end
-      fileset = manifest.fileset(href) if fileset.nil?
-      fileset = manifest.fileset_from_noid(href) if fileset['noid'].empty?
+      fileset = process.manifest.fileset(href) if fileset.nil?
+      fileset = process.manifest.fileset_from_noid(href) if fileset['noid'].empty?
 
       if fileset['noid'].empty?
-        @logger.warn("no fileset for href #{href}. Skipping.")
-        return actions
+        issue.actions << UMPTG::XML::Pipeline::Action.new(
+              issue,
+              options: {
+                      warning_message: "#{@name}, no fileset for href #{href}. Skipping."
+                  }
+            )
+        return
       end
-      @logger.info("found fileset #{fileset['file_name']}.")
 
       caption_node = fig_node.xpath("./*[local-name()='caption']").first
       caption_markup = caption_node.nil? ? nil : caption_node.inner_html
-      jats_media_markup = @manifest.fileset_embed_jats_markup(
+      jats_media_markup = process.manifest.fileset_embed_jats_markup(
                   file_name: fileset['file_name'],
                   ableplayer_sign_file_name: fig_node['data-fulcrum-ableplayer-sign-file-name'],
                   ableplayer_present_file_name: fig_node['data-fulcrum-ableplayer-present-file-name'],
@@ -88,13 +107,15 @@ module UMPTG::Journal::Resource::Filter
                   renderer: UMPTG::Journal::JATSRenderer.new
                 )
       unless jats_media_markup.strip.empty?
-        actions << UMPTG::XML::Pipeline::Actions::MarkupAction.new(
-                reference_node: reference_node,
-                action: :replace_node,
-                markup: jats_media_markup
+        issue.actions << UMPTG::XML::Pipeline::Actions::MarkupAction.new(
+                issue,
+                options: {
+                    action: :replace_node,
+                    markup: jats_media_markup,
+                    info_message: "found fileset #{fileset['file_name']}."
+                  }
               )
       end
-      return actions
     end
   end
 end

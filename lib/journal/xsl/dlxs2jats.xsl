@@ -1809,7 +1809,7 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
                 </xsl:otherwise>
             </xsl:choose>
             <xsl:choose>
-                <xsl:when test="normalize-space($node/ancestor::*[local-name()='FIGURE']/*[local-name()='HEAD' or local-name()='P']) !=''">
+                <xsl:when test="normalize-space($node/ancestor::*[local-name()='FIGURE']/*[local-name()='HEAD' or local-name()='P'][1]) !=''">
                     <!-- In a figure that has a header. Use that and do nothing here. -->
                     <xsl:message>Figure header exists.</xsl:message>
                 </xsl:when>
