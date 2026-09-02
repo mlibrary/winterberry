@@ -142,23 +142,74 @@ else
 
         manifest_headers = manifest.headers if manifest_headers.empty?
 
+        component = nil
+        field_values = []
+        field_map = {}
+        manifest_headers.each do |h|
+          fv = nil
+
+          case h
+          when "Monograph ID"
+            fv = identifier
+            field_values << fv
+          when "Title/Link"
+            t = manifest.monograph_row['title'].gsub(/"/,'""')
+            #fv = manifest.monograph_row['link'][0..-2] + ",\"\"" +  + "\"\")"
+            fv = manifest.monograph_row['link'][0..-2] + ",\"#{t}\")"
+            field_values << fv
+          when "NOID/Link"
+            fv = manifest.monograph_row['link'][0..-2] + ",\"#{manifest.monograph_row['noid']}\")"
+            field_values << fv
+          when "Component"
+            component = service.connection.get("component", noid: noid).body if component.nil?
+            if component.nil?
+              fv = ""
+            else
+              fv = "=HYPERLINK(\"https://www.fulcrum.org/greensub/components/#{component['id']}\",\"#{component['id']}\")"
+            end
+            field_values << fv
+          when "Products"
+            component = service.connection.get("component", noid: noid).body if component.nil?
+            if component.nil?
+              fv = ""
+            else
+              products = service.connection.get("components/#{component['id']}/products").body
+              p_list = products.collect {|p| p['identifier'] }
+              fv = p_list.join(';')
+            end
+            field_values << fv
+          end
+          unless fv.nil?
+            field_map[h] = fv
+            next
+          end
+
+          next if h.start_with?("Representative")
+
+          new_h = h.strip.downcase.gsub(' ', '_')
+          unless manifest.monograph_row.key?(new_h)
+            script_logger.error("invalid metadata field \"#{h}\".")
+            next
+          end
+          field_values << manifest.monograph_row[new_h]
+        end
+
         if options.include_representatives
           manifest.representatives().each do |kind,rep_row|
-            next unless ["epub","pdf","pdf_ebook"].include?(kind)
-            #next unless ["epub"].include?(kind)
+            #next unless ["epub","pdf","pdf_ebook","audiobook"].include?(kind)
 
             field_values = []
             manifest_headers.each do |h|
               next if h.start_with?("Representative")
-              if h == "Monograph ID"
-                #field_values << rep_row['file_name']
-                field_values << identifier
+              if field_map.key?(h)
+                field_values << field_map[h]
                 next
               end
 
               new_h = h.strip.downcase.gsub(' ', '_')
               unless manifest.monograph_row.key?(new_h)
-                script_logger.error("invalid metadata field \"#{h}\".")
+                #script_logger.error("invalid metadata field \"#{h}\".")
+                field_values << ""
                 next
               end
               field_values << manifest.monograph_row[new_h]
@@ -171,52 +222,7 @@ else
             monograph_manifest_rows << field_values
           end
         else
-          component = nil
-          field_values = []
-          manifest_headers.each do |h|
-            case h
-            when "Monograph ID"
-              field_values << identifier
-              next
-            when "Title/Link"
-              t = manifest.monograph_row['title'].gsub(/"/,'""')
-              #fv = manifest.monograph_row['link'][0..-2] + ",\"\"" +  + "\"\")"
-              fv = manifest.monograph_row['link'][0..-2] + ",\"#{t}\")"
-              field_values << fv
-              next
-            when "NOID/Link"
-              fv = manifest.monograph_row['link'][0..-2] + ",\"#{manifest.monograph_row['noid']}\")"
-              field_values << fv
-              next
-            when "Component"
-              component = service.connection.get("component", noid: noid).body if component.nil?
-              if component.nil?
-                fv = ""
-              else
-                fv = "=HYPERLINK(\"https://www.fulcrum.org/greensub/components/#{component['id']}\",\"#{component['id']}\")"
-              end
-              field_values << fv
-              next
-            when "Products"
-              component = service.connection.get("component", noid: noid).body if component.nil?
-              if component.nil?
-                fv = ""
-              else
-                products = service.connection.get("components/#{component['id']}/products").body
-                p_list = products.collect {|p| p['identifier'] }
-                fv = p_list.join(';')
-              end
-              field_values << fv
-              next
-            end
-
-            new_h = h.strip.downcase.gsub(' ', '_')
-            unless manifest.monograph_row.key?(new_h)
-              script_logger.error("invalid metadata field \"#{h}\".")
-              next
-            end
-            field_values << manifest.monograph_row[new_h]
-          end
+          # Include only the monograph row only.
           monograph_manifest_rows << field_values
         end
       end
