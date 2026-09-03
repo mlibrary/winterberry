@@ -29,7 +29,7 @@ module UMPTG::EPUB
             xhtml_header_level: false,
             xhtml_header_title: false,
             xhtml_img_alttext: true,
-            xhtml_pagebreak: false,
+            xhtml_pagebreak: true,
             xhtml_link: true,
             xhtml_table_overflow: false,
             xhtml_table_pagebreak: false,
@@ -98,6 +98,7 @@ module UMPTG::EPUB
       end
 
       if pagebreak_issues.count > 0
+=begin
         raise "missing CSS entry" if css_entry_action.nil?
 
         pagebreak_issues.each do |issue|
@@ -107,7 +108,7 @@ module UMPTG::EPUB
                       attribute_name: "class",
                       attribute_value: "umptg_page",
                       attribute_append: true,
-                      warning_message: "#{@name}, found invalid pagebreak class attribute #{issue.content}"
+                      warning_message: "#{issue.name}, found invalid pagebreak class attribute #{issue.content}"
                   }
             )
         end
@@ -125,6 +126,7 @@ module UMPTG::EPUB
                       warning_message: "#{@name}, missing CSS class \".page\""
                     }
               )
+=end
 
 =begin
         toc_entry = css_entry_action.entry.files.epub.rendition.navigation.entry

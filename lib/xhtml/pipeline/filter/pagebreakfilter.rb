@@ -49,29 +49,23 @@ module UMPTG::XHTML::Pipeline::Filter
           )
       end
 
-      pg_ndx = issue.content['id'].rindex('_')
-      pg_no = issue.content['id'][pg_ndx+1..-1]
+      aria_label = issue.content['aria-label']
+      if aria_label.nil?
+        issue.actions << UMPTG::XML::Pipeline::Actions::SetAttributeValueAction.new(
+            issue,
+            options: {
+                    attribute_name: "aria-label",
+                    attribute_value: "Page " + pg_no,
+                    warning_message: "#{issue.name}, found invalid pagebreak missing aria-label #{issue.content}"
+                }
+          )
 
-      issue.actions << UMPTG::XML::Pipeline::Actions::SetAttributeValueAction.new(
-          issue,
-          options: {
-                  attribute_name: "aria-label",
-                  attribute_value: "Page " + pg_no,
-                  warning_message: "#{@name}, found invalid pagebreak #{issue.content}"
-              }
-        )
-=begin
-      # Moved to Reviewer.review()
-      issue.actions << UMPTG::XML::Pipeline::Actions::SetAttributeValueAction.new(
-          issue,
-          options: {
-                  attribute_name: "class",
-                  attribute_value: "page",
-                  attribute_append: true,
-                  warning_message: "#{@name}, found invalid pagebreak class attribute #{issue.content}"
-              }
-        )
-=end
+        pg_ndx = issue.content['id'].rindex('_')
+        pg_no = issue.content['id'][pg_ndx+1..-1]
+      else
+        pg_no = aria_label
+      end
+
       if issue.content.text.empty?
         issue.actions << UMPTG::XML::Pipeline::Actions::MarkupAction.new(
             issue,
