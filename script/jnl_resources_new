@@ -91,13 +91,15 @@ end
 
 # Initalize the JATS resource processor
 jats_processor = UMPTG::Journal::Resource::Processor.new(
+          "JATSResourceProcessor",
           manifest: manifest,
           resource_map: resource_map,
-          options: { resource: true },
+          options: { jats_resource: true },
           logger: script_logger
         )
 
-jats2html_xsl_file = File.join(root_dir, "lib", "journal", "xsl", "janeway", "janeway.xsl")
+#jats2html_xsl_file = File.join(root_dir, "lib", "journal", "xsl", "janeway", "janeway.xsl")
+jats2html_xsl_file = File.join(root_dir, "lib", "journal", "xsl", "janeway", "michigan.xsl")
 
 jats_file_list.each do |jats_file|
   jats_file = File.expand_path(jats_file)
@@ -113,16 +115,18 @@ jats_file_list.each do |jats_file|
 
   result = jats_processor.run(
         jats_doc,
-        {
+        options: {
           normalize: true
         }
       )
-
+puts "result=#{result.modified}"
+=begin
   # Report results
   UMPTG::XML::Pipeline::Action.process_actions(
         actions: result.actions,
         logger: script_logger
         )
+=end
 
   if result.modified
     new_jats_file = File.join(
