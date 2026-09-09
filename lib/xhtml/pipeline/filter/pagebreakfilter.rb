@@ -51,6 +51,13 @@ module UMPTG::XHTML::Pipeline::Filter
 
       aria_label = issue.content['aria-label']
       if aria_label.nil?
+        pg_ndx = issue.content['id'].rindex('_')
+        if pg_ndx.nil?
+          pg_no = issue.content['id'][1..-1]
+        else
+          pg_no = issue.content['id'][pg_ndx+1..-1]
+        end
+
         issue.actions << UMPTG::XML::Pipeline::Actions::SetAttributeValueAction.new(
             issue,
             options: {
@@ -60,8 +67,6 @@ module UMPTG::XHTML::Pipeline::Filter
                 }
           )
 
-        pg_ndx = issue.content['id'].rindex('_')
-        pg_no = issue.content['id'][pg_ndx+1..-1]
       else
         pg_no = aria_label
       end
