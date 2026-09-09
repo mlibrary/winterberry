@@ -4,7 +4,11 @@ module UMPTG::EPUB::XHTML::Pipeline::Filter
 
     XPATH = <<-SXPATH
     //*[
-    (local-name()='article' or local-name()='section' or local-name()='p' or local-name()='a')
+    (
+    local-name()='article' or local-name()='section' or local-name()='p'
+    or (local-name()='li' and @role='doc-endnote')
+    or (local-name()='a' and not(@href))
+    )
     and (@role or @epub:type)
     ]
     SXPATH
@@ -25,6 +29,7 @@ module UMPTG::EPUB::XHTML::Pipeline::Filter
            )
 
       role = (issue.content['role'] || "").strip
+puts "content=#{issue.content.name},role=#{role}"
       if issue.content.name == "article"
         issue.actions << UMPTG::XML::Pipeline::Actions::RemoveAttributeAction.new(
                  issue,
@@ -44,7 +49,8 @@ module UMPTG::EPUB::XHTML::Pipeline::Filter
                      }
              )
       else
-        if role.empty? or role.downcase == "main"
+        case
+        when (role.empty? or role.downcase == "main")
           epub_type = (issue.content['epub:type'] || "").strip
 
           new_role = ""
@@ -67,6 +73,22 @@ module UMPTG::EPUB::XHTML::Pipeline::Filter
                          }
                  )
           end
+        when (issue.content.name == 'section' and role.downcase == "doc-cover")
+            issue.actions << UMPTG::XML::Pipeline::Actions::RemoveAttributeAction.new(
+                      issue,
+                      options: {
+                            attribute_name: "role",
+                            warning_message: "#{issue.name}, #{issue.content.name}/@role=\"#{role}\" not allowed"
+                          }
+                    )
+        when (issue.content.name == 'li' and role.downcase == "doc-endnote")
+            issue.actions << UMPTG::XML::Pipeline::Actions::RemoveAttributeAction.new(
+                      issue,
+                      options: {
+                            attribute_name: "role",
+                            warning_message: "#{issue.name}, #{issue.content.name}/@role=\"#{role}\" not allowed"
+                          }
+                    )
         end
       end
     end

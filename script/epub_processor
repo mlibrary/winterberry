@@ -24,7 +24,7 @@ options.filter_path_list = []
 options.process = :none
 options.epubcheck = false
 option_parser = OptionParser.new do |opts|
-  opts.banner = "Usage: #{File.basename(__FILE__)} [-e] [-d filer_path] [-f filter] [-m manifest_file] [-n] [-p migrator|none|resource_processor|reviewer] epub_file [epub_file...]"
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-e] [-d filer_path] [-f filter] [-m manifest_file] [-n] [-p migrator|none|cover_extractor|resource_processor|reviewer] epub_file [epub_file...]"
   opts.on('-e', "--epubcheck", "Invoke EPUBCheck") do |flag|
     options.epubcheck = flag
   end
@@ -40,7 +40,7 @@ option_parser = OptionParser.new do |opts|
   opts.on('-n', '--normalize', 'Use which link as resource') do |flag|
     options.normalize = true
   end
-  opts.on('-p', '--process migrator|none|resource_processor|reviewer|timesfont_processor', 'EPUB Processor (default is reviewer)') do |flag|
+  opts.on('-p', '--process migrator|none|cover_extractor|resource_processor|reviewer|timesfont_processor', 'EPUB Processor (default is reviewer)') do |flag|
     options.process = flag.to_sym
   end
   opts.on_tail('-h', '--help', 'Print this help message') do
@@ -164,7 +164,7 @@ epub_file_list.each do |epub_file|
     if cover_entry.nil?
       script_logger.warn("no cover entry found.")
     else
-      #cover_file = File.join(File.dirname(epub_file), File.basename(epub_file, ".*") + "_" + File.basename(cover_entry.name))
+      #cover_file = File.join(File.dirname(epub_file), File.basename(epub_file, ".*") + "_cover" + File.extname(cover_entry.name))
       cover_file = File.join(File.dirname(epub_file), File.basename(epub_file, ".*") + File.extname(cover_entry.name))
       File.binwrite(cover_file, cover_entry.content)
       script_logger.info("Saved cover #{cover_file}")

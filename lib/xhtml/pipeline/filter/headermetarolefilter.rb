@@ -31,10 +31,11 @@ module UMPTG::XHTML::Pipeline::Filter
         role = issue.content['role']
         unless role.nil?
           issue.actions << UMPTG::XML::Pipeline::Actions::RemoveAttributeAction.new(
-                    name: issue.name,
-                    reference_node: issue.content,
-                    attribute_name: "role",
-                    warning_message: "#{issue.name}, #{issue.content.name}/@role=\"#{role}\" not allowed"
+                    issue,
+                    options: {
+                          attribute_name: "role",
+                          warning_message: "#{issue.name}, #{issue.content.name}/@role=\"#{role}\" not allowed"
+                        }
                   )
         end
       end
