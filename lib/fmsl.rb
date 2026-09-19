@@ -53,15 +53,16 @@ module UMPTG
       # Remove line that have either an empty "File Name"
       # or "File Name" == 0
       #fmsl_body_list = fmsl_body_list[1..-1]
-      fmsl_body = fmsl_body_list.delete_if { |line|
+      fmsl_body = fmsl_body_list.delete_if do |line|
+        lne = line.strip
       #fmsl_body = File.open(fmsl_file).readlines.delete_if { |line|
-        line.strip.empty? \
-          or line.strip.start_with?(',,,,,,,,,,') \
-          or line.strip.start_with?('0,') \
-          or line.strip.downcase.start_with?('"in any columns') \
-          or line.strip.downcase.start_with?('in any columns') \
-          or line.strip.downcase.start_with?('primary data')
-      }
+        lne.empty? \
+          or lne.start_with?(',,,,,,,,,,') \
+          or lne.start_with?('0,') \
+          or lne.downcase.start_with?('"in any columns') \
+          or lne.downcase.start_with?('in any columns') \
+          or lne.downcase.start_with?('primary data')
+      end
       return fmsl_body
     end
 
@@ -87,8 +88,10 @@ module UMPTG
           #next if file_name.nil? or file_name.strip.downcase.start_with?('"this should be') \
           #      or file_name.strip.downcase.start_with?('this should be')
           unless file_name.nil?
-            next if file_name.strip.downcase.start_with?('"this should be') \
-                 or file_name.strip.downcase.start_with?('this should be')
+            fn = file_name.strip
+            next if fn.downcase.start_with?('"this should be') \
+                 or fn.downcase.start_with?('this should be') \
+                 or fn.strip.downcase.start_with?('required for the fulcrum')
             next if UMPTG::Fulcrum::Manifest.blank_row_name?(file_name)
           end
 
