@@ -427,7 +427,7 @@ doi_report_file_list.each do |doi_report_file|
 
     # Write the DOIs list CSV file.
     doi_list_headers = [ "DOI" ]
-    ["full", "10.57132", "10.62859"].each do |prefix|
+    ["full", "10.57132", "10.62859", "10.16997"].each do |prefix|
       doi_list_file = File.join(File.dirname(crossref_xml_file), "includes_DOIs_#{prefix}_list.csv")
       CSV.open(
               doi_list_file,
