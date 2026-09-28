@@ -15,6 +15,7 @@
     <xsl:param name="ELOQUENCE_VERIFICATION" select="'false'"/>
     <xsl:param name="UMP_URL_PREFIX" select="'https://press.umich.edu/isbn/'"/>
     <xsl:param name="MPS_URL_PREFIX" select="'https://services.publishing.umich.edu/isbn/'"/>
+    <xsl:param name="LPP_URL_PREFIX" select="'https://livedplacespublishing.com/book/isbn/'"/>
     <xsl:param name="UMP_DEPOSITOR" select="'scpo'"/>
     <xsl:param name="UMP_EMAIL" select="'mpub.xref@gmail.com'"/>
     <xsl:param name="UMP_REGISTRANT" select="'MPublishing'"/>

@@ -12,9 +12,12 @@
     <xsl:include href="tmm_to_crossref_common.xsl"/>
 
     <xsl:param name="MPS_SERVICES_IMPRINTS" select="'a2ru intervals;aberdeen university press;against the grain, llc;american pancreatic association;amherst college press;bridwell press;disobedience press;faculty reprints;health sciences publishing services;lever press;maize books;michigan publishing services;no imprint;open humanities press;school for environment sustainability;society for cinema and media studies;university of westminster press;'"/>
+    <xsl:param name="LPP_IMPRINTS" select="'lived places publishing;'"/>
     <xsl:param name="INCLUDE_BOOKKEY" select="'false'"/>
 
     <xsl:variable name="FORMAT_MPS_SERVICES_IMPRINTS" select="concat(';',$MPS_SERVICES_IMPRINTS,';')"/>
+    <xsl:variable name="FORMAT_LPP_IMPRINTS" select="concat(';',$LPP_IMPRINTS,';')"/>
+
     <xsl:variable name="NAMESPACE_URL" select="'http://www.crossref.org/schema/5.4.0'"/>
 
     <xsl:template match="root">
@@ -34,7 +37,7 @@
                         <!-- XSLT 1.1
                         <xsl:value-of select="concat('umpre-backlist-',date:date-time(),'-submission')"/>
                         -->
-                        <xsl:value-of select="concat('umpre-backlist-',$BATCH_ID,'-submission')"/>
+                        <xsl:value-of select="concat('umpre-mps-list-',$BATCH_ID,'-submission')"/>
                     </xsl:element>
                     <xsl:element name="timestamp" namespace="{$NAMESPACE_URL}">
                         <!-- XSLT 2.0
@@ -194,8 +197,15 @@
                         <xsl:variable name="imprint" select="translate(./groupentry3, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz')"/>
                         <xsl:variable name="url_prefix">
                             <xsl:choose>
-                                <xsl:when test="contains($FORMAT_MPS_SERVICES_IMPRINTS,$imprint)"><xsl:value-of select="$MPS_URL_PREFIX"/></xsl:when>
-                                <xsl:otherwise><xsl:value-of select="$UMP_URL_PREFIX"/></xsl:otherwise>
+                                <xsl:when test="contains($FORMAT_MPS_SERVICES_IMPRINTS,$imprint)">
+                                    <xsl:value-of select="$MPS_URL_PREFIX"/>
+                                </xsl:when>
+                                <xsl:when test="contains($FORMAT_LPP_IMPRINTS,$imprint)">
+                                    <xsl:value-of select="$LPP_URL_PREFIX"/>
+                                </xsl:when>
+                                <xsl:otherwise>
+                                    <xsl:value-of select="$UMP_URL_PREFIX"/>
+                                </xsl:otherwise>
                             </xsl:choose>
                         </xsl:variable>
 
