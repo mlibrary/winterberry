@@ -179,7 +179,7 @@ fmsl_file_list.each do |fmsl_file|
         end
         script_logger.info("VTT file #{vtt_name} found.")
 
-        row[col] = File.read(vtt_file)
+        #row[col] = File.read(vtt_file)
 =begin
         File.open(vtt_file, "rb") do |file|
           content = file.read

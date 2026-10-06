@@ -300,14 +300,14 @@ File.open(cmds_file, "w") do |fp|
     unless minfo.monograph_dir.nil?
       prefix = minfo.monograph_dir.fmsl_file.nil? ? "#" : ""
 
-      fp.puts "#{prefix}bundle exec ruby script#{File::SEPARATOR}monograph_resource_metadata #{minfo.monograph_system_dir}"
+      fp.puts "#{prefix}bundle exec ruby script#{File::SEPARATOR}monograph_dir_processor -n -p metadata #{minfo.monograph_system_dir}"
     end
   end
   isbn_list = monograph_info.values.collect {|v| v.isbn.gsub(/-/,'') unless v.isbn.nil? }
   fp.puts
   fp.puts "# Review monographs"
   monograph_info.values.each do |v|
-    fp.puts "bundle exec ruby script#{File::SEPARATOR}review_monograph -n -u #{v.monograph_system_dir}" \
+    fp.puts "bundle exec ruby script#{File::SEPARATOR}monograph_dir_processor -n -p review #{v.monograph_system_dir}" \
         unless v.monograph_system_dir.nil?
   end
   fp.puts

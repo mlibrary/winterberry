@@ -96,6 +96,11 @@ module UMPTG::Fulcrum::Resources::XHTML::Pipeline::Filter
                   }
              )
       else
+=begin
+        if fragment_node['style'] == "display:none"
+          fragment_node.remove_attribute("style")
+        end
+=end
         if resource_node_list.count > 1
           # Multiple resource references found.
           action_list << UMPTG::XML::Pipeline::Action.new(
