@@ -58,10 +58,11 @@ require_relative File.join(root_dir, "lib", "fulcrum", "manifest")
 class EPUBResult
   attr_reader :epub_file
   attr_accessor :pagebreak_count, :pagebreak_markup, \
-      :navigation_types, :pagelist_entry_count
+      :navigation_types, :pagelist_entry_count, :version
 
   def initialize(ef, results: nil)
     @epub_file = ef
+    @version = ""
     @pagebreak_count = 0
     @pagebreak_markup = ""
     @navigation_types = []
@@ -81,6 +82,7 @@ epub_processor = UMPTG::EPUB::Processor(
 
 EPUB_PAGELIST_HEADERS = [
         "EPUB File",
+        "Version",
         "Navigation Types",
         "Page List Entry #",
         "Pagebreak #",
@@ -127,6 +129,7 @@ epub_file_list.each do |epub_file|
   eresult = EPUBResult.new(epub_file)
   epub_results << eresult
 
+  eresult.version = epub.rendition.version
   eresult.pagebreak_count = epub_issues[:xhtml_pagebreak].count
   eresult.pagebreak_markup = epub_issues[:xhtml_pagebreak].first.nil? ? "" : \
               epub_issues[:xhtml_pagebreak].first.content.to_xml
@@ -152,6 +155,7 @@ CSV.open(
   epub_results.each do |er|
     csv << {
             "EPUB File" => File.basename(er.epub_file),
+            "Version" => er.version,
             "Navigation Types" => er.navigation_types.join('; '),
             "Page List Entry #" => er.pagelist_entry_count,
             "Pagebreak #" => er.pagebreak_count,

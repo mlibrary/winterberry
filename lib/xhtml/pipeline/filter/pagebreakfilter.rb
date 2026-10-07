@@ -2,11 +2,30 @@ module UMPTG::XHTML::Pipeline::Filter
 
   class PageBreakFilter < UMPTG::XML::Pipeline::Filter
 
+=begin
     XPATH = <<-SXPATH
     //*[
     @role="doc-pagebreak" or @epub:type="pagebreak"
     ]
     SXPATH
+=end
+    XPATH = <<-SXPATH
+    //*[
+    @role="doc-pagebreak"
+    or @*[local-name()='type' and namespace-uri()='http://www.idpf.org/2007/ops' and string()='pagebreak']
+    ] | //*[
+    local-name()='a' and (
+    starts-with(@id,'page_')
+    or starts-with(@id,'P')
+    or starts-with(@id,'p')
+    )
+    ] | //*[
+    local-name()='span' and (
+    starts-with(@id,'p')
+    )
+    ]
+    SXPATH
+
 
     def initialize(process, options: {})
       super(

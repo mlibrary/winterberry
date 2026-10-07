@@ -2,6 +2,7 @@ module UMPTG::EPUB::XHTML::Pipeline::Filter
 
   class NavTypeFilter < UMPTG::XML::Pipeline::Filter
 
+=begin
     XPATH = <<-SXPATH
     //*[
     local-name()='nav'
@@ -12,6 +13,28 @@ module UMPTG::EPUB::XHTML::Pipeline::Filter
     @role='doc-toc' or @epub:type='toc'
     or @epub:type='landmarks'
     or @epub:type='page-list'
+    )
+    ]
+=end
+    XPATH = <<-SXPATH
+    //*[
+    local-name()='nav'
+    and (@role or @*[local-name()='type' and namespace-uri()='http://www.idpf.org/2007/ops'])
+    ] | //*[
+    local-name()='section'
+    and (
+    @role='doc-toc'
+    or (
+    @*[
+    local-name()='type'
+    and namespace-uri()='http://www.idpf.org/2007/ops'
+    and (
+    string()='toc'
+    or string()='landmarks'
+    or string()='page-list'
+    )
+    ]
+    )
     )
     ]
     SXPATH
