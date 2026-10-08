@@ -429,6 +429,13 @@
             <xs:attribute name="active" type="xs:boolean" fixed="true"/>
         </xs:complexType>
     </xs:element>
+    <xs:element name="adapted_according_to_cc_license">
+        <xs:complexType>
+            <xs:attribute name="id" type="xs:string" fixed="adapted_according_to_cc_license"/>
+            <xs:attribute name="term" type="xs:string" fixed="adapted according to CC license"/>
+            <xs:attribute name="active" type="xs:boolean" fixed="true"/>
+        </xs:complexType>
+    </xs:element>
 
     <xs:element name="monograph" type="type_monograph"/>
     <xs:element name="metadata" type="type_monograph_metadata"/>
@@ -864,6 +871,7 @@
             <xs:element ref="in_copyright"/>
             <xs:element ref="public_domain"/>
             <xs:element ref="author_created_owned"/>
+            <xs:element ref="adapted_according_to_cc_license"/>
         </xs:choice>
         <xs:attribute name="enumeration" type="xs:boolean" fixed="true"/>
         <xs:attribute name="object" type="xs:string" fixed="file_set"/>
