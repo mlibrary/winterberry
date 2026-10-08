@@ -23,6 +23,10 @@ module UMPTG::EPUB::Archive::OEBPS::Metadata::DC
       return find(element_name: "identifier")
     end
 
+    def publisher(args = {})
+      return find(element_name: "publisher")
+    end
+
     def add(args = {})
       element_value = args[:element_value] || ""
 

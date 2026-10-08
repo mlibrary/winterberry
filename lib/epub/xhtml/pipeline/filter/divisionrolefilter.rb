@@ -29,7 +29,7 @@ module UMPTG::EPUB::XHTML::Pipeline::Filter
            )
 
       role = (issue.content['role'] || "").strip
-puts "content=#{issue.content.name},role=#{role}"
+
       if issue.content.name == "article"
         issue.actions << UMPTG::XML::Pipeline::Actions::RemoveAttributeAction.new(
                  issue,

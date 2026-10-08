@@ -2,11 +2,20 @@ module UMPTG::EPUB::NCX::Pipeline::Filter
 
   class NavigationFilter < UMPTG::XML::Pipeline::Filter
 
+=begin
     XPATH = <<-PCKXPATH
     //*[
     local-name() = 'navPoint' or local-name()='pageTarget'
     ]
     PCKXPATH
+=end
+    XPATH = <<-NCXXPATH
+    //*[
+    local-name() = 'navMap'
+    or local-name()='navList'
+    or local-name()='pageList'
+    ]
+    NCXXPATH
 
     def initialize(process, options: {})
       super(
@@ -26,8 +35,24 @@ module UMPTG::EPUB::NCX::Pipeline::Filter
            )
 
       name = issue.name
-      reference_node = issue.content  # <navPoint|pageTarget> element
+      reference_node = issue.content  # <navList|navMap|pageList> element
 
+      action = UMPTG::XML::Pipeline::Action.new(
+               issue,
+               options: {
+                    info_message: "#{issue.name}, #{issue.content.name} found NCX navigation #{reference_node.name}"
+                  }
+           )
+      issue.actions << action
+
+      case reference_node.name
+      when "navList"
+      when "navMap"
+      when "pageList"
+      else
+      end
+
+=begin
       if reference_node.name == "navPoint" or reference_node.name == "pageTarget"
         id = reference_node["id"]
         id = id.nil? ? "" : id.strip
@@ -42,6 +67,7 @@ module UMPTG::EPUB::NCX::Pipeline::Filter
                   )
         end
       end
+=end
     end
   end
 end
