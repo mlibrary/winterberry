@@ -45,6 +45,25 @@ require 'mime/types'
 require_relative File.join(root_dir, 'lib', 'fulcrum')
 
 ROOT_XML = <<-RXML
+<doi_batch version="5.4.0"
+xmlns="http://www.crossref.org/schema/5.4.0"
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+xsi:schemaLocation="http://www.crossref.org/schema/5.4.0 https://www.crossref.org/schemas/crossref5.4.0.xsd">
+<head>
+<doi_batch_id>%s</doi_batch_id>
+<timestamp>%s</timestamp>
+<depositor>
+<depositor_name>scpo</depositor_name>
+<email_address>mpub.xref@gmail.com</email_address>
+</depositor>
+<registrant>MPublishing</registrant>
+</head>
+<body>
+</body>
+</doi_batch>
+RXML
+=begin
+ROOT_XML = <<-RXML
 <doi_batch xmlns="http://www.crossref.org/schema/5.3.1"
 xmlns:ali="http://www.niso.org/schemas/ali/1.0/"
 xmlns:jats="http://www.ncbi.nlm.nih.gov/JATS1"
@@ -67,6 +86,7 @@ xmlns:xlink="http://www.w3.org/1999/xlink">
 </body>
 </doi_batch>
 RXML
+=end
 
 COMP_XML = <<-CXML
 <component parent_relation="isPartOf">
@@ -79,6 +99,9 @@ COMP_XML = <<-CXML
 </component>
 CXML
 
+BOOK_XML = <<-BXML
+<book book_type="monograph"><book_metadata language="en"></book_metadata></book>
+BXML
 
 time = Time.now
 # [Y0001]-[M01]-[D01]T[H01]:[m01]:[s01][Z]
@@ -109,6 +132,107 @@ manifest_file_list.each do |manifest_file|
     script_logger.error("no monograph DOI")
     next
   end
+
+  book_doc = Nokogiri::XML::DocumentFragment.parse(BOOK_XML)
+  book_node = book_doc.first_element_child
+  book_metadata_node = book_node.first_element_child
+
+  # Contributors
+  creators = manifest.monograph_row['creator(s)']
+  author_list = creators.split(';')
+  if author_list.count > 0
+    contrib_node = book_metadata_node.add_child("<contributors></>").first
+    first_person = true
+    author_list.each do |author|
+      s_list = author.split(',')
+      last_n = s_list[0] || ""
+      first_n = s_list[1] || ""
+      role = "author"
+      sequence = first_person ? "first" : "additional"
+
+      unless first_n.empty?
+        first_n = first_n.strip
+        m = first_n.match(/([^\(]+)\(([^\)]+)\)/)
+        unless m.nil?
+          first_n = m[1]
+          role = m[2]
+        end
+      end
+      person_node = contrib_node.add_child("<person_name contributor_role=\"#{role.downcase}\" sequence=\"#{sequence}\"></>").first
+      person_node.add_child("<given_name>#{first_n}</>") \
+            unless first_n.empty?
+      person_node.add_child("<surname>#{last_n}</>") \
+            unless last_n.empty?
+
+      first_person = false
+    end
+  end
+
+  # Title
+  full_title = manifest.monograph_row['title'] || ""
+  unless full_title.empty?
+    title_list = full_title.split(':')
+    if title_list.count > 0
+      title_node = book_metadata_node.add_child("<titles></>").first
+      title_node.add_child("<title>#{title_list[0].strip}</>")
+      title_node.add_child("<subtitle>#{title_list[1].strip}</>") \
+            unless title_list[1].nil?
+    end
+  end
+
+  # Publication Date
+  pub_year = manifest.monograph_row['pub_year'] || ""
+  unless pub_year.empty?
+    pub_year_node = book_metadata_node.add_child("<publication_date></>").first
+    pub_year_node.add_child("<year>#{pub_year.strip}</>")
+  end
+
+  # ISBNs
+  isbns = manifest.monograph_row['isbn(s)'] || ""
+  isbns_list = isbns.split(';')
+  isbns_list.each do |isbn|
+    isbn = isbn.strip
+    format = ""
+    unless isbn.empty?
+      m = isbn.match(/([^\(]+)\(([^\)]+)\)/)
+      unless m.nil?
+        isbn= m[1].strip
+        isbn = isbn.gsub(/-/, '')
+        f = m[2].strip
+        case f.downcase
+        when 'hardcover', 'paper', 'paperback'
+          format = 'print'
+        else
+          format = 'electronic'
+        end
+      end
+    end
+    isbn_node = book_metadata_node.add_child("<isbn media_type=\"#{format}\">#{isbn}</isbn>").first
+  end
+
+  # Publisher
+  pub_loc = manifest.monograph_row['pub_location'] || ""
+  publisher = manifest.monograph_row['publisher'] || ""
+  unless pub_loc.empty? and publisher.empty?
+    pub_node = book_metadata_node.add_child("<publisher></>").first
+    pub_node.add_child("<publisher_name>#{publisher.strip}</>") unless publisher.empty?
+    pub_node.add_child("<publisher_place>#{pub_loc.strip}</>") unless pub_loc.empty?
+  end
+
+  # DOI Data
+  doi = manifest.monograph_row['doi'] || ""
+  resource = manifest.monograph_row['link'] || ""
+  unless doi.empty? and resource.empty?
+    doi = doi.delete_prefix("https://doi.org/")
+    resource = resource[12..-3]
+    data_node = book_metadata_node.add_child("<doi_data></>").first
+    data_node.add_child("<doi>#{doi.strip}</>") unless doi.empty?
+    data_node.add_child("<resource>#{resource.strip}</>") unless resource.empty?
+  end
+
+  xref_root.add_child(book_node.to_xml)
+
+=begin
   comp_root_xml = "<sa_component parent_doi=\"#{monograph_doi}\"><component_list></></>"
   comp_doc = Nokogiri::XML::DocumentFragment.parse(comp_root_xml)
   comp_list_node = comp_doc.first_element_child.first_element_child
@@ -126,6 +250,7 @@ manifest_file_list.each do |manifest_file|
     comp_list_node.add_child(comp_xml)
   end
   xref_root.add_child(comp_doc.first_element_child.to_xml)
+=end
 end
 
 UMPTG::XML.save(xref_doc, output_file)
