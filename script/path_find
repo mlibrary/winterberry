@@ -18,8 +18,9 @@ script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
 # Process the script parameters.
 options = OpenStruct.new
 options.base_paths = [
-      "s:/Information\ Management/Fulcrum/Fulcrum_Unsynced/HEB/Round23/Fulcrum_prep",
-      "s:/Information\ Management/Fulcrum/Fulcrum_Unsynced/HEB/Round23/Fulcrum_prep_batch2",
+      "s:/Information\ Management/Fulcrum/Fulcrum_Synced/UMP",
+      #"s:/Information\ Management/Fulcrum/Fulcrum_Unsynced/HEB/Round23/Fulcrum_prep_batch2",
+      #"s:/Information\ Management/Fulcrum/Fulcrum_Unsynced/HEB/Round23/Fulcrum_prep_batch2",
     ]
 option_parser = OptionParser.new do |opts|
   opts.banner = "Usage: #{File.basename(__FILE__)} isbn [isbn...]"
@@ -41,12 +42,19 @@ paths_found = []
 isbn_list.each do |isbn|
   puts isbn
   options.base_paths.each do |bp|
+    path = File.join(bp, isbn)
+    if File.directory?(path)
+      paths_found << path
+      break
+    end
+=begin
     pattern = File.join(bp, '*', isbn + '.pdf')
     ff = Dir.glob(pattern)
     if ff.count > 0
       paths_found += ff
       break
     end
+=end
   end
 end
 paths_found.each {|p| puts p }
