@@ -1,0 +1,52 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Script for resolving a DOI
+
+require 'optparse'
+require 'ostruct'
+require 'os'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+# Process the script parameters.
+options = OpenStruct.new
+options.base_paths = [
+      "s:/Information\ Management/Fulcrum/Fulcrum_Unsynced/HEB/Round23/Fulcrum_prep",
+      "s:/Information\ Management/Fulcrum/Fulcrum_Unsynced/HEB/Round23/Fulcrum_prep_batch2",
+    ]
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} isbn [isbn...]"
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    script_logger.info(opts)
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  script_logger.info(option_parser.help)
+  return
+end
+
+# Process the command line parameters.
+isbn_list = ARGV
+
+paths_found = []
+isbn_list.each do |isbn|
+  puts isbn
+  options.base_paths.each do |bp|
+    pattern = File.join(bp, '*', isbn + '.pdf')
+    ff = Dir.glob(pattern)
+    if ff.count > 0
+      paths_found += ff
+      break
+    end
+  end
+end
+paths_found.each {|p| puts p }
