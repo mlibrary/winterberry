@@ -72,11 +72,14 @@ pdf_file_list.each do |pdf_file|
   script_logger.info("archived:#{archived_pdf_list.count}")
 
   pfile = File.join(pdir, pbase + ext)
-  archived_pfile = File.join(archive_dir, pbase + "_version#{archived_pdf_list.count + 1}" + ext)
+  pfile = File.join(pdir, pbase + '.png') unless File.file?(pfile)
+  #archived_pfile = File.join(archive_dir, pbase + "_version#{archived_pdf_list.count + 1}" + ext)
+  archived_pfile = File.join(archive_dir, pbase + "_version#{archived_pdf_list.count + 1}" + File.extname(pfile))
 
   script_logger.info("mv #{pfile} #{archived_pfile}")
   FileUtils.mv(pfile, archived_pfile) unless options.mode == :test
 
+  pfile = File.join(pdir, pbase + ext)
   script_logger.info("mv #{pdf_file} #{pfile}")
   FileUtils.mv(pdf_file, pfile) unless options.mode == :test
 end

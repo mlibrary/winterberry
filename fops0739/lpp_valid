@@ -1,0 +1,146 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Script inputs a Crossref submission xml file and
+# validates it against the Crossref schema.
+
+require 'optparse'
+require 'ostruct'
+require 'os'
+
+# Determine the root directory of the code base.
+script_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.dirname(script_dir)
+
+require_relative File.join(root_dir, "lib", "logger")
+
+script_logger = UMPTG::Logger.create(logger_fp: STDOUT)
+
+# Process the script parameters.
+options = OpenStruct.new
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} lpp_csv_file [lpp_csv_file...]"
+  opts.on_tail('-h', '--help', 'Print this help message') do
+    script_logger.info(opts)
+    exit 0
+  end
+end
+option_parser.parse!(ARGV)
+if ARGV.count < 1
+  script_logger.info(option_parser.help)
+  return
+end
+
+# Process the command line parameters.
+lpp_csv_file_list = ARGV
+
+LPP_DOIs = [
+"https://doi.org/10.62859/9781915271549",
+"https://doi.org/10.62859/9781916985322",
+"https://doi.org/10.62859/9781915271273",
+"https://doi.org/10.62859/9781916704169",
+"https://doi.org/10.62859/9781916985384",
+"https://doi.org/10.62859/9781916985261",
+"https://doi.org/10.62859/9781916704701",
+"https://doi.org/10.62859/9781916704732",
+"https://doi.org/10.62859/c.159988",
+"https://doi.org/10.62859/9781916704138",
+"https://doi.org/10.62859/9781915734600",
+"https://doi.org/10.62859/9781915734266",
+"https://doi.org/10.62859/9781915271099",
+"https://doi.org/10.62859/9781915734624",
+"https://doi.org/10.62859/9781917503143",
+"https://doi.org/10.62859/9781916704633",
+"https://doi.org/10.62859/9781916704107",
+"https://doi.org/10.62859/9781915734389",
+"https://doi.org/10.62859/9781915734709",
+"https://doi.org/10.62859/9781916985117",
+"https://doi.org/10.62859/9781915271662",
+"https://doi.org/10.62859/9781916985353",
+"https://doi.org/10.62859/9781915271068",
+"https://doi.org/10.62859/9781915734358",
+"https://doi.org/10.62859/9781916704213",
+"https://doi.org/10.62859/9781915734105",
+"https://doi.org/10.62859/c.148366",
+"https://doi.org/10.62859/9781915271242",
+"https://doi.org/10.62859/9781916704435",
+"https://doi.org/10.62859/9781915271587",
+"https://doi.org/10.62859/9781915271365",
+"https://doi.org/10.62859/9781916704589",
+"https://doi.org/10.62859/9781916704466",
+"https://doi.org/10.62859/9781915271150",
+"https://doi.org/10.62859/9781915271426",
+"https://doi.org/10.62859/9781915734532",
+"https://doi.org/10.62859/9781916704060",
+"https://doi.org/10.62859/9781916704282",
+"https://doi.org/10.62859/9781916704862",
+"https://doi.org/10.62859/9781915734792",
+"https://doi.org/10.62859/9781916704404",
+"https://doi.org/10.62859/9781916985070",
+"https://doi.org/10.62859/9781915734891",
+"https://doi.org/10.62859/9781915271211",
+"https://doi.org/10.62859/9781915734235",
+"https://doi.org/10.62859/9781915271815",
+"https://doi.org/10.62859/9781915271600",
+"https://doi.org/10.62859/9781916985926",
+"https://doi.org/10.62859/9781916985032",
+"https://doi.org/10.62859/9781915271488",
+"https://doi.org/10.62859/9781916985414",
+"https://doi.org/10.62859/9781916704039",
+"https://doi.org/10.62859/9781915734051",
+"https://doi.org/10.62859/9781915271013",
+"https://doi.org/10.62859/9781915271723",
+"https://doi.org/10.62859/9781915271457",
+"https://doi.org/10.62859/9781916985957",
+"https://doi.org/10.62859/9781915734204",
+"https://doi.org/10.62859/9781915271785",
+"https://doi.org/10.62859/9781915271754",
+"https://doi.org/10.62859/9781915271044",
+"https://doi.org/10.62859/9781915734860",
+"https://doi.org/10.62859/9781915734297",
+"https://doi.org/10.62859/9781915734716",
+"https://doi.org/10.62859/9781916704077",
+"https://doi.org/10.62859/9781915734440",
+"https://doi.org/10.62859/9781915734143",
+"https://doi.org/10.62859/9781915271198",
+"https://doi.org/10.62859/9781915271846",
+"https://doi.org/10.62859/9781916704992",
+"https://doi.org/10.62859/9781916704251",
+"https://doi.org/10.62859/9781917566025",
+]
+
+require 'csv'
+
+lpp_csv_file_list.each do |lpp_csv_file|
+  lpp_csv_file = File.expand_path(lpp_csv_file)
+  unless File.file?(lpp_csv_file)
+    script_logger.error("invalid LPP CSV file #{lpp_csv_file}")
+    exit 1
+  end
+  script_logger.info("processing LPP CSV file #{File.basename(lpp_csv_file)}")
+
+  lpp_csv = CSV.parse(
+                        File.read(lpp_csv_file),
+                        :headers => true,
+                        :return_headers => false
+                      )
+
+
+  lpp_rep_csv_file = File.join(File.dirname(lpp_csv_file), File.basename(lpp_csv_file, ".*") + "_report.csv")
+  CSV.open(
+          lpp_rep_csv_file,
+          "w",
+          force_quotes: true,
+          write_headers: true,
+          headers: lpp_csv.headers + ["Exported?"]
+        ) do |csv|
+    row = {}
+    lpp_csv.each do |lpp_row|
+      nrow = {}
+      lpp_row.each {|c,v| nrow[c] = v}
+      nrow['Exported?'] = LPP_DOIs.include?(lpp_row['DOI'])
+      csv << nrow
+    end
+  end
+  script_logger.info("saved CSV file #{lpp_rep_csv_file}")
+end
