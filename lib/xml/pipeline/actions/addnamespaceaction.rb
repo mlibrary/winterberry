@@ -1,10 +1,11 @@
 module UMPTG::XML::Pipeline::Actions
 
-  class AddNamespaceAction < NormalizeAction
-    def resolve(args = {})
-      super(args)
+  class AddNamespaceAction < UMPTG::Pipeline::NormalizeAction
+    def resolve(options: {})
+      super(options: options)
 
-      reference_node = @properties[:reference_node]
+      reference_node = issue.content
+
       prefix = @properties[:namespace_prefix]
       prefix = prefix.nil? ? "" : prefix
       uri = @properties[:namespace_uri]

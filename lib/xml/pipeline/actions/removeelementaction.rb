@@ -4,10 +4,10 @@ module UMPTG::XML::Pipeline::Actions
     def resolve(options: {})
       super(options: options)
 
-      reference_node = issue.content
+      reference_node = @properties[:reference_node] || issue.content
 
-      action_node_markup = issue.content.to_s
-      issue.content.remove()
+      action_node_markup = reference_node.to_s
+      reference_node.remove()
       add_info_msg("removed element #{action_node_markup}")
 
       @status = UMPTG::Action.COMPLETED

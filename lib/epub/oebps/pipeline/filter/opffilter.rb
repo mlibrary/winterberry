@@ -48,14 +48,14 @@ module UMPTG::EPUB::OEBPS::Pipeline::Filter
       actions = []
       case issue.content.name
       when "package"
-        actions += process_package(issue.content)
+        actions += process_package(issue)
       when "metadata"
-        actions += process_metadata(issue.content)
+        actions += process_metadata(issue)
       #when "manifest", "guide"
       when "guide"
-        actions += process_manifest(issue.content)
+        actions += process_manifest(issue)
       when "spine"
-        actions += process_spine(issue.content)
+        actions += process_spine(issue)
       else
       end
       issue.actions = actions
@@ -64,8 +64,10 @@ module UMPTG::EPUB::OEBPS::Pipeline::Filter
 
     private
 
-    def process_package(reference_node)
+    def process_package(issue)
       actions = []
+
+      reference_node = issue.content
 
       direction = reference_node["dir"]
       direction = direction.nil? ? "" : direction
@@ -81,9 +83,10 @@ module UMPTG::EPUB::OEBPS::Pipeline::Filter
 =end
       else
         actions << UMPTG::XML::Pipeline::Action.new(
-                  name: name,
-                  reference_node: reference_node,
-                  info_message: "#{name}, found value for #{reference_node}/@dir"
+                  issue,
+                  options: {
+                      info_message: "#{name}, found value for #{reference_node}/@dir"
+                    }
                 )
       end
 
@@ -91,24 +94,28 @@ module UMPTG::EPUB::OEBPS::Pipeline::Filter
       case version.strip[0]
       when "3"
         actions << UMPTG::XML::Pipeline::Action.new(
-                        name: name,
-                        reference_node: reference_node,
-                        info_message: "#{name}, version=#{version}"
+                        issue,
+                        options: {
+                            info_message: "#{name}, version=#{version}"
+                          }
                     )
       else
         actions << UMPTG::XML::Pipeline::Actions::SetAttributeValueAction.new(
-                  name: name,
-                  reference_node: reference_node,
-                  attribute_name: "version",
-                  attribute_value: "3.0",
-                  warning_message: "#{name}, version=#{version}"
+                  issue,
+                  options: {
+                      attribute_name: "version",
+                      attribute_value: "3.0",
+                      warning_message: "#{name}, version=#{version}"
+                    }
                 )
       end
 
       return actions
     end
 
-    def process_metadata(reference_node)
+    def process_metadata(issue)
+      reference_node = issue.content
+
       actions = []
 
       # Set[Y0001]-[M01]-[D01]T[H01]:[m01]:[s01]Z
@@ -134,32 +141,37 @@ module UMPTG::EPUB::OEBPS::Pipeline::Filter
         opf_dates.each do |d|
           if d.content.downcase.start_with?("modif")
             dte_actions << UMPTG::XML::Pipeline::Actions::MarkupAction.new(
-                      name: name,
-                      reference_node: d.parent,
-                      action: :replace_node,
-                      markup: markup,
-                      warning_msg: "#{name} invalid #{d.parent.name}/@opf:#{d.name}=\"#{d.content}\""
+                      issue,
+                      options: {
+                          reference_node: d.parent,
+                          action: :replace_node,
+                          markup: markup,
+                          warning_msg: "#{name} invalid #{d.parent.name}/@opf:#{d.name}=\"#{d.content}\""
+                        }
                     )
           end
         end
         if dte_actions.empty?
           dte_actions << UMPTG::XML::Pipeline::Actions::MarkupAction.new(
-                    name: name,
-                    reference_node: reference_node,
-                    action: :add_child,
-                    markup: markup,
-                    warning_msg: "#{name}, missing metadata/meta[@property='dcterms:modified']"
+                    issue,
+                    options: {
+                        action: :add_child,
+                        markup: markup,
+                        warning_msg: "#{name}, missing metadata/meta[@property='dcterms:modified']"
+                      }
                   )
         end
         actions += dte_actions
       else
         mdate_list.each do |n|
           actions << UMPTG::XML::Pipeline::Actions::MarkupAction.new(
-                    name: name,
-                    reference_node: n,
-                    action: :replace_content,
-                    markup: mdate,
-                    warning_message: "#{name}, invalid metadata/meta[@property='dcterms:modified'] content"
+                    issue,
+                    options: {
+                        reference_node: n,
+                        action: :replace_content,
+                        markup: mdate,
+                        warning_message: "#{name}, invalid metadata/meta[@property='dcterms:modified'] content"
+                      }
                   )
         end
       end
@@ -167,27 +179,33 @@ module UMPTG::EPUB::OEBPS::Pipeline::Filter
       alist = reference_node.xpath(OPF_REMOVEATTR_XPATH)
       alist.each do |n|
         actions << UMPTG::XML::Pipeline::Actions::RemoveAttributeAction.new(
-                  name: name,
-                  reference_node: n.parent,
-                  attribute_name: n.name,
-                  warning_message: "#{name}, invalid attribute #{n.name}"
+                  issue,
+                  options: {
+                      reference_node: n.parent,
+                      attribute_name: n.name,
+                      warning_message: "#{name}, invalid attribute #{n.name}"
+                    }
                 )
       end
 
       # Remove empty dc:* elements.
       reference_node.xpath(OPF_DCEMPTY_XPATH).each do |n|
         actions << UMPTG::XML::Pipeline::Actions::RemoveElementAction.new(
-                 name: name,
-                 reference_node: n,
-                 action_node: n,
-                 warning_message: "#{name}, found empty element #{n.namespace.prefix}:#{n.name}"
+                 issue,
+                 options: {
+                     reference_node: n,
+                     action_node: n,
+                     warning_message: "#{name}, found empty element #{n.namespace.prefix}:#{n.name}"
+                  }
                )
       end
 
       return actions
     end
 
-    def process_manifest(reference_node)
+    def process_manifest(issue)
+      reference_node = issue.content
+
       actions = []
       href_list = reference_node.xpath("./*[local-name()='item' or local-name()='reference']")
       href_list.each do |n|
@@ -195,11 +213,13 @@ module UMPTG::EPUB::OEBPS::Pipeline::Filter
         new_href = UMPTG::XHTML::fix_ext(href)
         unless href == new_href
           actions << UMPTG::XML::Pipeline::Actions::SetAttributeValueAction.new(
-                    name: name,
-                    reference_node: n,
-                    attribute_name: "href",
-                    attribute_value: new_href,
-                    warning_message: "#{name}, found #{reference_node.name}/@href=\"#{href}\""
+                    issue,
+                    options: {
+                        reference_node: n,
+                        attribute_name: "href",
+                        attribute_value: new_href,
+                        warning_message: "#{name}, found #{reference_node.name}/@href=\"#{href}\""
+                      }
                   )
         end
       end
@@ -222,16 +242,20 @@ module UMPTG::EPUB::OEBPS::Pipeline::Filter
       return actions
     end
 
-    def process_spine(reference_node)
+    def process_spine(issue)
+      reference_node = issue.content
+
       actions = []
 
       lin_list = reference_node.xpath("./*[local-name()='itemref' and @linear='no']")
       lin_list.each do |n|
         actions << UMPTG::XML::Pipeline::Actions::RemoveAttributeAction.new(
-                  name: name,
-                  reference_node: n,
-                  attribute_name: "linear",
-                  warning_message: "#{name}, found #{reference_node.name}/#{n.name}[@idref=\"#{n['idref']}\"]/@linear=\"no\""
+                  issue,
+                  options: {
+                      reference_node: n,
+                      attribute_name: "linear",
+                      warning_message: "#{name}, found #{reference_node.name}/#{n.name}[@idref=\"#{n['idref']}\"]/@linear=\"no\""
+                    }
                 )
       end
 

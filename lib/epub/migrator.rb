@@ -10,7 +10,7 @@ module UMPTG::EPUB
             epub_ncx_navigation: true,
             epub_oebps_opf: true,
             xhtml_migration: true,
-            xhtml_entity: false,
+            xhtml_entity: true,
             xhtml_header_title: true,
             xhtml_header_meta_role: true
           }

@@ -33,11 +33,12 @@ module UMPTG::EPUB::NCX::Pipeline::Filter
         new_src = UMPTG::XHTML::fix_ext(src)
         unless src == new_src
           issue.actions << UMPTG::XML::Pipeline::Actions::SetAttributeValueAction.new(
-                    name: name,
-                    reference_node: reference_node,
-                    attribute_name: "src",
-                    attribute_value: new_src,
-                    warning_message: "#{name}, found #{reference_node.name}/@src=\"#{src}\""
+                    issue,
+                    options: {
+                        attribute_name: "src",
+                        attribute_value: new_src,
+                        warning_message: "#{name}, found #{reference_node.name}/@src=\"#{src}\""
+                      }
                   )
         end
       end

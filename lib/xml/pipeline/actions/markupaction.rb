@@ -18,7 +18,7 @@ module UMPTG::XML::Pipeline::Actions
     def resolve(options: {})
       super(options: options)
 
-      reference_node = issue.content
+      reference_node = @properties[:reference_node] || issue.content
 
       fragment = reference_node.document.parse(markup)
 
@@ -43,7 +43,8 @@ module UMPTG::XML::Pipeline::Actions
         add_info_msg("#{issue.name}: #{reference_node.name}, replaced content markup #{markup}.")
       when :replace_node
         reference_name = reference_node.name
-        resolved_nodelist = reference_node.add_next_sibling(fragment)
+        #resolved_nodelist = reference_node.add_next_sibling(fragment)
+        resolved_nodelist = reference_node.add_next_sibling(markup)
         reference_node.remove
         add_info_msg("#{issue.name}: #{reference_name}, replaced with #{markup}.")
       else

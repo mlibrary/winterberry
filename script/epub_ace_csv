@@ -52,7 +52,7 @@ METADATA_HEADERS = MHEADERS + [
 
 CSV_HEADERS = [
       "File Name","Title","Identifier","Publisher","Pub Year","Format",
-      "Version","Language","Remediation Plan",
+      "Version","Language","Ace Result","Remediation Plan",
       "WCAG 2.0 violations","WCAG 2.1 violations",
       "WCAG 2.2 violations","EPUB violations",
       "Best practice violations" ] + METADATA_HEADERS +
@@ -94,7 +94,8 @@ ace_json_file_list.each do |ace_json_file|
   script_logger.info("#{File.basename(epub_file)} result:#{result}")
 
   row = {
-        "File Name" => File.basename(epub_file, ".*")
+        "File Name" => File.basename(epub_file, ".*"),
+        "Ace Result" => result
       }
 
   tag_cnt = {}
@@ -107,6 +108,12 @@ ace_json_file_list.each do |ace_json_file|
         new_k = MAP_METADATA[k]
         unless new_k.nil?
           case new_k
+          when "Title"
+            if v.is_a?(Array)
+              new_v = v[0] + ": " + v[1]
+            else
+              new_v = v
+            end
           when "ISBN"
             case
             when v.is_a?(Array)
@@ -130,7 +137,11 @@ ace_json_file_list.each do |ace_json_file|
               new_v = v
             end
           else
-            new_v = v
+            if v.is_a?(Array)
+              new_v = v.join(', ')
+            else
+              new_v = v
+            end
           end
           row[new_k] = new_v
           next

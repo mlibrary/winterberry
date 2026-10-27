@@ -42,6 +42,7 @@ module UMPTG::XHTML::Pipeline::Filter
           issue.actions << UMPTG::XML::Pipeline::Actions::MarkupAction.new(
                   issue,
                   options: {
+                      reference_node: n,
                       action: :replace_node,
                       markup: content,
                       warning_message: \

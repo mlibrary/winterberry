@@ -41,27 +41,28 @@ module UMPTG::XHTML::Pipeline::Filter
 
       case issue.content.name
       when "html"
-        issue.actions += process_root(issue.content, options)
+        issue.actions += process_root(issue, options)
       when "head"
-        issue.actions += process_heading(issue.content, options)
+        issue.actions += process_heading(issue, options)
       when "big"
-        issue.actions += process_big(issue.content, options)
+        issue.actions += process_big(issue, options)
       when "li"
-        issue.actions += process_li(issue.content, options)
+        issue.actions += process_li(issue, options)
       when "img"
-        issue.actions += process_img(issue.content, options)
+        issue.actions += process_img(issue, options)
       when "svg"
-        issue.actions += process_svg(issue.content, options)
+        issue.actions += process_svg(issue, options)
       when "table"
-        issue.actions += process_table(issue.content, options)
+        issue.actions += process_table(issue, options)
       else
         if issue.content.has_attribute?("href")
-          issue.actions += process_href(issue.content, options)
+          issue.actions += process_href(issue, options)
         else
           issue.actions << UMPTG::XML::Pipeline::Action.new(
-                          name: issue.name,
-                          reference_node: issue.content,
-                          info_message: "#{issue.name}, #{issue.content.name}"
+                          issue,
+                          options: {
+                              info_message: "#{issue.name}, #{issue.content.name}"
+                            }
                       )
         end
       end
@@ -71,32 +72,37 @@ module UMPTG::XHTML::Pipeline::Filter
 
     XSI_NS = "http://www.w3.org/2001/XMLSchema-instance"
 
-    def process_root(reference_node, options)
+    def process_root(issue, options)
+      reference_node = issue.content
+
       actions = []
 
       xsi_ns = reference_node.document.root.namespace_definitions.select {|ns| ns.href == XSI_NS }
       if xsi_ns.empty?
         actions << UMPTG::XML::Pipeline::Actions::AddNamespaceAction.new(
-                  name: name,
-                  reference_node: reference_node,
-                  namespace_prefix: "xsi",
-                  namespace_uri: XSI_NS,
-                  warning_message: "#{name}, missing namespace #{reference_node.name}/@xmlns:xsi=\"#{XSI_NS}\""
+                  issue,
+                  options: {
+                      namespace_prefix: "xsi",
+                      namespace_uri: XSI_NS,
+                      warning_message: "#{name}, missing namespace #{reference_node.name}/@xmlns:xsi=\"#{XSI_NS}\""
+                    }
                 )
       else
         actions << UMPTG::XML::Pipeline::Action.new(
-                  name: name,
-                  reference_node: reference_node,
-                  info_message: "#{name}, found namespace #{reference_node.name}/@xmlns:#{xsi_ns.first.prefix}=\"#{xsi_ns.first.href}\""
+                  issue,
+                  options: {
+                      info_message: "#{name}, found namespace #{reference_node.name}/@xmlns:#{xsi_ns.first.prefix}=\"#{xsi_ns.first.href}\""
+                    }
                 )
       end
 
       return actions
     end
 
-    def process_heading(reference_node, options)
-      actions = []
+    def process_heading(issue, options)
+      reference_node = issue.content
 
+      actions = []
 
       content = "text/html; charset=utf-8"
       markup = "<meta http-equiv=\"Content-Type\" content=\"#{content}\"/>"
@@ -105,11 +111,13 @@ module UMPTG::XHTML::Pipeline::Filter
       unless ctype_list.empty?
         ctype_list.each do |n|
           actions << UMPTG::XML::Pipeline::Actions::SetAttributeValueAction.new(
-                    name: name,
-                    reference_node: n,
-                    attribute_name: "http-equiv",
-                    attribute_value: 'Content-Type',
-                    warning_message: "#{name}, invalid meta[@content=\"#{n['content']}\""
+                    issue,
+                    options: {
+                        reference_node: n,
+                        attribute_name: "http-equiv",
+                        attribute_value: 'Content-Type',
+                        warning_message: "#{name}, invalid meta[@content=\"#{n['content']}\""
+                      }
                   )
         end
       end
@@ -117,20 +125,23 @@ module UMPTG::XHTML::Pipeline::Filter
       ctype_list = reference_node.xpath(".//*[local-name()='meta' and @http-equiv='Content-Type']")
       if ctype_list.empty?
         actions << UMPTG::XML::Pipeline::Actions::MarkupAction.new(
-                  name: name,
-                  reference_node: reference_node,
-                  action: :add_child,
-                  markup: markup,
-                  warning_message: "#{name}, missing meta[@http-equiv='Content-Type']/@content=\"#{content}\""
+                  issue,
+                  options: {
+                      action: :add_child,
+                      markup: markup,
+                      warning_message: "#{name}, missing meta[@http-equiv='Content-Type']/@content=\"#{content}\""
+                    }
                 )
       else
         ctype_list.each do |n|
           actions << UMPTG::XML::Pipeline::Actions::SetAttributeValueAction.new(
-                    name: name,
-                    reference_node: n,
-                    attribute_name: "content",
-                    attribute_value: content,
-                    warning_message: "#{name}, invalid meta[@http-equiv='Content-Type']/@content=\"#{n['content']}\""
+                    issue,
+                    options: {
+                        reference_node: n,
+                        attribute_name: "content",
+                        attribute_value: content,
+                        warning_message: "#{name}, invalid meta[@http-equiv='Content-Type']/@content=\"#{n['content']}\""
+                      }
                   )
         end
       end
@@ -139,10 +150,12 @@ module UMPTG::XHTML::Pipeline::Filter
       unless ctype_list.empty?
         ctype_list.each do |n|
           actions << UMPTG::XML::Pipeline::Actions::RemoveElementAction.new(
-                 name: name,
-                 reference_node: n,
-                 action_node: n,
-                 warning_message: "#{name}, invalid meta[@http-equiv='Content-Type']/@content=\"#{n['content']}\""
+                 issue,
+                 options: {
+                     reference_node: n,
+                     action_node: n,
+                     warning_message: "#{name}, invalid meta[@http-equiv='Content-Type']/@content=\"#{n['content']}\""
+                  }
                )
         end
       end
@@ -150,34 +163,40 @@ module UMPTG::XHTML::Pipeline::Filter
       return actions
     end
 
-    def process_big(reference_node, options)
+    def process_big(issue, options)
+      reference_node = issue.content
+
       actions = []
 
       content = reference_node.content || ""
       unless content.empty?
         markup = "<span style=\"font-size:larger\">" + content + "</span>"
         actions << UMPTG::XML::Pipeline::Actions::MarkupAction.new(
-                  name: name,
-                  reference_node: reference_node,
-                  action: :replace_node,
-                  markup: markup,
-                  warning_message: "#{name}, invalid element #{reference_node.name}"
+                  issue,
+                  options: {
+                      action: :replace_node,
+                      markup: markup,
+                      warning_message: "#{name}, invalid element #{reference_node.name}"
+                    }
                 )
       end
       return actions
     end
 
-    def process_img(reference_node, options)
+    def process_img(issue, options)
+      reference_node = issue.content
+
       actions = []
 
       ["height","width"].each do |attr|
         v = reference_node[attr]
         unless v.nil?
           actions << UMPTG::XML::Pipeline::Actions::RemoveAttributeAction.new(
-                    name: name,
-                    reference_node: reference_node,
-                    attribute_name: attr,
-                    warning_message: "#{name}, invalid attribute #{reference_node.name}/@#{attr}"
+                    issue,
+                    options: {
+                        attribute_name: attr,
+                        warning_message: "#{name}, invalid attribute #{reference_node.name}/@#{attr}"
+                      }
                   )
         end
       end
@@ -186,28 +205,34 @@ module UMPTG::XHTML::Pipeline::Filter
       width = width.nil? ? "" : width.strip
       if width == "100%"
         actions << UMPTG::XML::Pipeline::Actions::RemoveAttributeAction.new(
-                  name: name,
-                  reference_node: reference_node,
-                  attribute_name: "width",
-                  warning_message: "#{name}, invalid attribute #{reference_node.name}/@width"
+                  issue,
+                  options: {
+                      attribute_name: "width",
+                      warning_message: "#{name}, invalid attribute #{reference_node.name}/@width"
+                    }
                 )
       end
       return actions
     end
 
-    def process_li(reference_node, options)
+    def process_li(issue, options)
+      reference_node = issue.content
+
       actions = []
 
       actions << UMPTG::XML::Pipeline::Actions::RemoveAttributeAction.new(
-                name: name,
-                reference_node: reference_node,
-                attribute_name: "role",
-                warning_message: "#{name}, invalid attribute #{reference_node.name}/@role"
+                issue,
+                options: {
+                    attribute_name: "role",
+                    warning_message: "#{name}, invalid attribute #{reference_node.name}/@role"
+                  }
               )
       return actions
     end
 
-    def process_svg(reference_node, options)
+    def process_svg(issue, options)
+      reference_node = issue.content
+
       actions = []
 
       div_node = reference_node.document.create_element("div")
@@ -225,17 +250,20 @@ module UMPTG::XHTML::Pipeline::Filter
       end
 
       actions << UMPTG::XML::Pipeline::Actions::MarkupAction.new(
-                name: name,
-                reference_node: reference_node,
-                action: :replace_node,
-                markup: div_node.to_xml,
-                warning_message: "#{name}, found #{reference_node.name}"
+                issue,
+                options: {
+                    action: :replace_node,
+                    markup: div_node.to_xml,
+                    warning_message: "#{name}, found #{reference_node.name}"
+                  }
               )
 
       return actions
     end
 
-    def process_table(reference_node, options)
+    def process_table(issue, options)
+      reference_node = issue.content
+
       actions = []
 
       # Remove @[cellspacing|width]
@@ -243,10 +271,11 @@ module UMPTG::XHTML::Pipeline::Filter
         v = reference_node[attr]
         unless v.nil?
           actions << UMPTG::XML::Pipeline::Actions::RemoveAttributeAction.new(
-                    name: name,
-                    reference_node: reference_node,
-                    attribute_name: attr,
-                    warning_message: "#{name}, invalid attribute #{reference_node.name}/@#{attr}"
+                    issue,
+                    options: {
+                        attribute_name: attr,
+                        warning_message: "#{name}, invalid attribute #{reference_node.name}/@#{attr}"
+                      }
                   )
         end
       end
@@ -256,10 +285,11 @@ module UMPTG::XHTML::Pipeline::Filter
       attr_value = reference_node[attr]
       unless attr_value.nil? or !attr_value.strip.match?(/[0]+/)
         actions << UMPTG::XML::Pipeline::Actions::RemoveAttributeAction.new(
-                  name: name,
-                  reference_node: reference_node,
-                  attribute_name: attr,
-                  warning_message: "#{name}, invalid attribute #{reference_node.name}/@#{attr}"
+                  issue,
+                  options: {
+                      attribute_name: attr,
+                      warning_message: "#{name}, invalid attribute #{reference_node.name}/@#{attr}"
+                    }
                 )
       end
 
@@ -268,40 +298,48 @@ module UMPTG::XHTML::Pipeline::Filter
       attr_value = reference_node[attr]
       unless attr_value.nil?
         actions << UMPTG::XML::Pipeline::Actions::SetAttributeValueAction.new(
-                  name: name,
-                  reference_node: reference_node,
-                  attribute_name: "style",
-                  attribute_value: "padding:#{attr_value.strip}",
-                  attribute_append: true,
-                  warning_message: "#{name}, invalid #{reference_node.name}/@#{attr}"
+                  issue,
+                  options: {
+                      attribute_name: "style",
+                      attribute_value: "padding:#{attr_value.strip}",
+                      attribute_append: true,
+                      warning_message: "#{name}, invalid #{reference_node.name}/@#{attr}"
+                    }
                 )
         actions << UMPTG::XML::Pipeline::Actions::RemoveAttributeAction.new(
-                  name: name,
-                  reference_node: reference_node,
-                  attribute_name: attr,
-                  warning_message: "#{name}, invalid attribute #{reference_node.name}/@#{attr}"
+                  issue,
+                  options: {
+                      attribute_name: attr,
+                      warning_message: "#{name}, invalid attribute #{reference_node.name}/@#{attr}"
+                    }
                 )
       end
 
       # Move @align and @valign to @style
       attr_list = reference_node.xpath(".//@*[name()='align' or name()='valign']")
       attr_list.each do |attr|
+        #puts "parent=#{attr.parent.name},attr=#{attr.name},content=#{attr.content}"
         unless attr.content.strip.empty?
           val = attr.name == "valign" ? "text-align" : attr.name
           val += ":#{attr.content}"
+          #puts "val=#{val}"
           actions << UMPTG::XML::Pipeline::Actions::SetAttributeValueAction.new(
-                    name: name,
-                    reference_node: attr.parent,
-                    attribute_name: "style",
-                    attribute_value: val,
-                    attribute_append: true,
-                    warning_message: "#{name}, invalid #{attr.parent.name}/@#{attr.name}"
+                    issue,
+                    options: {
+                        reference_node: attr.parent,
+                        attribute_name: "style",
+                        attribute_value: val,
+                        attribute_append: true,
+                        warning_message: "#{name}, invalid #{attr.parent.name}/@#{attr.name}"
+                      }
                   )
           actions << UMPTG::XML::Pipeline::Actions::RemoveAttributeAction.new(
-                    name: name,
-                    reference_node: attr.parent,
-                    attribute_name: attr.name,
-                    warning_message: "#{name}, invalid attribute #{reference_node.name}/@#{attr.name}"
+                    issue,
+                    options: {
+                        reference_node: attr.parent,
+                        attribute_name: attr.name,
+                        warning_message: "#{name}, invalid attribute #{reference_node.name}/@#{attr.name}"
+                      }
                   )
         end
       end
@@ -313,10 +351,12 @@ module UMPTG::XHTML::Pipeline::Filter
           v = col_node[attr]
           unless v.nil?
             actions << UMPTG::XML::Pipeline::Actions::RemoveAttributeAction.new(
-                      name: name,
-                      reference_node: col_node,
-                      attribute_name: attr,
-                      warning_message: "#{name}, invalid attribute #{col_node.name}/@#{attr}"
+                      issue,
+                      options: {
+                          reference_node: col_node,
+                          attribute_name: attr,
+                          warning_message: "#{name}, invalid attribute #{col_node.name}/@#{attr}"
+                        }
                     )
           end
         end
@@ -326,19 +366,22 @@ module UMPTG::XHTML::Pipeline::Filter
       tbody_node = reference_node.xpath(".//*[local-name()='tbody']").first
       if tbody_node.nil?
         actions << UMPTG::XML::Pipeline::Actions::TableMarkupAction.new(
-                  name: name,
-                  reference_node: reference_node,
-                  action: :add_tbody,
-                  warning_message: "#{name}, missing #{reference_node.name}/tbody"
+                  issue,
+                  options: {
+                      action: :add_tbody,
+                      warning_message: "#{name}, missing #{reference_node.name}/tbody"
+                    }
                 )
       end
 
       reference_node.xpath("./*[local-name()='col']").each do |n|
         actions << UMPTG::XML::Pipeline::Actions::RemoveElementAction.new(
-                 name: name,
-                 reference_node: n,
-                 action_node: n,
-                 warning_message: "#{name}, found empty element #{n.name}"
+                 issue,
+                 options: {
+                     reference_node: n,
+                     action_node: n,
+                     warning_message: "#{name}, found empty element #{n.name}"
+                  }
                )
       end
 
@@ -347,11 +390,13 @@ module UMPTG::XHTML::Pipeline::Filter
           width = node["width"] || ""
           unless width.empty?
             actions << UMPTG::XML::Pipeline::Actions::RemoveAttributeAction.new(
-                   name: name,
-                   reference_node: node,
-                   attribute_name: "width",
-                   warning_message: \
-                     "#{name}, #{node.name} found invalid attribute @width"
+                   issue,
+                   options: {
+                       reference_node: node,
+                       attribute_name: "width",
+                       warning_message: \
+                         "#{name}, #{node.name} found invalid attribute @width"
+                    }
                  )
 
             attribute_value = "width:#{width}"
@@ -359,12 +404,14 @@ module UMPTG::XHTML::Pipeline::Filter
             style += ";" + attribute_value unless style.empty?
             style = attribute_value if style.empty?
             actions << UMPTG::XML::Pipeline::Actions::SetAttributeValueAction.new(
-                   name: name,
-                   reference_node: node,
-                   attribute_name: "style",
-                   attribute_value: style,
-                   info_message: \
-                     "#{name}, #{node.name} set attribute style=\"#{style}\""
+                   issue,
+                   options: {
+                       reference_node: node,
+                       attribute_name: "style",
+                       attribute_value: style,
+                       info_message: \
+                         "#{name}, #{node.name} set attribute style=\"#{style}\""
+                    }
                  )
           end
       end
@@ -372,18 +419,21 @@ module UMPTG::XHTML::Pipeline::Filter
       return actions
     end
 
-    def process_href(reference_node, options)
+    def process_href(issue, options)
+      reference_node = issue.content
+
       actions = []
 
       href = reference_node['href']
       new_href = UMPTG::XHTML::fix_ext(href)
       unless href == new_href
         actions << UMPTG::XML::Pipeline::Actions::SetAttributeValueAction.new(
-                  name: name,
-                  reference_node: reference_node,
-                  attribute_name: "href",
-                  attribute_value: new_href,
-                  warning_message: "#{name}, found #{reference_node.name}/@href=\"#{href}\""
+                  issue,
+                  options: {
+                      attribute_name: "href",
+                      attribute_value: new_href,
+                      warning_message: "#{name}, found #{reference_node.name}/@href=\"#{href}\""
+                    }
                 )
       end
 
